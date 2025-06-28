@@ -81,6 +81,11 @@ function Header() {
               Заявки
             </Link>
           </li>
+          <li>
+            <Link href="/delivery" onClick={handleNavClick}>
+              Доставка
+            </Link>
+          </li>
         </ul>
       </nav>
     </header>

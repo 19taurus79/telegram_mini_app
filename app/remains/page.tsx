@@ -22,7 +22,9 @@ function Remains() {
     <ul className={css.listContainer}>
       {data?.map((item) => (
         <li className={css.listItemButton} key={item.id}>
-          <Link href={`/remains/${item.id}`}>{item.product}</Link>
+          <Link href={`/remains/${item.id}`} className={css.link}>
+            {item.product}
+          </Link>
         </li>
       ))}
     </ul>

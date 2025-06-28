@@ -1,0 +1,128 @@
+.wrapper {
+  padding: 12px;
+  font-family: sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.clientBlock {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  background-color: var(--secondary-bg-color);
+  color: var(--secondary-text-color);
+}
+
+.rowLabel {
+  font-size: 14px;
+  margin-bottom: 4px;
+  background-color: var(--header-bg-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--foreground);
+}
+
+.orderBlock {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.orderTitle {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--primary-color);
+}
+
+.productList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.productItem {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.productItem:hover {
+  background-color: var(--hover-bg-color);
+}
+
+/* Модалка */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: var(--background);
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 300px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+}
+
+.modalTitle {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modalButtons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modalButton {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modalButton:first-child {
+  background-color: #ccc;
+  color: #333;
+}
+
+.modalButton:last-child {
+  background-color: var(--primary-color);
+  color: white;
+  margin-left: 10px;
+}
+
+.modalButton:first-child:hover {
+  background-color: #b3b3b3;
+}
+
+.modalButton:last-child:hover {
+  background-color: var(--primary-hover-color);
+}

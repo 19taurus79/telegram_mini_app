@@ -60,11 +60,15 @@ type ContractDetails = {
   party_sign: string;
   buying_season: string;
   different: number;
+  client: string;
+  contract_supplement: string;
+  manager: string;
 };
 type Contract = {
   contract_supplement: string;
 };
-axios.defaults.baseURL = "https://taurus.pp.ua";
+const url = process.env.NEXT_PUBLIC_URL_API;
+axios.defaults.baseURL = url;
 const initData =
   "user=%7B%22id%22%3A548019148%2C%22first_name%22%3A%22%D0%A1%D0%B5%D1%80%D0%B3%D0%B5%D0%B9%22%2C%22last_name%22%3A%22%D0%9E%D0%BD%D0%B8%D1%89%D0%B5%D0%BD%D0%BA%D0%BE%22%2C%22username%22%3A%22OnyshchenkoSergey%22%2C%22language_code%22%3A%22uk%22%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2Fqf0qiya3lYZumE5ExiC55ONcmy-5vzP6pZzzBMV92vw.svg%22%7D&chat_instance=-2141578439994487341&chat_type=private&auth_date=1750845726&signature=X9aOoJcn4BsHL7ziok388od1BTnHyPUD6UmcwlPgn8T9Sj2Ki2taXDU96pwTG8oJVojv7OKhTzoV5CPMSYV0Aw&hash=5d6e15a23d514196c2123c1bba73c6dd9a25152dc7bed12944df1f38be70991d";
 export const getRemainsById = async ({ productId }: { productId: string }) => {

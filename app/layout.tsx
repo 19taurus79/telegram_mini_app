@@ -5,6 +5,7 @@ import Header from "@/components/Header/Header";
 import TanStackProvider from "@/components/TanStackProvider/TanStackProvider";
 import { FilterProvider } from "@/context/FilterContext";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton/ScrollToTopButton";
+import { DeliveryProvider } from "@/context/DeliveryContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,10 +34,12 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <TanStackProvider>
           <FilterProvider>
-            <Header />
-            {children}
-            {/* {modal} */}
-            <ScrollToTopButton />
+            <DeliveryProvider>
+              <Header />
+              {children}
+              {/* {modal} */}
+              <ScrollToTopButton />
+            </DeliveryProvider>
           </FilterProvider>
         </TanStackProvider>
       </body>

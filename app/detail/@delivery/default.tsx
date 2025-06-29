@@ -82,6 +82,7 @@ export default function DeliveryList() {
                     </li>
                   ))}
                 </ul>
+                <button>Надіслати в роботу</button>
               </div>
             ))}
           </div>
@@ -94,7 +95,7 @@ export default function DeliveryList() {
             className={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className={styles.modalTitle}>Изменить количество</h3>
+            <h3 className={styles.modalTitle}>Змінити кількість</h3>
             <p>
               Товар: <b>{modalItem.product}</b>
             </p>
@@ -108,9 +109,9 @@ export default function DeliveryList() {
             />
             {/* Предупреждения */}
             <div style={{ color: "red", minHeight: 20, marginBottom: 8 }}>
-              {isEmpty && "Введите количество"}
+              {isEmpty && "Потрібно ввести кількість"}
               {!isEmpty && isTooLarge && (
-                <>Количество не может быть больше {maxQty}</>
+                <>Кількіть не може бути більше {maxQty}</>
               )}
             </div>
             <div className={styles.modalButtons}>
@@ -118,14 +119,14 @@ export default function DeliveryList() {
                 onClick={() => setModalItem(null)}
                 className={styles.modalButton}
               >
-                Отмена
+                Відміна
               </button>
               <button
                 onClick={handleSaveClick}
                 className={styles.modalButton}
                 disabled={isSaveDisabled}
               >
-                Сохранить
+                Зберегти
               </button>
             </div>
           </div>

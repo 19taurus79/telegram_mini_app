@@ -25,6 +25,9 @@ type GroupedDelivery = {
       quantity: number;
     }[];
   }[];
+  deliveryAddress?: string; // адрес доставки
+  contactPerson?: string; // контакт получателя
+  deliveryDate?: string; // дата доставки (например, ISO-строка)
 };
 
 // Тип: то, что мы будем хранить и передавать через контекст
@@ -35,6 +38,15 @@ type DeliveryContextType = {
   modalItem: OnDelivery | null; // текущий товар, который отображается в модалке
   setModalItem: (item: OnDelivery | null) => void; // ручное управление отображением модалки
   confirmAddWithQuantity: (quantity: number) => void; // подтверждение добавления товара с количеством
+  deliveryDetails: Record<
+    string,
+    { address: string; contact: string; date: string }
+  >;
+  setDeliveryDetails: React.Dispatch<
+    React.SetStateAction<
+      Record<string, { address: string; contact: string; date: string }>
+    >
+  >;
 };
 
 // Создаём сам контекст (сначала без значения, undefined)
@@ -49,6 +61,9 @@ export const DeliveryProvider = ({ children }: { children: ReactNode }) => {
 
   // Состояние: текущий товар, для которого пользователь должен ввести количество (через модалку)
   const [modalItem, setModalItem] = useState<OnDelivery | null>(null);
+  const [deliveryDetails, setDeliveryDetails] = useState<
+    Record<string, { address: string; contact: string; date: string }>
+  >({});
 
   // Обработка клика по товару:
   // если товар уже есть — удалить, если нет — открыть модалку
@@ -78,37 +93,36 @@ export const DeliveryProvider = ({ children }: { children: ReactNode }) => {
     const map = new Map<string, GroupedDelivery>();
 
     for (const item of onDeliveryArr) {
-      // Если клиента ещё нет в карте — создаём начальную группу
       if (!map.has(item.client)) {
+        const info = deliveryDetails[item.client] || {};
+
         map.set(item.client, {
           client: item.client,
           manager: item.manager,
           orders: [],
+          deliveryAddress: info.address,
+          contactPerson: info.contact,
+          deliveryDate: info.date,
         });
       }
 
       const group = map.get(item.client)!;
 
-      // Ищем заказ в текущей группе
       let order = group.orders.find((o) => o.order === item.order);
-
-      // Если заказа ещё нет — создаём его
       if (!order) {
         order = { order: item.order, products: [] };
         group.orders.push(order);
       }
 
-      // Добавляем товар в заказ
       order.products.push({
         product: item.product,
         quantity: item.quantity,
       });
     }
 
-    // Преобразуем карту в массив и возвращаем
     return Array.from(map.values());
-  }, [onDeliveryArr]);
-
+  }, [onDeliveryArr, deliveryDetails]);
+  console.log(groupedByClient);
   // Возвращаем провайдер с данными и функциями
   return (
     <DeliveryContext.Provider
@@ -119,6 +133,8 @@ export const DeliveryProvider = ({ children }: { children: ReactNode }) => {
         modalItem,
         setModalItem,
         confirmAddWithQuantity,
+        deliveryDetails,
+        setDeliveryDetails,
       }}
     >
       {children}

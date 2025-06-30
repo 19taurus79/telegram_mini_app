@@ -2,8 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { useDelivery } from "@/context/DeliveryContext";
 import styles from "./DeliveryTable.module.css";
+import DeliveryDetailsForm from "@/components/DeliveryDetailsForm/DeliveryDetailsForm";
 
 export default function DeliveryList() {
+  const [activeClientForDetails, setActiveClientForDetails] = useState<
+    string | null
+  >(null);
+  const { setDeliveryDetails } = useDelivery();
+
   const {
     groupedByClient,
     // handleRowClick,
@@ -48,6 +54,17 @@ export default function DeliveryList() {
     }
   };
 
+  const handleDeliveryDetailsSubmit = (
+    client: string,
+    data: { address: string; contact: string; date: string }
+  ) => {
+    setDeliveryDetails((prev) => ({
+      ...prev,
+      [client]: data,
+    }));
+    setActiveClientForDetails(null); // закрыть форму
+  };
+
   return (
     <>
       <div className={styles.wrapper}>
@@ -63,28 +80,24 @@ export default function DeliveryList() {
                 </strong>
                 <ul className={styles.productList}>
                   {order.products.map((p) => (
-                    <li
-                      key={p.product}
-                      className={styles.productItem}
-                      //   onClick={() =>
-                      //     handleRowClick({
-                      //       client: group.client,
-                      //       manager: group.manager,
-                      //       order: order.order,
-                      //       product: p.product,
-                      //       quantity: p.quantity,
-                      //       id: order.order + p.product,
-                      //     })
-                      //   }
-                    >
+                    <li key={p.product} className={styles.productItem}>
                       <span>{p.product}</span>
                       <span>{p.quantity}</span>
                     </li>
                   ))}
                 </ul>
-                <button>Надіслати в роботу</button>
               </div>
             ))}
+            <button onClick={() => setActiveClientForDetails(group.client)}>
+              Надіслати в роботу
+            </button>
+            {activeClientForDetails === group.client && (
+              <DeliveryDetailsForm
+                client={group.client}
+                onSubmit={handleDeliveryDetailsSubmit}
+                onCancel={() => setActiveClientForDetails(null)}
+              />
+            )}
           </div>
         ))}
       </div>

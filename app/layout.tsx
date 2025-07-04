@@ -6,7 +6,7 @@ import TanStackProvider from "@/components/TanStackProvider/TanStackProvider";
 import { FilterProvider } from "@/context/FilterContext";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton/ScrollToTopButton";
 import { DeliveryProvider } from "@/context/DeliveryContext";
-
+import Script from "next/script";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,6 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <Script src="https://telegram.org/js/telegram-web-app.js?58" />
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <TanStackProvider>
           <FilterProvider>

@@ -63,6 +63,7 @@ export default function DeliveryList() {
       [client]: data,
     }));
     setActiveClientForDetails(null); // закрыть форму
+    console.log("Delivery details saved:", client, data, groupedByClient);
   };
 
   return (

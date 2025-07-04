@@ -122,7 +122,8 @@ export const DeliveryProvider = ({ children }: { children: ReactNode }) => {
 
     return Array.from(map.values());
   }, [onDeliveryArr, deliveryDetails]);
-  console.log(groupedByClient);
+  console.log("Конечный вариант", groupedByClient);
+
   // Возвращаем провайдер с данными и функциями
   return (
     <DeliveryContext.Provider

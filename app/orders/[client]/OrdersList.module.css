@@ -1,0 +1,32 @@
+/* ContractList.module.css */
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background);
+}
+
+.item {
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 15px;
+  text-align: center;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.link {
+  text-decoration: none;
+  color: #0070f3;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
+}
+
+.link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}

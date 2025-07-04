@@ -1,4 +1,5 @@
 import axios from "axios";
+
 type Product = {
   id: string;
   product: string;
@@ -165,3 +166,12 @@ export const getContractDetails = async ({
   );
   return data;
 };
+// type Product = {
+//   product: string;
+//   quantity: number;
+// };
+
+// type Order = {
+//   order: string;
+//   products: Product[];
+// };

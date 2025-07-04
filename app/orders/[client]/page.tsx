@@ -1,7 +1,7 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getContracts } from "@/lib/api";
 import Link from "next/link";
-
+import css from "./OrdersList.module.css";
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
 // };
@@ -17,10 +17,13 @@ export default async function filteredOrders({ params }: Props) {
   const contracts = await getContracts({ client: client.client });
   return (
     <>
-      <ul>
+      <ul className={css.list}>
         {contracts.map((item) => (
-          <li key={item.contract_supplement}>
-            <Link href={`/detail/${item.contract_supplement}`}>
+          <li key={item.contract_supplement} className={css.item}>
+            <Link
+              href={`/detail/${item.contract_supplement}`}
+              className={css.link}
+            >
               {item.contract_supplement}
             </Link>
           </li>

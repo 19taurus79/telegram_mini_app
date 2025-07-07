@@ -11,26 +11,8 @@ type Detail = {
     id: string;
   }[];
 };
-// type OnDelivery = {
-//   client: string;
-//   manager: string;
-//   order: string;
-//   product: string;
-//   quantity: number;
-//   id: string;
-// };
-// let onDeliveryArr: OnDelivery[] = [];
+
 function TableOrderDetail({ details }: Detail) {
-  //   const handleRowClick = (item: OnDelivery) => {
-  //     const isExist = onDeliveryArr.some((el) => el.id === item.id);
-  //     if (!isExist) {
-  //       onDeliveryArr.push(item);
-  //     } else {
-  //       onDeliveryArr = onDeliveryArr.filter((el) => el.id !== item.id);
-  //     }
-  //     // onDeliveryArr.push(item);
-  //     console.log(onDeliveryArr);
-  //   };
   const { handleRowClick, onDeliveryArr } = useDelivery();
   const isSelected = (id: string) => onDeliveryArr.some((el) => el.id === id);
   return (

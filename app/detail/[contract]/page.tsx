@@ -2,6 +2,7 @@ import BackBtn from "@/components/BackBtn/BackBtn";
 import { getContractDetails } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
+import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 
 type Props = {
   params: Promise<{ contract: string }>;
@@ -60,6 +61,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
     <>
       <TableOrderDetail details={details} />
       <BackBtn />
+      <DeliveryBtn />
     </>
   );
 }

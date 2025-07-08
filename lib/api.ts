@@ -1,3 +1,4 @@
+import { DeliveryPayload } from "@/types/types";
 import axios from "axios";
 
 type Product = {
@@ -175,3 +176,17 @@ export const getContractDetails = async ({
 //   order: string;
 //   products: Product[];
 // };
+export const sendDeliveryData = async (payload: DeliveryPayload) => {
+  const { data } = await axios.post<{ status: string }>(
+    "/delivery/send",
+    payload,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};

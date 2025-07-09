@@ -1,6 +1,6 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById } from "@/lib/api";
-
+import css from "./RemainsList.module.css";
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
 // };
@@ -15,10 +15,11 @@ export default async function filteredRemains({ params }: Props) {
   const remains = await getRemainsById({ productId: id.id });
   return (
     <>
-      <ul>
+      <ul className={css.remainsList}>
+        <h2>Номенклатура: {remains[0].nomenclature}</h2>
         {remains.map((item) => (
-          <li key={item.id}>
-            <p>Номенклатура: {item.nomenclature}</p>
+          <li key={item.id} className={css.remainsItem}>
+            {/* <p>Номенклатура: {item.nomenclature}</p> */}
             <p>Партия: {item.nomenclature_series}</p>
             <p>Бух: {item.buh}</p>
             <p>Склад: {item.skl}</p>

@@ -1,0 +1,39 @@
+/* components/RemainsList/RemainsList.module.css */
+
+.remainsList {
+  list-style: none; /* Убираем стандартные маркеры списка */
+  padding: 0; /* Убираем внутренние отступы списка */
+  margin: 20px 0; /* Внешние отступы сверху и снизу */
+  background-color: var(--background);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 600px; /* Ограничиваем ширину списка */
+  margin-left: auto; /* Центрируем список */
+  margin-right: auto; /* Центрируем список */
+}
+
+.remainsItem {
+  padding: 15px 20px; /* Внутренние отступы для каждого элемента */
+  border-bottom: 1px solid var(--border-color); /* Разделитель между элементами */
+  font-size: 15px;
+  line-height: 1.5; /* Межстрочный интервал */
+  color: var(--foreground); /* Цвет текста */
+}
+
+.remainsItem:last-child {
+  border-bottom: none; /* Убираем границу у последнего элемента */
+}
+
+.remainsItem p {
+  margin: 0; /* Убираем стандартные отступы у параграфов */
+  padding: 2px 0; /* Небольшие внутренние отступы для параграфов */
+}
+
+.remainsItem p:first-of-type {
+  font-weight: bold; /* Делаем заголовок номенклатуры жирным */
+  color: #0070f3; /* Цвет для номенклатуры */
+}
+
+.remainsItem br {
+  display: none; /* Скрываем <br>, так как параграфы уже создают блочный вывод */
+}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
+import BackBtn from "@/components/BackBtn/BackBtn";
 
 type SelectedItem = {
   id: string;
@@ -88,70 +89,84 @@ export default function DeliveryData() {
   return (
     <div className={styles.wrapper}>
       {grouped.map((client) => (
-        <div key={client.client} className={styles.clientBlock}>
-          <div className={styles.clientHeader}>
-            <span className={styles.clientTitle}>Контрагент:</span>
-            <span>{client.client}</span>
-          </div>
-
-          {client.orders.map((order) => (
-            <div key={order.order} className={styles.orderBlock}>
-              <div className={styles.orderHeader}>
-                <span className={styles.clientTitle}>Доповнення:</span>
-                <span>{order.order}</span>
-              </div>
-
-              <div className={styles.table}>
-                <div className={styles.rowHeader}>
-                  <div className={styles.headerProduct}>Товар</div>
-                  <div className={styles.headerQuantity}>Кількість</div>
-                </div>
-                {order.items.map((item) => (
-                  <div className={styles.row} key={item.id}>
-                    <div className={styles.cell}>{item.product}</div>
-                    <div className={styles.quantityCell}>
-                      <span
-                        className={styles.quantity}
-                        onClick={() =>
-                          openModal({
-                            id: item.id,
-                            quantity: item.quantity,
-                            max: item.quantity,
-                          })
-                        }
-                      >
-                        {item.quantity}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <>
+          <div key={client.client} className={styles.clientBlock}>
+            <div className={styles.clientHeader}>
+              <span className={styles.clientTitle}>Контрагент:</span>
+              <span>{client.client}</span>
             </div>
-          ))}
 
-          <button
-            className={styles.submitButton}
-            onClick={() => {
-              setFormClient(client.client);
-              setFormData({ address: "", contact: "", phone: "", date: "" });
-              setFormError(null);
-            }}
-          >
-            Відправити дані для доставки
-          </button>
-          <button
-            className={styles.cancelButton}
-            onClick={() => {
-              removeClientDelivery(client.client); // ❌ Удаление данных
-              setFormClient(null);
-              setFormData({ address: "", contact: "", phone: "", date: "" });
-              setFormError(null);
-            }}
-          >
-            Видалити дані
-          </button>
-        </div>
+            {client.orders.map((order) => (
+              <div key={order.order} className={styles.orderBlock}>
+                <div className={styles.orderHeader}>
+                  <span className={styles.clientTitle}>Доповнення:</span>
+                  <span>{order.order}</span>
+                </div>
+
+                <div className={styles.table}>
+                  <div className={styles.rowHeader}>
+                    <div className={styles.headerProduct}>Товар</div>
+                    <div className={styles.headerQuantity}>Кількість</div>
+                  </div>
+                  {order.items.map((item) => (
+                    <div className={styles.row} key={item.id}>
+                      <div className={styles.cell}>{item.product}</div>
+                      <div className={styles.quantityCell}>
+                        <span
+                          className={styles.quantity}
+                          onClick={() =>
+                            openModal({
+                              id: item.id,
+                              quantity: item.quantity,
+                              max: item.quantity,
+                            })
+                          }
+                        >
+                          {item.quantity}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className={styles.deliveryActions}>
+              <button
+                className={styles.sendButton}
+                onClick={() => {
+                  setFormClient(client.client);
+                  setFormData({
+                    address: "",
+                    contact: "",
+                    phone: "",
+                    date: "",
+                  });
+                  setFormError(null);
+                }}
+              >
+                Відправити дані для доставки
+              </button>
+              <button
+                className={styles.deleteButton}
+                onClick={() => {
+                  removeClientDelivery(client.client); // ❌ Удаление данных
+                  setFormClient(null);
+                  setFormData({
+                    address: "",
+                    contact: "",
+                    phone: "",
+                    date: "",
+                  });
+                  setFormError(null);
+                }}
+              >
+                Видалити дані
+              </button>
+            </div>
+          </div>
+        </>
       ))}
+      <BackBtn />
 
       {/* Модалка изменения количества */}
       {selectedItem && (

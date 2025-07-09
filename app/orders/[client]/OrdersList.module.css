@@ -30,3 +30,10 @@
   color: #0056b3;
   text-decoration: underline;
 }
+.businessSpan {
+  color: #008000; /* ✅ Цвет для line_of_business (например, зеленый) */
+  font-weight: bold; /* ✅ Сделаем жирным для акцента */
+  margin-left: 10px; /* ✅ Небольшой отступ слева, если нужно, хотя justify-content уже прижмет */
+  white-space: nowrap; /* ✅ Чтобы текст не переносился на новую строку */
+  display: block; /* ✅ Делаем блочным элементом */
+}

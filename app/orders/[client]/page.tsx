@@ -25,6 +25,7 @@ export default async function filteredOrders({ params }: Props) {
               className={css.link}
             >
               {item.contract_supplement}
+              <span className={css.businessSpan}>{item.line_of_business}</span>
             </Link>
           </li>
         ))}

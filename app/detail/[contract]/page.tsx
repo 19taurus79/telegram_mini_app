@@ -3,12 +3,13 @@ import { getContractDetails } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
+import css from "./Detail.module.css";
 
 type Props = {
   params: Promise<{ contract: string }>;
 }; //Для получения деталей контракта
 
-export default async function filteredOrdersDetail({ params }: Props) {
+export default async function ilteredOrdersDetail({ params }: Props) {
   const contract = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
 
   const originalList = await getContractDetails({
@@ -60,8 +61,10 @@ export default async function filteredOrdersDetail({ params }: Props) {
   return (
     <>
       <TableOrderDetail details={details} />
-      <BackBtn />
-      <DeliveryBtn />
+      <div className={css.btnWrapper}>
+        <BackBtn />
+        <DeliveryBtn />
+      </div>
     </>
   );
 }

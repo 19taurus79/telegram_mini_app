@@ -68,6 +68,7 @@ type ContractDetails = {
 };
 type Contract = {
   contract_supplement: string;
+  line_of_business: string;
 };
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;

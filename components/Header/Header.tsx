@@ -73,7 +73,12 @@ function Header() {
           </li>
           <li>
             <Link href="/remains" onClick={handleNavClick}>
-              Залишки
+              Залишки на нашому складі
+            </Link>
+          </li>
+          <li>
+            <Link href="/av_stock" onClick={handleNavClick}>
+              Залишки на інших складах
             </Link>
           </li>
           <li>

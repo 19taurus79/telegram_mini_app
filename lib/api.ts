@@ -32,6 +32,9 @@ type Remains = {
 type Client = {
   client: string;
 };
+type TotalOrder = {
+  sum: number;
+};
 type Order = {
   id: string;
   division: string;
@@ -168,15 +171,7 @@ export const getContractDetails = async ({
   );
   return data;
 };
-// type Product = {
-//   product: string;
-//   quantity: number;
-// };
 
-// type Order = {
-//   order: string;
-//   products: Product[];
-// };
 export const sendDeliveryData = async (payload: DeliveryPayload) => {
   const { data } = await axios.post<{ status: string }>(
     "/delivery/send",
@@ -189,5 +184,58 @@ export const sendDeliveryData = async (payload: DeliveryPayload) => {
     }
   );
 
+  return data;
+};
+
+export const getTotalSumOrderByProduct = async ({
+  product,
+}: {
+  product: string;
+}) => {
+  const { data } = await axios.get<TotalOrder[]>(
+    `/data/sum_order_by_product/${product}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+      params: {
+        product: product,
+      },
+    }
+  );
+  return data;
+};
+
+export const getOrdersByProduct = async ({ product }: { product: string }) => {
+  const { data } = await axios.get<Order[]>(
+    `/data/order_by_product/${product}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+      params: {
+        product: product,
+      },
+    }
+  );
+  return data;
+};
+
+export const getProductDetailsById = async ({
+  product,
+}: {
+  product: string;
+}) => {
+  const { data } = await axios.get<Product>(`/data/product/${product}`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      product: product,
+    },
+  });
   return data;
 };

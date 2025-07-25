@@ -1,0 +1,227 @@
+.wrapper {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.clientBlock {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.clientHeader,
+.orderHeader {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clientTitle {
+  color: #666;
+  min-width: 100px;
+}
+
+.orderBlock {
+  margin-top: 12px;
+}
+
+.table {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rowHeader,
+.row {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.rowHeader {
+  background: var(--background);
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between; /* прижимает к краям */
+  /* background: #f8f8f8; */
+  /* font-weight: bold; */
+  padding: 8px 12px;
+}
+
+.cell {
+  /* flex: 1; */
+  padding: 8px;
+  word-break: break-word;
+  border: 1px solid var(--border-color);
+}
+.cell:nth-child(1) {
+  flex: 4; /* Увеличиваем ширину первой колонки */
+}
+.cell:nth-child(2) {
+  flex: 3; /* Ширина второй колонки */
+}
+.cell:nth-child(3) {
+  flex: 1; /* Ширина третьей колонки */
+  text-align: center; /* Выравнивание текста по центру */
+}
+.quantity {
+  color: var(--foreground);
+  cursor: pointer;
+  /* text-decoration: underline; */
+}
+
+/* Modal styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--background);
+  padding: 24px;
+  border-radius: 8px;
+  min-width: 280px;
+  max-width: 90vw;
+}
+
+.modalTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.button {
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.buttonSave {
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.buttonCancel {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+.quantityCell {
+  width: 80px; /* или min-width: 60px; */
+  text-align: center;
+  flex: 0 0 80px; /* фиксируем ширину */
+  padding: 8px;
+}
+
+.headerProduct {
+  text-align: left;
+}
+
+.headerQuantity {
+  text-align: right;
+}
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 6px;
+}
+/* styles/Button.module.css */
+
+.baseButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+  /* min-width: 120px; Минимальная ширина для кнопок */
+  text-align: center;
+  width: 100%;
+}
+
+/* Стили для кнопки "Отправить" (основное действие) */
+.sendButton {
+  composes: baseButton; /* Наследует базовые стили */
+  background-color: #007bff; /* Синий фон */
+  color: #ffffff; /* Белый текст */
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.sendButton:hover {
+  background-color: #0056b3; /* Темнее синий при наведении */
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.sendButton:active {
+  background-color: #004085; /* Еще темнее при нажатии */
+  box-shadow: 0 1px 2px rgba(0, 123, 255, 0.4);
+}
+
+/* Стили для кнопки "Удалить" (деструктивное действие) */
+.deleteButton {
+  composes: baseButton; /* Наследует базовые стили */
+  background-color: #dc3545; /* Красный фон */
+  color: #ffffff; /* Белый текст */
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.deleteButton:hover {
+  background-color: #c82333; /* Темнее красный при наведении */
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.deleteButton:active {
+  background-color: #bd2130; /* Еще темнее при нажатии */
+  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.4);
+}
+
+/* Дополнительные стили, например, для отмененной кнопки (если нужно) */
+/* .cancelButton {
+  composes: baseButton;
+  background-color: #6c757d;
+  color: #ffffff;
+}
+
+.cancelButton:hover {
+  background-color: #5a6268;
+} */
+.deliveryActions {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  margin-top: 10px;
+}

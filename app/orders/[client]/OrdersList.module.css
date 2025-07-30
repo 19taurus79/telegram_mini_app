@@ -37,3 +37,15 @@
   white-space: nowrap; /* ✅ Чтобы текст не переносился на новую строку */
   display: block; /* ✅ Делаем блочным элементом */
 }
+.statusOk {
+  color: #008000; /* Зеленый цвет для статуса OK */
+  font-weight: bold; /* Жирный шрифт для акцента */
+}
+.statusFailed {
+  color: #ff0000; /* Красный цвет для статуса Failed */
+  font-weight: bold; /* Жирный шрифт для акцента */
+}
+.statusWaiting {
+  color: #ffa500; /* Оранжевый цвет для статуса Waiting */
+  font-weight: bold; /* Жирный шрифт для акцента */
+}

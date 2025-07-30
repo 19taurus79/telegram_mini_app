@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import React from "react";
+import styles from "./Modal.module.css";
 
 type Props = {
   children: React.ReactNode;
@@ -11,11 +13,28 @@ const Modal = ({ children }: Props) => {
 
   const close = () => router.back();
 
+  const onBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      close();
+    }
+  };
+
   return (
-    <div>
-      <div>
+    <div
+      onClick={onBackdropClick}
+      className={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className={styles.modalContent}>
         {children}
-        <button onClick={close}>Close</button>
+        <button
+          onClick={close}
+          className={styles.closeButton}
+          aria-label="Close modal"
+        >
+          ×
+        </button>
       </div>
     </div>
   );

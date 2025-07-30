@@ -1,88 +1,18 @@
-import { DeliveryPayload } from "@/types/types";
+import {
+  AvRemains,
+  Client,
+  Contract,
+  ContractDetails,
+  DeliveryPayload,
+  GroupRemains,
+  Order,
+  PartyData,
+  Product,
+  Remains,
+  TotalOrder,
+} from "@/types/types";
 import axios from "axios";
 
-type Product = {
-  id: string;
-  product: string;
-  line_of_business: string;
-};
-type Remains = {
-  id: string;
-  line_of_business: string;
-  warehouse: string;
-  parent_element: string;
-  nomenclature: string;
-  party_sign: string;
-  buying_season: string;
-  nomenclature_series: string;
-  mtn: string;
-  origin_country: string;
-  germination: string;
-  crop_year: string;
-  quantity_per_pallet: string;
-  active_substance: string;
-  certificate: string;
-  certificate_start_date: string;
-  certificate_end_date: string;
-  buh: number;
-  skl: number;
-  weight: string;
-  product: string;
-};
-type Client = {
-  client: string;
-};
-type TotalOrder = {
-  sum: number;
-};
-type Order = {
-  id: string;
-  division: string;
-  manager: string;
-  company_group: string;
-  client: string;
-  contract_supplement: string;
-  parent_element: string;
-  manufacturer: string;
-  active_ingredient: string;
-  nomenclature: string;
-  party_sign: string;
-  buying_season: string;
-  line_of_business: string;
-  period: string;
-  shipping_warehouse: string;
-  document_status: string;
-  delivery_status: string;
-  shipping_address: string;
-  transport: string;
-  plan: number;
-  fact: number;
-  different: number;
-  product: string;
-};
-type ContractDetails = {
-  nomenclature: string;
-  party_sign: string;
-  buying_season: string;
-  different: number;
-  client: string;
-  contract_supplement: string;
-  manager: string;
-};
-type Contract = {
-  contract_supplement: string;
-  line_of_business: string;
-};
-type AvRemains = {
-  id: string;
-  nomenclature: string;
-  party_sign: string;
-  buying_season: string;
-  division: string;
-  line_of_business: string;
-  available: number;
-  product: string;
-};
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
 const initData =
@@ -94,6 +24,23 @@ export const getRemainsById = async ({ productId }: { productId: string }) => {
       "X-Telegram-Init-Data": initData,
     },
   });
+  console.log(data);
+  return data;
+};
+export const getGroupRemainsById = async ({
+  productId,
+}: {
+  productId: string;
+}) => {
+  const { data } = await axios.get<GroupRemains[]>(
+    `/data/remains_group/${productId}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
   console.log(data);
   return data;
 };
@@ -278,6 +225,56 @@ export const getAllProduct = async ({
     params: {
       category: group,
       name_part: searchValue,
+    },
+  });
+  return data;
+};
+
+export const getEnoughRemains = async () => {
+  const { data } = await axios.get("/data/products_for_all_orders", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
+export const getMovedData = async ({ order }: { order: string }) => {
+  const { data } = await axios.get(`/data/moved_products_for_order/${order}`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      order: order,
+    },
+  });
+  return data;
+};
+
+export const getPartyData = async ({ party }: { party: string }) => {
+  console.log("party", party);
+  const { data } = await axios.get<PartyData[]>(`/data/party_data`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      party: party,
+    },
+  });
+  return data;
+};
+
+export const getIdRemainsByParty = async ({ party }: { party: string }) => {
+  const { data } = await axios.get(`/data/id_in_remains`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      party: party,
     },
   });
   return data;

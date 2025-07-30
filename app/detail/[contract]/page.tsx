@@ -9,7 +9,7 @@ type Props = {
   params: Promise<{ contract: string }>;
 }; //Для получения деталей контракта
 
-export default async function ilteredOrdersDetail({ params }: Props) {
+export default async function filteredOrdersDetail({ params }: Props) {
   const contract = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
 
   const originalList = await getContractDetails({
@@ -27,7 +27,7 @@ export default async function ilteredOrdersDetail({ params }: Props) {
   //     manager: "Гаража Денис Олександрович",
   //   },
   // ];
-  console.log(originalList);
+  console.log("contract details", originalList);
   const details = originalList.map((item) => {
     // Собираем все непустые части в массив
     const parts = [];
@@ -55,6 +55,7 @@ export default async function ilteredOrdersDetail({ params }: Props) {
       order: item.contract_supplement,
       client: item.client,
       id: item.contract_supplement + item.nomenclature,
+      product_id: item.product,
     };
   });
 

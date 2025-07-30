@@ -1,0 +1,23 @@
+/* DataList.module.css */
+
+.list {
+  list-style-type: none; /* убираем маркеры */
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background);
+  max-width: 400px;
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+.listItem {
+  font-size: 16px;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.listItem:last-child {
+  margin-bottom: 0;
+}

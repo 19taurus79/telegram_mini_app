@@ -22,3 +22,7 @@
   background-color: #333333; /* или var(--hover-bg), если используешь переменные */
   color: #ffffff;
 }
+.ref {
+  display: block;
+  width: 100%;
+}

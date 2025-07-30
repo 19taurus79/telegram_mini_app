@@ -42,29 +42,29 @@ export default async function filteredRemains({ params }: Props) {
           </h3>
         )}
         {/* <h3>Під всі заяки потрібно: {sumOrder[0].sum}</h3> */}
-        {sumOrder[0].sum === null ? (
+        {sumOrder[0].total_orders === 0 ? (
           <h3>
             Немає жодної заявки на цю номенклатуру, тому весь залишок вільний
           </h3>
         ) : (
-          <h3>Під всі заявки потрібно: {sumOrder[0].sum}</h3>
+          <h3>Під всі заявки потрібно: {sumOrder[0].total_orders}</h3>
         )}
         {/* Якщо немає жодної заявки, то виводимо попередження */}
 
-        {sumOrder[0].sum > remainsSummary.buh ? (
+        {sumOrder[0].total_orders > remainsSummary.buh ? (
           <h3 className={css.warning}>
             Увага! Для виконання всіх заявок не вистачає&nbsp;
-            {sumOrder[0].sum - remainsSummary.buh} !
+            {sumOrder[0].total_orders - remainsSummary.buh} !
           </h3>
-        ) : sumOrder[0].sum !== null ? (
+        ) : sumOrder[0].total_orders !== 0 ? (
           <h3 className={css.success}>
             Все в порядку! Замовленної кількості вистачає для виконання всіх
             заявок !
           </h3>
         ) : null}
-        {remainsSummary.buh > sumOrder[0].sum ? (
+        {remainsSummary.buh > sumOrder[0].total_orders ? (
           <h3 className={css.success}>
-            Вільного залишку: {remainsSummary.buh - sumOrder[0].sum}
+            Вільного залишку: {remainsSummary.buh - sumOrder[0].total_orders}
           </h3>
         ) : (
           <h3 className={css.warning}>
@@ -83,7 +83,7 @@ export default async function filteredRemains({ params }: Props) {
         ))}
       </ul>
       <BackBtn />
-      {sumOrder[0].sum !== null && <OrdersByProduct product={id.id} />}
+      {sumOrder[0].total_orders !== 0 && <OrdersByProduct product={id.id} />}
     </>
   );
 }

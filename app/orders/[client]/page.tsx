@@ -2,6 +2,7 @@ import BackBtn from "@/components/BackBtn/BackBtn";
 import { getContracts } from "@/lib/api";
 import Link from "next/link";
 import css from "./OrdersList.module.css";
+import clsx from "clsx";
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
 // };
@@ -15,6 +16,7 @@ export default async function filteredOrders({ params }: Props) {
   console.log(client.client);
   //   const remains = await getRemainsById({ productId: id.id });
   const contracts = await getContracts({ client: client.client });
+
   return (
     <>
       <ul className={css.list}>
@@ -26,6 +28,21 @@ export default async function filteredOrders({ params }: Props) {
             >
               {item.contract_supplement}
               <span className={css.businessSpan}>{item.line_of_business}</span>
+              <span
+                className={clsx(
+                  item.document_status === "затверджено" && css.statusOk,
+                  item.document_status === "створено менеджером" &&
+                    css.statusWaiting,
+                  item.document_status === "продукція затверджена" &&
+                    css.statusWaiting,
+                  item.document_status === "до розгляду" && css.statusWaiting,
+                  item.document_status === "розглядається" && css.statusWaiting,
+
+                  item.document_status === "відхилено" && css.statusFailed
+                )}
+              >
+                {item.document_status}
+              </span>
             </Link>
           </li>
         ))}

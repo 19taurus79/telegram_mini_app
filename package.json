@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroui/accordion": "^2.2.21",
     "@tanstack/react-query": "^5.81.2",
     "axios": "^1.10.0",
     "clsx": "^2.1.1",

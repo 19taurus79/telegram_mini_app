@@ -25,6 +25,8 @@ export default async function filteredRemains({ params }: Props) {
   );
   const sumOrder = await getTotalSumOrderByProduct({ product: id.id });
   console.log("sumorder", sumOrder);
+  const seedBusiness = ["Насіння", "Власне виробництво насіння"];
+
   return (
     <>
       <ul className={css.remainsList}>
@@ -78,6 +80,15 @@ export default async function filteredRemains({ params }: Props) {
             <p>Партия: {item.nomenclature_series}</p>
             <p>Бух: {item.buh}</p>
             <p>Склад: {item.skl}</p>
+            {seedBusiness.includes(item.line_of_business) && (
+              <>
+                <p>МТН: {item.mtn}</p>
+                <p>Схожість: {item.germination}</p>
+                <p>Країна походження: {item.origin_country}</p>
+                <p>Рік урожаю: {item.crop_year}</p>
+                <p>Вага мішку: {item.weight}</p>
+              </>
+            )}
             <br />
           </li>
         ))}

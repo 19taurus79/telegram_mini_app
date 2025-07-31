@@ -1,5 +1,5 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
-import { getContractDetails } from "@/lib/api";
+import { getOrdersDetailsById } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
@@ -12,21 +12,12 @@ type Props = {
 export default async function filteredOrdersDetail({ params }: Props) {
   const contract = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
 
-  const originalList = await getContractDetails({
-    contract: contract.contract,
+  // const originalList = await getContractDetails({
+  //   contract: contract.contract,
+  // });
+  const originalList = await getOrdersDetailsById({
+    orderId: contract.contract,
   });
-  // Ответ сервера
-  // [
-  //   {
-  //     nomenclature: "Тайгедер 72%, к.е. (20 л)",
-  //     party_sign: " ",
-  //     buying_season: "",
-  //     different: 1200,
-  //     client: "АГРОЛАТІНВЕСТ ТОВ Харків, ВІП",
-  //     contract_supplement: "ТЕ-00052611",
-  //     manager: "Гаража Денис Олександрович",
-  //   },
-  // ];
   console.log("contract details", originalList);
   const details = originalList.map((item) => {
     // Собираем все непустые части в массив
@@ -56,9 +47,15 @@ export default async function filteredOrdersDetail({ params }: Props) {
       client: item.client,
       id: item.contract_supplement + item.nomenclature,
       product_id: item.product,
+      orders_q: item.orders_q,
+      moved_q: item.moved_q,
+      party: item.party,
+      buh: item.buh,
+      skl: item.skl,
+      qok: item.qok,
     };
   });
-
+  console.log("details", details);
   return (
     <>
       <TableOrderDetail details={details} />

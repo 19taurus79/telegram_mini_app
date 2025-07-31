@@ -6,6 +6,7 @@ import {
   DeliveryPayload,
   GroupRemains,
   Order,
+  OrdersDetails,
   PartyData,
   Product,
   Remains,
@@ -277,5 +278,25 @@ export const getIdRemainsByParty = async ({ party }: { party: string }) => {
       party: party,
     },
   });
+  return data;
+};
+
+export const getOrdersDetailsById = async ({
+  orderId,
+}: {
+  orderId: string;
+}) => {
+  const { data } = await axios.get<OrdersDetails[]>(
+    `/data/details_for_orders/${orderId}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+      params: {
+        orderId: orderId,
+      },
+    }
+  );
   return data;
 };

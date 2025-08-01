@@ -3,6 +3,7 @@ import { getContracts } from "@/lib/api";
 import Link from "next/link";
 import css from "./OrdersList.module.css";
 import clsx from "clsx";
+import { getInitData } from "@/lib/getInitData";
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
 // };
@@ -12,10 +13,10 @@ type Props = {
 
 export default async function filteredOrders({ params }: Props) {
   const client = await params;
-
+  const initData = await getInitData();
   console.log(client.client);
   //   const remains = await getRemainsById({ productId: id.id });
-  const contracts = await getContracts({ client: client.client });
+  const contracts = await getContracts({ client: client.client, initData });
 
   return (
     <>

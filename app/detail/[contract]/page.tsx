@@ -4,6 +4,7 @@ import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
+import { getInitData } from "@/lib/getInitData";
 //TODO: переписать по новым данным, которые приходят из API
 type Props = {
   params: Promise<{ contract: string }>;
@@ -17,6 +18,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
   // console.log("newData", newData);
   const originalList = await getOrdersDetailsById({
     orderId: contract,
+    initData: await getInitData(),
   });
   // const originalList = await getOrdersDetailsById({
   //   orderId: contract.contract,

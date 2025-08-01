@@ -1,4 +1,5 @@
 import { getRemainsById } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 
 type Props = {
   params: Promise<{ slug: string[] }>;
@@ -6,7 +7,8 @@ type Props = {
 async function filteredRemains({ params }: Props) {
   const slug = await params;
   console.log(slug);
-  const remains = await getRemainsById({ productId: slug.slug[0] });
+  const initData = await getInitData();
+  const remains = await getRemainsById({ productId: slug.slug[0], initData });
   return (
     <ul>
       {remains.map((item) => (

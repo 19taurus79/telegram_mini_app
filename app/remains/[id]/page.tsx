@@ -2,6 +2,7 @@ import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";
 import OrdersByProduct from "@/components/OrdersByProduct/OrderByProduct";
+import { getInitData } from "@/lib/getInitData";
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
 // };
@@ -11,9 +12,9 @@ type Props = {
 
 export default async function filteredRemains({ params }: Props) {
   const id = await params;
-
+  const initData = await getInitData();
   console.log(id);
-  const remains = await getRemainsById({ productId: id.id });
+  const remains = await getRemainsById({ productId: id.id, initData });
   const remainsSummary = remains.reduce(
     (acc, item) => {
       acc.buh += item.buh;
@@ -23,7 +24,10 @@ export default async function filteredRemains({ params }: Props) {
     },
     { buh: 0, skl: 0 }
   );
-  const sumOrder = await getTotalSumOrderByProduct({ product: id.id });
+  const sumOrder = await getTotalSumOrderByProduct({
+    product: id.id,
+    initData,
+  });
   console.log("sumorder", sumOrder);
   const seedBusiness = ["Насіння", "Власне виробництво насіння"];
 

@@ -1,12 +1,14 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
 import css from "./AvRemainsList.module.css";
 import { getAvRemainsById } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 type Props = {
   params: Promise<{ id: string }>;
 };
 export default async function AvStockPage({ params }: Props) {
   const id = await params;
-  const remains = await getAvRemainsById({ productId: id.id });
+  const initData = await getInitData();
+  const remains = await getAvRemainsById({ productId: id.id, initData });
   console.log("av stock remains", remains);
   return (
     <>

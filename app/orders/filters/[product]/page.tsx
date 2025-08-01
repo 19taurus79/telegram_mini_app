@@ -2,14 +2,20 @@ import BackBtn from "@/components/BackBtn/BackBtn";
 import { getOrdersByProduct, getProductDetailsById } from "@/lib/api";
 import css from "./OrdersByProduct.module.css";
 import React from "react";
+import { getInitData } from "@/lib/getInitData";
 type Props = {
   params: Promise<{ product: string }>;
 };
 export default async function OrdersByProduct({ params }: Props) {
   const product = await params;
-  const orders = await getOrdersByProduct({ product: product.product });
+  const orders = await getOrdersByProduct({
+    product: product.product,
+    initData: await getInitData(),
+  });
+  const initData = await getInitData();
   const productDetails = await getProductDetailsById({
     product: product.product,
+    initData,
   });
   return (
     <div className={css.wrapper}>

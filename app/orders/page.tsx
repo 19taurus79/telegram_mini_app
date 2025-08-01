@@ -6,16 +6,17 @@ import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import css from "./Orders.module.css";
 import { getClients } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 function Orders() {
   const { selectedGroup, searchValue } = useFilter();
   console.log("page group", selectedGroup);
   console.log("page search", selectedGroup);
   const fill = useFilter();
   console.log(fill);
-
+  const initData = getInitData();
   const { data } = useQuery({
     queryKey: ["clients", selectedGroup, searchValue],
-    queryFn: () => getClients({ searchValue }),
+    queryFn: () => getClients({ searchValue, initData }),
     placeholderData: keepPreviousData,
   });
   return (

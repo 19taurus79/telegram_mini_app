@@ -17,6 +17,7 @@ import {} from // EnoughtRemains,
 // TotalOrder,
 "@/types/types";
 import { useRouter } from "next/navigation";
+import { getInitData } from "@/lib/getInitData";
 
 // type Detail = {
 //   details: {
@@ -113,7 +114,8 @@ function TableOrderDetail({ details }: Detail) {
   // console.log("moved", moved);
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
-    const remainsId = await getIdRemainsByParty({ party });
+    const initData = await getInitData();
+    const remainsId = await getIdRemainsByParty({ party, initData });
     console.log("remainsId", remainsId);
     // const encodedParty = encodeURIComponent(party);
     router.push(`/party_data/${remainsId[0].id}`);

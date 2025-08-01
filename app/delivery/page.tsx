@@ -5,6 +5,7 @@ import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
 import BackBtn from "@/components/BackBtn/BackBtn";
+import { getInitData } from "@/lib/getInitData";
 
 type SelectedItem = {
   id: string;
@@ -296,7 +297,8 @@ export default function DeliveryData() {
                     date,
                     orders,
                   };
-                  const result = sendDeliveryData(payload);
+                  const initData = getInitData();
+                  const result = sendDeliveryData(payload, initData);
                   // console.log("✅ Отправлено:", result.status);
                   console.log("✅ Данные успешно отправлены", result);
                   console.log("📦 Отправленные данные:", payload);

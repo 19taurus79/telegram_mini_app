@@ -14,21 +14,27 @@ import {
 } from "@/types/types";
 import axios from "axios";
 
-declare global {
-  interface Window {
-    Telegram: {
-      WebApp: {
-        initData: string;
-      };
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     Telegram: {
+//       WebApp: {
+//         initData: string;
+//       };
+//     };
+//   }
+// }
 
-const initData = window.Telegram.WebApp.initData;
+// const initData = window.Telegram.WebApp.initData;
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
 
-export const getRemainsById = async ({ productId }: { productId: string }) => {
+export const getRemainsById = async ({
+  productId,
+  initData,
+}: {
+  productId: string;
+  initData: string;
+}) => {
   const { data } = await axios.get<Remains[]>(`/data/remains/${productId}`, {
     headers: {
       "Content-Type": "application/json",
@@ -40,8 +46,10 @@ export const getRemainsById = async ({ productId }: { productId: string }) => {
 };
 export const getGroupRemainsById = async ({
   productId,
+  initData,
 }: {
   productId: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<GroupRemains[]>(
     `/data/remains_group/${productId}`,
@@ -57,8 +65,10 @@ export const getGroupRemainsById = async ({
 };
 export const getAvRemainsById = async ({
   productId,
+  initData,
 }: {
   productId: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<AvRemains[]>(`/data/av_stock/${productId}`, {
     headers: {
@@ -73,9 +83,11 @@ export const getAvRemainsById = async ({
 export const getProductOnWarehouse = async ({
   group,
   searchValue,
+  initData,
 }: {
   group: string | null;
   searchValue: string | null;
+  initData: string;
 }) => {
   const { data } = await axios.get<Product[]>("/data/product_on_warehouse", {
     headers: {
@@ -90,7 +102,13 @@ export const getProductOnWarehouse = async ({
   return data;
 };
 
-export const getOrders = async ({ client }: { client: string }) => {
+export const getOrders = async ({
+  client,
+  initData,
+}: {
+  client: string;
+  initData: string;
+}) => {
   const { data } = await axios.get<Order[]>(`/data/orders/${client}`, {
     headers: {
       "Content-Type": "application/json",
@@ -106,8 +124,10 @@ export const getOrders = async ({ client }: { client: string }) => {
 
 export const getClients = async ({
   searchValue,
+  initData,
 }: {
   searchValue: string | null;
+  initData: string;
 }) => {
   const { data } = await axios.get<Client[]>("/data/clients", {
     headers: {
@@ -121,7 +141,13 @@ export const getClients = async ({
   return data;
 };
 
-export const getContracts = async ({ client }: { client: string }) => {
+export const getContracts = async ({
+  client,
+  initData,
+}: {
+  client: string;
+  initData: string;
+}) => {
   const { data } = await axios.get<Contract[]>(`/data/contracts/${client}`, {
     headers: {
       "Content-Type": "application/json",
@@ -136,8 +162,10 @@ export const getContracts = async ({ client }: { client: string }) => {
 
 export const getContractDetails = async ({
   contract,
+  initData,
 }: {
   contract: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<ContractDetails[]>(
     `/data/contract_detail/${contract}`,
@@ -154,7 +182,10 @@ export const getContractDetails = async ({
   return data;
 };
 
-export const sendDeliveryData = async (payload: DeliveryPayload) => {
+export const sendDeliveryData = async (
+  payload: DeliveryPayload,
+  initData: string
+) => {
   const { data } = await axios.post<{ status: string }>(
     "/delivery/send",
     payload,
@@ -171,8 +202,10 @@ export const sendDeliveryData = async (payload: DeliveryPayload) => {
 
 export const getTotalSumOrderByProduct = async ({
   product,
+  initData,
 }: {
   product: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<TotalOrder[]>(
     `/data/sum_order_by_product/${product}`,
@@ -189,7 +222,13 @@ export const getTotalSumOrderByProduct = async ({
   return data;
 };
 
-export const getOrdersByProduct = async ({ product }: { product: string }) => {
+export const getOrdersByProduct = async ({
+  product,
+  initData,
+}: {
+  product: string;
+  initData: string;
+}) => {
   const { data } = await axios.get<Order[]>(
     `/data/order_by_product/${product}`,
     {
@@ -207,8 +246,10 @@ export const getOrdersByProduct = async ({ product }: { product: string }) => {
 
 export const getProductDetailsById = async ({
   product,
+  initData,
 }: {
   product: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<Product>(`/data/product/${product}`, {
     headers: {
@@ -224,9 +265,11 @@ export const getProductDetailsById = async ({
 export const getAllProduct = async ({
   group,
   searchValue,
+  initData,
 }: {
   group: string | null;
   searchValue: string | null;
+  initData: string;
 }) => {
   const { data } = await axios.get<Product[]>("/data/products", {
     headers: {
@@ -241,30 +284,36 @@ export const getAllProduct = async ({
   return data;
 };
 
-export const getEnoughRemains = async () => {
-  const { data } = await axios.get("/data/products_for_all_orders", {
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-    },
-  });
-  return data;
-};
+// export const getEnoughRemains = async () => {
+//   const { data } = await axios.get("/data/products_for_all_orders", {
+//     headers: {
+//       "Content-Type": "application/json",
+//       "X-Telegram-Init-Data": initData,
+//     },
+//   });
+//   return data;
+// };
 
-export const getMovedData = async ({ order }: { order: string }) => {
-  const { data } = await axios.get(`/data/moved_products_for_order/${order}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-    },
-    params: {
-      order: order,
-    },
-  });
-  return data;
-};
+// export const getMovedData = async ({ order }: { order: string }) => {
+//   const { data } = await axios.get(`/data/moved_products_for_order/${order}`, {
+//     headers: {
+//       "Content-Type": "application/json",
+//       "X-Telegram-Init-Data": initData,
+//     },
+//     params: {
+//       order: order,
+//     },
+//   });
+//   return data;
+// };
 
-export const getPartyData = async ({ party }: { party: string }) => {
+export const getPartyData = async ({
+  party,
+  initData,
+}: {
+  party: string;
+  initData: string;
+}) => {
   console.log("party", party);
   const { data } = await axios.get<PartyData[]>(`/data/party_data`, {
     headers: {
@@ -278,7 +327,13 @@ export const getPartyData = async ({ party }: { party: string }) => {
   return data;
 };
 
-export const getIdRemainsByParty = async ({ party }: { party: string }) => {
+export const getIdRemainsByParty = async ({
+  party,
+  initData,
+}: {
+  party: string;
+  initData: string;
+}) => {
   const { data } = await axios.get(`/data/id_in_remains`, {
     headers: {
       "Content-Type": "application/json",
@@ -293,8 +348,10 @@ export const getIdRemainsByParty = async ({ party }: { party: string }) => {
 
 export const getOrdersDetailsById = async ({
   orderId,
+  initData,
 }: {
   orderId: string;
+  initData: string;
 }) => {
   const { data } = await axios.get<OrdersDetails[]>(
     `/data/details_for_orders/${orderId}`,

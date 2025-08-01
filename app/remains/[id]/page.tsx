@@ -1,3 +1,4 @@
+"use client";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";

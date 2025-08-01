@@ -1,10 +1,10 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
-import { getOrdersDetailsById } from "@/lib/api";
+import { getContractDetails } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
-
+//TODO: переписать по новым данным, которые приходят из API
 type Props = {
   params: Promise<{ contract: string }>;
 }; //Для получения деталей контракта
@@ -12,12 +12,12 @@ type Props = {
 export default async function filteredOrdersDetail({ params }: Props) {
   const contract = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
 
-  // const originalList = await getContractDetails({
-  //   contract: contract.contract,
-  // });
-  const originalList = await getOrdersDetailsById({
-    orderId: contract.contract,
+  const originalList = await getContractDetails({
+    contract: contract.contract,
   });
+  // const originalList = await getOrdersDetailsById({
+  //   orderId: contract.contract,
+  // });
   console.log("contract details", originalList);
   const details = originalList.map((item) => {
     // Собираем все непустые части в массив
@@ -47,12 +47,12 @@ export default async function filteredOrdersDetail({ params }: Props) {
       client: item.client,
       id: item.contract_supplement + item.nomenclature,
       product_id: item.product,
-      orders_q: item.orders_q,
-      moved_q: item.moved_q,
-      party: item.party,
-      buh: item.buh,
-      skl: item.skl,
-      qok: item.qok,
+      // orders_q: item.orders_q,
+      // moved_q: item.moved_q,
+      // party: item.party,
+      // buh: item.buh,
+      // skl: item.skl,
+      // qok: item.qok,
     };
   });
   console.log("details", details);

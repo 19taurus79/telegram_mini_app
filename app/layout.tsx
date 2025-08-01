@@ -31,7 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Script src="https://telegram.org/js/telegram-web-app.js?58" />
+      <Script
+        src="https://telegram.org/js/telegram-web-app.js?58"
+        strategy="beforeInteractive"
+      />
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <TanStackProvider>
           <FilterProvider>

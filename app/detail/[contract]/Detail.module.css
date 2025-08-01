@@ -78,3 +78,9 @@
   color: var(--primary-color);
   margin-bottom: 8px;
 }
+.qParty {
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+  text-align: center;
+}

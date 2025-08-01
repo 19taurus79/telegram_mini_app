@@ -149,21 +149,19 @@ export type PartyData = {
 };
 
 export type OrdersDetails = {
-  details: {
-    id: string;
-    nomenclature: string;
-    party_sign: string;
-    buying_season: string;
-    different: number;
-    client: string;
-    contract_supplement: string;
-    manager: string;
-    product: string;
-    orders_q: number;
-    moved_q: number;
-    party: string;
-    buh: number;
-    skl: number;
-    qok: true;
-  }[];
+  id: string;
+  nomenclature: string;
+  party_sign: string;
+  buying_season: string;
+  different: number;
+  client: string;
+  contract_supplement: string;
+  manager: string;
+  product: string;
+  orders_q: number;
+  moved_q: number;
+  party: string;
+  buh: number;
+  skl: number;
+  qok: true;
 };

@@ -10,7 +10,9 @@ import {
   PartyData,
   Product,
   Remains,
+  Task,
   TotalOrder,
+  Event,
 } from "@/types/types";
 import axios from "axios";
 
@@ -25,6 +27,7 @@ import axios from "axios";
 // }
 
 // const initData = window.Telegram.WebApp.initData;
+
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
 
@@ -365,5 +368,14 @@ export const getOrdersDetailsById = async ({
       },
     }
   );
+  return data;
+};
+export const getAllTasks = async () => {
+  const { data } = await axios.get<Task[]>("/data/get_all_tasks");
+  return data;
+};
+
+export const getEvents = async () => {
+  const { data } = await axios.get<Event[]>("/data/calendar_events");
   return data;
 };

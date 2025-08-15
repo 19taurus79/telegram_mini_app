@@ -34,8 +34,8 @@ import { getInitData } from "@/lib/getInitData";
 type Detail = {
   details: {
     orders_q: number;
-    moved_q: number;
-    party: string;
+    // moved_q: number;
+    // party: string;
     buh: number;
     skl: number;
     qok: boolean;
@@ -46,81 +46,30 @@ type Detail = {
     order: string;
     id: string;
     product_id: string;
+    parties: [
+      {
+        party: string;
+        moved_q: number;
+      },
+    ];
   }[];
 };
 function TableOrderDetail({ details }: Detail) {
-  // const { handleRowClick, onDeliveryArr } = useDelivery();
   const { delivery, setDelivery } = useDelivery();
-  // const [totalOrder, setTotalOrder] = useState<TotalOrder[]>([]);
-  // const [remains, setRemains] = useState<GroupRemains[]>([]);
-  // const [enough, setEnough] = useState<EnoughtRemains[]>([]);
-  // const [moved, setMoved] = useState<MovedData[]>([]);
+
   const isSelected = (id: string) => delivery.some((el) => el.id === id);
-  // useEffect(() => {
-  // const uniqueProducts = [...new Set(details.map((d) => d.product_id))];
 
-  // async function fetchTotalOrderForProducts(products: string[]) {
-  //   const promises = products.map((product) =>
-  //     getTotalSumOrderByProduct({ product })
-  //   );
-  //   const results = await Promise.all(promises);
-  //   const flattenedResults = results.flat();
-  //   setTotalOrder(flattenedResults);
-  // }
-
-  // if (uniqueProducts.length > 0) {
-  //   fetchTotalOrderForProducts(uniqueProducts);
-  // }
-  // async function getEnaugh() {
-  //   const enoughRemains = await getEnoughRemains();
-  //   setEnough(enoughRemains);
-  // }
-  // async function fetchRemainsForProducts(products: string[]) {
-  //   const promises = products.map((product) =>
-  //     getGroupRemainsById({ productId: product })
-  //   );
-  //   const results = await Promise.all(promises);
-  //   const flattenedResults = results.flat();
-  //   setRemains(flattenedResults);
-  // }
-  //   async function fetchMovedData(order: string) {
-  //     const movedData = await getMovedData({ order });
-  //     setMoved(movedData);
-  //   }
-  //   if (uniqueProducts.length > 0) {
-  //     fetchRemainsForProducts(uniqueProducts);
-  //     getEnaugh();
-  //     fetchMovedData(details[0].order);
-  //   }
-  // }, [details]);
-  // const mergedData = [...details, ...totalOrder, ...remains].reduce(
-  //   (acc, item) => {
-  //     const id = item.product_id;
-  //     if (!acc[id]) {
-  //       acc[id] = { id } as Partial<MergedData>;
-  //     }
-  //     Object.assign(acc[id], item);
-  //     return acc;
-  //   },
-  //   {} as Record<string, Partial<MergedData>>
-  // );
-  // console.log("uniqueProducts", uniqueProducts);
   console.log("details", details);
-  // console.log("delivery", delivery);
-  // console.log("totalOrder", totalOrder);
-  // console.log("remains", remains);
-  // console.log("mergedData", mergedData);
-  // console.log("enough", enough);
-  // console.log("moved", moved);
+
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
     const initData = await getInitData();
     const remainsId = await getIdRemainsByParty({ party, initData });
     console.log("remainsId", remainsId);
-    // const encodedParty = encodeURIComponent(party);
+    // debugger;
     router.push(`/party_data/${remainsId[0].id}`);
   };
-
+  // debugger;
   return (
     <div className={css.tableContainer}>
       <table className={css.table}>
@@ -150,13 +99,20 @@ function TableOrderDetail({ details }: Detail) {
                   {item.quantity}
                 </td>
               </tr>
-              {item.party && (
-                <tr>
-                  <td className={css.party} onClick={() => HandleClick(item)}>
-                    {item.party}
-                  </td>
-                  <td className={css.qParty}>{item.moved_q}</td>
-                </tr>
+              {item.parties && item.parties[0].moved_q > 0 && (
+                <>
+                  {item.parties.map((party, index) => (
+                    <tr key={index}>
+                      <td
+                        className={css.party}
+                        onClick={() => HandleClick(party)}
+                      >
+                        {party.party}
+                      </td>
+                      <td className={css.qParty}>{party.moved_q}</td>
+                    </tr>
+                  ))}
+                </>
               )}
             </>
           ))}

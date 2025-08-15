@@ -24,6 +24,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
   //   orderId: contract.contract,
   // });
   console.log("contract details", originalList);
+  // debugger;
   const details = originalList.map((item) => {
     // Собираем все непустые части в массив
     const parts = [];
@@ -43,7 +44,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
 
     // Объединяем все части пробелами
     const combinedName = parts.join(" ");
-
+    // debugger;
     return {
       product: combinedName, // Собираем название продукта из номенклатуры, ознаки партії и року закупівлі
       quantity: item.different,
@@ -53,8 +54,9 @@ export default async function filteredOrdersDetail({ params }: Props) {
       id: item.contract_supplement + item.nomenclature,
       product_id: item.product,
       orders_q: item.orders_q,
-      moved_q: item.moved_q,
-      party: item.party,
+      parties: item.parties,
+      // moved_q: item.moved_q,
+      // party: item.party,
       buh: item.buh,
       skl: item.skl,
       qok: item.qok,

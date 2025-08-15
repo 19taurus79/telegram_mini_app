@@ -159,9 +159,64 @@ export type OrdersDetails = {
   manager: string;
   product: string;
   orders_q: number;
-  moved_q: number;
-  party: string;
   buh: number;
   skl: number;
-  qok: true;
+  qok: boolean;
+  parties: [
+    {
+      party: string;
+      moved_q: number;
+    },
+  ];
+  // party: string;
+  // moved_q: number;
+};
+export type Task = {
+  kind: string;
+  id: string;
+  etag: string;
+  title: string;
+  updated: string;
+  selfLink: string;
+  position: string;
+  notes: string;
+  status: string;
+  due: string;
+  links: [];
+  webViewLink: string;
+};
+export type Event = {
+  kind: string;
+  etag: string;
+  id: string;
+  status: string;
+  htmlLink: string;
+  created: string;
+  updated: string;
+  summary: string;
+  description: string;
+  location: string;
+  colorId: string;
+  creator: {
+    email: string;
+  };
+  organizer: {
+    email: string;
+    displayName: string;
+    self: boolean;
+  };
+  start: {
+    dateTime: string;
+    timeZone: string;
+  };
+  end: {
+    dateTime: string;
+    timeZone: string;
+  };
+  iCalUID: string;
+  sequence: number;
+  reminders: {
+    useDefault: boolean;
+  };
+  eventType: string;
 };

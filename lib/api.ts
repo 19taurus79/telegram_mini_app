@@ -441,7 +441,11 @@ export const getTaskStatus = async (task_id: string) => {
   return data;
 };
 
-export const getUserByinitData = async () => {
-  const { data } = await axios.get<User>("/get_user");
+export const getUserByinitData = async (initData: string) => {
+  const { data } = await axios.get<User>("/get_user", {
+    params: {
+      initData: initData,
+    },
+  });
   return data;
 };

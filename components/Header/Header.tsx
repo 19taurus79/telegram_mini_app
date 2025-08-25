@@ -35,7 +35,7 @@ function Header() {
   const [initData, setInitData] = useState<string | null>(null);
 
   useEffect(() => {
-    if (window.Telegram?.WebApp?.initData) {
+    if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
       setInitData(window.Telegram.WebApp.initData);
     }
   }, []);
@@ -44,7 +44,7 @@ function Header() {
   useEffect(() => {
     const fetchUser = async () => {
       if (initData) {
-        const user = await getUserByinitData();
+        const user = await getUserByinitData(initData);
         setUserData(user);
       }
     };

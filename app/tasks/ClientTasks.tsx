@@ -43,7 +43,7 @@ export default function ClientTasks() {
                 return <h2 key={index}>{part}</h2>;
               } else if (index === 1) {
                 return (
-                  <p style={{ color: "yellow" }} key={index}>
+                  <p style={{ color: "blue" }} key={index}>
                     {part}
                   </p>
                 );

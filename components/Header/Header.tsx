@@ -35,7 +35,7 @@ function Header() {
   const [initData, setInitData] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
+    if (window.Telegram?.WebApp?.initData) {
       setInitData(window.Telegram.WebApp.initData);
     }
   }, []);

@@ -1,0 +1,35 @@
+ul.buttonList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* отступ между кнопками */
+}
+
+ul.buttonList li {
+  display: inline-block;
+}
+
+ul.buttonList li button {
+  background-color: #0070f3; /* основной цвет кнопки */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  min-width: 275px;
+
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  user-select: none;
+}
+
+ul.buttonList li button:hover {
+  background-color: #005bb5;
+}
+
+ul.buttonList li button:active {
+  background-color: #003f7f;
+}

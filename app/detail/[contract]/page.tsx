@@ -5,7 +5,7 @@ import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
 import { getInitData } from "@/lib/getInitData";
-//TODO: переписать по новым данным, которые приходят из API
+
 type Props = {
   params: Promise<{ contract: string }>;
 }; //Для получения деталей контракта

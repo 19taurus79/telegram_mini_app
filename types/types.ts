@@ -220,3 +220,23 @@ export type Event = {
   };
   eventType: string;
 };
+
+export type TaskStatus = {
+  id: string;
+  task_id: string;
+  task_creator: number | null;
+  task_status: number;
+  task_who_changed_id: number | null;
+  task_who_changed_name: string | null;
+};
+export type User = {
+  telegram_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  is_allowed: boolean;
+  registration_date: string;
+  last_activity_date: string;
+  is_admin: boolean;
+  full_name_for_orders: string;
+};

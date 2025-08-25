@@ -13,6 +13,8 @@ import {
   Task,
   TotalOrder,
   Event,
+  User,
+  TaskStatus,
 } from "@/types/types";
 import axios from "axios";
 
@@ -377,5 +379,69 @@ export const getAllTasks = async () => {
 
 export const getEvents = async () => {
   const { data } = await axios.get<Event[]>("/data/calendar_events");
+  return data;
+};
+
+export const getTaskById = async (taskId: string) => {
+  const { data } = await axios.get<Task>(`/data/get_task/`, {
+    params: {
+      task_id: taskId,
+    },
+  });
+  return data;
+};
+
+export const checkTaskInProgress = async (taskId: string) => {
+  const { data } = await axios.patch(
+    `/data/task_in_progress`,
+    {
+      tasks_status: 1,
+    },
+    {
+      params: {
+        task_id: taskId,
+      },
+    }
+  );
+
+  return data;
+};
+export const checkTaskCompleted = async (taskId: string) => {
+  const { data } = await axios.patch(
+    `/data/task_completed`,
+    {
+      tasks_status: 2,
+    },
+    {
+      params: {
+        task_id: taskId,
+      },
+    }
+  );
+
+  return data;
+};
+
+export const getTaskStatus = async (task_id: string) => {
+  const { data } = await axios.get<TaskStatus>("/data/get_task_status", {
+    params: {
+      task_id: task_id,
+    },
+  });
+  if (!data) {
+    return {
+      id: "",
+      task_id: task_id,
+      task_status: 0,
+      task_creator: null,
+      task_who_changed_id: null,
+      task_who_changed_name: null,
+    };
+  }
+  return data;
+};
+
+export const getUserByinitData = async () => {
+  const { data } = await axios.get<User>("/get_user");
   return data;
 };

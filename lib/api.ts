@@ -443,8 +443,9 @@ export const getTaskStatus = async (task_id: string) => {
 
 export const getUserByinitData = async (initData: string) => {
   const { data } = await axios.get<User>("/get_user", {
-    params: {
-      initData: initData,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
     },
   });
   return data;

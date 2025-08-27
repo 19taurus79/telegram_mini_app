@@ -18,18 +18,6 @@ import {
 } from "@/types/types";
 import axios from "axios";
 
-// declare global {
-//   interface Window {
-//     Telegram: {
-//       WebApp: {
-//         initData: string;
-//       };
-//     };
-//   }
-// }
-
-// const initData = window.Telegram.WebApp.initData;
-
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
 
@@ -372,8 +360,13 @@ export const getOrdersDetailsById = async ({
   );
   return data;
 };
-export const getAllTasks = async () => {
-  const { data } = await axios.get<Task[]>("/data/get_all_tasks");
+export const getAllTasks = async (initData: string) => {
+  const { data } = await axios.get<Task[]>("/data/get_all_tasks", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
   return data;
 };
 
@@ -391,7 +384,7 @@ export const getTaskById = async (taskId: string) => {
   return data;
 };
 
-export const checkTaskInProgress = async (taskId: string) => {
+export const checkTaskInProgress = async (taskId: string, initData: string) => {
   const { data } = await axios.patch(
     `/data/task_in_progress`,
     {
@@ -401,12 +394,16 @@ export const checkTaskInProgress = async (taskId: string) => {
       params: {
         task_id: taskId,
       },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
     }
   );
 
   return data;
 };
-export const checkTaskCompleted = async (taskId: string) => {
+export const checkTaskCompleted = async (taskId: string, initData: string) => {
   const { data } = await axios.patch(
     `/data/task_completed`,
     {
@@ -415,6 +412,10 @@ export const checkTaskCompleted = async (taskId: string) => {
     {
       params: {
         task_id: taskId,
+      },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
       },
     }
   );
@@ -448,5 +449,26 @@ export const getUserByinitData = async (initData: string) => {
       "X-Telegram-Init-Data": initData,
     },
   });
+  return data;
+};
+
+export const createTask = async (
+  initData: string,
+  title: string,
+  note: string
+) => {
+  const { data } = await axios.post<Task>(
+    "/data/add_task",
+    {
+      title: title,
+      note: note,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
   return data;
 };

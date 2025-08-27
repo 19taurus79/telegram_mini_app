@@ -1,17 +1,23 @@
 "use client";
-import { useState } from "react";
+// import { useState } from "react";
 import TaskForm from "../TaskAddForms/TaskAddsForms";
 import css from "./TaskMenu.module.css";
+import { useFormStore, useMenuStore } from "@/store/FormAndMenuTogls";
 export default function TaskAddBtnMenu() {
-  const [taskForm, setForm] = useState("");
-  const [isOpenMenu, setIsOpenMenu] = useState(true);
+  // const [taskForm, setForm] = useState("");
+  // const [isOpenMenu, setIsOpenMenu] = useState(true);
+  const { menuIsOpen, toggleMenu, setFormType } = useMenuStore();
+  const { toggleForm, formIsOpen } = useFormStore();
   const handleOpenMenu = (form: string) => {
-    setForm(form);
-    setIsOpenMenu(!isOpenMenu);
+    setFormType(form);
+    toggleMenu();
+    toggleForm();
   };
+  console.log("menuIsOpen", menuIsOpen);
+  console.log("formIsOpen", formIsOpen);
   return (
     <>
-      {isOpenMenu && (
+      {menuIsOpen && (
         <ul className={css.buttonList}>
           <li>
             <button onClick={() => handleOpenMenu("NP")}>
@@ -30,7 +36,7 @@ export default function TaskAddBtnMenu() {
           {/* <li>5</li> */}
         </ul>
       )}
-      <TaskForm form_id={taskForm} />
+      {formIsOpen && <TaskForm />}
     </>
   );
 }

@@ -12,6 +12,7 @@ export default function TaskAddBtnMenu() {
     setFormType(form);
     toggleMenu();
     toggleForm();
+    console.log("form", form);
   };
   console.log("menuIsOpen", menuIsOpen);
   console.log("formIsOpen", formIsOpen);
@@ -25,7 +26,9 @@ export default function TaskAddBtnMenu() {
             </button>
           </li>
           <li>
-            <button>Замовити товар по домові</button>
+            <button onClick={() => handleOpenMenu("PD")}>
+              Замовити товар по домові
+            </button>
           </li>
           <li>
             <button>Оформити самовивіз</button>

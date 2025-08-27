@@ -1,15 +1,16 @@
 "use client";
-import { Task } from "@/types/types";
+// import { Task } from "@/types/types";
 import css from "./Tasks.module.css";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import React, { useState, useEffect } from "react";
 import { getAllTasks } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ClientTasks() {
   // { tasks }: { tasks: Task[] }
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [initData, setInitData] = useState<string | null>(null);
+  // const [tasks, setTasks] = useState<Task[]>([]);
+  const [initData, setInitData] = useState<string>("");
   //TODO: get initData from Telegram WebApp
   //TODO: посмотреть в сторону реактквери или зустанд
   useEffect(() => {
@@ -21,20 +22,32 @@ export default function ClientTasks() {
       );
     }
   }, []);
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (!initData) return;
-      const data = await getAllTasks(initData);
-      setTasks(data);
-    };
-    fetchTasks();
-  }, [initData]);
+  // useEffect(() => {
+  //   const fetchTasks = async () => {
+  //     if (!initData) return;
+  //     const data = await getAllTasks(initData);
+  //     setTasks(data);
+  //   };
+  //   fetchTasks();
+  // }, [initData]);
+
+  const { data, error, isLoading, isError } = useQuery({
+    queryKey: ["tasks", initData],
+    queryFn: () => getAllTasks(initData!),
+    enabled: !!initData,
+  });
+  console.log("data", data);
+  console.log("error", error);
+  console.log("isLoading", isLoading);
+  console.log("isError", isError);
+  console.log("initData", initData);
   const router = useRouter();
   const handleClick = (id: string) => {
     console.log(id);
     router.push(`/tasks/${id}`);
   };
   //TODO: в фильтр добавить значения для рендера
+  const tasks = data ?? [];
   return (
     <ul className={css.listContainer}>
       {tasks

@@ -21,8 +21,8 @@ function Orders() {
   });
   return (
     <ul className={css.listContainer}>
-      {data?.map((item) => (
-        <li className={css.listItemButton} key={item.client}>
+      {data?.map((item, index) => (
+        <li className={css.listItemButton} key={`${item.client}-${index}`}>
           <Link className={css.ref} href={`/orders/${item.client}`}>
             {item.client}
           </Link>

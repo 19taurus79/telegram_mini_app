@@ -18,12 +18,13 @@
   transition: background-color 0.2s ease;
 }
 
-.listItemButton:hover {
-  background-color: var(
-    --hover-bg-color
-  ); /* или var(--hover-bg), если используешь переменные */
-  color: var(--foreground);
+@media (hover: hover) {
+  .listItemButton:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--foreground);
+  }
 }
+
 
 .link {
   display: block;

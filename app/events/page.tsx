@@ -19,12 +19,12 @@ export default async function Events() {
             })}
           >
             {event.description.split("\n").map((description) => (
-              <>
+              <div key={description}>
                 <p key={description}>{description}</p>
                 {/* <br /> */}
-              </>
+              </div>
             ))}
-            <p>{event.colorId}</p>
+            {/* <p>{event.colorId}</p> */}
           </li>
         ))}
       </ul>

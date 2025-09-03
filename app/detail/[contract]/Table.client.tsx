@@ -88,8 +88,8 @@ function TableOrderDetail({ details }: Detail) {
                 style={isSelected(item.id) ? { color: "green" } : {}}
               >
                 {" "}
-                <td>
-                  <span onClick={() => setDelivery(item)}>{item.product}</span>
+                <td onClick={() => setDelivery(item)}>
+                  <span>{item.product}</span>
                   <br />
                 </td>
                 <td

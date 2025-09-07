@@ -26,6 +26,7 @@ export default function DeliveryData() {
     contact: "",
     phone: "",
     date: "",
+    comment: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -141,6 +142,7 @@ export default function DeliveryData() {
                     contact: "",
                     phone: "",
                     date: "",
+                    comment: "",
                   });
                   setFormError(null);
                 }}
@@ -157,6 +159,7 @@ export default function DeliveryData() {
                     contact: "",
                     phone: "",
                     date: "",
+                    comment: "",
                   });
                   setFormError(null);
                 }}
@@ -252,6 +255,16 @@ export default function DeliveryData() {
                 }
               />
             </label>
+            <label>
+              Коментар:
+              <textarea
+                className={styles.modalInput}
+                value={formData.comment}
+                onChange={(e) =>
+                  setFormData({ ...formData, comment: e.target.value })
+                }
+              />
+            </label>
 
             {formError && <div className={styles.error}>{formError}</div>}
 
@@ -259,7 +272,7 @@ export default function DeliveryData() {
               <button
                 className={`${styles.button} ${styles.buttonSave}`}
                 onClick={() => {
-                  const { address, contact, phone, date } = formData;
+                  const { address, contact, phone, date, comment } = formData;
                   if (!address || !contact || !phone || !date) {
                     setFormError("Будь ласка, заповніть всі поля");
                     return;
@@ -295,6 +308,7 @@ export default function DeliveryData() {
                     contact,
                     phone,
                     date,
+                    comment,
                     orders,
                   };
                   const initData = getInitData();

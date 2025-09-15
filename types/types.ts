@@ -240,3 +240,20 @@ export type User = {
   is_admin: boolean;
   full_name_for_orders: string;
 };
+
+export type InnerEvent = {
+  id: string;
+  event_id: string;
+  event_creator: number | null;
+  event_status: number;
+  event_who_changed_id: number | null;
+  event_who_changed_name: string | null;
+  created_at: string;
+  updated_at: string;
+  start_event: string;
+  event: string;
+};
+export type DateWithTimeZone = {
+  dateTime: string;
+  timeZone: string;
+};

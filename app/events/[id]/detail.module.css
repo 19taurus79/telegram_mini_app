@@ -1,0 +1,40 @@
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  list-style: none;
+}
+
+.listItemButton {
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .listItemButton:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--foreground);
+  }
+}
+
+.link {
+  display: block;
+}
+.event {
+  background-color: red;
+}
+.inproccess {
+  background-color: yellow;
+  color: black;
+}
+.done {
+  background-color: green;
+}

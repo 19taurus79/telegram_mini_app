@@ -1,24 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
-
+import { FadeLoader } from "react-spinners";
 type SelectedItem = {
   id: string;
   quantity: number;
   max: number;
 };
-
+const override: CSSProperties = {
+  display: "block",
+  margin: "0 auto",
+  borderColor: "red",
+};
 export default function DeliveryData() {
   const { delivery, updateQuantity, removeClientDelivery } = useDelivery();
 
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formClient, setFormClient] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -87,7 +92,9 @@ export default function DeliveryData() {
     client: clientObj.client,
     orders: Object.values(clientObj.orders),
   }));
-
+  if (isLoading) {
+    return <FadeLoader color="#0ef18e" cssOverride={override} />;
+  }
   return (
     <div className={styles.wrapper}>
       {grouped.map((client) => (
@@ -203,6 +210,7 @@ export default function DeliveryData() {
       )}
 
       {/* Модалка отправки данных */}
+
       {formClient && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -270,11 +278,15 @@ export default function DeliveryData() {
 
             <div className={styles.modalActions}>
               <button
+                disabled={isLoading}
                 className={`${styles.button} ${styles.buttonSave}`}
-                onClick={() => {
+                onClick={async () => {
+                  setIsLoading(true);
+                  setFormError(null);
                   const { address, contact, phone, date, comment } = formData;
                   if (!address || !contact || !phone || !date) {
                     setFormError("Будь ласка, заповніть всі поля");
+                    setIsLoading(false);
                     return;
                   }
                   // Проверка даты
@@ -284,6 +296,7 @@ export default function DeliveryData() {
 
                   if (selectedDate < today) {
                     setFormError("Дата доставки не може бути в минулому");
+                    setIsLoading(false);
                     return;
                   }
 
@@ -312,17 +325,40 @@ export default function DeliveryData() {
                     orders,
                   };
                   const initData = getInitData();
-                  const result = sendDeliveryData(payload, initData);
-                  // console.log("✅ Отправлено:", result.status);
-                  console.log("✅ Данные успешно отправлены", result);
-                  console.log("📦 Отправленные данные:", payload);
 
-                  removeClientDelivery(formClient);
+                  try {
+                    const result = await sendDeliveryData(payload, initData); // Проверка статуса ответа от сервера
 
-                  setFormClient(null);
+                    if (result.status === "ok") {
+                      // Успешный сценарий
+                      console.log("✅ Данные успешно отправлены", result);
+                      removeClientDelivery(formClient);
+                      setFormClient(null);
+                      setFormData({
+                        address: "",
+                        contact: "",
+                        phone: "",
+                        date: "",
+                        comment: "",
+                      });
+                    } else {
+                      // Сценарий, где запрос успешен, но сервер вернул ошибку в теле ответа
+                      setFormError(
+                        "Сталася помилка, дані не відправлені. Спробуйте пізніше, або зверніться до розробника"
+                      );
+                    }
+                  } catch (error) {
+                    // Сценарий, где произошла ошибка сети или сервера
+                    console.error("Помилка відправки даних:", error);
+                    setFormError(
+                      "Сталася помилка мережі, дані не відправлені. Перевірте з'єднання."
+                    );
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
               >
-                Відправити
+                {isLoading ? "Відправка..." : "Відправити"}
               </button>
               <button
                 className={`${styles.button} ${styles.buttonCancel}`}

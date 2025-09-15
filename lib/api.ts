@@ -15,6 +15,7 @@ import {
   Event,
   User,
   TaskStatus,
+  InnerEvent,
 } from "@/types/types";
 import axios from "axios";
 
@@ -375,6 +376,28 @@ export const getEvents = async () => {
   return data;
 };
 
+export const getEventById = async (eventId: string) => {
+  const { data } = await axios.get<Event>(`/data/calendar_event_by_id`, {
+    params: {
+      id: eventId,
+    },
+  });
+  return data;
+};
+
+export const getEventByUser = async (initData: string) => {
+  const { data } = await axios.get<InnerEvent[]>(
+    "/data/calendar_events_by_user",
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export const getTaskById = async (taskId: string) => {
   const { data } = await axios.get<Task>(`/data/get_task/`, {
     params: {
@@ -403,6 +426,29 @@ export const checkTaskInProgress = async (taskId: string, initData: string) => {
 
   return data;
 };
+
+export const checkEventInProgress = async (
+  eventId: string,
+  initData: string
+) => {
+  const { data } = await axios.patch(
+    `/data/event_in_progress`,
+    {
+      events_status: 1,
+    },
+    {
+      params: {
+        event_id: eventId,
+      },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};
 export const checkTaskCompleted = async (taskId: string, initData: string) => {
   const { data } = await axios.patch(
     `/data/task_completed`,
@@ -412,6 +458,52 @@ export const checkTaskCompleted = async (taskId: string, initData: string) => {
     {
       params: {
         task_id: taskId,
+      },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};
+
+export const checkEventCompleted = async (
+  eventId: string,
+  initData: string
+) => {
+  const { data } = await axios.patch(
+    `/data/event_completed`,
+    {
+      events_status: 2,
+    },
+    {
+      params: {
+        event_id: eventId,
+      },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};
+export const chengedEventDate = async (
+  eventId: string,
+  initData: string,
+  date: string
+) => {
+  const { data } = await axios.patch(
+    `/data/event_changed_date`,
+    {
+      new_date: date,
+    },
+    {
+      params: {
+        event_id: eventId,
       },
       headers: {
         "Content-Type": "application/json",

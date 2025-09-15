@@ -1,33 +1,31 @@
-import { getEvents } from "@/lib/api";
-import css from "./Events.module.css";
-import clsx from "clsx";
-
-export default async function Events() {
-  const events = await getEvents();
-
-  return (
-    <>
-      {!events.length && <p>Подій немає</p>}
-      <ul className={css.listContainer}>
-        {events.map((event) => (
-          <li
-            key={event.id}
-            className={clsx(css.listItemButton, {
-              [css.event]: event.colorId === "11",
-              [css.inproccess]: event.colorId === "5",
-              [css.done]: event.colorId === "10",
-            })}
-          >
-            {event.description.split("\n").map((description) => (
-              <div key={description}>
-                <p key={description}>{description}</p>
-                {/* <br /> */}
-              </div>
-            ))}
-            {/* <p>{event.colorId}</p> */}
-          </li>
-        ))}
-      </ul>
-    </>
-  );
+"use client";
+import { getEventByUser } from "@/lib/api";
+import { CSSProperties } from "react";
+import { FadeLoader } from "react-spinners";
+import { getInitData } from "@/lib/getInitData";
+import EventsSmall from "./clientPage";
+import { useQuery } from "@tanstack/react-query";
+const fetchEvents = async () => {
+  const initData = getInitData();
+  const events = await getEventByUser(initData);
+  return events;
+};
+const override: CSSProperties = {
+  display: "block",
+  margin: "0 auto",
+  // color: "#0ef18e",
+};
+export default function Events() {
+  // const events = await getEvents();
+  // const initData = getInitData();
+  // const events = await getEventByUser(initData);
+  const { data: events, isLoading } = useQuery({
+    queryKey: ["events"],
+    queryFn: fetchEvents,
+  });
+  if (isLoading) {
+    // return <div>Loading...</div>;
+    return <FadeLoader color="#0ef18e" cssOverride={override} />;
+  }
+  if (events) return <EventsSmall events={events} />;
 }

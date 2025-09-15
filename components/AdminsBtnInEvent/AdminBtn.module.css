@@ -1,0 +1,30 @@
+.adminButton {
+  display: inline-block;
+  padding: 0.5em 1em;
+  border: 1px solid var(--foreground);
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--foreground);
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+  margin: 1rem;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.adminButton:hover {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  /* gap: 0.5rem; */
+  /* padding: 1rem; */
+  list-style: none;
+  justify-content: center;
+}

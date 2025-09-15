@@ -18,6 +18,7 @@ import {} from // EnoughtRemains,
 "@/types/types";
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
+import React from "react";
 
 // type Detail = {
 //   details: {
@@ -82,7 +83,7 @@ function TableOrderDetail({ details }: Detail) {
         </thead>
         <tbody>
           {details.map((item) => (
-            <>
+            <React.Fragment key={item.id}>
               <tr
                 key={item.id}
                 style={isSelected(item.id) ? { color: "green" } : {}}
@@ -114,7 +115,7 @@ function TableOrderDetail({ details }: Detail) {
                   ))}
                 </>
               )}
-            </>
+            </React.Fragment>
           ))}
         </tbody>
       </table>

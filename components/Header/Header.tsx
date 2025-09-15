@@ -123,13 +123,14 @@ function Header() {
               Доставка
             </Link>
           </li>
+
+          <li>
+            <Link href="/events" onClick={handleNavClick}>
+              Події
+            </Link>
+          </li>
           {userData?.is_admin && (
             <>
-              <li>
-                <Link href="/events" onClick={handleNavClick}>
-                  Події
-                </Link>
-              </li>
               <li>
                 <Link href="/tasks" onClick={handleNavClick}>
                   Задачи

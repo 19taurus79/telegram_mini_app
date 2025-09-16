@@ -161,7 +161,7 @@ export type OrdersDetails = {
   orders_q: number;
   buh: number;
   skl: number;
-  qok: boolean;
+  qok: string;
   parties: [
     {
       party: string;

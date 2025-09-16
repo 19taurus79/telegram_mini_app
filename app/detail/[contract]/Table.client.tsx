@@ -39,7 +39,7 @@ type Detail = {
     // party: string;
     buh: number;
     skl: number;
-    qok: boolean;
+    qok: string;
     product: string;
     quantity: number;
     client: string;
@@ -88,14 +88,19 @@ function TableOrderDetail({ details }: Detail) {
                 key={item.id}
                 style={isSelected(item.id) ? { color: "green" } : {}}
               >
-                {" "}
                 <td onClick={() => setDelivery(item)}>
                   <span>{item.product}</span>
                   <br />
                 </td>
                 <td
                   className={css.centr}
-                  style={item.qok ? { color: "green" } : {}}
+                  style={
+                    item.qok === "2"
+                      ? { color: "green" } // ✅ Если 'qok' равен "2", цвет зелёный
+                      : item.qok === "1"
+                        ? { color: "orange" } // ✅ Иначе, если 'qok' равен "1", цвет оранжевый
+                        : { color: "red" } // ✅ Иначе, цвет красный
+                  }
                 >
                   {item.quantity}
                 </td>

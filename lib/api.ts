@@ -139,7 +139,7 @@ export const getContracts = async ({
   client,
   initData,
 }: {
-  client: string;
+  client: number;
   initData: string;
 }) => {
   const { data } = await axios.get<Contract[]>(`/data/contracts/${client}`, {

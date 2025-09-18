@@ -8,7 +8,7 @@ import { getInitData } from "@/lib/getInitData";
 //   params: Promise<{ slug: string[] }>;
 // };
 type Props = {
-  params: Promise<{ client: string }>;
+  params: Promise<{ client: number }>;
 };
 
 export default async function filteredOrders({ params }: Props) {

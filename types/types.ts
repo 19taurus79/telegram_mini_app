@@ -47,6 +47,8 @@ export type Remains = {
 };
 export type Client = {
   client: string;
+  manager: string;
+  id: number;
 };
 export type TotalOrder = {
   product_id: string;

@@ -68,7 +68,7 @@ body {
 }
 
 body {
-  padding-top: var(--header-height, 80px); /* Add padding for fixed header */
+  padding-top: var(--header-height, 60px); /* Add padding for fixed header */
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
       to bottom,

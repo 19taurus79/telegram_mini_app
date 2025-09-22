@@ -52,7 +52,7 @@ const CurrencyWidget = () => {
         setLoading(false);
       })
       .catch(() => {
-        setError("Ошибка при запросе курсов валют.");
+        setError("Помилка під час запиту курсів валют.");
         setLoading(false);
       });
   }, []);

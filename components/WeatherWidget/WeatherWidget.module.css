@@ -5,7 +5,9 @@
   padding: 15px 20px;
   border-radius: 12px;
   text-align: center;
-  max-width: 350px;
+  max-width: 400px;
+  min-width: 300px; /* Ensure minimum width */
+  flex-basis: auto; /* Allow it to grow */
   margin: 20px auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid #e9ecef;

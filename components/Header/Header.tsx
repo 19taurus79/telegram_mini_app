@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { useFilter } from "@/context/FilterContext";
-import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useRef, useState, useLayoutEffect, useCallback } from "react";
 import { getUserByinitData } from "@/lib/api";
 import { User } from "@/types/types";
 import css from "./Header.module.css";
@@ -15,43 +15,35 @@ function Header() {
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname(); // Get the current path
 
-  useLayoutEffect(() => {
-    const updateHeaderHeight = () => {
-      if (headerRef.current) {
-        const height = headerRef.current.offsetHeight;
-        document.documentElement.style.setProperty('--header-height', `${height}px`);
-      }
-    };
-
-    updateHeaderHeight(); // Initial calculation
-
-    window.addEventListener('resize', updateHeaderHeight);
-    return () => {
-      window.removeEventListener('resize', updateHeaderHeight);
-    };
-  }, [pathname, menuOpen]); // Rerun when path or menuOpen changes
-
-  const updateSearchQuery = useDebouncedCallback(
-    (value: string) => setSearchValue(value),
-    300
-  );
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [userData, setUserData] = useState<User | null>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSearchQuery(e.target.value);
-  };
-
-  const handleClear = () => {
-    setSearchValue("");
-    updateSearchQuery(""); // для синхронизации
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
-  };
-  //TODO: get initData from Telegram WebApp
   const [initData, setInitData] = useState<string | null>(null);
+
+  const updateHeaderHeight = useCallback(() => {
+    if (headerRef.current) {
+      const height = headerRef.current.offsetHeight;
+      document.documentElement.style.setProperty('--header-height', `${height}px`);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    updateHeaderHeight(); // Initial calculation
+
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => {
+      window.removeEventListener("resize", updateHeaderHeight);
+    };
+  }, [pathname, updateHeaderHeight]); // Rerun only when path changes
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateHeaderHeight();
+    }, 300); // Match the CSS transition duration
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [menuOpen, updateHeaderHeight]);
 
   useEffect(() => {
     const isDev = process.env.NEXT_PUBLIC_DEV === "true";
@@ -80,6 +72,21 @@ function Header() {
   }, [initData]);
   console.log("initData", initData);
   console.log("userData", userData);
+
+  const handleInputChange = useDebouncedCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchValue(e.target.value);
+    },
+    300
+  );
+
+  const handleClear = () => {
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+    setSearchValue("");
+  };
+
   const handleNavClick = () => {
     setMenuOpen(false);
   };
@@ -90,7 +97,9 @@ function Header() {
 
       <button
         className={css.navToggle}
-        onClick={() => setMenuOpen((prev) => !prev)}
+        onClick={() => {
+          setMenuOpen((prev) => !prev);
+        }}
         aria-label="Toggle navigation"
       >
         ☰

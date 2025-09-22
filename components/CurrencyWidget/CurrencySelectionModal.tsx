@@ -42,7 +42,7 @@ const CurrencySelectionModal = ({ isOpen, onClose, allCurrencies, selectedCurren
     <div className={css.backdrop} onClick={onClose}>
       <div className={css.modal} onClick={e => e.stopPropagation()}>
         <div className={css.header}>
-          <h4>Выберите валюты</h4>
+          <h4>Оберіть валюти</h4>
           <button onClick={onClose} className={css.closeButton}>&times;</button>
         </div>
         <div className={css.listContainer}>
@@ -58,7 +58,7 @@ const CurrencySelectionModal = ({ isOpen, onClose, allCurrencies, selectedCurren
           ))}
         </div>
         <div className={css.footer}>
-          <button onClick={handleSave} className={css.saveButton}>Сохранить</button>
+          <button onClick={handleSave} className={css.saveButton}>Зберегти</button>
         </div>
       </div>
     </div>

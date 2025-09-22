@@ -8,23 +8,23 @@ import css from "./WeatherWidget.module.css";
 const getWeatherInterpretation = (code: number) => {
   const interpretations: { [key: number]: { description: string; emoji: string } } = {
     0: { description: "Ясно", emoji: "☀️" },
-    1: { description: "В основном ясно", emoji: "🌤️" },
-    2: { description: "Переменная облачность", emoji: "⛅" },
-    3: { description: "Пасмурно", emoji: "☁️" },
+    1: { description: "Переважно ясно", emoji: "🌤️" },
+    2: { description: "Мінлива хмарність", emoji: "⛅" },
+    3: { description: "Похмуро", emoji: "☁️" },
     45: { description: "Туман", emoji: "🌫️" },
-    48: { description: "Изморозь", emoji: "🥶" },
-    51: { description: "Легкая морось", emoji: "🌦️" },
-    53: { description: "Умеренная морось", emoji: "🌦️" },
-    55: { description: "Сильная морось", emoji: "🌧️" },
-    61: { description: "Небольшой дождь", emoji: "🌧️" },
-    63: { description: "Умеренный дождь", emoji: "🌧️" },
-    65: { description: "Сильный дождь", emoji: "⛈️" },
-    80: { description: "Небольшие ливни", emoji: "🌦️" },
-    81: { description: "Умеренные ливни", emoji: "🌧️" },
-    82: { description: "Сильные ливни", emoji: "⛈️" },
+    48: { description: "Паморозь", emoji: "🥶" },
+    51: { description: "Легка мряка", emoji: "🌦️" },
+    53: { description: "Помірна мряка", emoji: "🌦️" },
+    55: { description: "Сильна мряка", emoji: "🌧️" },
+    61: { description: "Невеликий дощ", emoji: "🌧️" },
+    63: { description: "Помірний дощ", emoji: "🌧️" },
+    65: { description: "Сильний дощ", emoji: "⛈️" },
+    80: { description: "Невеликі зливи", emoji: "🌦️" },
+    81: { description: "Помірні зливи", emoji: "🌧️" },
+    82: { description: "Сильні зливи", emoji: "⛈️" },
     95: { description: "Гроза", emoji: "⚡" },
   };
-  return interpretations[code] || { description: "Нет данных", emoji: "🤷" };
+  return interpretations[code] || { description: "Немає даних", emoji: "🤷" };
 };
 
 interface CurrentWeather {
@@ -58,7 +58,7 @@ const WeatherWidget = () => {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("Геолокация не поддерживается вашим браузером.");
+      setError("Геолокація не підтримується вашим браузером.");
       setLoading(false);
       return;
     }
@@ -74,17 +74,17 @@ const WeatherWidget = () => {
             if (data.current && data.hourly && data.daily) {
               setWeather(data);
             } else {
-              setError("Не удалось получить данные о погоде.");
+              setError("Не вдалося отримати дані про погоду.");
             }
             setLoading(false);
           })
           .catch(() => {
-            setError("Ошибка при запросе погоды.");
+            setError("Помилка під час запиту погоди.");
             setLoading(false);
           });
       },
       (err) => {
-        setError(`Ошибка получения геолокации: ${err.message}`);
+        setError(`Помилка отримання геолокації: ${err.message}`);
         setLoading(false);
       }
     );
@@ -93,7 +93,7 @@ const WeatherWidget = () => {
   if (loading) {
     return (
       <div className={css.widget}>
-        <p>Загрузка погоды...</p>
+        <p>Завантаження погоди...</p>
         <ClipLoader size={20} color={"#fff"} />
       </div>
     );
@@ -126,7 +126,7 @@ const WeatherWidget = () => {
 
   return (
     <div className={css.widget}>
-      <h3>Погода сейчас</h3>
+      <h3>Погода зараз</h3>
       <div className={css.weatherData}>
         <span className={css.emoji}>{currentInterpretation.emoji}</span>
         <span className={css.temp}>{Math.round(current.temperature_2m)}°C</span>
@@ -134,7 +134,7 @@ const WeatherWidget = () => {
       </div>
 
       <div className={css.forecastSection}>
-        <h4>Прогноз на сегодня</h4>
+        <h4>Прогноз на сьогодні</h4>
         <div className={css.hourlyForecast}>
             {todayHourlyForecast.map((forecast, index) => (
                 <div key={index} className={css.hourItem}>
@@ -147,11 +147,11 @@ const WeatherWidget = () => {
       </div>
 
       <div className={css.forecastSection}>
-        <h4>Прогноз на 5 дней</h4>
+        <h4>Прогноз на 5 днів</h4>
         <div className={css.dailyForecast}>
             {dailyForecast.map((forecast, index) => (
                 <div key={index} className={css.dayItem}>
-                    <span className={css.dayName}>{forecast.time.toLocaleDateString('ru-RU', { weekday: 'short' })}</span>
+                    <span className={css.dayName}>{forecast.time.toLocaleDateString('uk-UA', { weekday: 'short' })}</span>
                     <span className={css.dayEmoji}>{getWeatherInterpretation(forecast.code).emoji}</span>
                     <span className={css.dayTemp}>
                         <strong>{Math.round(forecast.maxTemp)}°</strong> / {Math.round(forecast.minTemp)}°

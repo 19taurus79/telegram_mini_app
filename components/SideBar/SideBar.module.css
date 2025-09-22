@@ -18,9 +18,9 @@
   border-left: 1px solid #ccc;
   padding: 1rem;
   position: fixed;
-  top: 0;
+  top: var(--header-height);
   right: 0;
-  height: 100vh;
+  height: calc(100vh - var(--header-height));
   z-index: 100;
   transform: translateX(0);
   transition:
@@ -59,4 +59,9 @@
   .sidebar {
     width: 80%;
   }
+}
+
+/* Style for the button when a filter is active */
+.toggleBtnFiltered {
+  background: #e74c3c;
 }

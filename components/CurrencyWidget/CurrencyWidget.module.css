@@ -1,0 +1,106 @@
+/* Light theme styles (default) */
+.widget {
+    background-color: #ffffff;
+    color: #212529;
+    padding: 15px 20px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 350px;
+    margin: 20px auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+}
+
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #6c757d;
+}
+
+.settingsButton {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settingsButton:hover {
+    background-color: #e9ecef;
+}
+
+.ratesContainer {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.rateItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.currency {
+    font-size: 1.1em;
+    color: #495057;
+}
+
+.value {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    border: 1px solid #f5c6cb;
+}
+
+/* Dark theme styles */
+@media (prefers-color-scheme: dark) {
+    .widget {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        border-color: #34495e;
+    }
+
+    .header h3 {
+        color: #bdc3c7;
+    }
+
+    .settingsButton {
+        color: #bdc3c7;
+    }
+
+    .settingsButton:hover {
+        background-color: #34495e;
+    }
+
+    .currency {
+        color: #95a5a6;
+    }
+
+    .error {
+        background-color: #c0392b;
+        color: #fff;
+        border: none;
+    }
+}

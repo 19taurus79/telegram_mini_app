@@ -1,16 +1,29 @@
 "use client";
 
-import Link from "next/link";
-import css from "./Header.module.css";
+import { usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { useFilter } from "@/context/FilterContext";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { getUserByinitData } from "@/lib/api";
 import { User } from "@/types/types";
+import css from "./Header.module.css";
+import Link from "next/link";
 
 function Header() {
   const { searchValue, setSearchValue } = useFilter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const pathname = usePathname(); // Get the current path
+
+  useLayoutEffect(() => {
+    if (headerRef.current) {
+      const height = headerRef.current.offsetHeight;
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${height}px`
+      );
+    }
+  }, [pathname]); // Rerun when path changes
 
   const updateSearchQuery = useDebouncedCallback(
     (value: string) => setSearchValue(value),
@@ -66,7 +79,7 @@ function Header() {
   };
 
   return (
-    <header className={css.header}>
+    <header className={css.header} ref={headerRef}>
       <h2 className={css.logo}>Ерідон Харків</h2>
 
       <button
@@ -77,24 +90,26 @@ function Header() {
         ☰
       </button>
 
-      <div className={css.searchWrapper}>
-        <input
-          ref={inputRef}
-          type="text"
-          className={css.searchInput}
-          placeholder="Пошук..."
-          onChange={handleInputChange}
-        />
-        {searchValue && (
-          <button
-            className={css.clearBtn}
-            onClick={handleClear}
-            aria-label="Clear search"
-          >
-            ×
-          </button>
-        )}
-      </div>
+      {pathname !== "/" && (
+        <div className={css.searchWrapper}>
+          <input
+            ref={inputRef}
+            type="text"
+            className={css.searchInput}
+            placeholder="Пошук..."
+            onChange={handleInputChange}
+          />
+          {searchValue && (
+            <button
+              className={css.clearBtn}
+              onClick={handleClear}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
 
       <nav className={`${css.nav} ${menuOpen ? css.navOpen : ""}`}>
         <ul className={css.navList}>

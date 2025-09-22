@@ -16,14 +16,20 @@ function Header() {
   const pathname = usePathname(); // Get the current path
 
   useLayoutEffect(() => {
-    if (headerRef.current) {
-      const height = headerRef.current.offsetHeight;
-      document.documentElement.style.setProperty(
-        "--header-height",
-        `${height}px`
-      );
-    }
-  }, [pathname]); // Rerun when path changes
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      }
+    };
+
+    updateHeaderHeight(); // Initial calculation
+
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+    };
+  }, [pathname, menuOpen]); // Rerun when path or menuOpen changes
 
   const updateSearchQuery = useDebouncedCallback(
     (value: string) => setSearchValue(value),

@@ -6,6 +6,8 @@ import { getTaskById, getTaskStatus } from "@/lib/api";
 type Props = {
   params: Promise<{ task: string }>;
 };
+const urlParams = new URLSearchParams(window.location.search);
+const fromLink = urlParams.get("from_link") === "1";
 export default async function DetailTask({ params }: Props) {
   const taskId = await params;
   const task = await getTaskById(taskId.task);
@@ -16,7 +18,7 @@ export default async function DetailTask({ params }: Props) {
     <>
       <TaskCart task={task} taskStatus={taskStatus} />
       <TasksBtn taskId={task.id} taskStatus={taskStatus} />
-      <BackBtn />
+      <BackBtn onBack={fromLink ? () => window.history.back() : undefined} />
     </>
   );
 }

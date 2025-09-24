@@ -7,19 +7,21 @@ import { getTaskById, getTaskStatus } from "@/lib/api";
 // URL search parameters should be accessed via the `searchParams` prop.
 
 type Props = {
-  // Adhering to project's specific convention of params being a Promise.
+  // Adhering to project's specific convention of props being Promises.
   params: Promise<{ task: string }>;
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key:string]: string | string[] | undefined }>;
 };
 
 export default async function DetailTask({ params, searchParams }: Props) {
-  // Awaiting the params promise as per project convention.
+  // Awaiting the promises as per project convention.
   const { task: taskId } = await params;
+  const resolvedSearchParams = await searchParams;
+
   const task = await getTaskById(taskId);
   const taskStatus = await getTaskStatus(task.id);
 
-  // Logic to read URL parameters is now inside the component and uses `searchParams`.
-  const fromLink = searchParams.from_link === "1";
+  // Logic to read URL parameters now uses the resolved `searchParams` object.
+  const fromLink = resolvedSearchParams.from_link === "1";
 
   console.log(task);
   return (

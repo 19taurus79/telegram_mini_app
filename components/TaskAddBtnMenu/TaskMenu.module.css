@@ -2,13 +2,15 @@ ul.buttonList {
   list-style: none;
   padding: 0;
   margin: 0;
+  margin-top: 30px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px; /* отступ между кнопками */
 }
 
 ul.buttonList li {
-  display: inline-block;
+  flex: 1 1 275px; /*  Позволяет элементам растягиваться и сжиматься с базовой шириной 275px */
+  display: flex;
 }
 
 ul.buttonList li button {
@@ -19,8 +21,9 @@ ul.buttonList li button {
   padding: 10px 20px;
   font-size: 1rem;
   cursor: pointer;
-  min-width: 275px;
-
+  width: 100%; /* Растягиваем кнопку на всю ширину li */
+  height: 100%;
+  text-align: center;
   transition: background-color 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   user-select: none;

@@ -3,7 +3,13 @@
 import { usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { useFilter } from "@/context/FilterContext";
-import { useEffect, useRef, useState, useLayoutEffect, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { getUserByinitData } from "@/lib/api";
 import { User } from "@/types/types";
 import css from "./Header.module.css";
@@ -22,7 +28,10 @@ function Header() {
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
       const height = headerRef.current.offsetHeight;
-      document.documentElement.style.setProperty('--header-height', `${height}px`);
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${height}px`
+      );
     }
   }, []);
 
@@ -159,15 +168,15 @@ function Header() {
               Події
             </Link>
           </li>
-          {userData?.is_admin && (
-            <>
-              <li>
-                <Link href="/tasks" onClick={handleNavClick}>
-                  Задачи
-                </Link>
-              </li>
-            </>
-          )}
+          {/* {userData?.is_admin && (
+            <> */}
+          <li>
+            <Link href="/tasks" onClick={handleNavClick}>
+              Задачи
+            </Link>
+          </li>
+          {/* </>
+          )} */}
         </ul>
       </nav>
     </header>

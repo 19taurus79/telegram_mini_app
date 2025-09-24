@@ -23,6 +23,8 @@
   font-size: 16px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 .error {
@@ -77,4 +79,61 @@
 .btnContainer {
   display: flex;
   justify-content: space-between;
+}
+/* / For the Button Group (theme-independent style) / .toggleButtonContainer { */
+.toggleButtonContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toggleButton {
+  background-color: #e0e0e0;
+  color: #000;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toggleButtonSelected {
+  background-color: #0070f3;
+  color: #fff;
+  border: 1px solid #0070f3;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* / For the Custom Select (theme-aware style) / */
+.customSelectContainer {
+  position: relative;
+}
+
+.customSelectDropdown {
+  position: absolute;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.customSelectItem {
+  padding: 10px;
+  cursor: pointer;
+  white-space: normal;
+  color: var(--foreground);
+}
+
+.customSelectItem:hover {
+  background-color: var(--background-hover, #f0f0f0);
+}
+
+.customSelectItemMuted {
+  padding: 10px;
+  color: var(--foreground-muted, #888);
 }

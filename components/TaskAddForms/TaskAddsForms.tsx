@@ -146,7 +146,7 @@ const formConfigs: {
     legend: "Дані для оформлення самовивозу зі складу",
     initialValues: {
       documentType: "доповнення",
-      date: new Date().toISOString().substring(0, 10),
+      date: "", // Set to empty string to prevent hydration error
       client: "",
       order: "",
       product: "",
@@ -279,140 +279,167 @@ const GenericTaskForm = <T extends AllFormValues>({
         onSubmit(values);
         actions.resetForm();
       }}
-      enableReinitialize // Important for custom select to get updated values
+      enableReinitialize
     >
-      {(formikProps) => (
-        <Form className={css.form}>
-          <fieldset className={css.fieldset}>
-            <legend className={css.legend}>{config.legend}</legend>
-            {config.fields.map((field) => {
-              if (field.as === "buttongroup") {
-                return (
-                  <div className={css.fieldContainer} key={field.name as string}>
-                    <div className={css.label}>{field.label}</div>
-                    <div className={css.toggleButtonContainer}>
-                      {field.options?.map((option) => (
-                        <button
-                          type="button"
-                          key={option.value}
-                          onClick={() => {
-                            formikProps.setFieldValue(
-                              field.name as string,
-                              option.value
-                            );
-                          }}
-                          className={
-                            formikProps.values[field.name] === option.value
-                              ? css.toggleButtonSelected
-                              : css.toggleButton
-                          }
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
+      {(formikProps) => {
+        useEffect(() => {
+          // Fix for hydration error: set date on client side
+          if ("date" in formikProps.values && !formikProps.values.date) {
+            formikProps.setFieldValue(
+              "date",
+              new Date().toISOString().substring(0, 10)
+            );
+          }
+        }, []); // Run only once on mount
 
-              if (field.as === "custom_select" && field.dataType === "clients") {
+        return (
+          <Form className={css.form}>
+            <fieldset className={css.fieldset}>
+              <legend className={css.legend}>{config.legend}</legend>
+              {config.fields.map((field) => {
+                if (field.as === "buttongroup") {
+                  return (
+                    <div
+                      className={css.fieldContainer}
+                      key={field.name as string}
+                    >
+                      <div className={css.label}>{field.label}</div>
+                      <div className={css.toggleButtonContainer}>
+                        {field.options?.map((option) => (
+                          <button
+                            type="button"
+                            key={option.value}
+                            onClick={() => {
+                              formikProps.setFieldValue(
+                                field.name as string,
+                                option.value
+                              );
+                            }}
+                            className={
+                              formikProps.values[field.name] === option.value
+                                ? css.toggleButtonSelected
+                                : css.toggleButton
+                            }
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (
+                  field.as === "custom_select" &&
+                  field.dataType === "clients"
+                ) {
+                  return (
+                    <div
+                      className={css.fieldContainer}
+                      key={field.name as string}
+                    >
+                      <label
+                        className={css.label}
+                        htmlFor={`${fieldId}-client-search`}
+                      >
+                        {field.label}
+                      </label>
+                      <div
+                        ref={selectRef}
+                        className={css.customSelectContainer}
+                      >
+                        <input
+                          type="text"
+                          id={`${fieldId}-client-search`}
+                          className={css.field}
+                          placeholder="Почніть вводити для пошуку..."
+                          value={clientSearch}
+                          onChange={(e) => {
+                            setClientSearch(e.target.value);
+                            setDropdownOpen(true);
+                          }}
+                          onFocus={() => setDropdownOpen(true)}
+                        />
+                        {isDropdownOpen && (
+                          <div className={css.customSelectDropdown}>
+                            {clientSearch.length < 2 ? (
+                              <div className={css.customSelectItemMuted}>
+                                Введіть 2 або більше символів для пошуку
+                              </div>
+                            ) : isClientsLoading ? (
+                              <div className={css.customSelectItemMuted}>
+                                Завантаження...
+                              </div>
+                            ) : clients && clients.length > 0 ? (
+                              clients.map((client) => (
+                                <div
+                                  key={client.id}
+                                  onClick={() => {
+                                    formikProps.setFieldValue(
+                                      field.name as string,
+                                      client.client
+                                    );
+                                    setClientSearch(client.client);
+                                    setDropdownOpen(false);
+                                  }}
+                                  className={css.customSelectItem}
+                                >
+                                  {client.client}
+                                </div>
+                              ))
+                            ) : (
+                              <div className={css.customSelectItemMuted}>
+                                Клієнтів не знайдено
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div className={css.fieldContainer} key={field.name as string}>
-                    <label className={css.label} htmlFor={`${fieldId}-client-search`}>
+                  <div
+                    className={css.fieldContainer}
+                    key={field.name as string}
+                  >
+                    <label
+                      className={css.label}
+                      htmlFor={`${fieldId}-${field.name as string}`}
+                    >
                       {field.label}
                     </label>
-                    <div
-                      ref={selectRef}
-                      className={css.customSelectContainer}
-                    >
-                      <input
-                        type="text"
-                        id={`${fieldId}-client-search`}
-                        className={css.field}
-                        placeholder="Почніть вводити для пошуку..."
-                        value={clientSearch}
-                        onChange={(e) => {
-                          setClientSearch(e.target.value);
-                          setDropdownOpen(true);
-                        }}
-                        onFocus={() => setDropdownOpen(true)}
-                      />
-                      {isDropdownOpen && (
-                        <div className={css.customSelectDropdown}>
-                          {clientSearch.length < 2 ? (
-                            <div className={css.customSelectItemMuted}>
-                              Введіть 2 або більше символів для пошуку
-                            </div>
-                          ) : isClientsLoading ? (
-                            <div className={css.customSelectItemMuted}>
-                              Завантаження...
-                            </div>
-                          ) : clients && clients.length > 0 ? (
-                            clients.map((client) => (
-                              <div
-                                key={client.id}
-                                onClick={() => {
-                                  formikProps.setFieldValue(
-                                    field.name as string,
-                                    client.client
-                                  );
-                                  setClientSearch(client.client);
-                                  setDropdownOpen(false);
-                                }}
-                                className={css.customSelectItem}
-                              >
-                                {client.client}
-                              </div>
-                            ))
-                          ) : (
-                            <div className={css.customSelectItemMuted}>
-                              Клієнтів не знайдено
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <Field
+                      className={css.field}
+                      id={`${fieldId}-${field.name as string}`}
+                      name={field.name}
+                      type={field.type || "text"}
+                      as={field.as}
+                      rows={field.rows}
+                    />
                   </div>
                 );
-              }
-
-              return (
-                <div className={css.fieldContainer} key={field.name as string}>
-                  <label
-                    className={css.label}
-                    htmlFor={`${fieldId}-${field.name as string}`}
-                  >
-                    {field.label}
-                  </label>
-                  <Field
-                    className={css.field}
-                    id={`${fieldId}-${field.name as string}`}
-                    name={field.name}
-                    type={field.type || "text"}
-                    as={field.as}
-                    rows={field.rows}
-                  />
-                </div>
-              );
-            })}
-          </fieldset>
-          <div className={css.btnContainer}>
-            <button className={css.submitButton} type="submit">
-              Ок
-            </button>
-            <button
-              onClick={() => {
-                formikProps.resetForm();
-                onCancel();
-              }}
-              className={css.cancelButton}
-              type="reset"
-            >
-              Відміна
-            </button>
-          </div>
-        </Form>
-      )}
+              })}
+            </fieldset>
+            <div className={css.btnContainer}>
+              <button className={css.submitButton} type="submit">
+                Ок
+              </button>
+              <button
+                onClick={() => {
+                  formikProps.resetForm();
+                  onCancel();
+                }}
+                className={css.cancelButton}
+                type="reset"
+              >
+                Відміна
+              </button>
+            </div>
+          </Form>
+        );
+      }}
     </Formik>
   );
 };

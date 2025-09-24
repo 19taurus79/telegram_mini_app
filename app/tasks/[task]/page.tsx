@@ -36,7 +36,7 @@ export default async function DetailTask({ params, searchParams }: Props) {
         to a Client Component prop can cause issues. This might need to be refactored
         by moving the logic into the BackBtn component itself.
       */}
-      <BackBtn isClose />
+      <BackBtn isClose={fromLink} />
       {/* <CloseButton /> */}
     </>
   );

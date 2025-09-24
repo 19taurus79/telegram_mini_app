@@ -35,8 +35,8 @@ export default function TaskCart({
           // }
         })}
       </li>
-      {task.notes.split("\n").map((note) => (
-        <li key={note}>{note}</li>
+      {task.notes.split("\n").map((note, index) => (
+        <li key={index}>{note}</li>
       ))}
     </ul>
   );

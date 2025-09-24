@@ -17,6 +17,7 @@ import {
   TaskStatus,
   InnerEvent,
   TaskInner,
+  TaskGoogle,
 } from "@/types/types";
 import axios from "axios";
 
@@ -400,7 +401,7 @@ export const getEventByUser = async (initData: string) => {
 };
 
 export const getTaskById = async (taskId: string) => {
-  const { data } = await axios.get<TaskInner>(`/data/get_task/`, {
+  const { data } = await axios.get<TaskGoogle>(`/data/get_task/`, {
     params: {
       task_id: taskId,
     },

@@ -3,10 +3,15 @@
 import css from "./Tasks.module.css";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, CSSProperties } from "react";
 import { getAllTasks } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-
+import { FadeLoader } from "react-spinners";
+const override: CSSProperties = {
+  display: "block",
+  margin: "0 auto",
+  borderColor: "red",
+};
 export default function ClientTasks() {
   // { tasks }: { tasks: Task[] }
   // const [tasks, setTasks] = useState<Task[]>([]);
@@ -38,26 +43,40 @@ export default function ClientTasks() {
   //   fetchTasks();
   // }, [initData]);
 
-  const { data, error, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["tasks", initData],
     queryFn: () => getAllTasks(initData!),
     enabled: !!initData,
   });
-  console.log("data", data);
-  console.log("error", error);
-  console.log("isLoading", isLoading);
-  console.log("isError", isError);
-  console.log("initData", initData);
+
   const router = useRouter();
   const handleClick = (id: string) => {
-    console.log(id);
     router.push(`/tasks/${id}`);
   };
   //TODO: в фильтр добавить значения для рендера
   const tasks = data ?? [];
+
   return (
     <ul className={css.listContainer}>
-      {tasks
+      {isLoading && <FadeLoader color="#0ef18e" cssOverride={override} />}
+      {isError && <div>Ошибка загрузки задач</div>}
+      {!isLoading && !isError && tasks.length === 0 && (
+        <div>Завдань не знайдено</div>
+      )}
+      {data?.map((task) => (
+        <li
+          key={task.id}
+          className={clsx(css.listItemButton, {
+            [css.completed]: task.task_status === 2,
+            [css.inProgress]: task.task_status === 1,
+          })}
+          onClick={() => handleClick(task.task_id)}
+        >
+          <span>{task.task}</span>
+          <span>{task.task_creator_name}</span>
+        </li>
+      ))}
+      {/* {tasks
         .filter((task) => {
           return task;
         })
@@ -83,20 +102,15 @@ export default function ClientTasks() {
                 return null;
               }
             })}
-            {/* <h2>{task.title}</h2> */}
+
             {task.notes.split("\n").map((note, index) => (
               <React.Fragment key={`${task.id}-${index}`}>
                 <p key={note}>{note}</p>
-                {/* <br /> */}
               </React.Fragment>
             ))}
             {task.due && <p>Дата: {task.due.substring(0, 10)}</p>}
-            {/* <p>{task.due.substring(0, 10)}</p> */}
-            {/* <a href={task.webViewLink} target="_blank">
-              {task.webViewLink}
-            </a> */}
           </li>
-        ))}
+        ))} */}
     </ul>
   );
 }

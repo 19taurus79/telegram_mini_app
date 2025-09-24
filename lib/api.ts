@@ -10,12 +10,13 @@ import {
   PartyData,
   Product,
   Remains,
-  Task,
+  // TaskGoogle,
   TotalOrder,
   Event,
   User,
   TaskStatus,
   InnerEvent,
+  TaskInner,
 } from "@/types/types";
 import axios from "axios";
 
@@ -362,7 +363,7 @@ export const getOrdersDetailsById = async ({
   return data;
 };
 export const getAllTasks = async (initData: string) => {
-  const { data } = await axios.get<Task[]>("/data/get_all_tasks", {
+  const { data } = await axios.get<TaskInner[]>("/data/get_all_tasks", {
     headers: {
       "Content-Type": "application/json",
       "X-Telegram-Init-Data": initData,
@@ -399,7 +400,7 @@ export const getEventByUser = async (initData: string) => {
 };
 
 export const getTaskById = async (taskId: string) => {
-  const { data } = await axios.get<Task>(`/data/get_task/`, {
+  const { data } = await axios.get<TaskInner>(`/data/get_task/`, {
     params: {
       task_id: taskId,
     },
@@ -549,7 +550,7 @@ export const createTask = async (
   title: string,
   note: string
 ) => {
-  const { data } = await axios.post<Task>(
+  const { data } = await axios.post<TaskInner>(
     "/data/add_task",
     {
       title: title,

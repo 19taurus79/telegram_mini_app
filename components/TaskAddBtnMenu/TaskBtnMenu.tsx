@@ -12,10 +12,10 @@ export default function TaskAddBtnMenu() {
     setFormType(form);
     toggleMenu();
     toggleForm();
-    console.log("form", form);
+    // console.log("form", form);
   };
-  console.log("menuIsOpen", menuIsOpen);
-  console.log("formIsOpen", formIsOpen);
+  // console.log("menuIsOpen", menuIsOpen);
+  // console.log("formIsOpen", formIsOpen);
   return (
     <>
       {menuIsOpen && (
@@ -27,14 +27,18 @@ export default function TaskAddBtnMenu() {
           </li>
           <li>
             <button onClick={() => handleOpenMenu("PD")}>
-              Замовити товар по домові
+              Замовити товар по домовленності, якщо немає вільного
             </button>
           </li>
           <li>
-            <button>Оформити самовивіз</button>
+            <button onClick={() => handleOpenMenu("EXW")}>
+              Оформити самовивіз
+            </button>
           </li>
           <li>
-            <button>Довільна форма</button>
+            <button onClick={() => handleOpenMenu("FREE")}>
+              Довільна форма
+            </button>
           </li>
           {/* <li>5</li> */}
         </ul>

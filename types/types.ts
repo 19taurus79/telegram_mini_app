@@ -173,7 +173,7 @@ export type OrdersDetails = {
   // party: string;
   // moved_q: number;
 };
-export type Task = {
+export type TaskGoogle = {
   kind: string;
   id: string;
   etag: string;
@@ -186,6 +186,16 @@ export type Task = {
   due: string;
   links: [];
   webViewLink: string;
+};
+export type TaskInner = {
+  id: string;
+  task: string;
+  task_creator: number;
+  task_creator_name: string;
+  task_id: string;
+  task_status: number;
+  task_who_changed_id: number;
+  task_who_changed_name: string;
 };
 export type Event = {
   kind: string;

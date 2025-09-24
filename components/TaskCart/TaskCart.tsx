@@ -1,10 +1,10 @@
-import { Task, TaskStatus } from "@/types/types";
+import { TaskGoogle, TaskStatus } from "@/types/types";
 import css from "./TaskCart.module.css";
 export default function TaskCart({
   task,
   taskStatus,
 }: {
-  task: Task;
+  task: TaskGoogle;
   taskStatus: TaskStatus;
 }) {
   return (

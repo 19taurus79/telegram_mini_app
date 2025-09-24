@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useState, useRef } from "react";
-import { Formik, Form, Field } from "formik";
+import { Formik, Form, Field, useFormikContext } from "formik";
 import css from "./Form.module.css";
 import {
   useEventsModalStore,
@@ -232,6 +232,21 @@ ${
   },
 };
 
+// This component handles side-effects within the Formik context
+const FormikEffectManager = () => {
+  const { values, setFieldValue } = useFormikContext<AllFormValues>();
+
+  useEffect(() => {
+    // Fix for hydration error: set date on client side, only once on mount
+    if ("date" in values && !values.date) {
+      setFieldValue("date", new Date().toISOString().substring(0, 10));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  return null; // This component renders nothing
+};
+
 // Generic props for the form component
 interface GenericTaskFormProps<T extends AllFormValues> {
   config: FormConfig<T>;
@@ -281,124 +296,48 @@ const GenericTaskForm = <T extends AllFormValues>({
       }}
       enableReinitialize
     >
-      {(formikProps) => {
-        useEffect(() => {
-          // Fix for hydration error: set date on client side
-          if ("date" in formikProps.values && !formikProps.values.date) {
-            formikProps.setFieldValue(
-              "date",
-              new Date().toISOString().substring(0, 10)
-            );
-          }
-        }, []); // Run only once on mount
-
-        return (
-          <Form className={css.form}>
-            <fieldset className={css.fieldset}>
-              <legend className={css.legend}>{config.legend}</legend>
-              {config.fields.map((field) => {
-                if (field.as === "buttongroup") {
-                  return (
-                    <div
-                      className={css.fieldContainer}
-                      key={field.name as string}
-                    >
-                      <div className={css.label}>{field.label}</div>
-                      <div className={css.toggleButtonContainer}>
-                        {field.options?.map((option) => (
-                          <button
-                            type="button"
-                            key={option.value}
-                            onClick={() => {
-                              formikProps.setFieldValue(
-                                field.name as string,
-                                option.value
-                              );
-                            }}
-                            className={
-                              formikProps.values[field.name] === option.value
-                                ? css.toggleButtonSelected
-                                : css.toggleButton
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (
-                  field.as === "custom_select" &&
-                  field.dataType === "clients"
-                ) {
-                  return (
-                    <div
-                      className={css.fieldContainer}
-                      key={field.name as string}
-                    >
-                      <label
-                        className={css.label}
-                        htmlFor={`${fieldId}-client-search`}
-                      >
-                        {field.label}
-                      </label>
-                      <div
-                        ref={selectRef}
-                        className={css.customSelectContainer}
-                      >
-                        <input
-                          type="text"
-                          id={`${fieldId}-client-search`}
-                          className={css.field}
-                          placeholder="Почніть вводити для пошуку..."
-                          value={clientSearch}
-                          onChange={(e) => {
-                            setClientSearch(e.target.value);
-                            setDropdownOpen(true);
+      {(formikProps) => (
+        <Form className={css.form}>
+          <FormikEffectManager />
+          <fieldset className={css.fieldset}>
+            <legend className={css.legend}>{config.legend}</legend>
+            {config.fields.map((field) => {
+              if (field.as === "buttongroup") {
+                return (
+                  <div
+                    className={css.fieldContainer}
+                    key={field.name as string}
+                  >
+                    <div className={css.label}>{field.label}</div>
+                    <div className={css.toggleButtonContainer}>
+                      {field.options?.map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          onClick={() => {
+                            formikProps.setFieldValue(
+                              field.name as string,
+                              option.value
+                            );
                           }}
-                          onFocus={() => setDropdownOpen(true)}
-                        />
-                        {isDropdownOpen && (
-                          <div className={css.customSelectDropdown}>
-                            {clientSearch.length < 2 ? (
-                              <div className={css.customSelectItemMuted}>
-                                Введіть 2 або більше символів для пошуку
-                              </div>
-                            ) : isClientsLoading ? (
-                              <div className={css.customSelectItemMuted}>
-                                Завантаження...
-                              </div>
-                            ) : clients && clients.length > 0 ? (
-                              clients.map((client) => (
-                                <div
-                                  key={client.id}
-                                  onClick={() => {
-                                    formikProps.setFieldValue(
-                                      field.name as string,
-                                      client.client
-                                    );
-                                    setClientSearch(client.client);
-                                    setDropdownOpen(false);
-                                  }}
-                                  className={css.customSelectItem}
-                                >
-                                  {client.client}
-                                </div>
-                              ))
-                            ) : (
-                              <div className={css.customSelectItemMuted}>
-                                Клієнтів не знайдено
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          className={
+                            formikProps.values[field.name] === option.value
+                              ? css.toggleButtonSelected
+                              : css.toggleButton
+                          }
+                        >
+                          {option.label}
+                        </button>
+                      ))}
                     </div>
-                  );
-                }
+                  </div>
+                );
+              }
 
+              if (
+                field.as === "custom_select" &&
+                field.dataType === "clients"
+              ) {
                 return (
                   <div
                     className={css.fieldContainer}
@@ -406,40 +345,105 @@ const GenericTaskForm = <T extends AllFormValues>({
                   >
                     <label
                       className={css.label}
-                      htmlFor={`${fieldId}-${field.name as string}`}
+                      htmlFor={`${fieldId}-client-search`}
                     >
                       {field.label}
                     </label>
-                    <Field
-                      className={css.field}
-                      id={`${fieldId}-${field.name as string}`}
-                      name={field.name}
-                      type={field.type || "text"}
-                      as={field.as}
-                      rows={field.rows}
-                    />
+                    <div
+                      ref={selectRef}
+                      className={css.customSelectContainer}
+                    >
+                      <input
+                        type="text"
+                        id={`${fieldId}-client-search`}
+                        className={css.field}
+                        placeholder="Почніть вводити для пошуку..."
+                        value={clientSearch}
+                        onChange={(e) => {
+                          setClientSearch(e.target.value);
+                          setDropdownOpen(true);
+                        }}
+                        onFocus={() => setDropdownOpen(true)}
+                      />
+                      {isDropdownOpen && (
+                        <div className={css.customSelectDropdown}>
+                          {clientSearch.length < 2 ? (
+                            <div className={css.customSelectItemMuted}>
+                              Введіть 2 або більше символів для пошуку
+                            </div>
+                          ) : isClientsLoading ? (
+                            <div className={css.customSelectItemMuted}>
+                              Завантаження...
+                            </div>
+                          ) : clients && clients.length > 0 ? (
+                            clients.map((client) => (
+                              <div
+                                key={client.id}
+                                onClick={() => {
+                                  formikProps.setFieldValue(
+                                    field.name as string,
+                                    client.client
+                                  );
+                                  setClientSearch(client.client);
+                                  setDropdownOpen(false);
+                                }}
+                                className={css.customSelectItem}
+                              >
+                                {client.client}
+                              </div>
+                            ))
+                          ) : (
+                            <div className={css.customSelectItemMuted}>
+                              Клієнтів не знайдено
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
-              })}
-            </fieldset>
-            <div className={css.btnContainer}>
-              <button className={css.submitButton} type="submit">
-                Ок
-              </button>
-              <button
-                onClick={() => {
-                  formikProps.resetForm();
-                  onCancel();
-                }}
-                className={css.cancelButton}
-                type="reset"
-              >
-                Відміна
-              </button>
-            </div>
-          </Form>
-        );
-      }}
+              }
+
+              return (
+                <div
+                  className={css.fieldContainer}
+                  key={field.name as string}
+                >
+                  <label
+                    className={css.label}
+                    htmlFor={`${fieldId}-${field.name as string}`}
+                  >
+                    {field.label}
+                  </label>
+                  <Field
+                    className={css.field}
+                    id={`${fieldId}-${field.name as string}`}
+                    name={field.name}
+                    type={field.type || "text"}
+                    as={field.as}
+                    rows={field.rows}
+                  />
+                </div>
+              );
+            })}
+          </fieldset>
+          <div className={css.btnContainer}>
+            <button className={css.submitButton} type="submit">
+              Ок
+            </button>
+            <button
+              onClick={() => {
+                formikProps.resetForm();
+                onCancel();
+              }}
+              className={css.cancelButton}
+              type="reset"
+            >
+              Відміна
+            </button>
+          </div>
+        </Form>
+      )}
     </Formik>
   );
 };

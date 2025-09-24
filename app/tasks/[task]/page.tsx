@@ -9,7 +9,7 @@ import { getTaskById, getTaskStatus } from "@/lib/api";
 type Props = {
   // Adhering to project's specific convention of props being Promises.
   params: Promise<{ task: string }>;
-  searchParams: Promise<{ [key:string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function DetailTask({ params, searchParams }: Props) {
@@ -24,6 +24,8 @@ export default async function DetailTask({ params, searchParams }: Props) {
   const fromLink = resolvedSearchParams.from_link === "1";
 
   console.log(task);
+  console.log(fromLink);
+  console.log(resolvedSearchParams);
   return (
     <>
       <TaskCart task={task} taskStatus={taskStatus} />

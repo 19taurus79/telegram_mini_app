@@ -1,4 +1,5 @@
 import BackBtn from "@/components/BackBtn/BackBtn";
+import CloseButton from "@/components/CloseBtn/CloseButton";
 import TaskCart from "@/components/TaskCart/TaskCart";
 import TasksBtn from "@/components/TasksBtn/TasksBtn";
 import { getTaskById, getTaskStatus } from "@/lib/api";
@@ -36,6 +37,7 @@ export default async function DetailTask({ params, searchParams }: Props) {
         by moving the logic into the BackBtn component itself.
       */}
       <BackBtn onBack={fromLink ? () => window.history.back() : undefined} />
+      <CloseButton />
     </>
   );
 }

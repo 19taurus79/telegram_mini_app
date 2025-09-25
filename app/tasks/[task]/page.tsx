@@ -29,6 +29,7 @@ export default async function DetailTask({ params, searchParams }: Props) {
   console.log(task);
   console.log(fromLink);
   console.log(resolvedSearchParams);
+  console.log("USER", user);
   return (
     <>
       <TaskCart task={task} taskStatus={taskStatus} />

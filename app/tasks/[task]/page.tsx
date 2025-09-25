@@ -2,8 +2,7 @@ import BackBtn from "@/components/BackBtn/BackBtn";
 // import CloseButton from "@/components/CloseBtn/CloseButton";
 import TaskCart from "@/components/TaskCart/TaskCart";
 import TasksBtn from "@/components/TasksBtn/TasksBtn";
-import { getTaskById, getTaskStatus, getUserByinitData } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
+import { getTaskById, getTaskStatus } from "@/lib/api";
 
 // The window object is not available in Server Components.
 // URL search parameters should be accessed via the `searchParams` prop.
@@ -18,10 +17,9 @@ export default async function DetailTask({ params, searchParams }: Props) {
   // Awaiting the promises as per project convention.
   const { task: taskId } = await params;
   const resolvedSearchParams = await searchParams;
-  const initData = await getInitData();
+
   const task = await getTaskById(taskId);
   const taskStatus = await getTaskStatus(task.id);
-  const user = await getUserByinitData(initData);
 
   // Logic to read URL parameters now uses the resolved `searchParams` object.
   const fromLink = resolvedSearchParams.from_link === "1";
@@ -32,7 +30,7 @@ export default async function DetailTask({ params, searchParams }: Props) {
   return (
     <>
       <TaskCart task={task} taskStatus={taskStatus} />
-      {user.is_admin && <TasksBtn taskId={task.id} taskStatus={taskStatus} />}
+      <TasksBtn taskId={task.id} taskStatus={taskStatus} />
       {/* 
         Passing a function that uses browser-only APIs (window) from a Server Component
         to a Client Component prop can cause issues. This might need to be refactored

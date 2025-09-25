@@ -1,43 +1,73 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useParams, useSearchParams } from "next/navigation";
+import { CSSProperties } from "react";
+import { FadeLoader } from "react-spinners";
+
 import BackBtn from "@/components/BackBtn/BackBtn";
-// import CloseButton from "@/components/CloseBtn/CloseButton";
 import TaskCart from "@/components/TaskCart/TaskCart";
 import TasksBtn from "@/components/TasksBtn/TasksBtn";
-import { getTaskById, getTaskStatus } from "@/lib/api";
+import { getTaskById, getTaskStatus, getUserByinitData } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
+// import { TaskGoogle, TaskStatus, User } from "@/types/types";
 
-// The window object is not available in Server Components.
-// URL search parameters should be accessed via the `searchParams` prop.
-
-type Props = {
-  // Adhering to project's specific convention of props being Promises.
-  params: Promise<{ task: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+const override: CSSProperties = {
+  display: "block",
+  margin: "0 auto",
 };
 
-export default async function DetailTask({ params, searchParams }: Props) {
-  // Awaiting the promises as per project convention.
-  const { task: taskId } = await params;
-  const resolvedSearchParams = await searchParams;
+// Helper function to fetch all data for the task detail view
+const fetchTaskDetail = async (taskId: string) => {
+  const initData = getInitData(); // Safe to call on client
 
-  const task = await getTaskById(taskId);
-  const taskStatus = await getTaskStatus(task.id);
+  // Fetch task, status, and user in parallel for efficiency
+  const taskPromise = getTaskById(taskId);
+  const taskStatusPromise = getTaskStatus(taskId); // Assuming getTaskStatus uses the same Google Task ID
+  const userPromise = initData
+    ? getUserByinitData(initData)
+    : Promise.resolve(null);
 
-  // Logic to read URL parameters now uses the resolved `searchParams` object.
-  const fromLink = resolvedSearchParams.from_link === "1";
+  const [task, taskStatus, user] = await Promise.all([
+    taskPromise,
+    taskStatusPromise,
+    userPromise,
+  ]);
 
-  console.log(task);
-  console.log(fromLink);
-  console.log(resolvedSearchParams);
+  return { task, taskStatus, user };
+};
+
+export default function DetailTask() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+
+  // Safely get taskId from params
+  const taskIdParam = params.task;
+  const taskId = Array.isArray(taskIdParam) ? taskIdParam[0] : taskIdParam;
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["taskDetail", taskId],
+    queryFn: () => fetchTaskDetail(taskId!),
+    enabled: !!taskId, // Only run the query if taskId is available
+  });
+
+  const fromLink = searchParams.get("from_link") === "1";
+
+  if (isLoading) {
+    return <FadeLoader color="#0ef18e" cssOverride={override} />;
+  }
+
+  if (isError || !data || !data.task || !data.taskStatus) {
+    return <div>Task not found.</div>;
+  }
+
+  const { task, taskStatus, user } = data;
+
   return (
     <>
       <TaskCart task={task} taskStatus={taskStatus} />
-      <TasksBtn taskId={task.id} taskStatus={taskStatus} />
-      {/* 
-        Passing a function that uses browser-only APIs (window) from a Server Component
-        to a Client Component prop can cause issues. This might need to be refactored
-        by moving the logic into the BackBtn component itself.
-      */}
+      {user?.is_admin && <TasksBtn taskId={task.id} taskStatus={taskStatus} />}
       <BackBtn isClose={fromLink} />
-      {/* <CloseButton /> */}
     </>
   );
 }

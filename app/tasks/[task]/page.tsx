@@ -1,4 +1,4 @@
-import DetailTask from "./detailTask";
+// import DetailTask from "./detailTask";
 
 type Props = {
   // Adhering to project's specific convention of props being Promises.
@@ -10,12 +10,12 @@ export default async function DetailTaskData({ params, searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
   return (
     <>
-      <DetailTask
+      {/* <DetailTask
         taskId={task}
         searchParams={resolvedSearchParams.from_link as string}
-      />
-      {/* <div>Task ID: {task}</div>
-      <div>Search params: {resolvedSearchParams.from_link}</div> */}
+      /> */}
+      <div>Task ID: {task}</div>
+      <div>Search params: {resolvedSearchParams.from_link}</div>
     </>
   );
 }

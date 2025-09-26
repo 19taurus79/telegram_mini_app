@@ -6,7 +6,7 @@ import TaskCart from "@/components/TaskCart/TaskCart";
 import TasksBtn from "@/components/TasksBtn/TasksBtn";
 import BackBtn from "@/components/BackBtn/BackBtn";
 // import { TaskGoogle, TaskStatus } from "@/types/types";
-import { RingLoader } from "react-spinners";
+import { FadeLoader } from "react-spinners";
 // import css from "./page.module.css";
 import { useUser } from "@/store/User";
 import { CSSProperties } from "react";
@@ -32,7 +32,7 @@ export default function TaskClientPage({ taskId, fromLink }: Props) {
   });
 
   if (isLoadingTask || isLoadingStatus || !task || !taskStatus) {
-    return <RingLoader color="#36d7b7" cssOverride={override} />;
+    return <FadeLoader color="#36d7b7" cssOverride={override} />;
   }
   console.log("User from store:", userData);
   return (

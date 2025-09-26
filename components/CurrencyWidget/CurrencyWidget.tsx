@@ -13,23 +13,23 @@ interface Rate {
 }
 
 const useCurrencySelection = () => {
-    const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
 
-    useEffect(() => {
-        const saved = localStorage.getItem("selectedCurrencies");
-        if (saved) {
-            setSelectedCurrencies(JSON.parse(saved));
-        } else {
-            setSelectedCurrencies(["USD", "EUR"]); // Default selection
-        }
-    }, []);
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedCurrencies");
+    if (saved) {
+      setSelectedCurrencies(JSON.parse(saved));
+    } else {
+      setSelectedCurrencies(["USD", "EUR"]); // Default selection
+    }
+  }, []);
 
-    const saveSelection = (selection: string[]) => {
-        localStorage.setItem("selectedCurrencies", JSON.stringify(selection));
-        setSelectedCurrencies(selection);
-    };
+  const saveSelection = (selection: string[]) => {
+    localStorage.setItem("selectedCurrencies", JSON.stringify(selection));
+    setSelectedCurrencies(selection);
+  };
 
-    return [selectedCurrencies, saveSelection] as const;
+  return [selectedCurrencies, saveSelection] as const;
 };
 
 const CurrencyWidget = () => {
@@ -61,41 +61,46 @@ const CurrencyWidget = () => {
     fetchRates();
   }, [fetchRates]);
 
-  const displayedRates = allRates.filter(rate => selectedCurrencies.includes(rate.cc));
+  const displayedRates = allRates.filter((rate) =>
+    selectedCurrencies.includes(rate.cc)
+  );
 
   return (
     <div className={css.widget}>
       <div className={css.header}>
         <h3>Курс НБУ на {date}</h3>
-        <button onClick={() => setIsModalOpen(true)} className={css.settingsButton}>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className={css.settingsButton}
+        >
           <Settings size={16} />
         </button>
       </div>
-      
+
       {loading && <ClipLoader size={20} color={"#fff"} />}
       {error && <div className={css.error}>{error}</div>}
-      
+
       {!loading && !error && (
         <div className={css.ratesContainer}>
-            {displayedRates.map(rate => (
-                <div className={css.rateItem} key={rate.cc}>
-                    <span className={css.currency}>{rate.cc}</span>
-                    <span className={css.value}>{rate.rate.toFixed(2)}</span>
-                </div>
-            ))}
+          {displayedRates.map((rate) => (
+            <div className={css.rateItem} key={rate.cc}>
+              <span className={css.currency}>{rate.cc}</span>
+              <span className={css.value}>{rate.rate.toFixed(2)}</span>
+            </div>
+          ))}
         </div>
       )}
 
       {isModalOpen && (
         <CurrencySelectionModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            allCurrencies={allRates}
-            selectedCurrencies={selectedCurrencies}
-            onSave={(selection) => {
-                saveSelection(selection);
-                setIsModalOpen(false);
-            }}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          allCurrencies={allRates}
+          selectedCurrencies={selectedCurrencies}
+          onSave={(selection) => {
+            saveSelection(selection);
+            setIsModalOpen(false);
+          }}
         />
       )}
     </div>

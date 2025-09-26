@@ -15,7 +15,7 @@ export default async function filteredOrders({ params }: Props) {
   const client = await params;
   const initData = await getInitData();
   console.log(client.client);
-  //   const remains = await getRemainsById({ productId: id.id });
+
   const contracts = await getContracts({ client: client.client, initData });
 
   return (

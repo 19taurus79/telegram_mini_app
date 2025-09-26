@@ -1,43 +1,36 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
-// import CloseButton from "@/components/CloseBtn/CloseButton";
-import TaskCart from "@/components/TaskCart/TaskCart";
-import TasksBtn from "@/components/TasksBtn/TasksBtn";
 import { getTaskById, getTaskStatus } from "@/lib/api";
-
-// The window object is not available in Server Components.
-// URL search parameters should be accessed via the `searchParams` prop.
+import TaskClientPage from "./TaskClientPage";
+import {
+  HydrationBoundary,
+  QueryClient,
+  dehydrate,
+} from "@tanstack/react-query";
 
 type Props = {
-  // Adhering to project's specific convention of props being Promises.
   params: Promise<{ task: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function DetailTask({ params, searchParams }: Props) {
-  // Awaiting the promises as per project convention.
+export default async function DetailTaskPage({ params, searchParams }: Props) {
   const { task: taskId } = await params;
   const resolvedSearchParams = await searchParams;
-
-  const task = await getTaskById(taskId);
-  const taskStatus = await getTaskStatus(task.id);
-
-  // Logic to read URL parameters now uses the resolved `searchParams` object.
   const fromLink = resolvedSearchParams.from_link === "1";
 
-  console.log(task);
-  console.log(fromLink);
-  console.log(resolvedSearchParams);
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ["task", taskId],
+    queryFn: () => getTaskById(taskId),
+  });
+
+  await queryClient.prefetchQuery({
+    queryKey: ["taskStatus", taskId],
+    queryFn: () => getTaskStatus(taskId),
+  });
+
   return (
-    <>
-      <TaskCart task={task} taskStatus={taskStatus} />
-      <TasksBtn taskId={task.id} taskStatus={taskStatus} />
-      {/* 
-        Passing a function that uses browser-only APIs (window) from a Server Component
-        to a Client Component prop can cause issues. This might need to be refactored
-        by moving the logic into the BackBtn component itself.
-      */}
-      <BackBtn isClose={fromLink} />
-      {/* <CloseButton /> */}
-    </>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <TaskClientPage taskId={taskId} fromLink={fromLink} />
+    </HydrationBoundary>
   );
 }

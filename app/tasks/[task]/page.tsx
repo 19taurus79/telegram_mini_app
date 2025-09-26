@@ -24,9 +24,6 @@ export default async function DetailTask({ params, searchParams }: Props) {
   // Logic to read URL parameters now uses the resolved `searchParams` object.
   const fromLink = resolvedSearchParams.from_link === "1";
 
-  console.log(task);
-  console.log(fromLink);
-  console.log(resolvedSearchParams);
   return (
     <>
       <TaskCart task={task} taskStatus={taskStatus} />

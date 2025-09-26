@@ -11,9 +11,10 @@ import {
   useCallback,
 } from "react";
 import { getUserByinitData } from "@/lib/api";
-import { User } from "@/types/types";
 import css from "./Header.module.css";
 import Link from "next/link";
+import { useInitData } from "@/store/InitData";
+import { useUser } from "@/store/User";
 
 function Header() {
   const { searchValue, setSearchValue } = useFilter();
@@ -22,8 +23,10 @@ function Header() {
   const pathname = usePathname(); // Get the current path
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userData, setUserData] = useState<User | null>(null);
-  const [initData, setInitData] = useState<string | null>(null);
+  const initData = useInitData((state) => state.initData);
+  const setInitData = useInitData((state) => state.setInitData);
+  const userData = useUser((state) => state.userData);
+  const setUserData = useUser((state) => state.setUserData);
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -68,7 +71,7 @@ function Header() {
     } else {
       setInitData("");
     }
-  }, []);
+  }, [setInitData]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -78,9 +81,9 @@ function Header() {
       }
     };
     fetchUser();
-  }, [initData]);
-  console.log("initData", initData);
-  console.log("userData", userData);
+  }, [initData, setUserData]);
+  console.log("initData from store:", initData);
+  console.log("userData from store:", userData);
 
   const handleInputChange = useDebouncedCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

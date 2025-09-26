@@ -14,7 +14,7 @@ export default async function filteredRemains({ params }: Props) {
   const id = await params;
   const initData = await getInitData();
   console.log(id);
-  const remains = await getRemainsById({ productId: id.id});
+  const remains = await getRemainsById({ productId: id.id, initData });
   const remainsSummary = remains.reduce(
     (acc, item) => {
       acc.buh += item.buh;

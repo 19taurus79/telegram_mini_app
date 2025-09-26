@@ -53,7 +53,7 @@ export default function ClientTasks() {
   const handleClick = (id: string) => {
     router.push(`/tasks/${id}`);
   };
-  
+  //TODO: в фильтр добавить значения для рендера
   const tasks = data ?? [];
 
   return (
@@ -76,7 +76,41 @@ export default function ClientTasks() {
           <span>{task.task_creator_name}</span>
         </li>
       ))}
-      
+      {/* {tasks
+        .filter((task) => {
+          return task;
+        })
+        .map((task) => (
+          <li
+            key={task.id}
+            className={clsx(css.listItemButton, {
+              [css.completed]: task.status === "completed",
+            })}
+            data-id={task.id}
+            onClick={() => handleClick(task.id)}
+          >
+            {task.title.split("_").map((part, index) => {
+              if (index === 0) {
+                return <h2 key={index}>{part}</h2>;
+              } else if (index === 1) {
+                return (
+                  <p style={{ color: "green" }} key={index}>
+                    {part}
+                  </p>
+                );
+              } else {
+                return null;
+              }
+            })}
+
+            {task.notes.split("\n").map((note, index) => (
+              <React.Fragment key={`${task.id}-${index}`}>
+                <p key={note}>{note}</p>
+              </React.Fragment>
+            ))}
+            {task.due && <p>Дата: {task.due.substring(0, 10)}</p>}
+          </li>
+        ))} */}
     </ul>
   );
 }

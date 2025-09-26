@@ -1,6 +1,6 @@
 import Modal from "@/components/Modal/Modal";
 import { getRemainsById } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
+// import { getInitData } from "@/lib/getInitData";
 
 // type Props = {
 //   params: Promise<{ slug: string[] }>;
@@ -10,9 +10,9 @@ type Props = {
 };
 async function filteredRemains({ params }: Props) {
   const id = await params;
-  const initData = getInitData();
+  // const initData = getInitData();
   console.log(id);
-  const remains = await getRemainsById({ productId: id.id, initData });
+  const remains = await getRemainsById({ productId: id.id });
   return (
     <Modal>
       <ul>

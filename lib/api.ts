@@ -1,3 +1,4 @@
+import { useInitData } from "@/store/InitData";
 import {
   AvRemains,
   Client,
@@ -23,14 +24,8 @@ import axios from "axios";
 
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
-
-export const getRemainsById = async ({
-  productId,
-  initData,
-}: {
-  productId: string;
-  initData: string;
-}) => {
+const initData = useInitData.getState().initData || "";
+export const getRemainsById = async ({ productId }: { productId: string }) => {
   const { data } = await axios.get<Remains[]>(`/data/remains/${productId}`, {
     headers: {
       "Content-Type": "application/json",
@@ -279,29 +274,6 @@ export const getAllProduct = async ({
   });
   return data;
 };
-
-// export const getEnoughRemains = async () => {
-//   const { data } = await axios.get("/data/products_for_all_orders", {
-//     headers: {
-//       "Content-Type": "application/json",
-//       "X-Telegram-Init-Data": initData,
-//     },
-//   });
-//   return data;
-// };
-
-// export const getMovedData = async ({ order }: { order: string }) => {
-//   const { data } = await axios.get(`/data/moved_products_for_order/${order}`, {
-//     headers: {
-//       "Content-Type": "application/json",
-//       "X-Telegram-Init-Data": initData,
-//     },
-//     params: {
-//       order: order,
-//     },
-//   });
-//   return data;
-// };
 
 export const getPartyData = async ({
   party,

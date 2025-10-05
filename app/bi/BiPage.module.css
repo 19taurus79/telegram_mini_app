@@ -1,0 +1,95 @@
+.pageContainer {
+  padding: 20px;
+}
+
+.topContainer {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px; /* Space between top and bottom sections */
+}
+
+.mainTableContainer {
+  flex-basis: 60%;
+  min-width: 0;
+}
+
+.detailsContainer {
+  flex-basis: 40%;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.th,
+.td {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+}
+
+.th {
+  background-color: var(--header-bg-color);
+}
+
+/* Widths for the main product tables */
+.productColumn {
+  width: 60%;
+}
+
+.qtyColumn {
+  width: 20%;
+}
+
+/* Widths for the details table */
+.divisionColumn {
+  width: 70%;
+}
+
+.availableColumn {
+  width: 30%;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.selectedRow {
+  background-color: var(--primary-color);
+  color: var(--secondary-text-color);
+  cursor: pointer;
+}
+
+.placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 150px; /* Give placeholder some height */
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--foreground);
+  background-color: var(--row-even-bg);
+  text-align: center;
+  padding: 10px;
+}

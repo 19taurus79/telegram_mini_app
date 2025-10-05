@@ -269,3 +269,37 @@ export type DateWithTimeZone = {
   dateTime: string;
   timeZone: string;
 };
+export type BiRemains = {
+  remains_total: [
+    {
+      product: string;
+      buh: number;
+      skl: number;
+    },
+  ];
+  remains_with_series: [
+    {
+      product: string;
+      nomenclature_series: string;
+      buh: number;
+      skl: number;
+    },
+  ];
+};
+export type BiOrdersItem = {
+  product: string;
+  qty_needed: number;
+  qty_remain: number;
+  qty_missing: number;
+  available_stock: [
+    {
+      division: string;
+      available: number;
+    },
+  ];
+};
+
+export type BiOrders = {
+  missing_but_available: BiOrdersItem[];
+  missing_and_unavailable: BiOrdersItem[];
+};

@@ -18,6 +18,8 @@ import {
   InnerEvent,
   TaskInner,
   TaskGoogle,
+  BiRemains,
+  BiOrders,
 } from "@/types/types";
 import axios from "axios";
 
@@ -564,5 +566,15 @@ export const createTask = async (
       },
     }
   );
+  return data;
+};
+
+export const getRemainsForBi = async () => {
+  const { data } = await axios.get<BiRemains>("/api/remains");
+  return data;
+};
+
+export const dataForOrderByProduct = async () => {
+  const { data } = await axios.get<BiOrders>("/api/combined");
   return data;
 };

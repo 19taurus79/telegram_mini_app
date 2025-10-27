@@ -1,0 +1,55 @@
+.tableWrapper {
+  width: 100%;
+}
+
+.title {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.th,
+.td {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+}
+
+.th {
+  background-color: var(--header-bg-color);
+}
+
+.productColumn {
+  width: 60%;
+}
+
+.qtyColumn {
+  width: 20%;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.selectedRow {
+  background-color: var(--primary-color);
+  color: var(--secondary-text-color);
+  cursor: pointer;
+}

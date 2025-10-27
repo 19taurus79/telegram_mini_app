@@ -291,12 +291,11 @@ export type BiOrdersItem = {
   qty_needed: number;
   qty_remain: number;
   qty_missing: number;
-  available_stock: [
-    {
-      division: string;
-      available: number;
-    },
-  ];
+  available_stock: {
+    division: string;
+    warehouse: string;
+    available: number;
+  }[];
 };
 
 export type BiOrders = {

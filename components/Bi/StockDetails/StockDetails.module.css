@@ -1,0 +1,56 @@
+.detailsContainer {
+  flex-basis: 40%;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.th,
+.td {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+}
+
+.th {
+  background-color: var(--header-bg-color);
+}
+
+.divisionColumn {
+  width: 70%;
+}
+
+.availableColumn {
+  width: 30%;
+}
+
+.placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 150px; /* Give placeholder some height */
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--foreground);
+  background-color: var(--row-even-bg);
+  text-align: center;
+  padding: 10px;
+}

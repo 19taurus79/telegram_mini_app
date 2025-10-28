@@ -296,6 +296,15 @@ export type BiOrdersItem = {
     warehouse: string;
     available: number;
   }[];
+  orders: {
+    manager: string;
+    client: string;
+    contract_supplement: string;
+    period: string;
+    document_status: string;
+    product: string;
+    qty: number;
+  }[];
 };
 
 export type BiOrders = {

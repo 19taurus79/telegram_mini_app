@@ -1,4 +1,4 @@
-import styles from "./ProductTable.module.css";
+import css from "./ProductTable.module.css";
 import { BiOrdersItem } from "@/types/types";
 
 // --- КОМПОНЕНТ ТАБЛИЦІ (REUSABLE) ---
@@ -17,18 +17,16 @@ const ProductTable = ({
   onRowClick,
   selectedProduct,
 }: ProductTableProps) => (
-  <div className={styles.tableWrapper}>
-    <h2 className={styles.title}>{title}</h2>
+  <div className={css.tableWrapper}>
+    <h2 className={css.title}>{title}</h2>
     {data && data.length > 0 ? ( // Перевірка, чи є дані для відображення
-      <table className={styles.table}>
+      <table className={css.table}>
         <thead>
           <tr>
-            <th className={`${styles.th} ${styles.productColumn}`}>
-              Номенклатура
-            </th>
-            <th className={`${styles.th} ${styles.qtyColumn}`}>Залишки</th>
-            <th className={`${styles.th} ${styles.qtyColumn}`}>Потрібно</th>
-            <th className={`${styles.th} ${styles.qtyColumn}`}>Не вистачає</th>
+            <th className={`${css.th} ${css.productColumn}`}>Номенклатура</th>
+            <th className={`${css.th} ${css.qtyColumn}`}>Залишки</th>
+            <th className={`${css.th} ${css.qtyColumn}`}>Потрібно</th>
+            <th className={`${css.th} ${css.qtyColumn}`}>Не вистачає</th>
           </tr>
         </thead>
         <tbody>
@@ -42,21 +40,21 @@ const ProductTable = ({
                 className={
                   onRowClick // Визначення стилю рядка: підсвічений, якщо обраний, або звичайний
                     ? selectedProduct?.product === order.product
-                      ? styles.selectedRow
-                      : styles.row
+                      ? css.selectedRow
+                      : css.row
                     : ""
                 }
               >
-                <td className={`${styles.td} ${styles.productColumn}`}>
+                <td className={`${css.td} ${css.productColumn}`}>
                   {order.product}
                 </td>
-                <td className={`${styles.td} ${styles.qtyColumn}`}>
+                <td className={`${css.td} ${css.qtyColumn}`}>
                   {order.qty_remain}
                 </td>
-                <td className={`${styles.td} ${styles.qtyColumn}`}>
+                <td className={`${css.td} ${css.qtyColumn}`}>
                   {order.qty_needed}
                 </td>
-                <td className={`${styles.td} ${styles.qtyColumn}`}>
+                <td className={`${css.td} ${css.qtyColumn}`}>
                   {order.qty_missing}
                 </td>
               </tr>

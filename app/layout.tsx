@@ -8,6 +8,7 @@ import { ScrollToTopButton } from "@/components/ScrollToTopButton/ScrollToTopBut
 import { DeliveryProvider } from "@/context/DeliveryContext";
 import Script from "next/script";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "react-hot-toast"; // Import Toaster
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -49,6 +50,7 @@ export default function RootLayout({
             </DeliveryProvider>
           </FilterProvider>
           <ReactQueryDevtools initialIsOpen={false} />
+          <Toaster /> {/* Add Toaster component here */}
         </TanStackProvider>
       </body>
     </html>

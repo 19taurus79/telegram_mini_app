@@ -35,3 +35,7 @@
 .row:hover {
   background-color: var(--hover-bg-color);
 }
+
+.copyableRow {
+  cursor: pointer;
+}

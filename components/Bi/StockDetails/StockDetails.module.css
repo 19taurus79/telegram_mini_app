@@ -54,3 +54,11 @@
   text-align: center;
   padding: 10px;
 }
+
+.copyableRow {
+  cursor: pointer;
+}
+
+.copyableRow:hover {
+  background-color: var(--hover-bg-color);
+}

@@ -32,10 +32,10 @@ const RecommendationsTable = ({
             <tr
               key={`${rec.product}-${rec.take_from_division}-${rec.take_from_warehouse}-${index}`}
             >
-              <td className={styles.td}>{rec.product}</td>
-              <td className={styles.td}>{rec.take_from_division}</td>
-              <td className={styles.td}>{rec.take_from_warehouse}</td>
-              <td className={styles.td}>{rec.qty_to_take}</td>
+              <td className={styles.td} title={rec.product}>{rec.product}</td>
+              <td className={styles.td} title={rec.take_from_division}>{rec.take_from_division}</td>
+              <td className={styles.td} title={rec.take_from_warehouse}>{rec.take_from_warehouse}</td>
+              <td className={styles.td} title={rec.qty_to_take.toString()}>{rec.qty_to_take}</td>
             </tr>
           ))}
         </tbody>

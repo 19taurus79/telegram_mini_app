@@ -45,12 +45,12 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 className={`${css.row} ${css.copyableRow}`}
                 onClick={() => handleCopy(order.contract_supplement, order.qty)}
               >
-                <td className={css.td}>{order.manager}</td>
-                <td className={css.td}>{order.client}</td>
-                <td className={css.td}>{order.contract_supplement}</td>
-                <td className={css.td}>{order.period}</td>
-                <td className={css.td}>{order.document_status}</td>
-                <td className={css.td}>{order.qty}</td>
+                <td className={css.td} title={order.manager}>{order.manager}</td>
+                <td className={css.td} title={order.client}>{order.client}</td>
+                <td className={css.td} title={order.contract_supplement}>{order.contract_supplement}</td>
+                <td className={css.td} title={order.period}>{order.period}</td>
+                <td className={css.td} title={order.document_status}>{order.document_status}</td>
+                <td className={css.td} title={order.qty.toString()}>{order.qty}</td>
               </tr>
             ))}
           </tbody>

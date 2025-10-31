@@ -43,13 +43,13 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
                   onClick={() => handleCopy(stock.warehouse)}
                   className={css.copyableRow}
                 >
-                  <td className={`${css.td} ${css.divisionColumn}`}>
+                  <td className={`${css.td} ${css.divisionColumn}`} title={stock.division}>
                     {stock.division}
                   </td>
-                  <td className={`${css.td} ${css.divisionColumn}`}>
+                  <td className={`${css.td} ${css.divisionColumn}`} title={stock.warehouse}>
                     {stock.warehouse}
                   </td>
-                  <td className={`${css.td} ${css.availableColumn}`}>
+                  <td className={`${css.td} ${css.availableColumn}`} title={stock.available.toString()}>
                     {stock.available}
                   </td>
                 </tr>

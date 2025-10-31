@@ -288,6 +288,7 @@ export type BiRemains = {
 };
 export type BiOrdersItem = {
   product: string;
+  line_of_business: string;
   qty_needed: number;
   qty_remain: number;
   qty_missing: number;

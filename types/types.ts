@@ -312,3 +312,39 @@ export type BiOrders = {
   missing_but_available: BiOrdersItem[];
   missing_and_unavailable: BiOrdersItem[];
 };
+
+export interface MovedItem {
+  'Заявка на відвантаження': string;
+  Номенклатура: string;
+  Заказано: number;
+  Примечание_заказано: string;
+  'Партія номенклатури': string;
+  Перемещено: number;
+  'Вид діяльності': string;
+  'Ознака партії': string;
+  'Сезон закупівлі': number;
+  Товар: string;
+  index: number;
+}
+
+export interface NoteItem {
+  Договор: string;
+  Количество_в_примечании: number;
+  index: number;
+}
+
+export interface Leftover {
+  product: string;
+  note_text: string;
+  total_ordered: number;
+  total_moved: number;
+  current_moved: MovedItem[];
+  current_notes: NoteItem[];
+}
+
+export interface MatchingData {
+  session_id: string;
+  leftovers: {
+    [key: string]: Leftover;
+  };
+}

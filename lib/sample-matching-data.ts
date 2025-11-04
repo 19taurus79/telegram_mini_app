@@ -1,7 +1,7 @@
 import { MatchingData } from "@/types/types";
 
 export const sampleMatchingData: MatchingData = {
-  session_id: "f7e8e309-52b4-43d7-8f82-5e2b2ba4b83e",
+  session_id: "fab007c4-24a0-422f-b574-02745969309a",
   leftovers: {
     "ТЕ-00290707": {
       product: "Макксалія інс. укр. (50К) власне виробництво 2024",

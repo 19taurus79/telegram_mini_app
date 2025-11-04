@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, DragEvent } from "react";
 import axios from "axios";
 import styles from "./FileUploadForm.module.css";
+import toast from 'react-hot-toast';
 
 const fileInputs = [
   { id: "av_stock_file", label: "Доступность по подразделениям" },
@@ -18,7 +19,7 @@ const fileInputs = [
 export default function FileUploadForm() {
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+  const [dragOver, setDragOver] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files: inputFiles } = e.target;
@@ -30,10 +31,33 @@ export default function FileUploadForm() {
     }
   };
 
+  const handleDrag = (e: DragEvent<HTMLLabelElement>, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragOver(id);
+    } else if (e.type === "dragleave") {
+      setDragOver(null);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLLabelElement>, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(null);
+    const { files: droppedFiles } = e.dataTransfer;
+    if (droppedFiles && droppedFiles.length > 0) {
+      setFiles((prevFiles) => ({
+        ...prevFiles,
+        [id]: droppedFiles[0],
+      }));
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage("Загрузка...");
+    toast.loading("Загрузка...");
 
     const formData = new FormData();
     let fileCount = 0;
@@ -45,25 +69,25 @@ export default function FileUploadForm() {
     }
 
     if (fileCount === 0) {
-      setMessage("Пожалуйста, выберите хотя бы один файл.");
+      toast.dismiss();
+      toast.error("Пожалуйста, выберите хотя бы один файл.");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      // ЗАГЛУШКА: Замените '/api/upload' на ваш реальный эндпоинт
       const response = await axios.post("/upload-data", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
+      toast.dismiss();
       console.log("Server response:", response.data);
-      setMessage("Файлы успешно загружены!");
+      toast.success("Файлы успешно загружены!");
     } catch (error) {
+      toast.dismiss();
       console.error("Ошибка при загрузке файлов:", error);
-      setMessage(
-        "Произошла ошибка при загрузке. Посмотрите в консоль для деталей."
-      );
+      toast.error("Произошла ошибка при загрузке. Посмотрите в консоль для деталей.");
     } finally {
       setIsSubmitting(false);
     }
@@ -72,9 +96,20 @@ export default function FileUploadForm() {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       {fileInputs.map(({ id, label }) => (
-        <div key={id} className={styles.formGroup}>
-          <label htmlFor={id} className={styles.label}>
-            {label}
+        <div key={id} className={styles.fileInputContainer}>
+          <label 
+            htmlFor={id} 
+            className={`${styles.dropzone} ${dragOver === id ? styles.dragover : ''}`}
+            onDragEnter={(e) => handleDrag(e, id)}
+            onDragLeave={(e) => handleDrag(e, id)}
+            onDragOver={(e) => handleDrag(e, id)}
+            onDrop={(e) => handleDrop(e, id)}
+          >
+            {files[id] ? (
+              <span className={styles.fileName}>{files[id]?.name}</span>
+            ) : (
+              <span>{label}</span>
+            )}
           </label>
           <input
             type="file"
@@ -88,7 +123,6 @@ export default function FileUploadForm() {
       <button type="submit" disabled={isSubmitting} className={styles.button}>
         {isSubmitting ? "Загрузка..." : "Отправить"}
       </button>
-      {message && <p className={styles.message}>{message}</p>}
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { MatchingData, MovedItem, NoteItem } from '@/types/types';
 import { useState, useMemo } from 'react';
 import styles from './MatchingUI.module.css';
 import axios from 'axios'; // Import axios
+import toast from 'react-hot-toast'; // Import toast
 
 interface MatchingUIProps {
   data: MatchingData;
@@ -56,7 +57,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data }) => {
   const handleSubmit = async (leftoverId: string) => {
     const currentMatch = matches[leftoverId];
     if (currentMatch.movedIndex === null || currentMatch.noteIndices.length === 0) {
-      alert('Пожалуйста, выберите перемещение и хотя бы один заказ для сопоставления.');
+      toast.error('Пожалуйста, выберите перемещение и хотя бы один заказ для сопоставления.');
       return;
     }
 
@@ -70,11 +71,11 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data }) => {
     try {
       const response = await axios.post(`/process/${session_id}/manual_match`, payload);
       console.log('Сопоставление успешно отправлено:', response.data);
-      alert('Сопоставление успешно отправлено!');
+      toast.success('Сопоставление успешно отправлено!');
       setHiddenLeftovers(prev => [...prev, leftoverId]);
     } catch (error) {
       console.error('Ошибка при отправке сопоставления:', error);
-      alert('Ошибка при отправке сопоставления. Пожалуйста, попробуйте еще раз.');
+      toast.error('Ошибка при отправке сопоставления. Пожалуйста, попробуйте еще раз.');
     }
   };
 

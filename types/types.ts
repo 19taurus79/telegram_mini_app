@@ -303,6 +303,7 @@ export type BiOrdersItem = {
     contract_supplement: string;
     period: string;
     document_status: string;
+    delivery_status: string;
     product: string;
     qty: number;
   }[];

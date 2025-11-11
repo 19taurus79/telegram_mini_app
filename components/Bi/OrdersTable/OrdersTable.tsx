@@ -31,11 +31,12 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
           <thead>
             <tr>
               <th className={css.th}>Менеджер</th>
-              <th className={css.th}>Клиент</th>
-              <th className={css.th}>Договор</th>
-              <th className={css.th}>Период</th>
+              <th className={css.th}>Контрагент</th>
+              <th className={css.th}>Доповнення</th>
+              <th className={css.th}>Період</th>
               <th className={css.th}>Статус</th>
-              <th className={css.th}>Кол-во</th>
+              <th className={css.th}>До постачання</th>
+              <th className={css.th}>Кількість</th>
             </tr>
           </thead>
           <tbody>
@@ -50,6 +51,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 <td className={css.td} title={order.contract_supplement}>{order.contract_supplement}</td>
                 <td className={css.td} title={order.period}>{order.period}</td>
                 <td className={css.td} title={order.document_status}>{order.document_status}</td>
+                <td className={css.td} title={order.delivery_status}>{order.delivery_status}</td>
                 <td className={css.td} title={order.qty.toString()}>{order.qty}</td>
               </tr>
             ))}

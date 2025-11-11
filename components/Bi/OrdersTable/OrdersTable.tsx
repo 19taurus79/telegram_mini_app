@@ -25,17 +25,19 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
 
   return (
     <div className={css.tableWrapper}>
-      <h2 className={css.title}>Детализация по заказам</h2>
+      <h2 className={css.title}>Деталізація по заказах</h2>
       {orders && orders.length > 0 ? (
         <table className={css.table}>
           <thead>
             <tr>
               <th className={css.th}>Менеджер</th>
-              <th className={css.th}>Клиент</th>
-              <th className={css.th}>Договор</th>
-              <th className={css.th}>Период</th>
+              <th className={css.th}>Контрагент</th>
+              <th className={css.th}>Доповнення</th>
+              <th className={css.th}>Період</th>
               <th className={css.th}>Статус</th>
-              <th className={css.th}>Кол-во</th>
+              <th className={css.th}>До постачання</th>
+              <th className={css.th}>Кількість</th>
+              <th className={css.th}>Переміщено</th>
             </tr>
           </thead>
           <tbody>
@@ -50,13 +52,15 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 <td className={css.td} title={order.contract_supplement}>{order.contract_supplement}</td>
                 <td className={css.td} title={order.period}>{order.period}</td>
                 <td className={css.td} title={order.document_status}>{order.document_status}</td>
+                <td className={css.td} title={order.delivery_status}>{order.delivery_status}</td>
                 <td className={css.td} title={order.qty.toString()}>{order.qty}</td>
+                <td className={css.td} title={order.moved_qty.toString()}>{order.moved_qty}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>Нет данных по заказам</p>
+        <p>Данні відсутні.</p>
       )}
     </div>
   );

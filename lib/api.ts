@@ -20,6 +20,7 @@ import {
   TaskGoogle,
   BiRemains,
   BiOrders,
+  FiltersState, // Импортируем новый тип
 } from "@/types/types";
 import axios from "axios";
 
@@ -574,7 +575,24 @@ export const getRemainsForBi = async () => {
   return data;
 };
 
-export const dataForOrderByProduct = async () => {
-  const { data } = await axios.get<BiOrders>("/api/combined");
+export const dataForOrderByProduct = async (filters?: FiltersState) => {
+  const params = new URLSearchParams();
+
+  if (filters?.document_status && filters.document_status.length > 0) {
+    filters.document_status.forEach((status: string) => {
+      params.append("document_status", status);
+    });
+  }
+
+  if (filters?.delivery_status && filters.delivery_status.length > 0) {
+    filters.delivery_status.forEach((status: string) => {
+      params.append("order_status", status);
+    });
+  }
+
+  const { data } = await axios.get<BiOrders>("/api/combined", {
+    params,
+  });
+
   return data;
 };

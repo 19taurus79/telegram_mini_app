@@ -1,43 +1,25 @@
 // Вказує, що цей файл є Клієнтським Компонентом в Next.js.
-// Це необхідно, оскільки ми використовуємо хуки React (useState, useMemo, useQuery), які працюють лише на клієнті.
 "use client";
 
-// Імпорт хуків `useState` та `useMemo` з бібліотеки React.
-// `useState` для створення та керування станом.
-// `useMemo` для мемоізації (кешування) результатів обчислень.
-import { useState, useMemo } from "react";
-
-// Імпорт функції для отримання даних з нашого API.
+import { useState, useMemo, useEffect, useRef } from "react";
 import { dataForOrderByProduct } from "@/lib/api";
-
-// Імпорт хука `useQuery` з бібліотеки TanStack Query (React Query).
-// Використовується для запитів даних, їх кешування, синхронізації та оновлення.
-import { useQuery } from "@tanstack/react-query";
-
-// Імпорт модульних стилів для цього компонента.
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import styles from "./BiPage.module.css";
-
-// Імпорт типів `BiOrders` та `BiOrdersItem` для типізації даних, що надходять з API.
-import { BiOrders, BiOrdersItem } from "@/types/types";
-
-// Імпорт дочірніх компонентів, на які ми розділили сторінку.
+import { BiOrders, BiOrdersItem, FiltersState } from "@/types/types";
 import ProductTable from "@/components/Bi/ProductTable/ProductTable";
 import StockDetails from "@/components/Bi/StockDetails/StockDetails";
 import RecommendationsTable from "@/components/Bi/RecommendationsTable/RecommendationsTable";
 import OrdersTable from "@/components/Bi/OrdersTable/OrdersTable";
+import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
 
-// Визначення інтерфейсу для об'єкта рекомендації.
-// Це допомагає забезпечити однакову структуру для кожної рекомендації.
 interface Recommendation {
-  product: string; // Назва продукту
-  take_from_division: string; // Підрозділ, звідки рекомендується взяти товар
-  take_from_warehouse: string; // Конкретний склад, звідки брати
-  qty_to_take: number; // Кількість товару для переміщення
+  product: string;
+  take_from_division: string;
+  take_from_warehouse: string;
+  qty_to_take: number;
 }
 
-// --- ПРІОРИТЕТНІ ПІДРОЗДІЛИ ---
-// Масив, що визначає пріоритет підрозділів при формуванні рекомендацій.
-// Товари будуть братися в першу чергу зі складів цих підрозділів у вказаному порядку.
 const priorityDivisions = [
   "Центральний офіс",
   "Київський підрозділ",
@@ -47,45 +29,86 @@ const priorityDivisions = [
   "Запорізький підрозділ",
 ];
 
-// --- ГОЛОВНИЙ КОМПОНЕНТ СТОРІНКИ ---
 export default function BiPage() {
-  // Створення стану `selectedProduct` для зберігання інформації про продукт,
-  // який користувач вибрав у таблиці. Початкове значення - `null`.
-  // `setSelectedProduct` - функція для оновлення цього стану.
   const [selectedProduct, setSelectedProduct] = useState<BiOrdersItem | null>(
     null
   );
 
-  // Виконання запиту до API за допомогою `useQuery`.
-  const { data, isLoading, error } = useQuery<BiOrders, Error>({
-    // `queryKey`: унікальний ключ для цього запиту. React Query використовує його для кешування.
-    queryKey: ["biOrders"],
-    // `queryFn`: асинхронна функція, яка виконує запит і повертає дані.
-    queryFn: dataForOrderByProduct,
+  const [filters, setFilters] = useState<FiltersState>({
+    document_status: [],
+    delivery_status: [],
   });
 
-  // Обчислення рекомендацій за допомогою хука `useMemo`.
-  // Код всередині `useMemo` буде виконуватися повторно тільки тоді, коли зміниться залежність `[data]`.
-  // Це запобігає зайвим обчисленням при кожному рендері компонента.
-  const recommendations = useMemo(() => {
-    const newRecommendations: Recommendation[] = []; // Ініціалізація масиву для зберігання рекомендацій.
+  const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
 
-    // Якщо дані ще не завантажені або відсутній масив `missing_but_available`, повертаємо порожній масив.
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+  }: UseQueryResult<BiOrders, Error> = useQuery({
+    queryKey: ["biOrders", filters],
+    queryFn: () => dataForOrderByProduct(filters),
+    placeholderData: (previousData) => previousData,
+  });
+
+  const toastIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isFetching && !isLoading) {
+      if (toastIdRef.current === null) {
+        toastIdRef.current = toast.loading("Оновлення даних...");
+      }
+    } else {
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
+    }
+  }, [isFetching, isLoading]);
+
+  const filterOptions = useMemo(() => {
+    if (!data) {
+      return { document_status: [], delivery_status: [] };
+    }
+
+    const docStatuses = new Set<string>();
+    const deliveryStatuses = new Set<string>();
+
+    const allProducts = [
+      ...(data.missing_but_available || []),
+      ...(data.missing_and_unavailable || []),
+    ];
+
+    allProducts.forEach((product) => {
+      product.orders.forEach(
+        (order: { document_status: string; delivery_status: string }) => {
+          docStatuses.add(order.document_status);
+          deliveryStatuses.add(order.delivery_status);
+        }
+      );
+    });
+
+    return {
+      document_status: Array.from(docStatuses).sort(),
+      delivery_status: Array.from(deliveryStatuses).sort(),
+    };
+  }, [data]);
+
+  const recommendations = useMemo(() => {
+    const newRecommendations: Recommendation[] = [];
     if (!data?.missing_but_available) {
       return newRecommendations;
     }
 
-    // Ітерація по кожному продукту, якого не вистачає, але він є на інших складах.
     for (const product of data.missing_but_available) {
-      let needed = product.qty_missing; // Кількість, яку потрібно знайти.
-      if (needed <= 0) continue; // Якщо потреба нульова або від'ємна, переходимо до наступного продукту.
+      let needed = product.qty_missing;
+      if (needed <= 0) continue;
 
-      // Створення `Set` з пріоритетних підрозділів для швидкої перевірки (O(1) замість O(n) для indexOf).
       const prioritySet = new Set(priorityDivisions);
-      const priorityStock: typeof product.available_stock = []; // Масив для складів з пріоритетних підрозділів.
-      const otherStock: typeof product.available_stock = []; // Масив для всіх інших складів.
+      const priorityStock: typeof product.available_stock = [];
+      const otherStock: typeof product.available_stock = [];
 
-      // Розподіл наявних залишків на пріоритетні та інші.
       for (const stock of product.available_stock) {
         if (prioritySet.has(stock.division)) {
           priorityStock.push(stock);
@@ -94,39 +117,39 @@ export default function BiPage() {
         }
       }
 
-      // Сортування пріоритетних складів згідно з порядком у масиві `priorityDivisions`.
       priorityStock.sort(
-        (a, b) =>
+        (a: { division: string }, b: { division: string }) =>
           priorityDivisions.indexOf(a.division) -
           priorityDivisions.indexOf(b.division)
       );
 
-      // 1. Перший прохід: ітерація по пріоритетних складах.
       for (const stock of priorityStock) {
-        if (needed <= 0) break; // Якщо потреба повністю закрита, виходимо з циклу.
+        if (needed <= 0) break;
         if (stock.available > 0) {
-          const canTake = Math.min(needed, stock.available); // Визначаємо, скільки можна взяти (не більше, ніж є на складі, і не більше, ніж потрібно).
+          const canTake = Math.min(needed, stock.available);
           newRecommendations.push({
             product: product.product,
             take_from_division: stock.division,
             take_from_warehouse: stock.warehouse,
             qty_to_take: canTake,
           });
-          needed -= canTake; // Зменшуємо кількість, яку ще потрібно знайти.
+          needed -= canTake;
         }
       }
 
-      // 2. Другий прохід: якщо після пріоритетних складів потреба ще не закрита.
       if (needed > 0) {
-        // Сортуємо решту складів за алфавітом (спочатку за підрозділом, потім за складом).
-        otherStock.sort((a, b) => {
-          if (a.division !== b.division) {
-            return a.division.localeCompare(b.division);
+        otherStock.sort(
+          (
+            a: { division: string; warehouse: string },
+            b: { division: string; warehouse: string }
+          ) => {
+            if (a.division !== b.division) {
+              return a.division.localeCompare(b.division);
+            }
+            return a.warehouse.localeCompare(b.warehouse);
           }
-          return a.warehouse.localeCompare(b.warehouse);
-        });
+        );
 
-        // Ітерація по відсортованих інших складах.
         for (const stock of otherStock) {
           if (needed <= 0) break;
           if (stock.available > 0) {
@@ -142,37 +165,35 @@ export default function BiPage() {
         }
       }
     }
-    return newRecommendations; // Повертаємо фінальний масив рекомендацій.
+    return newRecommendations;
   }, [data]);
 
-  // Якщо дані ще завантажуються, показуємо повідомлення про завантаження.
-  if (isLoading) {
-    return <p>Loading...</p>;
-  }
+  const handleApplyFilters = (newFilters: FiltersState) => {
+    setSelectedProduct(null);
+    setFilters(newFilters);
+  };
 
-  // Якщо під час завантаження сталася помилка, показуємо повідомлення про помилку.
-  if (error) {
-    return <p>Error: {error.message}</p>;
-  }
+  const renderContent = () => {
+    if (isLoading) {
+      return <p>Loading...</p>;
+    }
 
-  // Основна JSX-розмітка сторінки.
-  return (
-    <div className={styles.pageContainer}>
-      <h1>BI Data</h1>
-      {/* Рендеримо контент тільки тоді, коли дані (`data`) успішно завантажені. */}
-      {data && (
+    if (error) {
+      return <p>Error: {error.message}</p>;
+    }
+
+    if (data) {
+      return (
         <>
           <div className={styles.topContainer}>
             <div className={styles.mainTableContainer}>
-              {/* Перша таблиця: товари, яких не вистачає, але вони є на інших складах. */}
               <ProductTable
                 title="Потрібно замовити (є на складах)"
                 data={data.missing_but_available}
-                onRowClick={setSelectedProduct} // Передаємо функцію для оновлення стану при кліку на рядок.
-                selectedProduct={selectedProduct} // Передаємо вибраний продукт для підсвічування.
+                onRowClick={setSelectedProduct}
+                selectedProduct={selectedProduct}
               />
             </div>
-            {/* Компонент, що показує деталізацію по складах для вибраного продукту. */}
             <div className={styles.stockDetailsContainer}>
               <StockDetails selectedProduct={selectedProduct} />
             </div>
@@ -184,20 +205,41 @@ export default function BiPage() {
           </div>
 
           <div className={styles.bottomContainer}>
-            {/* Друга таблиця: товари, яких не вистачає і їх немає на жодному складі. */}
             <ProductTable
               title="Не вистачає під заявки (немає на складах)"
               data={data.missing_and_unavailable}
-              // `onRowClick` не передається, тому рядки в цій таблиці не будуть клікабельними.
             />
           </div>
 
           <div className={styles.bottomContainer}>
-            {/* Третя таблиця: згенеровані рекомендації по переміщенню товарів. */}
             <RecommendationsTable recommendations={recommendations} />
           </div>
         </>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className={styles.pageContainer}>
+
+      <button
+        onClick={() => setIsFilterPanelVisible(!isFilterPanelVisible)}
+        className={styles.toggleFilterButton}
+      >
+        {isFilterPanelVisible ? "Сховати фільтри" : "Показати фільтри"}
+      </button>
+
+      {isFilterPanelVisible && (
+        <FilterPanel
+          options={filterOptions}
+          onApply={handleApplyFilters}
+          isSubmitting={isFetching}
+          appliedFilters={filters} // Передаємо поточні фільтри
+        />
       )}
+      {renderContent()}
     </div>
   );
 }

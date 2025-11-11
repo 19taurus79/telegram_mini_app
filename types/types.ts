@@ -349,3 +349,8 @@ export interface MatchingData {
     [key: string]: Leftover;
   };
 }
+
+export interface FiltersState {
+  document_status: string[];
+  delivery_status: string[];
+}

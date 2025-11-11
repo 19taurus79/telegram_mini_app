@@ -1,0 +1,80 @@
+.filterPanel {
+  padding: 15px;
+  background-color: var(--header-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin-bottom: 15px;
+  color: var(--foreground);
+}
+
+.wrapper {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterGroup h4 {
+  margin-bottom: 5px;
+  color: var(--foreground);
+  font-weight: bold;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.checkboxLabel input {
+  cursor: pointer;
+}
+
+/* Контейнер для кнопок */
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: auto; /* Притискає кнопки до правого краю */
+  align-self: flex-end; /* Вирівнює кнопки по нижньому краю */
+}
+
+.applyButton,
+.clearButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.applyButton {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.applyButton:hover {
+  background-color: var(--primary-hover-color);
+}
+
+.clearButton {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border-color);
+}
+
+.clearButton:hover {
+  background-color: var(--hover-bg-color);
+}

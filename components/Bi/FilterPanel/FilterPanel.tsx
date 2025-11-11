@@ -1,8 +1,9 @@
 // Вказує, що цей файл є Клієнтським Компонентом в Next.js.
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Імпортуємо useEffect
 import css from "./FilterPanel.module.css";
+import { FiltersState } from "@/types/types"; // Імпортуємо FiltersState
 
 interface FilterOptions {
   document_status: string[];
@@ -11,29 +12,33 @@ interface FilterOptions {
 
 interface FilterPanelProps {
   options: FilterOptions;
-  onApply: (filters: {
-    document_status: string[];
-    delivery_status: string[];
-  }) => void;
-  isSubmitting: boolean; // Новий пропс для стану завантаження
+  onApply: (filters: FiltersState) => void;
+  isSubmitting: boolean;
+  appliedFilters: FiltersState; // Новий пропс для синхронізації
 }
 
 const FilterPanel = ({
   options,
   onApply,
   isSubmitting,
+  appliedFilters, // Отримуємо новий пропс
 }: FilterPanelProps) => {
   const [selectedDocStatuses, setSelectedDocStatuses] = useState<string[]>([]);
   const [selectedDeliveryStatuses, setSelectedDeliveryStatuses] = useState<
     string[]
   >([]);
 
+  // Цей useEffect синхронізує внутрішній стан панелі з глобальним станом фільтрів
+  useEffect(() => {
+    setSelectedDocStatuses(appliedFilters.document_status);
+    setSelectedDeliveryStatuses(appliedFilters.delivery_status);
+  }, [appliedFilters]); // Запускається щоразу, коли змінюються застосовані фільтри
+
   const handleCheckboxChange = (
     value: string,
     setter: React.Dispatch<React.SetStateAction<string[]>>,
     currentValues: string[]
   ) => {
-    // Блокуємо зміну чекбоксів під час завантаження
     if (isSubmitting) return;
     if (currentValues.includes(value)) {
       setter(currentValues.filter((item) => item !== value));
@@ -58,6 +63,7 @@ const FilterPanel = ({
     });
   };
 
+  // Тепер ця логіка буде працювати коректно, оскільки стан синхронізовано
   const hasActiveFilters =
     selectedDocStatuses.length > 0 || selectedDeliveryStatuses.length > 0;
 
@@ -80,7 +86,7 @@ const FilterPanel = ({
                     selectedDocStatuses
                   )
                 }
-                disabled={isSubmitting} // Блокуємо чекбокс
+                disabled={isSubmitting}
               />
               {status}
             </label>
@@ -101,7 +107,7 @@ const FilterPanel = ({
                     selectedDeliveryStatuses
                   )
                 }
-                disabled={isSubmitting} // Блокуємо чекбокс
+                disabled={isSubmitting}
               />
               {status}
             </label>
@@ -111,7 +117,7 @@ const FilterPanel = ({
           <button
             onClick={handleApplyClick}
             className={css.applyButton}
-            disabled={isSubmitting} // Блокуємо кнопку
+            disabled={isSubmitting}
           >
             {isSubmitting ? "Завантаження..." : "Застосувати"}
           </button>
@@ -119,7 +125,7 @@ const FilterPanel = ({
             <button
               onClick={handleClearClick}
               className={css.clearButton}
-              disabled={isSubmitting} // Блокуємо кнопку
+              disabled={isSubmitting}
             >
               Очистити
             </button>

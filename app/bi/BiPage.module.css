@@ -39,3 +39,29 @@
 .ordersContainer {
   grid-area: bottom;
 }
+.toggleFilterButton {
+    display: block; /* Чтобы кнопка занимала всю ширину и имела отступы */
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 15px;
+    margin-bottom: 20px; /* Отступ от контента ниже */
+    width: 100%; /* Растягиваем на всю ширину для мобильного вида */
+    max-width: 250px; /* Ограничиваем максимальную ширину на больших экранах */
+}
+
+.toggleFilterButton:hover {
+    background-color: var(--primary-hover-color);
+}
+.headerContainer{
+    display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+}

@@ -1,10 +1,10 @@
 // Вказує, що цей файл є Клієнтським Компонентом в Next.js.
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react"; // Імпортуємо useEffect та useRef
+import { useState, useMemo, useEffect, useRef } from "react";
 import { dataForOrderByProduct } from "@/lib/api";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import toast from "react-hot-toast"; // Імпортуємо toast
+import toast from "react-hot-toast";
 import styles from "./BiPage.module.css";
 import { BiOrders, BiOrdersItem, FiltersState } from "@/types/types";
 import ProductTable from "@/components/Bi/ProductTable/ProductTable";
@@ -39,6 +39,8 @@ export default function BiPage() {
     delivery_status: [],
   });
 
+  const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
+
   const {
     data,
     isLoading,
@@ -50,22 +52,17 @@ export default function BiPage() {
     placeholderData: (previousData) => previousData,
   });
 
-  // Створюємо ref для зберігання ID активного тоста
   const toastIdRef = useRef<string | null>(null);
 
-  // Використовуємо useEffect для більш точного керування тостами
   useEffect(() => {
-    // Показуємо тост, тільки якщо почався фоновий запит (не перший)
     if (isFetching && !isLoading) {
-      // Якщо тост ще не показаний, показуємо його і зберігаємо ID
       if (toastIdRef.current === null) {
         toastIdRef.current = toast.loading("Оновлення даних...");
       }
     } else {
-      // Якщо запит завершився і є активний тост, закриваємо його
       if (toastIdRef.current) {
         toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null; // Скидаємо ref
+        toastIdRef.current = null;
       }
     }
   }, [isFetching, isLoading]);
@@ -226,12 +223,22 @@ export default function BiPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <h1>BI Data</h1>
-      <FilterPanel
-        options={filterOptions}
-        onApply={handleApplyFilters}
-        isSubmitting={isFetching}
-      />
+
+      <button
+        onClick={() => setIsFilterPanelVisible(!isFilterPanelVisible)}
+        className={styles.toggleFilterButton}
+      >
+        {isFilterPanelVisible ? "Сховати фільтри" : "Показати фільтри"}
+      </button>
+
+      {isFilterPanelVisible && (
+        <FilterPanel
+          options={filterOptions}
+          onApply={handleApplyFilters}
+          isSubmitting={isFetching}
+          appliedFilters={filters} // Передаємо поточні фільтри
+        />
+      )}
       {renderContent()}
     </div>
   );

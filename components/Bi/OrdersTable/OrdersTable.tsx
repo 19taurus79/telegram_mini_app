@@ -25,7 +25,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
 
   return (
     <div className={css.tableWrapper}>
-      <h2 className={css.title}>Детализация по заказам</h2>
+      <h2 className={css.title}>Деталізація по заказах</h2>
       {orders && orders.length > 0 ? (
         <table className={css.table}>
           <thead>
@@ -58,7 +58,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
           </tbody>
         </table>
       ) : (
-        <p>Нет данных по заказам</p>
+        <p>Данні відсутні.</p>
       )}
     </div>
   );

@@ -37,6 +37,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               <th className={css.th}>Статус</th>
               <th className={css.th}>До постачання</th>
               <th className={css.th}>Кількість</th>
+              <th className={css.th}>Переміщено</th>
             </tr>
           </thead>
           <tbody>
@@ -53,6 +54,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 <td className={css.td} title={order.document_status}>{order.document_status}</td>
                 <td className={css.td} title={order.delivery_status}>{order.delivery_status}</td>
                 <td className={css.td} title={order.qty.toString()}>{order.qty}</td>
+                <td className={css.td} title={order.moved_qty.toString()}>{order.moved_qty}</td>
               </tr>
             ))}
           </tbody>

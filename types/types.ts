@@ -298,6 +298,7 @@ export type BiOrdersItem = {
     available: number;
   }[];
   orders: {
+      moved_qty: string;
     manager: string;
     client: string;
     contract_supplement: string;

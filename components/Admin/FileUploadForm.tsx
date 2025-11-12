@@ -6,7 +6,6 @@ import styles from "./FileUploadForm.module.css";
 import toast from 'react-hot-toast';
 import { MatchingData } from "@/types/types";
 
-// Определяем список инпутов для файлов, которые будут отображаться в форме.
 const fileInputs = [
   { id: "av_stock_file", label: "Доступность по подразделениям" },
   { id: "remains_file", label: "Остатки" },
@@ -18,27 +17,17 @@ const fileInputs = [
   { id: "moved", label: "Перемещено" },
 ];
 
-// Определяем пропсы для компонента.
 interface FileUploadFormProps {
-  // Функция обратного вызова, которая будет вызвана после успешной первой загрузки.
-  // Передает данные для сопоставления и все выбранные файлы родительскому компоненту.
   onUploadSuccess: (data: MatchingData, allFiles: Record<string, File | null>) => void;
+  // Новий пропс для прямого завантаження
+  onSkipMatching: (allFiles: Record<string, File | null>) => void;
 }
 
-/**
- * FileUploadForm - компонент, отвечающий за отображение формы загрузки файлов и выполнение первого этапа загрузки.
- */
-export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps) {
-  // Состояние для хранения выбранных файлов. Ключ - id инпута, значение - объект File.
+export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: FileUploadFormProps) {
   const [files, setFiles] = useState<Record<string, File | null>>({});
-  // Состояние для отслеживания процесса отправки формы (для блокировки кнопки).
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Состояние для отслеживания, над каким инпутом находится перетаскиваемый файл (для стилизации).
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  /**
-   * Обработчик изменения состояния инпута файла (когда файл выбирается через диалоговое окно).
-   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files: inputFiles } = e.target;
     if (inputFiles && inputFiles.length > 0) {
@@ -49,22 +38,16 @@ export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps)
     }
   };
 
-  /**
-   * Обработчик событий drag-n-drop (dragenter, dragover, dragleave).
-   */
   const handleDrag = (e: DragEvent<HTMLLabelElement>, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
-      setDragOver(id); // Устанавливаем id инпута, над которым находится курсор.
+      setDragOver(id);
     } else if (e.type === "dragleave") {
-      setDragOver(null); // Сбрасываем, когда курсор уходит.
+      setDragOver(null);
     }
   };
 
-  /**
-   * Обработчик события drop (когда файл "бросают" в дропзону).
-   */
   const handleDrop = (e: DragEvent<HTMLLabelElement>, id: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -73,34 +56,51 @@ export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps)
     if (droppedFiles && droppedFiles.length > 0) {
       setFiles((prevFiles) => ({
         ...prevFiles,
-        [id]: droppedFiles[0], // Добавляем файл в состояние.
+        [id]: droppedFiles[0],
       }));
     }
   };
 
   /**
-   * Обработчик отправки формы. Выполняет первый этап загрузки.
+   * Оновлений обробник відправки форми.
+   * Тепер він вирішує, який шлях завантаження вибрати.
    */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Проверяем, выбраны ли обязательные для первого этапа файлы.
-    if (!files.ordered || !files.moved) {
-      toast.error("Пожалуйста, выберите файлы 'Заказано' и 'Перемещено'.");
+    // Перевіряємо, чи є хоча б один файл для завантаження
+    if (Object.values(files).every(file => file === null)) {
+      toast.error("Будь ласка, виберіть хоча б один файл.");
       return;
     }
 
-    setIsSubmitting(true);
-    toast.loading("Загрузка файлов сопоставления...");
+    // Логіка вибору шляху
+    // Якщо файли 'ordered' або 'moved' присутні, йдемо по шляху зіставлення.
+    if (files.ordered || files.moved) {
+      // Перевіряємо, що обидва файли є, якщо хоча б один з них є
+      if (!files.ordered || !files.moved) {
+        toast.error("Для зіставлення потрібні ОБИДВА файли: 'Заказано' та 'Перемещено'.");
+        return;
+      }
+      await handleMatchingUpload();
+    } else {
+      // Інакше, пропускаємо зіставлення і завантажуємо файли напряму.
+      await handleDirectUpload();
+    }
+  };
 
-    // Создаем FormData для отправки файлов.
+  /**
+   * Логіка для першого етапу завантаження (зіставлення).
+   */
+  const handleMatchingUpload = async () => {
+    setIsSubmitting(true);
+    toast.loading("Загрузка файлов для сопоставления...");
+
     const formData = new FormData();
-    // Добавляем файлы с именами, которые ожидает бэкенд.
     formData.append("ordered_file", files.ordered as File);
     formData.append("moved_file", files.moved as File);
 
     try {
-      // Отправляем запрос на первый эндпоинт.
       const response = await axios.post("/upload_ordered_moved", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -108,7 +108,6 @@ export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps)
       });
       toast.dismiss();
       toast.success("Файлы успешно загружены! Начинается сопоставление.");
-      // Вызываем колбэк родительского компонента, передавая ему данные для сопоставления и все выбранные файлы.
       onUploadSuccess(response.data, files);
     } catch (error) {
       toast.dismiss();
@@ -119,11 +118,21 @@ export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps)
     }
   };
 
+  /**
+   * Логіка для прямого завантаження (пропуск зіставлення).
+   */
+  const handleDirectUpload = async () => {
+    setIsSubmitting(true);
+    // Викликаємо функцію з батьківського компонента, передаючи їй всі файли.
+    // Батьківський компонент сам обробить завантаження.
+    await onSkipMatching(files);
+    setIsSubmitting(false);
+  };
+
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       {fileInputs.map(({ id, label }) => (
         <div key={id} className={styles.fileInputContainer}>
-          {/* Обертка-лейбл, которая работает как дропзона. */}
           <label 
             htmlFor={id} 
             className={`${styles.dropzone} ${dragOver === id ? styles.dragover : ''}`}
@@ -132,14 +141,12 @@ export default function FileUploadForm({ onUploadSuccess }: FileUploadFormProps)
             onDragOver={(e) => handleDrag(e, id)}
             onDrop={(e) => handleDrop(e, id)}
           >
-            {/* Показываем либо имя файла, либо лейбл. */}
             {files[id] ? (
               <span className={styles.fileName}>{files[id]?.name}</span>
             ) : (
               <span>{label}</span>
             )}
           </label>
-          {/* Сам инпут файла скрыт, но связан с лейблом через htmlFor. */}
           <input
             type="file"
             id={id}

@@ -1,108 +1,138 @@
 .container {
-  padding: 2rem;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .leftoverContainer {
   background-color: var(--header-bg-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-  transition: box-shadow 0.3s ease, background-color 0.3s ease;
   border: 1px solid var(--border-color);
-}
-
-.leftoverContainer:hover {
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out, height 0.5s ease-out;
+  opacity: 1;
+  transform: scale(1);
 }
 
 .productTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
   color: var(--foreground);
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 1rem;
 }
 
 .columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.column {
+  flex: 1;
+  background-color: var(--background);
+  padding: 15px;
+  border-radius: 6px;
 }
 
 .column h3 {
-  font-size: 1.2rem;
-  font-weight: 500;
+  margin-bottom: 15px;
   color: var(--foreground);
-  margin-bottom: 1rem;
-  text-align: center;
 }
 
 .item {
-  background-color: var(--row-even-bg);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-  position: relative;
+  transition: border-color 0.2s, background-color 0.2s;
 }
 
 .item:hover {
-  transform: translateY(-3px);
-  border-color: var(--primary-color);
+  background-color: var(--hover-bg-color);
 }
 
 .item.selected {
   border-color: var(--primary-color);
-  background-color: var(--hover-bg-color);
+  background-color: #e8f4ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .item.selected {
+    background-color: #3a4a5c;
+  }
 }
 
 .item p {
-  margin: 0.3rem 0;
-  color: var(--foreground);
+  margin: 0;
+  font-size: 14px;
 }
 
 .summary {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background-color: var(--background);
-  border-radius: 6px;
   text-align: center;
-  font-weight: 500;
-  color: var(--foreground);
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.submitBtn,
+.skipBtn,
+.skipAllBtn {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s, opacity 0.2s;
 }
 
 .submitBtn {
   background-color: var(--primary-color);
   color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  display: block;
-  margin: 2rem auto 0;
-}
-
-.leftoverContainer.hidden {
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  height: 0;
-  padding: 0;
-  margin: 0;
-  border: none;
-  overflow: hidden;
 }
 
 .submitBtn:hover {
   background-color: var(--primary-hover-color);
+}
+
+.skipBtn {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.skipBtn:hover {
+  background-color: #e9ecef;
+}
+
+.skipAllBtn {
+  display: block;
+  width: 100%;
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #6c757d;
+  color: white;
+  font-size: 16px;
+}
+
+.skipAllBtn:hover {
+  background-color: #5a6268;
+}
+
+@media (prefers-color-scheme: dark) {
+  .skipBtn {
+    background-color: #495057;
+    color: #ced4da;
+    border-color: #6c757d;
+  }
+  .skipBtn:hover {
+    background-color: #343a40;
+  }
 }

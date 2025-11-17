@@ -24,14 +24,14 @@ export default function UploadPage() {
   const handleAllMatched = async () => {
     if (!currentSessionId) return;
 
-    toast.loading("Получение результатов сопоставления...");
+    toast.loading("Отримання результатів співставлення...");
 
     try {
       const resultsResponse = await axios.get(`/process/${currentSessionId}/results`);
       const manualMatchesJson = JSON.stringify(resultsResponse.data);
 
       toast.dismiss();
-      toast.loading("Загрузка остальных файлов...");
+      toast.loading("Завантаження  файлів...");
 
       const formData = new FormData();
       let remainingFileCount = 0;
@@ -54,11 +54,11 @@ export default function UploadPage() {
       }
 
       toast.dismiss();
-      toast.success("Все операции успешно завершены!");
+      toast.success("Всі операції успішно завершені!");
     } catch (error) {
       toast.dismiss();
-      console.error("Ошибка на заключительном этапе загрузки:", error);
-      toast.error("Произошла ошибка на заключительном этапе загрузки.");
+      console.error("Помилка на заключному етапі завантаження:", error);
+      toast.error("Помилка на заключному етапі завантаження.");
     } finally {
       setMatchingData(null);
       setAllFiles({});
@@ -69,7 +69,7 @@ export default function UploadPage() {
   };
 
   const handleDirectUpload = async (files: Record<string, File | null>) => {
-    const toastId = toast.loading("Загрузка файлов...");
+    const toastId = toast.loading("Завантаження файлів...");
     try {
       const formData = new FormData();
       let fileCount = 0;
@@ -90,19 +90,19 @@ export default function UploadPage() {
       }
 
       toast.dismiss(toastId);
-      toast.success("Файлы успешно загружены!");
+      toast.success("Файли успішно завантажені!");
       // 3. Оновлюємо ключ, щоб перестворити форму
       setFormKey(prevKey => prevKey + 1);
     } catch (error) {
       toast.dismiss(toastId);
-      console.error("Ошибка при прямой загрузке:", error);
-      toast.error("Произошла ошибка при загрузке файлов.");
+      console.error("Помилка при завантажені файлів:", error);
+      toast.error("Помилка при завантажені файлів.");
     }
   };
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Загрузка данных</h1>
+      <h1 className={styles.title}>Завантаження даних</h1>
       {matchingData ? (
         <MatchingUI data={matchingData} onAllMatched={handleAllMatched} />
       ) : (

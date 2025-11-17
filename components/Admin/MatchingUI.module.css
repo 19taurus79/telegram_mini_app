@@ -136,3 +136,8 @@
     background-color: #343a40;
   }
 }
+.noMatchedWrapper{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

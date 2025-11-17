@@ -7,14 +7,14 @@ import toast from 'react-hot-toast';
 import { MatchingData } from "@/types/types";
 
 const fileInputs = [
-  { id: "av_stock_file", label: "Доступность по подразделениям" },
-  { id: "remains_file", label: "Остатки" },
+  { id: "av_stock_file", label: "Доступно по підрозділах" },
+  { id: "remains_file", label: "Залишки" },
   { id: "submissions_file", label: "Заявки" },
-  { id: "payment_file", label: "Оплаты" },
-  { id: "moved_file", label: "Заказано-Перемещено" },
-  { id: "free_stock", label: "Доступно(общий)" },
-  { id: "ordered", label: "Заказано" },
-  { id: "moved", label: "Перемещено" },
+  { id: "payment_file", label: "Оплати" },
+  // { id: "moved_file", label: "Замовлено-Переміщено" },
+  { id: "free_stock", label: "Доступно" },
+  { id: "ordered", label: "Замовлено" },
+  { id: "moved", label: "Переміщено" },
 ];
 
 interface FileUploadFormProps {
@@ -79,7 +79,7 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
     if (files.ordered || files.moved) {
       // Перевіряємо, що обидва файли є, якщо хоча б один з них є
       if (!files.ordered || !files.moved) {
-        toast.error("Для зіставлення потрібні ОБИДВА файли: 'Заказано' та 'Перемещено'.");
+        toast.error("Для зіставлення потрібні ОБИДВА файли: 'Замовлено' та 'Переміщено'.");
         return;
       }
       await handleMatchingUpload();
@@ -94,7 +94,7 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
    */
   const handleMatchingUpload = async () => {
     setIsSubmitting(true);
-    toast.loading("Загрузка файлов для сопоставления...");
+    toast.loading("Завантаження файлів для співставлення...");
 
     const formData = new FormData();
     formData.append("ordered_file", files.ordered as File);
@@ -107,12 +107,12 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
         },
       });
       toast.dismiss();
-      toast.success("Файлы успешно загружены! Начинается сопоставление.");
+      toast.success("Файли завантажені! Починається співставлення.");
       onUploadSuccess(response.data, files);
     } catch (error) {
       toast.dismiss();
-      console.error("Ошибка при загрузке файлов:", error);
-      toast.error("Произошла ошибка при загрузке. Посмотрите в консоль для деталей.");
+      console.error("Помилка при завантажені файлів:", error);
+      toast.error("Виникла помилка при завантажені. Подивиться в консоль для отримання деталій.");
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +157,7 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
         </div>
       ))}
       <button type="submit" disabled={isSubmitting} className={styles.button}>
-        {isSubmitting ? "Загрузка..." : "Отправить"}
+        {isSubmitting ? "Завантаження..." : "Відправити"}
       </button>
     </form>
   );

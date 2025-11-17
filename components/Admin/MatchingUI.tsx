@@ -129,10 +129,12 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
   if (Object.keys(leftovers).length === 0) {
     return (
       <div className={styles.container}>
+          <div className={styles.noMatchedWrapper}>
         <p>Немає елементів для ручного співставлення.</p>
         <button onClick={onAllMatched} className={styles.submitBtn} style={{ marginTop: '20px' }}>
           Продовжити завантаження
         </button>
+          </div>
       </div>
     );
   }
@@ -158,31 +160,31 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
                     onClick={() => handleMatchChange(leftoverId, 'moved', item.index)}
                   >
                     <p><strong>Номенклатура:</strong> {item.Номенклатура}</p>
-                    <p><strong>Перемещено:</strong> {item.Перемещено}</p>
+                    <p><strong>Переміщено:</strong> {item.Перемещено}</p>
                     <p><strong>Партія:</strong> {item['Партія номенклатури']}</p>
                   </div>
                 ))}
               </div>
               <div className={styles.column}>
-                <h3>Заказы</h3>
+                <h3>Замовлення</h3>
                 {leftover.current_notes.map((item: NoteItem) => (
                   <div 
                     key={item.index} 
                     className={`${styles.item} ${matches[leftoverId]?.noteIndices.includes(item.index) ? styles.selected : ''}`}
                     onClick={() => handleMatchChange(leftoverId, 'note', item.index)}
                   >
-                    <p><strong>Договор:</strong> {item.Договор}</p>
-                    <p><strong>Количество:</strong> {item.Количество_в_примечании}</p>
+                    <p><strong>Доповнення:</strong> {item.Договор}</p>
+                    <p><strong>Кількість:</strong> {item.Количество_в_примечании}</p>
                   </div>
                 ))}
               </div>
             </div>
             <div className={styles.summary}>
-              Сумма по заказам: {sums[leftoverId]?.notesSum || 0} / Перемещено: {sums[leftoverId]?.movedSum || 0}
+              Сума по заказах: {sums[leftoverId]?.notesSum || 0} / Переміщено: {sums[leftoverId]?.movedSum || 0}
             </div>
             <div className={styles.buttonGroup}>
               <button onClick={() => handleSubmit(leftoverId)} className={styles.submitBtn}>
-                Сохранить
+                Зберегти
               </button>
               <button onClick={() => handleSkipItem(leftoverId)} className={styles.skipBtn}>
                 Пропустить
@@ -194,7 +196,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
       
       {visibleLeftovers.length > 0 && (
         <button onClick={handleSkipAll} className={styles.skipAllBtn}>
-          Пропустить все оставшиеся и продолжить
+          Пропустить все
         </button>
       )}
     </div>

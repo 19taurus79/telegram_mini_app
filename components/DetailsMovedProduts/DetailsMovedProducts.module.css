@@ -1,0 +1,55 @@
+.container {
+  padding: 10px;
+  /* grid-area: moved; */ /* Можливо, знадобиться інша grid-area */
+}
+
+@media (max-width: 768px) {
+  .container {
+    display: none;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.9rem;
+  background-color: var(--background, #fff);
+  color: var(--foreground, #111);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.table th {
+  background-color: var(--background, #f7f9fc);
+  font-weight: 600;
+  color: var(--foreground, #555);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background-color: var(--hover-bg-color, #f0f5ff);
+}
+
+.table td:last-child {
+  font-weight: 500;
+}
+
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortableHeader:hover {
+  background-color: var(--hover-bg-color, #f0f5ff);
+}

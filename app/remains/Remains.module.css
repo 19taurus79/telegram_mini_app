@@ -4,6 +4,7 @@
   gap: 0.5rem;
   padding: 1rem;
   list-style: none;
+    grid-area: product;
 }
 
 .listItemButton {
@@ -27,4 +28,27 @@
 
 .link {
   display: block;
+}
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+            "product remains"
+            "moved orders";
+}
+@media (min-width: 768px) {
+    .listContainer{
+        overflow: auto;
+        height: 50vh;
+    }
+
+
+}
+@media (max-width: 768px) {
+    .wrapper{
+        display: block;
+
+    }
+
 }

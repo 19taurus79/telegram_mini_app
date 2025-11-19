@@ -1,26 +1,26 @@
 import {
-  AvRemains,
-  Client,
-  Contract,
-  ContractDetails,
-  DeliveryPayload,
-  GroupRemains,
-  Order,
-  OrdersDetails,
-  PartyData,
-  Product,
-  Remains,
-  // TaskGoogle,
-  TotalOrder,
-  Event,
-  User,
-  TaskStatus,
-  InnerEvent,
-  TaskInner,
-  TaskGoogle,
-  BiRemains,
-  BiOrders,
-  FiltersState, // Импортируем новый тип
+    AvRemains,
+    Client,
+    Contract,
+    ContractDetails,
+    DeliveryPayload,
+    GroupRemains,
+    Order,
+    OrdersDetails,
+    PartyData,
+    Product,
+    Remains,
+    // TaskGoogle,
+    TotalOrder,
+    Event,
+    User,
+    TaskStatus,
+    InnerEvent,
+    TaskInner,
+    TaskGoogle,
+    BiRemains,
+    BiOrders,
+    FiltersState, MovedData, // Импортируем новый тип
 } from "@/types/types";
 import axios from "axios";
 
@@ -366,6 +366,19 @@ export const getOrdersDetailsById = async ({
   );
   return data;
 };
+
+export const getMovedDataByProduct = async (product_id: string) => {
+    const { data } = await axios.get<MovedData[]>(`/data/moved_products/${product_id}`, {
+        headers: {
+            "Content-Type": "application/json",
+        },
+        params: {
+            product_id: product_id,
+        },
+    });
+    return data;
+};
+
 export const getAllTasks = async (initData: string) => {
   const { data } = await axios.get<TaskInner[]>("/data/get_all_tasks", {
     headers: {

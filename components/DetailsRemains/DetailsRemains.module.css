@@ -1,0 +1,86 @@
+.container{
+    padding: 10px;
+    grid-area: remains;
+    height: 40vh;
+    overflow: auto;
+}
+@media (max-width: 768px) {
+  .container {
+    display: none;
+  }
+}
+.header{
+    padding: 10px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  overflow: hidden; /* Щоб border-radius працював для таблиці */
+  font-size: 0.9rem;
+  background-color: var(--background, #fff);
+  color: var(--foreground, #111);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.table th {
+  /* Використовуємо альтернативний фон для заголовків */
+  background-color: var(--background, #f7f9fc);
+  font-weight: 600;
+  /* Використовуємо вторинний колір тексту */
+  color: var(--foreground, #555);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background-color: var(--hover-bg-color, #f0f5ff);
+}
+
+.table td:nth-child(2),
+.table td:nth-child(3) {
+  font-weight: 500;
+}
+
+.details {
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.details[open] {
+  border-color: var(--border-color, #e0e0e0);
+  padding: 0.5rem;
+}
+
+.summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none; /* Прибираємо стандартний маркер */
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.summary:hover {
+  background-color: var(--hover-bg-color, #f0f5ff);
+}
+
+.detailsContent {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.deficit {
+  color: #dc3545; /* Червоний колір для акценту на дефіциті */
+  font-weight: 600;
+}

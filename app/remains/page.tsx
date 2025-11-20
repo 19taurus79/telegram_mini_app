@@ -1,38 +1,84 @@
 "use client";
 
+import { useState } from "react";
 import { getProductOnWarehouse } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import css from "./Remains.module.css";
-import { getInitData } from "@/lib/getInitData";
+import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
+import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
+import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedProducts";
+import { useInitData } from "@/store/InitData";
+import type { InitData } from "@/store/InitData";
+
+const DESKTOP_BREAKPOINT = 768;
+
 function Remains() {
   const { selectedGroup, searchValue } = useFilter();
-  console.log("page group", selectedGroup);
-  console.log("page search", selectedGroup);
-  const fill = useFilter();
-  console.log(fill);
-  const initData = getInitData();
-  const { data } = useQuery({
-    queryKey: ["products", selectedGroup, searchValue],
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const initData = useInitData((state: InitData) => state.initData);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["products", selectedGroup, searchValue, initData],
     queryFn: () =>
       getProductOnWarehouse({
-        group: selectedGroup,
-        searchValue: searchValue,
-        initData,
+        group: selectedGroup || null,
+        searchValue: searchValue || null,
+        initData: initData || "",
       }),
+    enabled: !!initData,
     placeholderData: keepPreviousData,
   });
+
+  const handleProductClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    productId: string
+  ) => {
+    if (window.innerWidth >= DESKTOP_BREAKPOINT) {
+      event.preventDefault();
+      setSelectedProductId(productId);
+    }
+  };
+
+  const renderProductList = () => {
+    if (isLoading) {
+      return <p>Завантаження продуктів...</p>;
+    }
+
+    if (isError) {
+      return <p>Помилка завантаження: {error.message}</p>;
+    }
+
+    if (!data || data.length === 0) {
+      return <p>Продуктів не знайдено.</p>;
+    }
+
+    // Повертаємо повну структуру з класами, як було раніше
+    return (
+      <ul>
+        {data.map((item) => (
+          <li className={css.listItemButton} key={item.id}>
+            <Link
+              href={`/remains/${item.id}`}
+              className={css.link}
+              onClick={(e) => handleProductClick(e, item.id)}
+            >
+              {item.product}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <ul className={css.listContainer}>
-      {data?.map((item) => (
-        <li className={css.listItemButton} key={item.id}>
-          <Link href={`/remains/${item.id}`} className={css.link}>
-            {item.product}
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <div className={css.wrapper}>
+      <div className={css.listContainer}>{renderProductList()}</div>
+      <DetailsRemains selectedProductId={selectedProductId} />
+      <DetailsOrdersByProduct selectedProductId={selectedProductId} />
+      <DetailsMovedProducts selectedProductId={selectedProductId} />
+    </div>
   );
 }
 

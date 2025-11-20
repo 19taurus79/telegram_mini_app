@@ -1,9 +1,13 @@
 .listContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
+  grid-area: product;
+  overflow-y: auto;
+  height: 40vh; /* Висота для десктопної версії */
+}
+
+.listContainer ul {
   list-style: none;
+  padding: 0; /* Скидаємо відступи за замовчуванням */
+  margin: 0;
 }
 
 .listItemButton {
@@ -27,4 +31,23 @@
 
 .link {
   display: block;
+}
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+            "product remains"
+            "moved orders";
+}
+@media (max-width: 768px) {
+    .wrapper{
+        display: block;
+    }
+
+    /* На мобільних пристроях знімаємо обмеження по висоті */
+    .listContainer {
+        height: auto;
+        margin-bottom: 20px; /* Додаємо відступ знизу для розділення блоків */
+    }
 }

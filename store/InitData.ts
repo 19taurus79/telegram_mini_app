@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-type InitData = {
+// Додаємо ключове слово `export`, щоб тип був доступний для імпорту
+export type InitData = {
   initData: string | null;
   setInitData: (data: string | null) => void;
 };

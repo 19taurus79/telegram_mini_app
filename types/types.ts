@@ -140,6 +140,9 @@ export type MovedData = {
   period: string;
   order: string;
   product_id: string;
+  client: string;
+  manager: string;
+    party_sign_y: string;
 };
 
 export type PartyData = {

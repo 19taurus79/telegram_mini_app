@@ -1,15 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce";
-import { useFilter } from "@/context/FilterContext";
-import {
-  useEffect,
-  useRef,
-  useState,
-  useLayoutEffect,
-  useCallback,
-} from "react";
+import { useDebouncedCallback } from 'use-debounce';
+import { useFilter } from '@/context/FilterContext';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { getUserByinitData } from "@/lib/api";
 import css from "./Header.module.css";
 import Link from "next/link";
@@ -38,14 +32,14 @@ function Header() {
     }
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     updateHeaderHeight(); // Initial calculation
 
     window.addEventListener("resize", updateHeaderHeight);
     return () => {
       window.removeEventListener("resize", updateHeaderHeight);
     };
-  }, [pathname, updateHeaderHeight]); // Rerun only when path changes
+  }, [pathname, updateHeaderHeight]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -171,15 +165,30 @@ function Header() {
               Події
             </Link>
           </li>
-          {/* {userData?.is_admin && (
-            <> */}
           <li>
             <Link href="/tasks" onClick={handleNavClick}>
               Задачи
             </Link>
           </li>
+          {/* {userData?.is_admin && (
+            <> */}
           {/* </>
           )} */}
+            {userData?.is_admin && (
+                <>
+                <li>
+                    <Link href="/bi" onClick={handleNavClick}>
+                        Заказати товар
+                    </Link>
+                </li>
+                <li>
+                <Link href="/admin/upload" onClick={handleNavClick}>
+            Завантажити дані
+        </Link>
+      </li>
+                </>
+            )
+            }
         </ul>
       </nav>
     </header>

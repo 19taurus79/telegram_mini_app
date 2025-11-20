@@ -1,6 +1,8 @@
 .container {
   padding: 10px;
-  /* grid-area: moved; */ /* Можливо, знадобиться інша grid-area */
+  grid-area: moved;
+    height: 40vh;
+    overflow: auto;
 }
 
 @media (max-width: 768px) {

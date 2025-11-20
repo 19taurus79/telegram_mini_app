@@ -1,32 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import { getProductOnWarehouse } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import css from "./Remains.module.css";
-import { getInitData } from "@/lib/getInitData";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { useState } from "react";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedProducts";
+import { useInitData } from "@/store/InitData";
+import type { InitData } from "@/store/InitData";
+
+const DESKTOP_BREAKPOINT = 768;
 
 function Remains() {
   const { selectedGroup, searchValue } = useFilter();
-  // Правильное использование useState с деструктуризацией массива и типизацией
-  const [selectedProductId, setSelectedProductId] = useState<string>(
-    ""
-  );
-  const initData = getInitData();
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const initData = useInitData((state: InitData) => state.initData);
 
-  const { data } = useQuery({
-    queryKey: ["products", selectedGroup, searchValue],
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["products", selectedGroup, searchValue, initData],
     queryFn: () =>
       getProductOnWarehouse({
-        group: selectedGroup,
-        searchValue: searchValue,
-        initData,
+        group: selectedGroup || null,
+        searchValue: searchValue || null,
+        initData: initData || "",
       }),
+    enabled: !!initData,
     placeholderData: keepPreviousData,
   });
 
@@ -34,23 +35,29 @@ function Remains() {
     event: React.MouseEvent<HTMLAnchorElement>,
     productId: string
   ) => {
-    // Проверяем ширину экрана в браузере
-    if (window.innerWidth >= 768) {
-      // 768px - условная граница десктопа
-      // Если экран широкий (десктоп):
-      // 1. Отменяем стандартное поведение ссылки (переход на другую страницу)
+    if (window.innerWidth >= DESKTOP_BREAKPOINT) {
       event.preventDefault();
-      // 2. Обновляем состояние, чтобы правая панель обновилась
       setSelectedProductId(productId);
     }
-    // Если экран узкий (мобильный), мы ничего не делаем.
-    // Link сработает как обычная ссылка и перейдет на страницу /remains/[id].
   };
 
-  return (
-    <div className={css.wrapper}>
-      <ul className={css.listContainer}>
-        {data?.map((item) => (
+  const renderProductList = () => {
+    if (isLoading) {
+      return <p>Завантаження продуктів...</p>;
+    }
+
+    if (isError) {
+      return <p>Помилка завантаження: {error.message}</p>;
+    }
+
+    if (!data || data.length === 0) {
+      return <p>Продуктів не знайдено.</p>;
+    }
+
+    // Повертаємо повну структуру з класами, як було раніше
+    return (
+      <ul>
+        {data.map((item) => (
           <li className={css.listItemButton} key={item.id}>
             <Link
               href={`/remains/${item.id}`}
@@ -62,9 +69,15 @@ function Remains() {
           </li>
         ))}
       </ul>
+    );
+  };
+
+  return (
+    <div className={css.wrapper}>
+      <div className={css.listContainer}>{renderProductList()}</div>
       <DetailsRemains selectedProductId={selectedProductId} />
-        <DetailsOrdersByProduct selectedProductId={selectedProductId} />
-        <DetailsMovedProducts selectedProductId={selectedProductId}/>
+      <DetailsOrdersByProduct selectedProductId={selectedProductId} />
+      <DetailsMovedProducts selectedProductId={selectedProductId} />
     </div>
   );
 }

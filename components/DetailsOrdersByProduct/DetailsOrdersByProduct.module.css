@@ -1,6 +1,8 @@
 .container {
   padding: 10px;
   grid-area: orders;
+    height: 40vh;
+    overflow: auto;
 }
 
 @media (max-width: 768px) {
@@ -52,4 +54,28 @@
 
 .sortableHeader:hover {
   background-color: var(--hover-bg-color, #f0f5ff);
+}
+
+.checkmarkHeader {
+  width: 40px;
+  text-align: center;
+  color: var(--foreground, #999);
+}
+
+.checkmarkCell span {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.checkmarkCell {
+  text-align: center;
+  width: 40px;
+}
+
+.checkmarkGreen {
+  color: #28a745; /* Яскравий зелений */
+}
+
+.checkmarkYellow {
+  color: #ffc107; /* Яскравий жовтий/бурштиновий */
 }

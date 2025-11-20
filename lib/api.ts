@@ -367,16 +367,23 @@ export const getOrdersDetailsById = async ({
   return data;
 };
 
-export const getMovedDataByProduct = async (product_id: string) => {
-    const { data } = await axios.get<MovedData[]>(`/data/moved_products/${product_id}`, {
-        headers: {
-            "Content-Type": "application/json",
-        },
-        params: {
-            product_id: product_id,
-        },
-    });
-    return data;
+export const getMovedDataByProduct = async ({
+  productId,
+  initData,
+}: {
+  productId: string;
+  initData: string;
+}) => {
+  const { data } = await axios.get<MovedData[]>(
+    `/data/moved_products/${productId}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
 };
 
 export const getAllTasks = async (initData: string) => {

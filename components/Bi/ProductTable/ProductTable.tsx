@@ -89,19 +89,19 @@ const ProductTable = ({
                       className={`${css.td} ${css.qtyColumn}`}
                       title={order.qty_remain.toString()}
                     >
-                      {order.qty_remain}
+                      {order.qty_remain.toFixed(2)}
                     </td>
                     <td
                       className={`${css.td} ${css.qtyColumn}`}
                       title={order.qty_needed.toString()}
                     >
-                      {order.qty_needed}
+                      {order.qty_needed.toFixed(2)}
                     </td>
                     <td
                       className={`${css.td} ${css.qtyColumn}`}
                       title={order.qty_missing.toString()}
                     >
-                      {order.qty_missing}
+                      {order.qty_missing.toFixed(2)}
                     </td>
                   </tr>
                 ))}

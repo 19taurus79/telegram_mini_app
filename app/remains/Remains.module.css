@@ -1,10 +1,13 @@
 .listContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
+  grid-area: product;
+  overflow-y: auto;
+  height: 40vh; /* Висота для десктопної версії */
+}
+
+.listContainer ul {
   list-style: none;
-    grid-area: product;
+  padding: 0; /* Скидаємо відступи за замовчуванням */
+  margin: 0;
 }
 
 .listItemButton {
@@ -37,18 +40,14 @@
             "product remains"
             "moved orders";
 }
-@media (min-width: 768px) {
-    .listContainer{
-        overflow: auto;
-        height: 50vh;
-    }
-
-
-}
 @media (max-width: 768px) {
     .wrapper{
         display: block;
-
     }
 
+    /* На мобільних пристроях знімаємо обмеження по висоті */
+    .listContainer {
+        height: auto;
+        margin-bottom: 20px; /* Додаємо відступ знизу для розділення блоків */
+    }
 }

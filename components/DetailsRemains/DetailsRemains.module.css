@@ -1,6 +1,8 @@
 .container{
     padding: 10px;
     grid-area: remains;
+    height: 40vh;
+    overflow: auto;
 }
 @media (max-width: 768px) {
   .container {
@@ -76,4 +78,9 @@
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.deficit {
+  color: #dc3545; /* Червоний колір для акценту на дефіциті */
+  font-weight: 600;
 }

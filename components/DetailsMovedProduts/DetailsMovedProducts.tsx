@@ -1,9 +1,11 @@
 "use client";
 
-// import { useMemo } from "react";
+import { useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getMovedDataByProduct } from "@/lib/api";
 import css from "./DetailsMovedProducts.module.css";
+import { useInitData } from "@/store/InitData";
+import { useDetailsDataStore } from "@/store/DetailsDataStore";
 
 export default function DetailsMovedProducts({
   selectedProductId,
@@ -11,15 +13,23 @@ export default function DetailsMovedProducts({
   selectedProductId: string | null;
 }) {
   // const [sortDirection, setSortDirection] = useState<
+  const setMovedProducts = useDetailsDataStore((state) => state.setMovedProducts);
   //   "ascending" | "descending" | null
   // >(null);
 
+  const initData = useInitData((state) => state.initData);
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["movedProducts", selectedProductId],
-    queryFn: () => getMovedDataByProduct(selectedProductId!),
+    queryFn: () => getMovedDataByProduct({productId: selectedProductId!, initData: initData!}),
     enabled: !!selectedProductId,
     placeholderData: keepPreviousData,
   });
+
+  // Записуємо дані в стор при їх оновленні
+  useEffect(() => {
+    setMovedProducts(data ?? null);
+  }, [data, setMovedProducts]);
 
   // const sortedData = useMemo(() => {
   //   if (!data) return [];

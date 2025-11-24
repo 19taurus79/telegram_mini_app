@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+// import { useState } from 'react';
 import { GeocodedAddress } from '@/types/types';
 
 // Динамический импорт компонента карты

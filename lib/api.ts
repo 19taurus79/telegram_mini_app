@@ -20,7 +20,7 @@ import {
     TaskGoogle,
     BiRemains,
     BiOrders,
-    FiltersState, MovedData, // Импортируем новый тип
+    FiltersState, MovedData,
 } from "@/types/types";
 import axios from "axios";
 
@@ -282,29 +282,6 @@ export const getAllProduct = async ({
   });
   return data;
 };
-
-// export const getEnoughRemains = async () => {
-//   const { data } = await axios.get("/data/products_for_all_orders", {
-//     headers: {
-//       "Content-Type": "application/json",
-//       "X-Telegram-Init-Data": initData,
-//     },
-//   });
-//   return data;
-// };
-
-// export const getMovedData = async ({ order }: { order: string }) => {
-//   const { data } = await axios.get(`/data/moved_products_for_order/${order}`, {
-//     headers: {
-//       "Content-Type": "application/json",
-//       "X-Telegram-Init-Data": initData,
-//     },
-//     params: {
-//       order: order,
-//     },
-//   });
-//   return data;
-// };
 
 export const getPartyData = async ({
   party,
@@ -616,3 +593,6 @@ export const dataForOrderByProduct = async (filters?: FiltersState) => {
 
   return data;
 };
+
+// Додаємо експорт за замовчуванням
+export default axios;

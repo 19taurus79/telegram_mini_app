@@ -1,0 +1,33 @@
+/* FileUpload.module.css */
+.fileInputWrapper {
+  position: relative;
+  /* width: 250px; */
+  font-family: Arial, sans-serif;
+}
+
+.fileInput {
+  opacity: 0;
+  position: absolute;
+  width: 250px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.fileLabel {
+  display: inline-block;
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  width: 100%;
+}
+
+.fileName {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #555;
+}

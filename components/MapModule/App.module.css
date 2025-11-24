@@ -113,6 +113,14 @@
   .searchCloseBtn {
     display: none;
   }
+
+  .searchToggle {
+    display: none;
+  }
+
+  .header {
+    display: none;
+  }
 }
 
 /* Mobile Layout */

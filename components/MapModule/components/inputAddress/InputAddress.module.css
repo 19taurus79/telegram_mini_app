@@ -1,0 +1,54 @@
+.container {
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+
+
+.inputWrapper {
+  position: relative;
+  /* display: flex; */ /* Removed flex, input will take full width */
+  /* align-items: center; */
+  margin-bottom: 10px;
+}
+
+.clearButton {
+  position: absolute;
+  right: 15px; /* Adjusted right position */
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #aaa;
+  padding: 0; /* Remove default button padding */
+  line-height: 1; /* Ensure consistent vertical alignment */
+}
+
+.clearButton:hover {
+  color: #333;
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.button:hover {
+  background-color: var(--primary-hover-color);
+}

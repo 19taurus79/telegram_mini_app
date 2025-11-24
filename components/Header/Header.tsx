@@ -111,7 +111,10 @@ function Header() {
         ☰
       </button>
 
-      {pathname !== "/" && (
+      {/* Список маршрутов, где должен отображаться поиск */}
+      {["/remains", "/orders", "/av_stock"].some((path) =>
+        pathname.startsWith(path)
+      ) && (
         <div className={css.searchWrapper}>
           <input
             ref={inputRef}
@@ -184,8 +187,14 @@ function Header() {
                 <li>
                 <Link href="/admin/upload" onClick={handleNavClick}>
             Завантажити дані
-        </Link>
-      </li>
+                </Link>
+                
+              </li>
+              <li>
+                <Link href="/map" onClick={handleNavClick}>
+            Карти
+                </Link>
+              </li>
                 </>
             )
             }

@@ -19,7 +19,9 @@ export default function MapFeature({ onAddressSelect }) {
   const { applications, setApplications } = useApplicationsStore();
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false); // State for mobile search panel
   const [areApplicationsVisible, setAreApplicationsVisible] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // State for mobile bottom sheet
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -83,14 +85,32 @@ export default function MapFeature({ onAddressSelect }) {
       }`}
     >
       <div className={css.header}>
-        <Header
+        {/* <Header
           onLoadDataClick={handleLoadDataClick}
           isDataTopVisible={isDataTopVisible}
           onToggleAddressSearch={handleToggleAddressSearch}
           isAddressSearchVisible={isAddressSearchVisible}
           onToggleApplications={handleToggleApplications}
           areApplicationsVisible={areApplicationsVisible}
-        />
+        /> */}
+      </div>
+      
+      {/* Mobile Search Toggle Button */}
+      <div className={css.searchToggle} onClick={() => setIsSearchPanelOpen(!isSearchPanelOpen)}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+
+      <div className={`${css.input} ${css.searchPanel} ${isSearchPanelOpen ? css.searchOpen : css.searchClosed}`}>
+        <InputAddress onAddressSelect={(data) => {
+            onAddressSelect(data);
+            setIsSearchPanelOpen(false); // Close panel on selection
+        }} />
+        <div className={css.searchCloseBtn} onClick={() => setIsSearchPanelOpen(false)}>
+          ✕
+        </div>
       </div>
       <div className={css.map}>
         <MapContainer
@@ -124,14 +144,18 @@ export default function MapFeature({ onAddressSelect }) {
           />
         </MapContainer>
       </div>
-      <div className={css.dataTop}>
-        <TopData />
-      </div>
-      <div className={css.input}>
-        <InputAddress onAddressSelect={onAddressSelect} />
-      </div>
-      <div className={css.dataBottom}>
-        <BottomData />
+      <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>
+        <div className={css.sheetHeader} onClick={() => setIsSheetOpen(!isSheetOpen)}>
+           <div className={css.sheetHandle}></div>
+        </div>
+        <div className={css.sheetContent}>
+            <div className={css.dataTop}>
+                <TopData />
+            </div>
+            <div className={css.dataBottom}>
+                <BottomData />
+            </div>
+        </div>
       </div>
     </div>
   );

@@ -24,10 +24,10 @@ export default function BottomData() {
                 setAddressData(item);
               }}
             >
-              Address: {item.display_name}
+              Адреса: {item.display_name}
             </p>
-            <p className={css.infoText}>Latitude: {item.lat}</p>
-            <p className={css.infoText}>Longitude: {item.lon}</p>
+            <p className={css.infoText}>Широта: {item.lat}</p>
+            <p className={css.infoText}>Довгота: {item.lon}</p>
             {/* <button
               className={css.button}
               onClick={() => {

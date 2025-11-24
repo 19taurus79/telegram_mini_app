@@ -358,3 +358,20 @@ export interface FiltersState {
   document_status: string[];
   delivery_status: string[];
 }
+
+export type GeocodedAddress = {
+  display_name?: string;
+  lat?: string;
+  lon?: string;
+  address?: {
+    country?: string;
+    state?: string;
+    county?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    [key: string]: string | undefined;
+  };
+  [key: string]: any;
+};

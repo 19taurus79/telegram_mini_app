@@ -195,6 +195,11 @@ export default function InputAddress({ onAddressSelect }) {
               }}
             />
           )}
+          slotProps={{
+            popper: {
+              sx: { zIndex: 2500 }
+            }
+          }}
         />
 
         <Autocomplete
@@ -245,6 +250,11 @@ export default function InputAddress({ onAddressSelect }) {
                 </Box>
               </li>
             );
+          }}
+          slotProps={{
+            popper: {
+              sx: { zIndex: 2500 }
+            }
           }}
         />
       </Box>

@@ -16,6 +16,18 @@ import { customIcon } from "./leaflet-icon";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
+import { useMap } from "react-leaflet"; // Импортируем useMap
+
+// Компонент для управления картой (flyTo)
+function MapController({ coords }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords) {
+      map.flyTo(coords, 16);
+    }
+  }, [coords, map]);
+  return null;
+}
 
 export default function MapFeature({ onAddressSelect }) {
   const { addressData } = useDisplayAddressStore();
@@ -29,6 +41,7 @@ export default function MapFeature({ onAddressSelect }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [flyToCoords, setFlyToCoords] = useState(null); // Состояние для flyTo
 
   useEffect(() => {
     setIsMounted(true);
@@ -142,12 +155,7 @@ export default function MapFeature({ onAddressSelect }) {
             onClose={() => setIsSearchPanelOpen(false)} 
             onFlyTo={(lat, lon) => {
               console.log('MapFeature onFlyTo triggered:', lat, lon);
-              if (mapRef.current) {
-                console.log('Flying to coordinates');
-                mapRef.current.flyTo([lat, lon], 16);
-              } else {
-                console.log('mapRef.current is null');
-              }
+              setFlyToCoords([lat, lon]); // Обновляем состояние для MapController
             }}
           />
         ) : (
@@ -206,10 +214,13 @@ export default function MapFeature({ onAddressSelect }) {
               ])}
             />
           )}
-          {addressMarker}
-          <ChangeMapView
-            center={addressData.lat ? [addressData.lat, addressData.lon] : null}
-          />
+          {!areApplicationsVisible && addressMarker}
+          {!areApplicationsVisible && (
+            <ChangeMapView
+              center={addressData.lat ? [addressData.lat, addressData.lon] : null}
+            />
+          )}
+          <MapController coords={flyToCoords} />
         </MapContainer>
       </div>
       <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>

@@ -15,10 +15,11 @@ import { useState, useRef, useEffect } from "react";
 import { customIcon } from "./leaflet-icon";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
+import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 
 export default function MapFeature({ onAddressSelect }) {
   const { addressData } = useDisplayAddressStore();
-  const { applications, setApplications } = useApplicationsStore();
+  const { applications, setApplications, setSelectedClient } = useApplicationsStore();
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
@@ -136,10 +137,25 @@ export default function MapFeature({ onAddressSelect }) {
       )}
 
       <div className={`${css.input} ${css.searchPanel} ${isSearchPanelOpen ? css.searchOpen : css.searchClosed}`}>
-        <InputAddress onAddressSelect={(data) => {
-            onAddressSelect(data);
-            setIsSearchPanelOpen(false);
-        }} />
+        {areApplicationsVisible ? (
+          <ApplicationsList 
+            onClose={() => setIsSearchPanelOpen(false)} 
+            onFlyTo={(lat, lon) => {
+              console.log('MapFeature onFlyTo triggered:', lat, lon);
+              if (mapRef.current) {
+                console.log('Flying to coordinates');
+                mapRef.current.flyTo([lat, lon], 16);
+              } else {
+                console.log('mapRef.current is null');
+              }
+            }}
+          />
+        ) : (
+          <InputAddress onAddressSelect={(data) => {
+              onAddressSelect(data);
+              setIsSearchPanelOpen(false);
+          }} />
+        )}
         <div className={css.searchCloseBtn} onClick={() => setIsSearchPanelOpen(false)}>
           ✕
         </div>
@@ -166,9 +182,18 @@ export default function MapFeature({ onAddressSelect }) {
                 icon={customIcon}
               >
                 <Popup>
-                  <strong>{item.client}</strong><br />
-                  {item.address.city}, {item.address.area}<br />
-                  <strong>Количество заявок: {item.count}</strong>
+                  <div 
+                    onClick={() => {
+                      setSelectedClient(item);
+                      setIsSheetOpen(true); // Открываем bottom sheet на мобилке
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <strong>{item.client}</strong><br />
+                    {item.address.city}, {item.address.area}<br />
+                    <strong>Количество заявок: {item.count}</strong><br />
+                    <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
+                  </div>
                 </Popup>
               </Marker>
             ))}
@@ -177,7 +202,7 @@ export default function MapFeature({ onAddressSelect }) {
               points={applications.map(item => [
                 parseFloat(item.address.latitude),
                 parseFloat(item.address.longitude),
-                item.count // Интенсивность = количество заявок
+                item.totalQuantity || 1 // Интенсивность = общее количество товара
               ])}
             />
           )}

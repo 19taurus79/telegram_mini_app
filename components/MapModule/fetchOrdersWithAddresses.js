@@ -40,17 +40,33 @@ export function mergeOrdersWithAddresses(orders, addresses) {
           client: clientName,
           address: address,
           orders: [],
-          count: 0
+          uniqueContracts: new Set(),
+          totalQuantity: 0 // Общее количество товара
         });
       }
       
       const clientData = clientOrdersMap.get(clientName);
       clientData.orders.push(order);
-      clientData.count++;
+      
+      // Добавляем уникальный договор
+      if (order.contract_supplement) {
+        clientData.uniqueContracts.add(order.contract_supplement);
+      }
+      
+      // Суммируем количество товара
+      if (order.different && !isNaN(order.different)) {
+        clientData.totalQuantity += parseFloat(order.different);
+      }
     }
   });
 
-  const result = Array.from(clientOrdersMap.values());
+  // Преобразуем Set в count и округляем totalQuantity
+  const result = Array.from(clientOrdersMap.values()).map(item => ({
+    ...item,
+    count: item.uniqueContracts.size,
+    totalQuantity: Math.round(item.totalQuantity * 100) / 100, // Округление до 2 знаков
+    uniqueContracts: undefined // Удаляем Set из финального объекта
+  }));
   console.log('Merged result:', result.length, 'unique clients');
   
   return result;
@@ -66,7 +82,7 @@ export async function fetchOrdersHeatmapData() {
   const heatmapPoints = mergedData.map(item => [
     item.address.latitude,
     item.address.longitude,
-    item.count // Интенсивность = количество заявок
+    item.totalQuantity // Интенсивность = общее количество товара
   ]);
 
   console.log('Heatmap points generated:', heatmapPoints.length);

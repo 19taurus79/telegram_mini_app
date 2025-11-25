@@ -11,15 +11,19 @@ export default function HeatmapLayer({ points }) {
 
     // Create heatmap layer
     const heatLayer = L.heatLayer(points, {
-      radius: 25,
-      blur: 15,
-      maxZoom: 13,
+      radius: 35, // Увеличен радиус
+      blur: 20, // Увеличено размытие
+      maxZoom: 17, // Увеличен maxZoom
+      max: 1.5, // Максимальное значение интенсивности
       gradient: {
-        0.0: 'blue',
-        0.5: 'lime',
-        0.7: 'yellow',
-        1.0: 'red'
-      }
+        0.0: '#0000ff',    // Ярко-синий
+        0.2: '#00ffff',    // Циан
+        0.4: '#00ff00',    // Зеленый
+        0.6: '#ffff00',    // Желтый
+        0.8: '#ff8000',    // Оранжевый
+        1.0: '#ff0000'     // Красный
+      },
+      minOpacity: 0.5 // Минимальная непрозрачность
     });
 
     // Add to map

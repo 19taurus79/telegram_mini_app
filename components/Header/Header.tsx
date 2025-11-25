@@ -9,6 +9,7 @@ import css from "./Header.module.css";
 import Link from "next/link";
 import { useInitData } from "@/store/InitData";
 import { useUser } from "@/store/User";
+import { useMapControlStore } from "@/components/MapModule/store/mapControlStore";
 
 function Header() {
   const { searchValue, setSearchValue } = useFilter();
@@ -21,6 +22,10 @@ function Header() {
   const setInitData = useInitData((state) => state.setInitData);
   const userData = useUser((state) => state.userData);
   const setUserData = useUser((state) => state.setUserData);
+  const areApplicationsVisible = useMapControlStore((state) => state.areApplicationsVisible);
+  const toggleApplications = useMapControlStore((state) => state.toggleApplications);
+  const showHeatmap = useMapControlStore((state) => state.showHeatmap);
+  const toggleHeatmap = useMapControlStore((state) => state.toggleHeatmap);
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -195,6 +200,34 @@ function Header() {
             Карти
                 </Link>
               </li>
+              {pathname === '/map' && (
+                <>
+                  <li>
+                    <button 
+                      onClick={() => {
+                        toggleApplications();
+                        handleNavClick();
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit', textAlign: 'left', width: '100%' }}
+                    >
+                      {areApplicationsVisible ? 'Приховати заявки' : 'Показати заявки'}
+                    </button>
+                  </li>
+                  {areApplicationsVisible && (
+                    <li>
+                      <button 
+                        onClick={() => {
+                          toggleHeatmap();
+                          handleNavClick();
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit', textAlign: 'left', width: '100%' }}
+                      >
+                        {showHeatmap ? 'Показати маркери' : 'Показати теплову карту'}
+                      </button>
+                    </li>
+                  )}
+                </>
+              )}
                 </>
             )
             }

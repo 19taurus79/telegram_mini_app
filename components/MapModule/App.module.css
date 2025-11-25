@@ -121,6 +121,10 @@
   .header {
     display: none;
   }
+
+  .heatmapToggle {
+    display: none;
+  }
 }
 
 /* Mobile Layout */
@@ -212,6 +216,23 @@
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     z-index: 1400; /* Below search panel */
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+  }
+
+  .heatmapToggle {
+    position: fixed;
+    top: 130px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-color: var(--background);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 1400;
     cursor: pointer;
     border: 1px solid var(--border-color);
   }

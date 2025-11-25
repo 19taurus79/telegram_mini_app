@@ -10,7 +10,7 @@
     "map dataTop input"
     "map dataTop dataBottom";
   gap: 10px;
-  height: 100vh; /* можно задавать высоту контейнера */
+  height: calc(100vh - var(--header-height, 60px)); /* можно задавать высоту контейнера */
   overflow: auto; /* разрешаем прокрутку при переполнении контейнера */
 }
 
@@ -121,6 +121,10 @@
   .header {
     display: none;
   }
+
+  .heatmapToggle {
+    display: none;
+  }
 }
 
 /* Mobile Layout */
@@ -167,6 +171,8 @@
     top: 60px; /* Below header */
     left: 0;
     width: 100%;
+    height: calc(100vh - 60px); /* Full height minus header */
+    max-height: calc(100vh - 60px);
     z-index: 1500; /* Below bottom sheet but above map */
     background-color: var(--background);
     padding: 10px;
@@ -175,6 +181,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    overflow: hidden; /* Prevent panel itself from scrolling */
   }
 
   .searchCloseBtn {
@@ -216,11 +223,28 @@
     border: 1px solid var(--border-color);
   }
 
+  .heatmapToggle {
+    position: fixed;
+    top: 130px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-color: var(--background);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 1400;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+  }
+
 
 
   .bottomSheet {
     position: fixed; /* Fixed to viewport to avoid 100vh scroll issues */
-    bottom: 0;
+    bottom: -16px;
     left: 0;
     width: 100%;
     background-color: var(--background);
@@ -231,7 +255,7 @@
     transition: transform 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
-    max-height: 60vh;
+    max-height: 95vh;
   }
 
   .sheetHeader {

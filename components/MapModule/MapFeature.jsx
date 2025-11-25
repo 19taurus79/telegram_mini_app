@@ -2,26 +2,31 @@
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import css from "./App.module.css"; // Ensure this file is copied or path updated
+import css from "./App.module.css";
 import TopData from "./components/topData/topData";
 import InputAddress from "./components/inputAddress/InputAddress";
 import BottomData from "./components/bottomData/bottomData";
 import { useDisplayAddressStore } from "./store/displayAddress";
 import { useApplicationsStore } from "./store/applicationsStore";
-import fetchApplications from "./fetchApplications";
+import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
 import { useState, useRef, useEffect } from "react";
 import { customIcon } from "./leaflet-icon";
+import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
+import { useMapControlStore } from "./store/mapControlStore";
+import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 
 export default function MapFeature({ onAddressSelect }) {
   const { addressData } = useDisplayAddressStore();
-  const { applications, setApplications } = useApplicationsStore();
+  const { applications, setApplications, setSelectedClient } = useApplicationsStore();
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
-  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false); // State for mobile search panel
-  const [areApplicationsVisible, setAreApplicationsVisible] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // State for mobile bottom sheet
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
+  const areApplicationsVisible = useMapControlStore((state) => state.areApplicationsVisible);
+  const showHeatmap = useMapControlStore((state) => state.showHeatmap);
+  const toggleHeatmap = useMapControlStore((state) => state.toggleHeatmap);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -44,8 +49,12 @@ export default function MapFeature({ onAddressSelect }) {
   useEffect(() => {
     const getApplications = async () => {
       if (areApplicationsVisible && applications.length === 0) {
-        const apps = await fetchApplications();
-        setApplications(apps);
+        console.log('Fetching orders and addresses...');
+        const { mergedData, heatmapPoints } = await fetchOrdersHeatmapData();
+        console.log('Merged data:', mergedData);
+        console.log('Heatmap points:', heatmapPoints);
+        // Сохраняем объединенные данные в store
+        setApplications(mergedData);
       }
     };
     getApplications();
@@ -71,7 +80,6 @@ export default function MapFeature({ onAddressSelect }) {
     );
   }
 
-  // Prevent SSR issues with Leaflet
   if (!isMounted) {
     return <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>Loading Map...</div>;
   }
@@ -103,11 +111,51 @@ export default function MapFeature({ onAddressSelect }) {
         </svg>
       </div>
 
+      {/* Heatmap Toggle Button */}
+      {areApplicationsVisible && (
+        <div 
+          className={css.heatmapToggle} 
+          onClick={toggleHeatmap}
+          title={showHeatmap ? "Показать маркеры" : "Показать тепловую карту"}
+        >
+          {showHeatmap ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M8 13h2"></path>
+              <path d="M8 17h2"></path>
+              <path d="M14 13h2"></path>
+              <path d="M14 17h2"></path>
+            </svg>
+          )}
+        </div>
+      )}
+
       <div className={`${css.input} ${css.searchPanel} ${isSearchPanelOpen ? css.searchOpen : css.searchClosed}`}>
-        <InputAddress onAddressSelect={(data) => {
-            onAddressSelect(data);
-            setIsSearchPanelOpen(false); // Close panel on selection
-        }} />
+        {areApplicationsVisible ? (
+          <ApplicationsList 
+            onClose={() => setIsSearchPanelOpen(false)} 
+            onFlyTo={(lat, lon) => {
+              console.log('MapFeature onFlyTo triggered:', lat, lon);
+              if (mapRef.current) {
+                console.log('Flying to coordinates');
+                mapRef.current.flyTo([lat, lon], 16);
+              } else {
+                console.log('mapRef.current is null');
+              }
+            }}
+          />
+        ) : (
+          <InputAddress onAddressSelect={(data) => {
+              onAddressSelect(data);
+              setIsSearchPanelOpen(false);
+          }} />
+        )}
         <div className={css.searchCloseBtn} onClick={() => setIsSearchPanelOpen(false)}>
           ✕
         </div>
@@ -126,18 +174,38 @@ export default function MapFeature({ onAddressSelect }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {areApplicationsVisible &&
-            applications.map((app) => (
+          {areApplicationsVisible && !showHeatmap &&
+            applications.map((item) => (
               <Marker
-                key={app.id}
-                position={[app.lat, app.lon]}
+                key={item.client}
+                position={[item.address.latitude, item.address.longitude]}
                 icon={customIcon}
               >
                 <Popup>
-                  {app.name} <br /> {app.address}
+                  <div 
+                    onClick={() => {
+                      setSelectedClient(item);
+                      setIsSheetOpen(true); // Открываем bottom sheet на мобилке
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <strong>{item.client}</strong><br />
+                    {item.address.city}, {item.address.area}<br />
+                    <strong>Количество заявок: {item.count}</strong><br />
+                    <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
+                  </div>
                 </Popup>
               </Marker>
             ))}
+          {areApplicationsVisible && showHeatmap && (
+            <HeatmapLayer 
+              points={applications.map(item => [
+                parseFloat(item.address.latitude),
+                parseFloat(item.address.longitude),
+                item.totalQuantity || 1 // Интенсивность = общее количество товара
+              ])}
+            />
+          )}
           {addressMarker}
           <ChangeMapView
             center={addressData.lat ? [addressData.lat, addressData.lon] : null}

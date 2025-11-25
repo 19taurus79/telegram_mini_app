@@ -1,46 +1,57 @@
-import { useDisplayAddressStore } from "../../store/displayAddress";
-import { useGeocodeStore } from "../../store/geocodData";
-import { useUploadFilesStore } from "../../store/uploadFilesStore";
-
+import { useApplicationsStore } from "../../store/applicationsStore";
 import css from "./bottomData.module.css";
 
 export default function BottomData() {
-  const { setAddressData } = useDisplayAddressStore();
-  const { geocodeData } = useGeocodeStore();
-  const { files, rawFiles } = useUploadFilesStore();
+  const { selectedClient } = useApplicationsStore();
   
-  if (!geocodeData || geocodeData.length === 0) return null;
+  if (!selectedClient) {
+    return (
+      <div className={css.container}>
+        <p className={css.emptyMessage}>Оберіть клієнта на карті для перегляду заявок</p>
+      </div>
+    );
+  }
+
+  // Группируем заявки по номеру договора
+  const groupedOrders = {};
+  selectedClient.orders.forEach(order => {
+    const contractNum = order.contract_supplement || 'Без номера';
+    if (!groupedOrders[contractNum]) {
+      groupedOrders[contractNum] = [];
+    }
+    groupedOrders[contractNum].push(order);
+  });
 
   return (
     <div className={css.container}>
-      <h2 className={css.title}>Дані з геокодування:</h2>
-      <ul className={css.list}>
-        {geocodeData.map((item, index) => (
-          <li key={index} className={css.listItem}>
-            <p
-              className={css.addressText}
-              onClick={() => {
-                console.log(item);
-                setAddressData(item);
-              }}
-            >
-              Адреса: {item.display_name}
-            </p>
-            <p className={css.infoText}>Широта: {item.lat}</p>
-            <p className={css.infoText}>Довгота: {item.lon}</p>
-            {/* <button
-              className={css.button}
-              onClick={() => {
-                console.log(item);
-                console.log("Оброблені файли", files);
-                console.log("Не оброблені файли", rawFiles);
-              }}
-            >
-              Select
-            </button> */}
-          </li>
+      <h2 className={css.title}>
+        {selectedClient.client}
+      </h2>
+      <p className={css.subtitle}>
+        {selectedClient.address.city}, {selectedClient.address.area}
+      </p>
+      <p className={css.orderCount}>
+        Всього заявок: {selectedClient.count}
+      </p>
+      
+      <div className={css.ordersContainer}>
+        {Object.entries(groupedOrders).map(([contractNum, orders]) => (
+          <div key={contractNum} className={css.contractGroup}>
+            <h3 className={css.contractNumber}>Договір: {contractNum}</h3>
+            <ul className={css.ordersList}>
+              {orders.map((order, index) => (
+                <li key={index} className={css.orderItem}>
+                  <div className={css.productName}>{order.nomenclature}</div>
+                  <div className={css.orderDetails}>
+                    <span>Кількість: {order.different}</span>
+                    {/* {order.manufacturer && <span> • {order.manufacturer}</span>} */}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

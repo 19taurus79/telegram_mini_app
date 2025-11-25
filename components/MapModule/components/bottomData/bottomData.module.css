@@ -1,61 +1,77 @@
 .container {
-  padding: 24px;
-  background-color: black;
-  border-radius: 8px;
-  margin: auto;
-  color: white;
+  padding: 15px;
+  background-color: var(--background);
+  color: var(--foreground);
+  height: 100%;
+  overflow-y: auto;
 }
 
 .title {
-  font-size: 20px;
-  color: white;
-  margin-bottom: 12px;
-}
-
-.list {
-  list-style-type: none;
-  padding-left: 0;
-}
-
-.listItem {
-  padding: 12px;
-  border-bottom: 1px solid #444;
-  margin-bottom: 8px;
-  background-color: #333;
-  border-radius: 4px;
-}
-
-.listItem:last-child {
-  border-bottom: none;
-}
-
-.addressText {
-  cursor: pointer;
+  margin: 0 0 5px 0;
+  font-size: 1.2em;
   font-weight: bold;
-  margin-bottom: 4px;
-  color: #5b9bd5;
 }
 
-.addressText:hover {
-  text-decoration: underline;
+.subtitle {
+  margin: 0 0 10px 0;
+  font-size: 0.9em;
+  opacity: 0.8;
 }
 
-.infoText {
-  margin: 2px 0;
-  font-size: 14px;
-  color: #ccc;
+.orderCount {
+  margin: 0 0 15px 0;
+  font-weight: 500;
+  color: var(--primary-color);
 }
 
-.button {
-  margin-top: 8px;
-  padding: 6px 12px;
-  background-color: #5b9bd5;
-  color: white;
-  border: none;
+.emptyMessage {
+  text-align: center;
+  opacity: 0.6;
+  padding: 20px;
+}
+
+.ordersContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contractGroup {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  background-color: rgba(var(--primary-color-rgb, 0, 122, 255), 0.05);
+}
+
+.contractNumber {
+  margin: 0 0 10px 0;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.ordersList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderItem {
+  padding: 8px;
+  background-color: var(--background);
   border-radius: 4px;
-  cursor: pointer;
+  border-left: 3px solid var(--primary-color);
 }
 
-.button:hover {
-  background-color: #477ab9;
+.productName {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.orderDetails {
+  font-size: 0.85em;
+  opacity: 0.8;
 }

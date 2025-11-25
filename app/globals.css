@@ -78,6 +78,21 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Remove padding for map page */
+main {
+  min-height: calc(100vh - var(--header-height, 60px));
+}
+
+/* Full height for map page specifically */
+body:has(main > div[style*="height: 100%"]) {
+  padding-top: 0;
+}
+
+body:has(main > div[style*="height: 100%"]) main {
+  min-height: 100vh;
+  padding-top: var(--header-height, 60px);
+}
+
 * {
   box-sizing: border-box;
   padding: 0;

@@ -12,10 +12,11 @@ import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
 import { useState, useRef, useEffect } from "react";
-import { customIcon } from "./leaflet-icon";
+import { customIcon, clientIcon } from "./leaflet-icon";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
+import ClientsList from "./components/ClientsList/ClientsList";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -36,8 +37,12 @@ export default function MapFeature({ onAddressSelect }) {
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const areApplicationsVisible = useMapControlStore((state) => state.areApplicationsVisible);
+  const setAreApplicationsVisible = useMapControlStore((state) => state.setApplicationsVisible);
   const showHeatmap = useMapControlStore((state) => state.showHeatmap);
   const toggleHeatmap = useMapControlStore((state) => state.toggleHeatmap);
+  const areClientsVisible = useMapControlStore((state) => state.areClientsVisible);
+  const toggleClients = useMapControlStore((state) => state.toggleClients);
+  const [clients, setClients] = useState([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -72,6 +77,20 @@ export default function MapFeature({ onAddressSelect }) {
     };
     getApplications();
   }, [areApplicationsVisible, applications.length, setApplications]);
+
+  useEffect(() => {
+    const getClients = async () => {
+      if (areClientsVisible && clients.length === 0) {
+        console.log('Fetching clients...');
+        const { addresses } = await import("./fetchOrdersWithAddresses").then(mod => mod.fetchOrdersAndAddresses());
+        // Filter addresses that have coordinates
+        const validClients = addresses.filter(addr => addr.latitude && addr.longitude);
+        setClients(validClients);
+        console.log('Clients:', validClients);
+      }
+    };
+    getClients();
+  }, [areClientsVisible, clients.length]);
 
   useEffect(() => {
     if (mapRef.current) {
@@ -149,6 +168,8 @@ export default function MapFeature({ onAddressSelect }) {
         </div>
       )}
 
+
+
       <div className={`${css.input} ${css.searchPanel} ${isSearchPanelOpen ? css.searchOpen : css.searchClosed}`}>
         {areApplicationsVisible ? (
           <ApplicationsList 
@@ -157,6 +178,16 @@ export default function MapFeature({ onAddressSelect }) {
               console.log('MapFeature onFlyTo triggered:', lat, lon);
               setFlyToCoords([lat, lon]); // Обновляем состояние для MapController
             }}
+          />
+        ) : areClientsVisible ? (
+          <ClientsList 
+            clients={clients}
+            onClose={() => setIsSearchPanelOpen(false)}
+            onFlyTo={(lat, lon) => {
+              console.log('MapFeature client onFlyTo triggered:', lat, lon);
+              setFlyToCoords([lat, lon]);
+            }}
+            onClientSelect={(client) => setSelectedClient(client)}
           />
         ) : (
           <InputAddress onAddressSelect={(data) => {
@@ -169,7 +200,25 @@ export default function MapFeature({ onAddressSelect }) {
         </div>
       </div>
       <div className={css.map}>
+        {/* Clients Toggle Button */}
+        <div 
+          className={css.clientsToggle} 
+          onClick={toggleClients}
+          title={areClientsVisible ? "Скрити контрагентів" : "Показати контрагентів"}
+          style={{
+            background: areClientsVisible ? '#4caf50' : 'white',
+            color: areClientsVisible ? 'white' : 'black',
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
         <MapContainer
+          className={css.leafletMap}
           ref={mapRef}
           center={
             addressData.lat
@@ -205,6 +254,31 @@ export default function MapFeature({ onAddressSelect }) {
                 </Popup>
               </Marker>
             ))}
+          {areClientsVisible && clients.map((client, index) => (
+            <Marker
+              key={`${client.client}-${index}`}
+              position={[client.latitude, client.longitude]}
+              icon={clientIcon}
+              eventHandlers={{
+                click: () => {
+                  setSelectedClient(client);
+                  setIsSheetOpen(true);
+                },
+              }}
+            >
+              <Popup>
+                <div>
+                  <strong>{client.client}</strong><br />
+                  {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
+                  {`Менеджер: ${client.manager}`}<br />
+                  {`Контактна особа: ${client.representative}`}<br />
+                  {`Телефон: ${client.phone1}`}<br />
+
+                  {/* <em style={{ fontSize: '0.85em', color: '#666' }}>Контрагент</em> */}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
           {areApplicationsVisible && showHeatmap && (
             <HeatmapLayer 
               points={applications.map(item => [

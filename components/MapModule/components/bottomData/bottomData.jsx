@@ -5,12 +5,18 @@ import css from "./bottomData.module.css";
 
 export default function BottomData() {
   const { selectedClient } = useApplicationsStore();
-  const { areApplicationsVisible } = useMapControlStore();
+  const { areApplicationsVisible, areClientsVisible } = useMapControlStore();
   const { addressData } = useDisplayAddressStore();
 
   // Режим отображения заявок
   if (areApplicationsVisible) {
-    if (!selectedClient) {
+    // Если выбран клиент с заявками - показываем его
+    if (selectedClient && selectedClient.orders) {
+       // Продолжаем выполнение блока
+    } else if (selectedClient && !selectedClient.orders && areClientsVisible) {
+       // Если выбран контрагент (без заявок) и включен режим контрагентов - пропускаем этот блок
+       // чтобы сработал следующий if (areClientsVisible)
+    } else {
       return (
         <div className={css.container}>
           <p className={css.emptyMessage}>Оберіть клієнта на карті для перегляду заявок</p>
@@ -18,6 +24,7 @@ export default function BottomData() {
       );
     }
 
+    if (selectedClient && selectedClient.orders) {
     // Группируем заявки по номеру договора
     const groupedOrders = {};
     selectedClient.orders.forEach(order => {
@@ -57,6 +64,32 @@ export default function BottomData() {
               </ul>
             </div>
           ))}
+        </div>
+      </div>
+    );
+    }
+  }
+
+  // Режим отображения контрагентов
+  if (areClientsVisible) {
+    if (!selectedClient) {
+      return (
+        <div className={css.container}>
+          <p className={css.emptyMessage}>Оберіть контрагента на карті для перегляду інформації</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={css.container}>
+        <h2 className={css.title}>{selectedClient.client}</h2>
+        <div className={css.addressInfo}>
+            <p><strong>Адреса:</strong> {selectedClient.region} обл., {selectedClient.area} район, {selectedClient.commune} громада, {selectedClient.city}</p>
+            <p><strong>Менеджер:</strong> {selectedClient.manager}</p>
+            <p><strong>Контактна особа:</strong> {selectedClient.representative}</p>
+            <p><strong>Телефон:</strong> <a href={`tel:${selectedClient.phone1}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone1}</a></p>
+            {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone2}</a></p>}
+            {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
         </div>
       </div>
     );

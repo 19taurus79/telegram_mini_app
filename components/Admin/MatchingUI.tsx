@@ -13,7 +13,8 @@ interface MatchingUIProps {
 
 interface Matches {
   [leftoverId: string]: {
-    movedIndex: number | null;
+    movedIndices: number[];
+    movedQuantities: { [index: number]: number };
     noteIndices: number[];
   };
 }
@@ -22,7 +23,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
   const { session_id, leftovers } = data;
 
   const [matches, setMatches] = useState<Matches>(
-    Object.keys(leftovers).reduce((acc, key) => ({ ...acc, [key]: { movedIndex: null, noteIndices: [] } }), {})
+    Object.keys(leftovers).reduce((acc, key) => ({ ...acc, [key]: { movedIndices: [], movedQuantities: {}, noteIndices: [] } }), {})
   );
   
   // Стан для успішно зіставлених елементів
@@ -52,10 +53,30 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
     setMatches(prev => {
       const newMatches = { ...prev };
       if (type === 'moved') {
-        newMatches[leftoverId] = {
-          ...newMatches[leftoverId],
-          movedIndex: newMatches[leftoverId].movedIndex === index ? null : index,
-        };
+        const currentMoved = newMatches[leftoverId].movedIndices;
+        const currentQuantities = newMatches[leftoverId].movedQuantities;
+        
+        if (currentMoved.includes(index)) {
+          // Deselecting
+          const restQuantities = { ...currentQuantities };
+          delete restQuantities[index];
+          newMatches[leftoverId] = {
+            ...newMatches[leftoverId],
+            movedIndices: currentMoved.filter(i => i !== index),
+            movedQuantities: restQuantities,
+          };
+        } else {
+          // Selecting
+          const item = leftovers[leftoverId].current_moved.find(m => m.index === index);
+          newMatches[leftoverId] = {
+            ...newMatches[leftoverId],
+            movedIndices: [...currentMoved, index],
+            movedQuantities: {
+              ...currentQuantities,
+              [index]: item ? item.Перемещено : 0
+            },
+          };
+        }
       } else {
         const currentNotes = newMatches[leftoverId].noteIndices;
         if (currentNotes.includes(index)) {
@@ -74,17 +95,40 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
     });
   };
 
+  const handleQuantityChange = (
+    leftoverId: string,
+    index: number,
+    value: number
+  ) => {
+    setMatches(prev => ({
+      ...prev,
+      [leftoverId]: {
+        ...prev[leftoverId],
+        movedQuantities: {
+          ...prev[leftoverId].movedQuantities,
+          [index]: value
+        }
+      }
+    }));
+  };
+
   const handleSubmit = async (leftoverId: string) => {
     const currentMatch = matches[leftoverId];
-    if (currentMatch.movedIndex === null || currentMatch.noteIndices.length === 0) {
-      toast.error('Будь ласка, виберіть переміщення та хоча б одне замовлення для співставлення.');
+    if (currentMatch.movedIndices.length === 0 || currentMatch.noteIndices.length === 0) {
+      toast.error('Будь ласка, виберіть хоча б одне переміщення та хоча б одне замовлення для співставлення.');
       return;
     }
 
+    const selectedMovedItems = currentMatch.movedIndices.map(index => {
+      return {
+        index: index,
+        quantity: currentMatch.movedQuantities[index] || 0
+      };
+    });
+
     const payload = {
-      session_id: session_id,
       request_id: leftoverId,
-      selected_moved_indices: [currentMatch.movedIndex],
+      selected_moved_items: selectedMovedItems,
       selected_notes_indices: currentMatch.noteIndices,
     };
 
@@ -113,9 +157,10 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
   const sums = useMemo(() => {
     return Object.entries(matches).reduce((acc, [leftoverId, match]) => {
       const leftover = leftovers[leftoverId];
-      const movedSum = match.movedIndex !== null 
-        ? leftover.current_moved.find(m => m.index === match.movedIndex)?.Перемещено || 0
-        : 0;
+
+      const movedSum = match.movedIndices.reduce((sum, movedIndex) => {
+        return sum + (match.movedQuantities[movedIndex] || 0);
+      }, 0);
       const notesSum = match.noteIndices.reduce((sum, noteIndex) => {
         const note = leftover.current_notes.find(n => n.index === noteIndex);
         return sum + (note?.Количество_в_примечании || 0);
@@ -156,12 +201,23 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
                 {leftover.current_moved.map((item: MovedItem) => (
                   <div 
                     key={item.index} 
-                    className={`${styles.item} ${matches[leftoverId]?.movedIndex === item.index ? styles.selected : ''}`}
+                    className={`${styles.item} ${matches[leftoverId]?.movedIndices.includes(item.index) ? styles.selected : ''}`}
                     onClick={() => handleMatchChange(leftoverId, 'moved', item.index)}
                   >
                     <p><strong>Номенклатура:</strong> {item.Номенклатура}</p>
                     <p><strong>Переміщено:</strong> {item.Перемещено}</p>
                     <p><strong>Партія:</strong> {item['Партія номенклатури']}</p>
+                    {matches[leftoverId]?.movedIndices.includes(item.index) && (
+                      <div className={styles.quantityInput} onClick={(e) => e.stopPropagation()}>
+                        <label>Кількість для списання:</label>
+                        <input
+                          type="number"
+                          value={matches[leftoverId].movedQuantities[item.index] || ''}
+                          onChange={(e) => handleQuantityChange(leftoverId, item.index, parseFloat(e.target.value))}
+                          className={styles.input}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

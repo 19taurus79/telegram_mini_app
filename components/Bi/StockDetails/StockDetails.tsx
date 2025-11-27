@@ -50,7 +50,7 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
                     {stock.warehouse}
                   </td>
                   <td className={`${css.td} ${css.availableColumn}`} title={stock.available.toString()}>
-                    {stock.available}
+                    {Number(stock.available).toFixed(2)}
                   </td>
                 </tr>
               ))}

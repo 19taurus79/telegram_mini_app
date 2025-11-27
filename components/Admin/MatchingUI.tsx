@@ -22,6 +22,9 @@ interface Matches {
 const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
   const { session_id, leftovers } = data;
 
+  // Локальний стан для залишків, щоб підтримувати часткове співставлення
+  const [localLeftovers, setLocalLeftovers] = useState(leftovers);
+
   const [matches, setMatches] = useState<Matches>(
     Object.keys(leftovers).reduce((acc, key) => ({ ...acc, [key]: { movedIndices: [], movedQuantities: {}, noteIndices: [] } }), {})
   );
@@ -33,17 +36,17 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
 
   // Обчислюємо видимі елементи, виключаючи і зіставлені, і пропущені
   const visibleLeftovers = useMemo(() => 
-    Object.keys(leftovers).filter(key => !hiddenLeftovers.includes(key) && !skippedLeftovers.includes(key)),
-    [leftovers, hiddenLeftovers, skippedLeftovers]
+    Object.keys(localLeftovers).filter(key => !hiddenLeftovers.includes(key) && !skippedLeftovers.includes(key)),
+    [localLeftovers, hiddenLeftovers, skippedLeftovers]
   );
 
   // Ефект, який спрацьовує, коли більше немає видимих елементів
   useEffect(() => {
-    if (Object.keys(leftovers).length > 0 && visibleLeftovers.length === 0) {
+    if (Object.keys(localLeftovers).length > 0 && visibleLeftovers.length === 0) {
       toast.success('Всі елементи оброблено!');
       onAllMatched();
     }
-  }, [visibleLeftovers, leftovers, onAllMatched]);
+  }, [visibleLeftovers, localLeftovers, onAllMatched]);
 
   const handleMatchChange = (
     leftoverId: string,
@@ -67,7 +70,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
           };
         } else {
           // Selecting
-          const item = leftovers[leftoverId].current_moved.find(m => m.index === index);
+          const item = localLeftovers[leftoverId].current_moved.find(m => m.index === index);
           newMatches[leftoverId] = {
             ...newMatches[leftoverId],
             movedIndices: [...currentMoved, index],
@@ -135,7 +138,58 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
     try {
       await axios.post(`/process/${session_id}/manual_match`, payload);
       toast.success('Співставлення успішно відправлено!');
-      setHiddenLeftovers(prev => [...prev, leftoverId]);
+
+      // Оновлюємо локальний стан
+      setLocalLeftovers(prev => {
+        const newLeftovers = { ...prev };
+        const currentLeftover = { ...newLeftovers[leftoverId] };
+        
+        // Оновлюємо переміщені елементи
+        currentLeftover.current_moved = currentLeftover.current_moved.map(item => {
+          if (currentMatch.movedIndices.includes(item.index)) {
+            const usedQuantity = currentMatch.movedQuantities[item.index] || 0;
+            return {
+              ...item,
+              Перемещено: item.Перемещено - usedQuantity
+            };
+          }
+          return item;
+        }).filter(item => item.Перемещено > 0.001); // Видаляємо, якщо кількість майже 0
+
+        // Видаляємо використані нотатки
+        currentLeftover.current_notes = currentLeftover.current_notes.filter(
+          note => !currentMatch.noteIndices.includes(note.index)
+        );
+
+        newLeftovers[leftoverId] = currentLeftover;
+        return newLeftovers;
+      });
+
+      // Скидаємо вибір для цього елемента
+      setMatches(prev => ({
+        ...prev,
+        [leftoverId]: { movedIndices: [], movedQuantities: {}, noteIndices: [] }
+      }));
+
+      // Перевіряємо, чи повністю оброблено елемент.
+      // Оскільки setLocalLeftovers асинхронний, ми обчислюємо залишок на основі поточних даних і змін.
+      
+      const remainingMoved = localLeftovers[leftoverId].current_moved.map(item => {
+          if (currentMatch.movedIndices.includes(item.index)) {
+            const usedQuantity = currentMatch.movedQuantities[item.index] || 0;
+            return item.Перемещено - usedQuantity;
+          }
+          return item.Перемещено;
+      }).filter(q => q > 0.001);
+
+      const remainingNotes = localLeftovers[leftoverId].current_notes.filter(
+          note => !currentMatch.noteIndices.includes(note.index)
+      );
+
+      if (remainingMoved.length === 0 && remainingNotes.length === 0) {
+         setHiddenLeftovers(prev => [...prev, leftoverId]);
+      }
+
     } catch (error) {
       console.error('Помилка при відправці співставлення:', error);
       toast.error('Помилка при відправці співставлення.');
@@ -145,7 +199,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
   // Нова функція для пропуску одного елемента (тільки на фронтенді)
   const handleSkipItem = (leftoverId: string) => {
     setSkippedLeftovers(prev => [...prev, leftoverId]);
-    toast.success(`Зіставлення для ${leftovers[leftoverId].product} пропущено.`);
+    toast.success(`Зіставлення для ${localLeftovers[leftoverId].product} пропущено.`);
   };
 
   // Нова функція для пропуску всіх видимих елементів
@@ -156,7 +210,7 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
 
   const sums = useMemo(() => {
     return Object.entries(matches).reduce((acc, [leftoverId, match]) => {
-      const leftover = leftovers[leftoverId];
+      const leftover = localLeftovers[leftoverId];
 
       const movedSum = match.movedIndices.reduce((sum, movedIndex) => {
         return sum + (match.movedQuantities[movedIndex] || 0);
@@ -169,9 +223,9 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
       acc[leftoverId] = { movedSum, notesSum };
       return acc;
     }, {} as { [key: string]: { movedSum: number, notesSum: number } });
-  }, [matches, leftovers]);
+  }, [matches, localLeftovers]);
 
-  if (Object.keys(leftovers).length === 0) {
+  if (Object.keys(localLeftovers).length === 0) {
     return (
       <div className={styles.container}>
           <div className={styles.noMatchedWrapper}>
@@ -186,12 +240,12 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
 
   return (
     <div className={styles.container}>
-      {Object.keys(leftovers).map((leftoverId) => {
+      {Object.keys(localLeftovers).map((leftoverId) => {
         // Рендеримо компонент тільки якщо він не прихований і не пропущений
         if (hiddenLeftovers.includes(leftoverId) || skippedLeftovers.includes(leftoverId)) {
           return null;
         }
-        const leftover = leftovers[leftoverId];
+        const leftover = localLeftovers[leftoverId];
         return (
           <div key={leftoverId} className={styles.leftoverContainer}>
             <h3 className={styles.productTitle}>{leftover.product}</h3>

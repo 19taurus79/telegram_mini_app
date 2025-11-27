@@ -171,15 +171,8 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
         [leftoverId]: { movedIndices: [], movedQuantities: {}, noteIndices: [] }
       }));
 
-      // Перевіряємо, чи повністю оброблено елемент
-      const updatedLeftover = localLeftovers[leftoverId]; // Note: this might be stale, but we check logic below
-      // Краще перевірити в useEffect або тут, але з урахуванням оновлення.
-      // Оскільки setLocalLeftovers асинхронний, ми не можемо відразу перевірити updatedLeftover.
-      // Але ми можемо перевірити, чи залишились елементи після наших змін.
-      
-      // Логіка вище вже фільтрує масиви. Якщо обидва порожні - ховаємо.
-      // Але ми не маємо доступу до оновленого стану прямо тут.
-      // Тому ми можемо просто перевірити, чи залишиться щось після наших змін.
+      // Перевіряємо, чи повністю оброблено елемент.
+      // Оскільки setLocalLeftovers асинхронний, ми обчислюємо залишок на основі поточних даних і змін.
       
       const remainingMoved = localLeftovers[leftoverId].current_moved.map(item => {
           if (currentMatch.movedIndices.includes(item.index)) {

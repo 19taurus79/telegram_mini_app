@@ -58,7 +58,8 @@ const MatchingUI: React.FC<MatchingUIProps> = ({ data, onAllMatched }) => {
         
         if (currentMoved.includes(index)) {
           // Deselecting
-          const { [index]: removed, ...restQuantities } = currentQuantities;
+          const restQuantities = { ...currentQuantities };
+          delete restQuantities[index];
           newMatches[leftoverId] = {
             ...newMatches[leftoverId],
             movedIndices: currentMoved.filter(i => i !== index),

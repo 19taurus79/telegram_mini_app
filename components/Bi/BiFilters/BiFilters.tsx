@@ -25,7 +25,7 @@ const BiFilters: React.FC<BiFiltersProps> = ({ data, onFilterChange }) => {
 
   // Обчислюємо значення для фільтрів лише один раз при першому рендері.
   // Пустий масив залежностей в useMemo гарантує, що цей код не виконається повторно.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   const { linesOfBusiness, managers } = useMemo(() => {
     const allLines = new Set<string>();
     data.missing_but_available.forEach((item) =>

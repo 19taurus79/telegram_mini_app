@@ -7,11 +7,25 @@ import { sendDeliveryData } from "@/lib/api";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
+import { fetchOrdersAndAddresses } from "@/components/MapModule/fetchOrdersWithAddresses";
+import { useEffect } from "react";
+
 type SelectedItem = {
   id: string;
   quantity: number;
   max: number;
 };
+
+type ClientAddress = {
+  client: string;
+  representative: string;
+  phone1: string;
+  region: string;
+  area: string;
+  commune: string;
+  city: string;
+};
+
 const override: CSSProperties = {
   display: "block",
   margin: "0 auto",
@@ -24,6 +38,7 @@ export default function DeliveryData() {
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [clientsDirectory, setClientsDirectory] = useState<ClientAddress[]>([]);
 
   const [formClient, setFormClient] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -34,6 +49,19 @@ export default function DeliveryData() {
     comment: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Fetch client directory on mount
+  useEffect(() => {
+    const loadClientsDirectory = async () => {
+      try {
+        const { addresses } = await fetchOrdersAndAddresses();
+        setClientsDirectory(addresses);
+      } catch (error) {
+        console.error("Failed to load clients directory:", error);
+      }
+    };
+    loadClientsDirectory();
+  }, []);
 
   const openModal = (item: SelectedItem) => {
     setSelectedItem(item);
@@ -144,13 +172,33 @@ export default function DeliveryData() {
                 className={styles.sendButton}
                 onClick={() => {
                   setFormClient(client.client);
-                  setFormData({
-                    address: "",
-                    contact: "",
-                    phone: "",
-                    date: "",
-                    comment: "",
-                  });
+                  
+                  // Find client in directory
+                  const clientData = clientsDirectory.find(
+                    (c) => c.client === client.client
+                  );
+                  
+                  if (clientData) {
+                    // Auto-fill form with directory data
+                    const addressText = `${clientData.region} обл., ${clientData.area || ''} район, ${clientData.commune || ''} громада, ${clientData.city || ''}`;
+                    setFormData({
+                      address: addressText.trim(),
+                      contact: clientData.representative || "",
+                      phone: clientData.phone1 || "",
+                      date: "",
+                      comment: "",
+                    });
+                  } else {
+                    // No data in directory - leave empty
+                    setFormData({
+                      address: "",
+                      contact: "",
+                      phone: "",
+                      date: "",
+                      comment: "",
+                    });
+                  }
+                  
                   setFormError(null);
                 }}
               >

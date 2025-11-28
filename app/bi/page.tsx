@@ -12,6 +12,7 @@ import StockDetails from "@/components/Bi/StockDetails/StockDetails";
 import RecommendationsTable from "@/components/Bi/RecommendationsTable/RecommendationsTable";
 import OrdersTable from "@/components/Bi/OrdersTable/OrdersTable";
 import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
+import Loader from "@/components/Loader/Loader";
 
 interface Recommendation {
   product: string;
@@ -175,7 +176,7 @@ export default function BiPage() {
 
   const renderContent = () => {
     if (isLoading) {
-      return <p>Loading...</p>;
+      return <Loader />;
     }
 
     if (error) {

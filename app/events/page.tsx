@@ -1,7 +1,7 @@
 "use client";
 import { getEventByUser } from "@/lib/api";
 import { CSSProperties } from "react";
-import { FadeLoader } from "react-spinners";
+import Loader from "@/components/Loader/Loader";
 import { getInitData } from "@/lib/getInitData";
 import EventsSmall from "./clientPage";
 import { useQuery } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ export default function Events() {
   });
   if (isLoading) {
     // return <div>Loading...</div>;
-    return <FadeLoader color="#0ef18e" cssOverride={override} />;
+    return <Loader />;
   }
   if (events) return <EventsSmall events={events} />;
 }

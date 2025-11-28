@@ -12,7 +12,8 @@ import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
 import { useState, useRef, useEffect } from "react";
-import { customIcon, clientIcon } from "./leaflet-icon";
+import { customIcon, clientIcon, warehouseIcon } from "./leaflet-icon";
+import { warehouses } from "./warehouses";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
@@ -244,6 +245,21 @@ export default function MapFeature({ onAddressSelect }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {/* Warehouse Markers */}
+          {warehouses.map((warehouse) => (
+            <Marker
+              key={`warehouse-${warehouse.id}`}
+              position={[warehouse.lat, warehouse.lng]}
+              icon={warehouseIcon}
+            >
+              <Popup>
+                <div>
+                  <strong>{warehouse.name}</strong><br />
+                  {warehouse.description}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
           {areApplicationsVisible && !showHeatmap && (() => {
             const groupedApps = groupItemsByLocation(applications);
             return groupedApps.map((group, index) => {

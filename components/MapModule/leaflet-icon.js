@@ -19,3 +19,10 @@ export const clientIcon = new L.Icon({
   popupAnchor: [1, -34],
   // shadowSize: [41, 41],
 });
+
+export const warehouseIcon = new L.Icon({
+  iconUrl: "/images/warehouse.png", // <--- Укажите путь к иконке склада
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30],
+});

@@ -1,7 +1,7 @@
 import css from "./ClientsList.module.css";
 import { useRef } from "react";
 
-export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect }) {
+export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect, onAddClient }) {
   const letterRefs = useRef({});
 
   // Украинский алфавит
@@ -53,6 +53,11 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect 
     <div className={css.container}>
       <div className={css.header}>
         <h3>Список контрагентів ({clients.length})</h3>
+        {onAddClient && (
+          <button className={css.addButton} onClick={onAddClient}>
+            + Додати клієнта
+          </button>
+        )}
       </div>
       
       {/* Алфавитный указатель */}

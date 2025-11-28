@@ -18,6 +18,7 @@ import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
+import EditClientModal from "./components/EditClientModal/EditClientModal";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -45,8 +46,8 @@ const groupItemsByLocation = (items) => {
 };
 
 export default function MapFeature({ onAddressSelect }) {
-  const { addressData } = useDisplayAddressStore();
-  const { applications, setApplications, setSelectedClient } = useApplicationsStore();
+  const { addressData, setAddressData } = useDisplayAddressStore();
+  const { applications, setApplications, selectedClient, setSelectedClient } = useApplicationsStore();
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
@@ -61,6 +62,38 @@ export default function MapFeature({ onAddressSelect }) {
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
   const [flyToCoords, setFlyToCoords] = useState(null); // Состояние для flyTo
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+
+  const handleSaveClient = (clientData) => {
+    console.log("Saving client data:", clientData);
+    // Here you would typically make an API call to save the data
+    // For now, we update the local state to reflect changes immediately
+    if (editingClient) {
+        // Update existing client - preserve all original fields and merge with new data
+        const updatedClient = { ...editingClient, ...clientData };
+        setClients(prev => prev.map(c => c.client === editingClient.client ? updatedClient : c));
+        // Update selectedClient if it's the one being edited
+        if (selectedClient?.client === editingClient.client) {
+          setSelectedClient(updatedClient);
+        }
+    } else {
+        // Add new client
+        setClients(prev => [...prev, clientData]);
+    }
+    // Clear address marker from main map
+    setAddressData({});
+  };
+
+  const handleAddClient = () => {
+    setEditingClient(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClient = (client) => {
+    setEditingClient(client);
+    setIsEditModalOpen(true);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -202,6 +235,7 @@ export default function MapFeature({ onAddressSelect }) {
               setFlyToCoords([lat, lon]);
             }}
             onClientSelect={(client) => setSelectedClient(client)}
+            onAddClient={handleAddClient}
           />
         ) : (
           <InputAddress onAddressSelect={(data) => {
@@ -395,10 +429,16 @@ export default function MapFeature({ onAddressSelect }) {
                 <TopData />
             </div>
             <div className={css.dataBottom}>
-                <BottomData />
+                <BottomData onEditClient={handleEditClient} />
             </div>
         </div>
       </div>
+      <EditClientModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onSave={handleSaveClient} 
+        client={editingClient} 
+      />
     </div>
   );
 }

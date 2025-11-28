@@ -197,7 +197,7 @@ export default function InputAddress({ onAddressSelect }) {
           )}
           slotProps={{
             popper: {
-              sx: { zIndex: 2500 }
+              sx: { zIndex: 10100 }
             }
           }}
         />
@@ -253,7 +253,7 @@ export default function InputAddress({ onAddressSelect }) {
           }}
           slotProps={{
             popper: {
-              sx: { zIndex: 2500 }
+              sx: { zIndex: 10100 }
             }
           }}
         />

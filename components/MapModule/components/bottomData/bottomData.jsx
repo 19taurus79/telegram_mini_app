@@ -34,14 +34,16 @@ export default function BottomData({ onEditClient }) {
       }
       groupedOrders[contractNum].push(order);
     });
-
+      console.log("groupedOrders",groupedOrders);
+      console.log("selectedClient",selectedClient);
     return (
       <div className={css.container}>
         <h2 className={css.title}>
           {selectedClient.client}
         </h2>
+        <h3>{selectedClient.orders[0].manager}</h3>
         <p className={css.subtitle}>
-          {selectedClient.address.city}, {selectedClient.address.area}
+          {`${selectedClient.address.region} обл., ${selectedClient.address.area} район, ${selectedClient.address.commune} громада, ${selectedClient.address.city}`}
         </p>
         <p className={css.orderCount}>
           Всього заявок: {selectedClient.count}

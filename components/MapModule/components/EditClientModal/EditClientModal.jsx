@@ -50,8 +50,8 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     representative: "",
     phone1: "",
     address: "",
-    latitude: 50.4501, // Default to Kiev
-    longitude: 30.5234,
+    latitude: 49.97306496577671, // Default to warehouse
+    longitude: 35.984652686977824,
   });
 
   useEffect(() => {
@@ -66,8 +66,8 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         representative: client.representative || "",
         phone1: client.phone1 || "",
         address: addressText,
-        latitude: parseFloat(client.latitude) || 50.4501,
-        longitude: parseFloat(client.longitude) || 30.5234,
+        latitude: parseFloat(client.latitude) || 49.97306496577671,
+        longitude: parseFloat(client.longitude) || 35.984652686977824,
       });
     } else {
       // Reset for new client
@@ -77,8 +77,8 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         representative: "",
         phone1: "",
         address: "",
-        latitude: 50.4501,
-        longitude: 30.5234,
+        latitude: 49.97306496577671,
+        longitude: 35.984652686977824,
       });
     }
   }, [client, isOpen]);

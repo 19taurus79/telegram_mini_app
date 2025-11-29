@@ -11,8 +11,8 @@ export default function TopData() {
   const { files, rawFiles } = useUploadFilesStore();
   const { setGeocodeData } = useGeocodeStore();
   const [activeIndex, setActiveIndex] = useState(null);
-  console.log("rawFiles", rawFiles);
-  console.log("files", files);
+  // console.log("rawFiles", rawFiles);
+  // console.log("files", files);
   const handleAddressClick = async (item, index) => {
     const data = await fetchGeocode(item.address);
     console.log(data);

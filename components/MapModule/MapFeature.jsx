@@ -8,7 +8,7 @@ import InputAddress from "./components/inputAddress/InputAddress";
 import BottomData from "./components/bottomData/bottomData";
 import { useDisplayAddressStore } from "./store/displayAddress";
 import { useApplicationsStore } from "./store/applicationsStore";
-import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
+import { fetchOrdersHeatmapData, fetchOrdersAndAddresses, mergeOrdersWithAddresses } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
 import { useState, useRef, useEffect } from "react";
@@ -47,7 +47,8 @@ const groupItemsByLocation = (items) => {
 
 export default function MapFeature({ onAddressSelect }) {
   const { addressData, setAddressData } = useDisplayAddressStore();
-  const { applications, setApplications, selectedClient, setSelectedClient } = useApplicationsStore();
+  const { applications, setApplications, selectedClient, setSelectedClient, setUnmappedApplications, selectedManager } = useApplicationsStore();
+  
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
@@ -58,6 +59,17 @@ export default function MapFeature({ onAddressSelect }) {
   const areClientsVisible = useMapControlStore((state) => state.areClientsVisible);
   const toggleClients = useMapControlStore((state) => state.toggleClients);
   const [clients, setClients] = useState([]);
+  
+  // Filter applications based on selected manager
+  const filteredApplications = selectedManager 
+    ? applications.filter(app => app.address?.manager === selectedManager)
+    : applications;
+
+  // Filter clients based on selected manager
+  const filteredClients = selectedManager
+    ? clients.filter(client => client.manager === selectedManager)
+    : clients;
+
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -115,11 +127,13 @@ export default function MapFeature({ onAddressSelect }) {
     const getApplications = async () => {
       if (areApplicationsVisible && applications.length === 0) {
         console.log('Fetching orders and addresses...');
-        const { mergedData, heatmapPoints } = await fetchOrdersHeatmapData();
+        const { mergedData, unmappedData, heatmapPoints } = await fetchOrdersHeatmapData();
         console.log('Merged data:', mergedData);
+        console.log('Unmapped data:', unmappedData);
         console.log('Heatmap points:', heatmapPoints);
         // Сохраняем объединенные данные в store
         setApplications(mergedData);
+        setUnmappedApplications(unmappedData);
       }
     };
     getApplications();
@@ -295,7 +309,7 @@ export default function MapFeature({ onAddressSelect }) {
             </Marker>
           ))}
           {areApplicationsVisible && !showHeatmap && (() => {
-            const groupedApps = groupItemsByLocation(applications);
+            const groupedApps = groupItemsByLocation(filteredApplications);
             return groupedApps.map((group, index) => {
               const item = group[0];
               const isGroup = group.length > 1;
@@ -346,7 +360,7 @@ export default function MapFeature({ onAddressSelect }) {
           })()}
 
           {areClientsVisible && (() => {
-            const groupedClients = groupItemsByLocation(clients.map(c => ({
+            const groupedClients = groupItemsByLocation(filteredClients.map(c => ({
               ...c,
               address: { latitude: c.latitude, longitude: c.longitude } // Normalize structure for helper
             })));
@@ -404,7 +418,7 @@ export default function MapFeature({ onAddressSelect }) {
           })()}
           {areApplicationsVisible && showHeatmap && (
             <HeatmapLayer 
-              points={applications.map(item => [
+              points={filteredApplications.map(item => [
                 parseFloat(item.address.latitude),
                 parseFloat(item.address.longitude),
                 item.totalQuantity || 1 // Интенсивность = общее количество товара

@@ -1,14 +1,22 @@
 import css from "./ClientsList.module.css";
 import { useRef } from "react";
+import ManagerFilter from "../ManagerFilter/ManagerFilter";
+import { useApplicationsStore } from "../../store/applicationsStore";
 
 export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect, onAddClient }) {
   const letterRefs = useRef({});
+  const { selectedManager } = useApplicationsStore();
+
+  // Filter clients based on selected manager
+  const filteredClients = selectedManager
+    ? clients.filter(client => client.manager === selectedManager)
+    : clients;
 
   // Украинский алфавит
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');
 
   // Группируем клиентов по первой букве
-  const sortedClients = [...clients].sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  const sortedClients = [...filteredClients].sort((a, b) => a.client.localeCompare(b.client, 'uk'));
   
   const groupedByLetter = {};
   sortedClients.forEach(item => {
@@ -51,8 +59,9 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect,
 
   return (
     <div className={css.container}>
+      <ManagerFilter />
       <div className={css.header}>
-        <h3>Список контрагентів ({clients.length})</h3>
+        <h3>Список контрагентів ({filteredClients.length})</h3>
         {onAddClient && (
           <button className={css.addButton} onClick={onAddClient}>
             + Додати клієнта

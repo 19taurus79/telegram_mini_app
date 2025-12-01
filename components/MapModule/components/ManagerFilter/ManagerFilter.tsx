@@ -5,8 +5,13 @@ import { fetchManagers } from "../../fetchManagers";
 import css from "./ManagerFilter.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 
+interface Manager {
+    id: number;
+    manager: string;
+}
+
 export default function ManagerFilter() {
-    const [managers, setManagers] = useState<any[]>([]);
+    const [managers, setManagers] = useState<Manager[]>([]);
     const { selectedManager, setSelectedManager } = useApplicationsStore();
 
     useEffect(()=>{
@@ -29,7 +34,7 @@ export default function ManagerFilter() {
 
     return (
         <div className={css.container}>
-            {managers.map((manager: {id: number, manager: string}) => (
+            {managers.map((manager: Manager) => (
                 <button 
                     className={selectedManager === manager.manager ? css.buttonActive : css.button} 
                     key={manager.id} 

@@ -8,15 +8,17 @@ import InputAddress from "./components/inputAddress/InputAddress";
 import BottomData from "./components/bottomData/bottomData";
 import { useDisplayAddressStore } from "./store/displayAddress";
 import { useApplicationsStore } from "./store/applicationsStore";
-import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
+import { fetchOrdersHeatmapData, fetchOrdersAndAddresses, mergeOrdersWithAddresses } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
 import { useState, useRef, useEffect } from "react";
-import { customIcon, clientIcon } from "./leaflet-icon";
+import { customIcon, clientIcon, warehouseIcon } from "./leaflet-icon";
+import { warehouses } from "./warehouses";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
 import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
+import EditClientModal from "./components/EditClientModal/EditClientModal";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -30,9 +32,23 @@ function MapController({ coords }) {
   return null;
 }
 
+// Helper function to group items by location
+const groupItemsByLocation = (items) => {
+  const groups = {};
+  items.forEach(item => {
+    const key = `${item.address?.latitude || item.latitude},${item.address?.longitude || item.longitude}`;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(item);
+  });
+  return Object.values(groups);
+};
+
 export default function MapFeature({ onAddressSelect }) {
-  const { addressData } = useDisplayAddressStore();
-  const { applications, setApplications, setSelectedClient } = useApplicationsStore();
+  const { addressData, setAddressData } = useDisplayAddressStore();
+  const { applications, setApplications, selectedClient, setSelectedClient, setUnmappedApplications, selectedManager } = useApplicationsStore();
+  
   const [isDataTopVisible, setDataTopVisible] = useState(false);
   const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
@@ -43,10 +59,53 @@ export default function MapFeature({ onAddressSelect }) {
   const areClientsVisible = useMapControlStore((state) => state.areClientsVisible);
   const toggleClients = useMapControlStore((state) => state.toggleClients);
   const [clients, setClients] = useState([]);
+  
+  // Filter applications based on selected manager
+  const filteredApplications = selectedManager 
+    ? applications.filter(app => app.address?.manager === selectedManager)
+    : applications;
+
+  // Filter clients based on selected manager
+  const filteredClients = selectedManager
+    ? clients.filter(client => client.manager === selectedManager)
+    : clients;
+
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const mapRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
   const [flyToCoords, setFlyToCoords] = useState(null); // Состояние для flyTo
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+
+  const handleSaveClient = (clientData) => {
+    console.log("Saving client data:", clientData);
+    // Here you would typically make an API call to save the data
+    // For now, we update the local state to reflect changes immediately
+    if (editingClient) {
+        // Update existing client - preserve all original fields and merge with new data
+        const updatedClient = { ...editingClient, ...clientData };
+        setClients(prev => prev.map(c => c.client === editingClient.client ? updatedClient : c));
+        // Update selectedClient if it's the one being edited
+        if (selectedClient?.client === editingClient.client) {
+          setSelectedClient(updatedClient);
+        }
+    } else {
+        // Add new client
+        setClients(prev => [...prev, clientData]);
+    }
+    // Clear address marker from main map
+    setAddressData({});
+  };
+
+  const handleAddClient = () => {
+    setEditingClient(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClient = (client) => {
+    setEditingClient(client);
+    setIsEditModalOpen(true);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -68,11 +127,13 @@ export default function MapFeature({ onAddressSelect }) {
     const getApplications = async () => {
       if (areApplicationsVisible && applications.length === 0) {
         console.log('Fetching orders and addresses...');
-        const { mergedData, heatmapPoints } = await fetchOrdersHeatmapData();
+        const { mergedData, unmappedData, heatmapPoints } = await fetchOrdersHeatmapData();
         console.log('Merged data:', mergedData);
+        console.log('Unmapped data:', unmappedData);
         console.log('Heatmap points:', heatmapPoints);
         // Сохраняем объединенные данные в store
         setApplications(mergedData);
+        setUnmappedApplications(unmappedData);
       }
     };
     getApplications();
@@ -188,6 +249,7 @@ export default function MapFeature({ onAddressSelect }) {
               setFlyToCoords([lat, lon]);
             }}
             onClientSelect={(client) => setSelectedClient(client)}
+            onAddClient={handleAddClient}
           />
         ) : (
           <InputAddress onAddressSelect={(data) => {
@@ -231,57 +293,132 @@ export default function MapFeature({ onAddressSelect }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {areApplicationsVisible && !showHeatmap &&
-            applications.map((item) => (
-              <Marker
-                key={item.client}
-                position={[item.address.latitude, item.address.longitude]}
-                icon={customIcon}
-              >
-                <Popup>
-                  <div 
-                    onClick={() => {
-                      setSelectedClient(item);
-                      setIsSheetOpen(true); // Открываем bottom sheet на мобилке
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <strong>{item.client}</strong><br />
-                    {item.address.city}, {item.address.area}<br />
-                    <strong>Количество заявок: {item.count}</strong><br />
-                    <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          {areClientsVisible && clients.map((client, index) => (
+          {/* Warehouse Markers */}
+          {warehouses.map((warehouse) => (
             <Marker
-              key={`${client.client}-${index}`}
-              position={[client.latitude, client.longitude]}
-              icon={clientIcon}
-              eventHandlers={{
-                click: () => {
-                  setSelectedClient(client);
-                  setIsSheetOpen(true);
-                },
-              }}
+              key={`warehouse-${warehouse.id}`}
+              position={[warehouse.lat, warehouse.lng]}
+              icon={warehouseIcon}
             >
               <Popup>
                 <div>
-                  <strong>{client.client}</strong><br />
-                  {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
-                  {`Менеджер: ${client.manager}`}<br />
-                  {`Контактна особа: ${client.representative}`}<br />
-                  {`Телефон: ${client.phone1}`}<br />
-
-                  {/* <em style={{ fontSize: '0.85em', color: '#666' }}>Контрагент</em> */}
+                  <strong>{warehouse.name}</strong><br />
+                  {warehouse.description}
                 </div>
               </Popup>
             </Marker>
           ))}
+          {areApplicationsVisible && !showHeatmap && (() => {
+            const groupedApps = groupItemsByLocation(filteredApplications);
+            return groupedApps.map((group, index) => {
+              const item = group[0];
+              const isGroup = group.length > 1;
+              
+              return (
+                <Marker
+                  key={`app-group-${index}`}
+                  position={[item.address.latitude, item.address.longitude]}
+                  icon={customIcon}
+                >
+                  <Popup>
+                    {isGroup ? (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        <strong>Знайдено {group.length} заявок:</strong>
+                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                          {group.map((groupItem, i) => (
+                            <li 
+                              key={i}
+                              onClick={() => {
+                                setSelectedClient(groupItem);
+                                setIsSheetOpen(true);
+                              }}
+                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                            >
+                              {groupItem.client} ({groupItem.count})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => {
+                          setSelectedClient(item);
+                          setIsSheetOpen(true);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <strong>{item.client}</strong><br />
+                        {item.address.city}, {item.address.area}<br />
+                        <strong>Количество заявок: {item.count}</strong><br />
+                        <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
+                      </div>
+                    )}
+                  </Popup>
+                </Marker>
+              );
+            });
+          })()}
+
+          {areClientsVisible && (() => {
+            const groupedClients = groupItemsByLocation(filteredClients.map(c => ({
+              ...c,
+              address: { latitude: c.latitude, longitude: c.longitude } // Normalize structure for helper
+            })));
+
+            return groupedClients.map((group, index) => {
+              const client = group[0];
+              const isGroup = group.length > 1;
+
+              return (
+                <Marker
+                  key={`client-group-${index}`}
+                  position={[client.latitude, client.longitude]}
+                  icon={clientIcon}
+                  eventHandlers={{
+                    click: () => {
+                      if (!isGroup) {
+                        setSelectedClient(client);
+                        setIsSheetOpen(true);
+                      }
+                    },
+                  }}
+                >
+                  <Popup>
+                    {isGroup ? (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        <strong>Знайдено {group.length} контрагентів:</strong>
+                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                          {group.map((groupClient, i) => (
+                            <li 
+                              key={i}
+                              onClick={() => {
+                                setSelectedClient(groupClient);
+                                setIsSheetOpen(true);
+                              }}
+                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                            >
+                              {groupClient.client}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div>
+                        <strong>{client.client}</strong><br />
+                        {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
+                        {`Менеджер: ${client.manager}`}<br />
+                        {`Контактна особа: ${client.representative}`}<br />
+                        {`Телефон: ${client.phone1}`}<br />
+                      </div>
+                    )}
+                  </Popup>
+                </Marker>
+              );
+            });
+          })()}
           {areApplicationsVisible && showHeatmap && (
             <HeatmapLayer 
-              points={applications.map(item => [
+              points={filteredApplications.map(item => [
                 parseFloat(item.address.latitude),
                 parseFloat(item.address.longitude),
                 item.totalQuantity || 1 // Интенсивность = общее количество товара
@@ -306,10 +443,16 @@ export default function MapFeature({ onAddressSelect }) {
                 <TopData />
             </div>
             <div className={css.dataBottom}>
-                <BottomData />
+                <BottomData onEditClient={handleEditClient} />
             </div>
         </div>
       </div>
+      <EditClientModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onSave={handleSaveClient} 
+        client={editingClient} 
+      />
     </div>
   );
 }

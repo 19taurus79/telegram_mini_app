@@ -3,7 +3,7 @@ import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
 import css from "./bottomData.module.css";
 
-export default function BottomData() {
+export default function BottomData({ onEditClient }) {
   const { selectedClient } = useApplicationsStore();
   const { areApplicationsVisible, areClientsVisible } = useMapControlStore();
   const { addressData } = useDisplayAddressStore();
@@ -34,14 +34,16 @@ export default function BottomData() {
       }
       groupedOrders[contractNum].push(order);
     });
-
+      console.log("groupedOrders",groupedOrders);
+      console.log("selectedClient",selectedClient);
     return (
       <div className={css.container}>
         <h2 className={css.title}>
           {selectedClient.client}
         </h2>
+        <h3>{selectedClient.orders[0].manager}</h3>
         <p className={css.subtitle}>
-          {selectedClient.address.city}, {selectedClient.address.area}
+          {`${selectedClient.address.region} обл., ${selectedClient.address.area} район, ${selectedClient.address.commune} громада, ${selectedClient.address.city}`}
         </p>
         <p className={css.orderCount}>
           Всього заявок: {selectedClient.count}
@@ -91,6 +93,14 @@ export default function BottomData() {
             {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone2}</a></p>}
             {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
         </div>
+        {onEditClient && (
+          <button 
+            className={css.editButton} 
+            onClick={() => onEditClient(selectedClient)}
+          >
+            Редагувати
+          </button>
+        )}
       </div>
     );
   }

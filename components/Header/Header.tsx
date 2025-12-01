@@ -81,8 +81,8 @@ function Header() {
     };
     fetchUser();
   }, [initData, setUserData]);
-  console.log("initData from store:", initData);
-  console.log("userData from store:", userData);
+  // console.log("initData from store:", initData);
+  // console.log("userData from store:", userData);
 
   const handleInputChange = useDebouncedCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,7 +197,7 @@ function Header() {
               </li>
               <li>
                 <Link href="/map" onClick={handleNavClick}>
-            Карти
+            Мапа
                 </Link>
               </li>
               {pathname === '/map' && (

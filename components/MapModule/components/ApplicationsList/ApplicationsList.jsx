@@ -1,16 +1,25 @@
 import css from "./ApplicationsList.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useRef, useEffect } from "react";
+import ManagerFilter from "../ManagerFilter/ManagerFilter";
 
 export default function ApplicationsList({ onClose, onFlyTo }) {
-  const { applications, setSelectedClient } = useApplicationsStore();
+  const { applications, unmappedApplications, setSelectedClient, selectedManager } = useApplicationsStore();
   const letterRefs = useRef({});
+
+  const filteredApplications = selectedManager 
+    ? applications.filter(item => item.address?.manager === selectedManager)
+    : applications;
+
+  const filteredUnmappedApplications = selectedManager
+    ? unmappedApplications.filter(item => item.orders?.[0]?.manager === selectedManager)
+    : unmappedApplications;
 
   // Украинский алфавит
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');
 
   // Группируем клиентов по первой букве
-  const sortedApplications = applications.sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  const sortedApplications = filteredApplications.sort((a, b) => a.client.localeCompare(b.client, 'uk'));
   
   const groupedByLetter = {};
   sortedApplications.forEach(item => {
@@ -53,11 +62,13 @@ export default function ApplicationsList({ onClose, onFlyTo }) {
     }
     if (onClose) onClose();
   };
-
+  console.log("Applications:",applications)
+console.log("Unmapped applications:",unmappedApplications)
   return (
     <div className={css.container}>
+      <ManagerFilter/>
       <div className={css.header}>
-        <h3>Список заявок ({applications.length})</h3>
+        <h3>Список заявок ({filteredApplications.length}) | Без адреси: {filteredUnmappedApplications.length}</h3>
       </div>
       
       {/* Алфавитный указатель */}
@@ -101,6 +112,32 @@ export default function ApplicationsList({ onClose, onFlyTo }) {
             ))}
           </div>
         ))}
+
+        {/* Секция для заявок без адреса */}
+        {filteredUnmappedApplications.length > 0 && (
+          <div className={css.unmappedSection}>
+            <div className={css.letterHeader} style={{ backgroundColor: '#ffebee', color: '#d32f2f' }}>
+              Без адреси ({filteredUnmappedApplications.length})
+            </div>
+            {filteredUnmappedApplications.map((item) => (
+              <div 
+                key={item.client} 
+                className={css.item}
+                style={{ borderLeft: '4px solid #f44336' }}
+                // onClick={() => handleItemClick(item)} // Не кликабельно, так как нет координат
+              >
+                <div className={css.clientName}>{item.client}</div>
+                <div className={css.clientName}>{item.orders[0].manager}</div>
+                <div className={css.address} style={{ fontStyle: 'italic', color: '#666' }}>
+                  Адреса не знайдена в довіднику
+                </div>
+                <div className={css.count}>
+                  Заявок: {item.count}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

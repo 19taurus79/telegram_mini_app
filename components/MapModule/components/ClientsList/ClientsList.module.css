@@ -13,12 +13,30 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+}
+
+.addButton {
+  padding: 6px 12px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.addButton:hover {
+  background-color: #45a049;
 }
 
 .alphabetIndex {

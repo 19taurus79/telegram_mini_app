@@ -1,20 +1,16 @@
 "use client";
 import { getEventByUser } from "@/lib/api";
-import { CSSProperties } from "react";
 import Loader from "@/components/Loader/Loader";
 import { getInitData } from "@/lib/getInitData";
 import EventsSmall from "./clientPage";
 import { useQuery } from "@tanstack/react-query";
+
 const fetchEvents = async () => {
   const initData = getInitData();
   const events = await getEventByUser(initData);
   return events;
 };
-const override: CSSProperties = {
-  display: "block",
-  margin: "0 auto",
-  // color: "#0ef18e",
-};
+
 export default function Events() {
   // const events = await getEvents();
   // const initData = getInitData();

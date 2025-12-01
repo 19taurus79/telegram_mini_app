@@ -43,7 +43,14 @@ function MapUpdater({ position }) {
   return null;
 }
 
+import { fetchManagers } from "../../fetchManagers";
+import { fetchClientsList } from "../../services/fetchFormData";
+
+// ... (previous imports)
+
 export default function EditClientModal({ isOpen, onClose, onSave, client }) {
+  const [managersList, setManagersList] = useState([]);
+  const [clientsList, setClientsList] = useState([]);
   const [formData, setFormData] = useState({
     client: "",
     manager: "",
@@ -55,7 +62,21 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   });
 
   useEffect(() => {
+    const loadData = async () => {
+        const managers = await fetchManagers();
+        if (managers) setManagersList(managers);
+
+        const clients = await fetchClientsList();
+        if (clients) setClientsList(clients);
+    };
+    if (isOpen) {
+        loadData();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (client) {
+      // ... (existing logic)
       const addressText = client.region 
         ? `${client.region} обл., ${client.area || ''} район, ${client.commune || ''} громада, ${client.city || ''}`
         : (client.address?.display_name || client.address || "");
@@ -70,7 +91,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         longitude: parseFloat(client.longitude) || 35.984652686977824,
       });
     } else {
-      // Reset for new client
+      // ... (existing logic)
       setFormData({
         client: "",
         manager: "",
@@ -132,6 +153,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   return (
     <div className={css.overlay}>
       <div className={css.modal}>
+        {/* ... (header) */}
         <div className={css.header}>
           <h2>{client ? "Редагувати клієнта" : "Додати клієнта"}</h2>
           <button className={css.closeButton} onClick={onClose}>
@@ -142,23 +164,33 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         <form onSubmit={handleSubmit}>
           <div className={css.formGroup}>
             <label>Назва клієнта</label>
-            <input
+            <select
               className={css.input}
               name="client"
               value={formData.client}
               onChange={handleChange}
               required
-            />
+            >
+                <option value="">Оберіть клієнта</option>
+                {clientsList.map((c, index) => (
+                    <option key={index} value={c.client}>{c.client}</option>
+                ))}
+            </select>
           </div>
 
           <div className={css.formGroup}>
             <label>Менеджер</label>
-            <input
+            <select
               className={css.input}
               name="manager"
               value={formData.manager}
               onChange={handleChange}
-            />
+            >
+                <option value="">Оберіть менеджера</option>
+                {managersList.map((m) => (
+                    <option key={m.id} value={m.manager}>{m.manager}</option>
+                ))}
+            </select>
           </div>
 
           <div className={css.formGroup}>
@@ -170,6 +202,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
               onChange={handleChange}
             />
           </div>
+          {/* ... (rest of the form) */}
 
           <div className={css.formGroup}>
             <label>Телефон</label>

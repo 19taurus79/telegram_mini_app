@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import css from "./EditClientModal.module.css";
 import InputAddress from "../inputAddress/InputAddress";
 import { customIcon } from "../../leaflet-icon";
+import toast from "react-hot-toast";
 
 // Component to handle marker drag events
 function DraggableMarker({ position, setPosition }) {
@@ -45,6 +46,8 @@ function MapUpdater({ position }) {
 
 import { fetchManagers } from "../../fetchManagers";
 import { fetchClientsList } from "../../services/fetchFormData";
+import { createClientAddress, updateClientAddress } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 
 // ... (previous imports)
 
@@ -56,6 +59,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     manager: "",
     representative: "",
     phone1: "",
+    phone2: "",
     address: "",
     latitude: 49.97306496577671, // Default to warehouse
     longitude: 35.984652686977824,
@@ -85,6 +89,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         manager: client.manager || "",
         representative: client.representative || "",
         phone1: client.phone1 || "",
+        phone2: client.phone2 || "",
         address: addressText,
         latitude: parseFloat(client.latitude) || 49.97306496577671,
         longitude: parseFloat(client.longitude) || 35.984652686977824,
@@ -95,6 +100,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         manager: "",
         representative: "",
         phone1: "",
+        phone2: "",
         address: "",
         latitude: 49.97306496577671,
         longitude: 35.984652686977824,
@@ -142,10 +148,65 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    
+    if (client && client.id) {
+      // Editing existing client - call API
+      try {
+        const initData = getInitData();
+        await updateClientAddress({
+          id: client.id,
+          clientData: {
+            client: formData.client,
+            manager: formData.manager,
+            representative: formData.representative,
+            phone1: formData.phone1,
+            phone2: formData.phone2 || "",
+            address: formData.address,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+          },
+          initData,
+        });
+        
+        toast.success("Адресу клієнта оновлено успішно");
+        // Call onSave callback to update local state
+        onSave(formData);
+        onClose();
+      } catch (error) {
+        console.error("Error updating client address:", error);
+        const errorMessage = error?.response?.data?.detail || "Помилка при оновленні адреси клієнта";
+        toast.error(errorMessage);
+      }
+    } else {
+      // Adding new client - call API
+      try {
+        const initData = getInitData();
+        await createClientAddress({
+          clientData: {
+            client: formData.client,
+            manager: formData.manager,
+            representative: formData.representative,
+            phone1: formData.phone1,
+            phone2: formData.phone2 || "",
+            address: formData.address,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+          },
+          initData,
+        });
+        
+        toast.success("Адресу клієнта додано успішно");
+        // Call onSave callback to update local state
+        onSave(formData);
+        onClose();
+      } catch (error) {
+        console.error("Error creating client address:", error);
+        const errorMessage = error?.response?.data?.detail || "Помилка при додаванні адреси клієнта";
+        toast.error(errorMessage);
+      }
+    }
   };
 
   if (!isOpen) return null;

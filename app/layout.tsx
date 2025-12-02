@@ -50,7 +50,11 @@ export default function RootLayout({
             </DeliveryProvider>
           </FilterProvider>
           <ReactQueryDevtools initialIsOpen={false} />
-          <Toaster /> {/* Add Toaster component here */}
+          <Toaster 
+            containerStyle={{
+              zIndex: 10001,
+            }}
+          /> {/* Add Toaster component here */}
         </TanStackProvider>
       </body>
     </html>

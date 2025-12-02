@@ -75,8 +75,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (client) {
-      // ... (existing logic)
+    if (client && isOpen) {
       const addressText = client.region 
         ? `${client.region} обл., ${client.area || ''} район, ${client.commune || ''} громада, ${client.city || ''}`
         : (client.address?.display_name || client.address || "");
@@ -90,8 +89,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         latitude: parseFloat(client.latitude) || 49.97306496577671,
         longitude: parseFloat(client.longitude) || 35.984652686977824,
       });
-    } else {
-      // ... (existing logic)
+    } else if (!client && isOpen) {
       setFormData({
         client: "",
         manager: "",
@@ -102,7 +100,9 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         longitude: 35.984652686977824,
       });
     }
-  }, [client, isOpen]);
+  }, [client, isOpen, clientsList]);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -164,18 +164,32 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         <form onSubmit={handleSubmit}>
           <div className={css.formGroup}>
             <label>Назва клієнта</label>
-            <select
-              className={css.input}
-              name="client"
-              value={formData.client}
-              onChange={handleChange}
-              required
-            >
+            {client ? (
+              // When editing - show disabled input
+              <input
+                className={css.input}
+                name="client"
+                value={formData.client}
+                disabled
+              />
+            ) : (
+              // When adding new - show select dropdown
+              <select
+                className={css.input}
+                name="client"
+                value={formData.client}
+                onChange={handleChange}
+                required
+              >
                 <option value="">Оберіть клієнта</option>
-                {clientsList.map((c, index) => (
-                    <option key={index} value={c.client}>{c.client}</option>
-                ))}
-            </select>
+                {clientsList.map((c, index) => {
+                  const clientName = typeof c === 'string' ? c : (c.client || c.name || '');
+                  return (
+                    <option key={index} value={clientName}>{clientName}</option>
+                  );
+                })}
+              </select>
+            )}
           </div>
 
           <div className={css.formGroup}>

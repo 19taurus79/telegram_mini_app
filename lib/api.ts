@@ -594,5 +594,65 @@ export const dataForOrderByProduct = async (filters?: FiltersState) => {
   return data;
 };
 
+export const createClientAddress = async ({
+  clientData,
+  initData,
+}: {
+  clientData: {
+    client: string;
+    manager: string;
+    representative: string;
+    phone1: string;
+    phone2?: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  initData: string;
+}) => {
+  const { data } = await axios.post(
+    `/add_address_for_client`,
+    clientData,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const updateClientAddress = async ({
+  id,
+  clientData,
+  initData,
+}: {
+  id: number;
+  clientData: {
+    client: string;
+    manager: string;
+    representative: string;
+    phone1: string;
+    phone2?: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  initData: string;
+}) => {
+  const { data } = await axios.put(
+    `/update_address_for_client/${id}`,
+    clientData,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 // Додаємо експорт за замовчуванням
 export default axios;

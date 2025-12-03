@@ -21,6 +21,7 @@ import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
 import EditClientModal from "./components/EditClientModal/EditClientModal";
 import DrawControl from "./components/DrawControl/DrawControl";
+import SelectionList from "./components/SelectionList/SelectionList";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -78,6 +79,8 @@ export default function MapFeature({ onAddressSelect }) {
   const [flyToCoords, setFlyToCoords] = useState(null); // Состояние для flyTo
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [selectedItems, setSelectedItems] = useState({ applications: [], clients: [] });
+  const [isSelectionListOpen, setIsSelectionListOpen] = useState(false);
 
   const handleSaveClient = (clientData) => {
     console.log("Saving client data:", clientData);
@@ -107,6 +110,16 @@ export default function MapFeature({ onAddressSelect }) {
   const handleEditClient = (client) => {
     setEditingClient(client);
     setIsEditModalOpen(true);
+  };
+
+  const handleSelectionCreate = (selection) => {
+    console.log('=== handleSelectionCreate вызвана ===');
+    console.log('Selection:', selection);
+    console.log('Applications:', selection.applications.length);
+    console.log('Clients:', selection.clients.length);
+    setSelectedItems(selection);
+    setIsSelectionListOpen(true);
+    console.log('Modal должно открыться');
   };
 
   useEffect(() => {
@@ -489,7 +502,11 @@ export default function MapFeature({ onAddressSelect }) {
             />
           )}
           <MapController coords={flyToCoords} />
-          <DrawControl />
+          <DrawControl 
+            applications={filteredApplications}
+            clients={filteredClients}
+            onSelectionCreate={handleSelectionCreate}
+          />
         </MapContainer>
       </div>
       <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>
@@ -511,6 +528,16 @@ export default function MapFeature({ onAddressSelect }) {
         onSave={handleSaveClient} 
         client={editingClient} 
       />
+      {isSelectionListOpen && (selectedItems.clients.length > 0 || selectedItems.applications.length > 0) && (
+        <SelectionList 
+          items={selectedItems.clients.length > 0 ? selectedItems.clients : selectedItems.applications}
+          type={selectedItems.clients.length > 0 ? "clients" : "applications"}
+          onClose={() => {
+            console.log('Закрываем SelectionList');
+            setIsSelectionListOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

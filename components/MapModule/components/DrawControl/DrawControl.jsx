@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-geometryutil';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
-export default function DrawControl() {
+export default function DrawControl({ applications = [], clients = [], onSelectionCreate }) {
   const map = useMap();
+  const applicationsRef = useRef(applications);
+  const clientsRef = useRef(clients);
+  const onSelectionCreateRef = useRef(onSelectionCreate);
+
+  // Обновляем рефы при изменении пропсов
+  useEffect(() => {
+    applicationsRef.current = applications;
+    clientsRef.current = clients;
+    onSelectionCreateRef.current = onSelectionCreate;
+  }, [applications, clients, onSelectionCreate]);
 
   useEffect(() => {
     // Исправляем иконки маркеров для Leaflet.PM
@@ -116,6 +126,122 @@ export default function DrawControl() {
       return `${(sqMeters / 10000).toFixed(2)} га`;
     };
 
+    // Функция для проверки, находится ли точка внутри полигона
+    const isPointInPolygon = (point, polygon) => {
+      const x = point.lat;
+      const y = point.lng;
+      let inside = false;
+
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat;
+        const yi = polygon[i].lng;
+        const xj = polygon[j].lat;
+        const yj = polygon[j].lng;
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+
+      return inside;
+    };
+
+    // Функция для проверки, находится ли точка внутри круга
+    const isPointInCircle = (point, center, radius) => {
+      const distance = map.distance(point, center);
+      return distance <= radius;
+    };
+
+    // Функция для поиска маркеров внутри фигуры
+    const checkMarkersInShape = (layer, shape) => {
+      console.log('=== checkMarkersInShape вызвана ===');
+      console.log('Shape:', shape);
+      
+      // Используем актуальные данные из рефов
+      const currentApps = applicationsRef.current;
+      const currentClients = clientsRef.current;
+      
+      console.log('Applications доступно:', currentApps.length);
+      console.log('Clients доступно:', currentClients.length);
+      
+      const selectedApplications = [];
+      const selectedClients = [];
+
+      if (shape === 'Polygon' || shape === 'Rectangle') {
+        const latlngs = layer.getLatLngs()[0];
+        console.log('Полигон координаты:', latlngs);
+        
+        // Проверяем заявки
+        currentApps.forEach(app => {
+          if (app.address?.latitude && app.address?.longitude) {
+            const point = { lat: app.address.latitude, lng: app.address.longitude };
+            const isInside = isPointInPolygon(point, latlngs);
+            if (isInside) {
+              console.log('Заявка внутри:', app.client);
+              selectedApplications.push(app);
+            }
+          }
+        });
+
+        // Проверяем клиентов
+        currentClients.forEach(client => {
+          if (client.latitude && client.longitude) {
+            const point = { lat: client.latitude, lng: client.longitude };
+            const isInside = isPointInPolygon(point, latlngs);
+            if (isInside) {
+              console.log('Клиент внутри:', client.client);
+              selectedClients.push(client);
+            }
+          }
+        });
+      } else if (shape === 'Circle') {
+        const center = layer.getLatLng();
+        const radius = layer.getRadius();
+        console.log('Круг центр:', center, 'радиус:', radius);
+
+        // Проверяем заявки
+        currentApps.forEach(app => {
+          if (app.address?.latitude && app.address?.longitude) {
+            const point = { lat: app.address.latitude, lng: app.address.longitude };
+            const isInside = isPointInCircle(point, center, radius);
+            if (isInside) {
+              console.log('Заявка внутри круга:', app.client);
+              selectedApplications.push(app);
+            }
+          }
+        });
+
+        // Проверяем клиентов
+        currentClients.forEach(client => {
+          if (client.latitude && client.longitude) {
+            const point = { lat: client.latitude, lng: client.longitude };
+            const isInside = isPointInCircle(point, center, radius);
+            if (isInside) {
+              console.log('Клиент внутри круга:', client.client);
+              selectedClients.push(client);
+            }
+          }
+        });
+      }
+
+      console.log('Найдено заявок:', selectedApplications.length);
+      console.log('Найдено клиентов:', selectedClients.length);
+
+      // Вызываем callback с результатами через реф
+      if (onSelectionCreateRef.current && (selectedApplications.length > 0 || selectedClients.length > 0)) {
+        console.log('Вызываем onSelectionCreate');
+        onSelectionCreateRef.current({
+          applications: selectedApplications,
+          clients: selectedClients,
+          shape: shape
+        });
+      } else {
+        console.log('Callback не вызван. onSelectionCreate:', !!onSelectionCreateRef.current, 'Есть результаты:', (selectedApplications.length > 0 || selectedClients.length > 0));
+      }
+
+      console.log(`Найдено в фигуре: ${selectedApplications.length} заявок, ${selectedClients.length} клиентов`);
+    };
+
     // Обработчик создания фигуры
     map.on('pm:create', (e) => {
       console.log('Создана фигура:', e);
@@ -162,6 +288,9 @@ export default function DrawControl() {
         layer.bindPopup(`<strong>Площадь:</strong> ${areaText}`);
         
         console.log(`Полигон: ${areaText}`);
+        
+        // Проверяем маркеры внутри фигуры
+        checkMarkersInShape(layer, e.shape);
       }
       else if (e.shape === 'Circle') {
         const radius = layer.getRadius();
@@ -180,6 +309,9 @@ export default function DrawControl() {
         layer.bindPopup(`<strong>Радиус:</strong> ${radiusText}<br/><strong>Площадь:</strong> ${areaText}`);
         
         console.log(`Круг - Радиус: ${radiusText}, Площадь: ${areaText}`);
+        
+        // Проверяем маркеры внутри фигуры
+        checkMarkersInShape(layer, e.shape);
       }
       else if (e.shape === 'Marker') {
         const latlng = layer.getLatLng();

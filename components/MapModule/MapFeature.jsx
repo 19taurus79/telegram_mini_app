@@ -102,8 +102,14 @@ export default function MapFeature({ onAddressSelect }) {
     setAddressData({});
   };
 
-  const handleAddClient = () => {
-    setEditingClient(null);
+  const handleAddClient = (initialData = null) => {
+    // Если переданы начальные данные (например, из заявки без адреса), 
+    // используем их, но убеждаемся, что нет ID, чтобы это считалось созданием нового
+    if (initialData) {
+      setEditingClient({ ...initialData, id: null });
+    } else {
+      setEditingClient(null);
+    }
     setIsEditModalOpen(true);
   };
 
@@ -254,6 +260,7 @@ export default function MapFeature({ onAddressSelect }) {
               console.log('MapFeature onFlyTo triggered:', lat, lon);
               setFlyToCoords([lat, lon]); // Обновляем состояние для MapController
             }}
+            onAddClient={handleAddClient}
           />
         ) : areClientsVisible ? (
           <ClientsList 

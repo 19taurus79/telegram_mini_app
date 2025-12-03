@@ -3,7 +3,7 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 import { useRef, useEffect } from "react";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 
-export default function ApplicationsList({ onClose, onFlyTo }) {
+export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
   const { applications, unmappedApplications, setSelectedClient, selectedManager } = useApplicationsStore();
   const letterRefs = useRef({});
 
@@ -123,8 +123,17 @@ console.log("Unmapped applications:",unmappedApplications)
               <div 
                 key={item.client} 
                 className={css.item}
-                style={{ borderLeft: '4px solid #f44336' }}
-                // onClick={() => handleItemClick(item)} // Не кликабельно, так как нет координат
+                style={{ borderLeft: '4px solid #f44336', cursor: 'pointer' }}
+                onClick={() => {
+                  if (onAddClient) {
+                    onAddClient({
+                      client: item.client,
+                      manager: item.orders?.[0]?.manager || ""
+                    });
+                    if (onClose) onClose();
+                  }
+                }}
+                title="Натисніть, щоб додати адресу клієнта"
               >
                 <div className={css.clientName}>{item.client}</div>
                 <div className={css.clientName}>{item.orders[0].manager}</div>

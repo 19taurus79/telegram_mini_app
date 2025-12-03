@@ -1,6 +1,7 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, LayersControl } from "react-leaflet";
+const { BaseLayer } = LayersControl;
 import "leaflet/dist/leaflet.css";
 import css from "./App.module.css";
 import TopData from "./components/topData/topData";
@@ -19,6 +20,8 @@ import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
 import EditClientModal from "./components/EditClientModal/EditClientModal";
+import DrawControl from "./components/DrawControl/DrawControl";
+import SelectionList from "./components/SelectionList/SelectionList";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -76,6 +79,8 @@ export default function MapFeature({ onAddressSelect }) {
   const [flyToCoords, setFlyToCoords] = useState(null); // Состояние для flyTo
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [selectedItems, setSelectedItems] = useState({ applications: [], clients: [] });
+  const [isSelectionListOpen, setIsSelectionListOpen] = useState(false);
 
   const handleSaveClient = (clientData) => {
     console.log("Saving client data:", clientData);
@@ -97,14 +102,30 @@ export default function MapFeature({ onAddressSelect }) {
     setAddressData({});
   };
 
-  const handleAddClient = () => {
-    setEditingClient(null);
+  const handleAddClient = (initialData = null) => {
+    // Если переданы начальные данные (например, из заявки без адреса), 
+    // используем их, но убеждаемся, что нет ID, чтобы это считалось созданием нового
+    if (initialData) {
+      setEditingClient({ ...initialData, id: null });
+    } else {
+      setEditingClient(null);
+    }
     setIsEditModalOpen(true);
   };
 
   const handleEditClient = (client) => {
     setEditingClient(client);
     setIsEditModalOpen(true);
+  };
+
+  const handleSelectionCreate = (selection) => {
+    console.log('=== handleSelectionCreate вызвана ===');
+    console.log('Selection:', selection);
+    console.log('Applications:', selection.applications.length);
+    console.log('Clients:', selection.clients.length);
+    setSelectedItems(selection);
+    setIsSelectionListOpen(true);
+    console.log('Modal должно открыться');
   };
 
   useEffect(() => {
@@ -239,6 +260,7 @@ export default function MapFeature({ onAddressSelect }) {
               console.log('MapFeature onFlyTo triggered:', lat, lon);
               setFlyToCoords([lat, lon]); // Обновляем состояние для MapController
             }}
+            onAddClient={handleAddClient}
           />
         ) : areClientsVisible ? (
           <ClientsList 
@@ -289,10 +311,65 @@ export default function MapFeature({ onAddressSelect }) {
           }
           zoom={13}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <LayersControl position="bottomright">
+            {/* Обычные карты */}
+            <BaseLayer checked name="OpenStreetMap">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </BaseLayer>
+            
+            <BaseLayer name="OpenStreetMap Hot">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>'
+                url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+              />
+            </BaseLayer>
+
+            <BaseLayer name="CartoDB Positron">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              />
+            </BaseLayer>
+
+            <BaseLayer name="CartoDB Dark Matter">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              />
+            </BaseLayer>
+
+            {/* Спутниковые карты */}
+            <BaseLayer name="ESRI World Imagery (Спутник)">
+              <TileLayer
+                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              />
+            </BaseLayer>
+
+            <BaseLayer name="Google Satellite (Спутник)">
+              <TileLayer
+                attribution='&copy; Google'
+                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+              />
+            </BaseLayer>
+
+            <BaseLayer name="Google Hybrid (Спутник + Дороги)">
+              <TileLayer
+                attribution='&copy; Google'
+                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+              />
+            </BaseLayer>
+
+            <BaseLayer name="OpenTopoMap">
+              <TileLayer
+                attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+                url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+              />
+            </BaseLayer>
+          </LayersControl>
           {/* Warehouse Markers */}
           {warehouses.map((warehouse) => (
             <Marker
@@ -432,6 +509,11 @@ export default function MapFeature({ onAddressSelect }) {
             />
           )}
           <MapController coords={flyToCoords} />
+          <DrawControl 
+            applications={filteredApplications}
+            clients={filteredClients}
+            onSelectionCreate={handleSelectionCreate}
+          />
         </MapContainer>
       </div>
       <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>
@@ -453,6 +535,16 @@ export default function MapFeature({ onAddressSelect }) {
         onSave={handleSaveClient} 
         client={editingClient} 
       />
+      {isSelectionListOpen && (selectedItems.clients.length > 0 || selectedItems.applications.length > 0) && (
+        <SelectionList 
+          items={selectedItems.clients.length > 0 ? selectedItems.clients : selectedItems.applications}
+          type={selectedItems.clients.length > 0 ? "clients" : "applications"}
+          onClose={() => {
+            console.log('Закрываем SelectionList');
+            setIsSelectionListOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

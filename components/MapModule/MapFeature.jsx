@@ -20,6 +20,7 @@ import { useMapControlStore } from "./store/mapControlStore";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
 import EditClientModal from "./components/EditClientModal/EditClientModal";
+import DrawControl from "./components/DrawControl/DrawControl";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -488,6 +489,7 @@ export default function MapFeature({ onAddressSelect }) {
             />
           )}
           <MapController coords={flyToCoords} />
+          <DrawControl />
         </MapContainer>
       </div>
       <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>

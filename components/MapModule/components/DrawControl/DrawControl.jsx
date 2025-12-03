@@ -373,6 +373,9 @@ export default function DrawControl({ applications = [], clients = [], onSelecti
           } else {
             layer.bindPopup(`<strong>Площадь:</strong> ${areaText}`);
           }
+
+          // Обновляем список маркеров внутри
+          checkMarkersInShape(layer, 'Polygon');
         }
         else if (layer instanceof L.Circle) {
           // Обновляем для круга
@@ -398,6 +401,9 @@ export default function DrawControl({ applications = [], clients = [], onSelecti
           } else {
             layer.bindPopup(`<strong>Радиус:</strong> ${radiusText}<br/><strong>Площадь:</strong> ${areaText}`);
           }
+
+          // Обновляем список маркеров внутри
+          checkMarkersInShape(layer, 'Circle');
         }
       });
     });

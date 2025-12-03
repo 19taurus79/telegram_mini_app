@@ -11,9 +11,9 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
     ? applications.filter(item => item.address?.manager === selectedManager)
     : applications;
 
-  const filteredUnmappedApplications = selectedManager
+  const filteredUnmappedApplications = (selectedManager
     ? unmappedApplications.filter(item => item.orders?.[0]?.manager === selectedManager)
-    : unmappedApplications;
+    : unmappedApplications).sort((a, b) => a.client.localeCompare(b.client, 'uk'));
 
   // Украинский алфавит
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');

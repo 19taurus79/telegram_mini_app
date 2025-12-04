@@ -186,7 +186,7 @@ function Header() {
                 <>
                 <li>
                     <Link href="/bi" onClick={handleNavClick}>
-                        Заказати товар
+                        Замовити товар
                     </Link>
                 </li>
                 <li>

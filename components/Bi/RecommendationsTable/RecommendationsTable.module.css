@@ -1,5 +1,6 @@
 .tableWrapper {
   width: 100%;
+  overflow-x: auto; /* Enable horizontal scrolling */
 }
 
 .title {
@@ -14,6 +15,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px; /* Ensure table has minimum width */
 }
 
 .th,
@@ -26,4 +28,16 @@
 
 .th {
   background-color: var(--header-bg-color);
+}
+
+@media (max-width: 768px) {
+  .th, .td {
+    padding: 6px;
+    font-size: 14px;
+  }
+  
+  .title {
+      font-size: 1rem;
+      white-space: normal;
+  }
 }

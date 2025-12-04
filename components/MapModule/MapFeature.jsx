@@ -12,7 +12,7 @@ import { useApplicationsStore } from "./store/applicationsStore";
 import { fetchOrdersHeatmapData, fetchOrdersAndAddresses, mergeOrdersWithAddresses } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import Header from "./components/Header/Header";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { customIcon, clientIcon, warehouseIcon } from "./leaflet-icon";
 import { warehouses } from "./warehouses";
 import HeatmapLayer from "./components/HeatmapLayer/HeatmapLayer";
@@ -22,6 +22,8 @@ import ClientsList from "./components/ClientsList/ClientsList";
 import EditClientModal from "./components/EditClientModal/EditClientModal";
 import DrawControl from "./components/DrawControl/DrawControl";
 import SelectionList from "./components/SelectionList/SelectionList";
+import RoutingControl from "./components/RoutingControl/RoutingControl";
+import RoutePanel from "./components/RoutePanel/RoutePanel";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -82,6 +84,12 @@ export default function MapFeature({ onAddressSelect }) {
   const [selectedItems, setSelectedItems] = useState({ applications: [], clients: [] });
   const [isSelectionListOpen, setIsSelectionListOpen] = useState(false);
 
+  // Routing state
+  const [isRoutingMode, setIsRoutingMode] = useState(false);
+  const [routeWaypoints, setRouteWaypoints] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
+
+
   const handleSaveClient = (clientData) => {
     console.log("Saving client data:", clientData);
     // Here you would typically make an API call to save the data
@@ -127,6 +135,137 @@ export default function MapFeature({ onAddressSelect }) {
     setIsSelectionListOpen(true);
     console.log('Modal должно открыться');
   };
+
+  // Routing handlers
+  // Routing handlers
+  const handleToggleRoutingMode = useCallback(() => {
+    setIsRoutingMode(prev => !prev);
+    if (isRoutingMode) {
+      // Clear routing when disabling
+      setRouteWaypoints([]);
+      setRouteInfo(null);
+    }
+  }, [isRoutingMode]);
+
+  const handleMarkerClickForRouting = useCallback((lat, lng, name = '', type = '') => {
+    if (!isRoutingMode) return;
+
+    setRouteWaypoints(prev => {
+      // If we already have 2 points and the user clicks another, 
+      // we can either add it as a via point or reset. 
+      // User complaint "can only select two points" suggests they want more.
+      // Let's allow adding up to 10 points for now.
+      if (prev.length >= 10) {
+        alert("Максимальное количество точек маршрута: 10");
+        return prev;
+      }
+      return [...prev, { lat, lng, name, type }];
+    });
+  }, [isRoutingMode]);
+
+  const handleClearRoute = useCallback(() => {
+    setRouteWaypoints([]);
+    setRouteInfo(null);
+  }, []);
+
+  const handleDeleteWaypoint = useCallback((index) => {
+    setRouteWaypoints(prev => prev.filter((_, i) => i !== index));
+    setRouteInfo(null);
+  }, []);
+
+  const handleMoveWaypoint = useCallback((fromIndex, toIndex) => {
+    setRouteWaypoints(prev => {
+      const newWaypoints = [...prev];
+      const [moved] = newWaypoints.splice(fromIndex, 1);
+      newWaypoints.splice(toIndex, 0, moved);
+      return newWaypoints;
+    });
+    setRouteInfo(null);
+  }, []);
+
+  const handleOptimizeRoute = useCallback((method = 'nearest') => {
+    if (routeWaypoints.length < 3) return;
+
+    setRouteWaypoints(prev => {
+      if (prev.length < 3) return prev;
+      
+      const start = prev[0];
+      const end = prev[prev.length - 1];
+      const middle = prev.slice(1, -1);
+      
+      // Calculate distance between two points
+      const distance = (p1, p2) => {
+        const dx = p1.lat - p2.lat;
+        const dy = p1.lng - p2.lng;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+      
+      let optimized = [start];
+      
+      if (method === 'nearest') {
+        // Nearest neighbor algorithm
+        const remaining = [...middle];
+        let current = start;
+        
+        while (remaining.length > 0) {
+          let nearestIndex = 0;
+          let nearestDist = distance(current, remaining[0]);
+          
+          for (let i = 1; i < remaining.length; i++) {
+            const dist = distance(current, remaining[i]);
+            if (dist < nearestDist) {
+              nearestDist = dist;
+              nearestIndex = i;
+            }
+          }
+          
+          current = remaining[nearestIndex];
+          optimized.push(current);
+          remaining.splice(nearestIndex, 1);
+        }
+      } else if (method === 'shortest') {
+        // 2-opt algorithm for shortest path
+        let route = [...middle];
+        let improved = true;
+        
+        while (improved) {
+          improved = false;
+          for (let i = 0; i < route.length - 1; i++) {
+            for (let j = i + 1; j < route.length; j++) {
+              const currentDist = distance(route[i], route[i + 1]) + distance(route[j], route[j + 1] || end);
+              const newDist = distance(route[i], route[j]) + distance(route[i + 1], route[j + 1] || end);
+              
+              if (newDist < currentDist) {
+                // Reverse the segment between i+1 and j
+                const segment = route.slice(i + 1, j + 1).reverse();
+                route = [...route.slice(0, i + 1), ...segment, ...route.slice(j + 1)];
+                improved = true;
+              }
+            }
+          }
+        }
+        optimized = [start, ...route];
+      } else if (method === 'reverse') {
+        // Simply reverse the middle points
+        optimized = [start, ...middle.reverse()];
+      }
+      
+      optimized.push(end);
+      return optimized;
+    });
+    setRouteInfo(null);
+  }, [routeWaypoints]);
+
+  const handleRouteFound = useCallback((info) => {
+    setRouteInfo(info);
+  }, []);
+
+  const handleRoutingError = useCallback((error) => {
+    console.error('Routing error:', error);
+    // Suppress alert to avoid spamming if it happens frequently during drag
+    // alert('Не удалось построить маршрут. Попробуйте выбрать другие точки.');
+  }, []);
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -275,7 +414,13 @@ export default function MapFeature({ onAddressSelect }) {
           />
         ) : (
           <InputAddress onAddressSelect={(data) => {
-              onAddressSelect(data);
+              if (isRoutingMode && data.lat && data.lon) {
+                // Add address to route
+                handleMarkerClickForRouting(data.lat, data.lon, data.display_name || 'Адреса з пошуку', 'Пошук');
+              } else {
+                // Normal address selection
+                onAddressSelect(data);
+              }
               setIsSearchPanelOpen(false);
           }} />
         )}
@@ -299,6 +444,22 @@ export default function MapFeature({ onAddressSelect }) {
             <circle cx="9" cy="7" r="4"></circle>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        {/* Routing Toggle Button */}
+        <div 
+          className={css.clientsToggle} 
+          onClick={handleToggleRoutingMode}
+          title={isRoutingMode ? "Вимкнути режим маршруту" : "Увімкнути режим маршруту"}
+          style={{
+            background: isRoutingMode ? '#2196f3' : 'white',
+            color: isRoutingMode ? 'white' : 'black',
+            top: '130px', // Position below clients toggle
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
           </svg>
         </div>
         <MapContainer
@@ -376,6 +537,13 @@ export default function MapFeature({ onAddressSelect }) {
               key={`warehouse-${warehouse.id}`}
               position={[warehouse.lat, warehouse.lng]}
               icon={warehouseIcon}
+              eventHandlers={{
+                click: () => {
+                  if (isRoutingMode) {
+                    handleMarkerClickForRouting(warehouse.lat, warehouse.lng, warehouse.name, 'Склад');
+                  }
+                },
+              }}
             >
               <Popup>
                 <div>
@@ -396,41 +564,53 @@ export default function MapFeature({ onAddressSelect }) {
                   key={`app-group-${index}`}
                   position={[item.address.latitude, item.address.longitude]}
                   icon={customIcon}
+                  eventHandlers={{
+                    click: () => {
+                      if (isRoutingMode) {
+                        handleMarkerClickForRouting(item.address.latitude, item.address.longitude, item.client, 'Заявка');
+                      } else if (!isGroup) {
+                        setSelectedClient(item);
+                        setIsSheetOpen(true);
+                      }
+                    },
+                  }}
                 >
-                  <Popup>
-                    {isGroup ? (
-                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <strong>Знайдено {group.length} заявок:</strong>
-                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                          {group.map((groupItem, i) => (
-                            <li 
-                              key={i}
-                              onClick={() => {
-                                setSelectedClient(groupItem);
-                                setIsSheetOpen(true);
-                              }}
-                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
-                            >
-                              {groupItem.client} ({groupItem.count})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => {
-                          setSelectedClient(item);
-                          setIsSheetOpen(true);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <strong>{item.client}</strong><br />
-                        {item.address.city}, {item.address.area}<br />
-                        <strong>Количество заявок: {item.count}</strong><br />
-                        <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
-                      </div>
-                    )}
-                  </Popup>
+                  {!isRoutingMode && (
+                    <Popup>
+                      {isGroup ? (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <strong>Знайдено {group.length} заявок:</strong>
+                          <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                            {group.map((groupItem, i) => (
+                              <li 
+                                key={i}
+                                onClick={() => {
+                                  setSelectedClient(groupItem);
+                                  setIsSheetOpen(true);
+                                }}
+                                style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                              >
+                                {groupItem.client} ({groupItem.count})
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => {
+                            setSelectedClient(item);
+                            setIsSheetOpen(true);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <strong>{item.client}</strong><br />
+                          {item.address.city}, {item.address.area}<br />
+                          <strong>Количество заявок: {item.count}</strong><br />
+                          <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
+                        </div>
+                      )}
+                    </Popup>
+                  )}
                 </Marker>
               );
             });
@@ -453,42 +633,46 @@ export default function MapFeature({ onAddressSelect }) {
                   icon={clientIcon}
                   eventHandlers={{
                     click: () => {
-                      if (!isGroup) {
+                      if (isRoutingMode) {
+                        handleMarkerClickForRouting(client.latitude, client.longitude, client.client, 'Клієнт');
+                      } else if (!isGroup) {
                         setSelectedClient(client);
                         setIsSheetOpen(true);
                       }
                     },
                   }}
                 >
-                  <Popup>
-                    {isGroup ? (
-                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <strong>Знайдено {group.length} контрагентів:</strong>
-                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                          {group.map((groupClient, i) => (
-                            <li 
-                              key={i}
-                              onClick={() => {
-                                setSelectedClient(groupClient);
-                                setIsSheetOpen(true);
-                              }}
-                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
-                            >
-                              {groupClient.client}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div>
-                        <strong>{client.client}</strong><br />
-                        {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
-                        {`Менеджер: ${client.manager}`}<br />
-                        {`Контактна особа: ${client.representative}`}<br />
-                        {`Телефон: ${client.phone1}`}<br />
-                      </div>
-                    )}
-                  </Popup>
+                  {!isRoutingMode && (
+                    <Popup>
+                      {isGroup ? (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <strong>Знайдено {group.length} контрагентів:</strong>
+                          <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                            {group.map((groupClient, i) => (
+                              <li 
+                                key={i}
+                                onClick={() => {
+                                  setSelectedClient(groupClient);
+                                  setIsSheetOpen(true);
+                                }}
+                                style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                              >
+                                {groupClient.client}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div>
+                          <strong>{client.client}</strong><br />
+                          {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
+                          {`Менеджер: ${client.manager}`}<br />
+                          {`Контактна особа: ${client.representative}`}<br />
+                          {`Телефон: ${client.phone1}`}<br />
+                        </div>
+                      )}
+                    </Popup>
+                  )}
                 </Marker>
               );
             });
@@ -514,7 +698,24 @@ export default function MapFeature({ onAddressSelect }) {
             clients={filteredClients}
             onSelectionCreate={handleSelectionCreate}
           />
+          {isRoutingMode && (
+            <RoutingControl 
+              waypoints={routeWaypoints}
+              onRouteFound={handleRouteFound}
+              onRoutingError={handleRoutingError}
+            />
+          )}
         </MapContainer>
+        <RoutePanel 
+          routeInfo={routeInfo}
+          waypoints={routeWaypoints}
+          onClear={handleClearRoute}
+          onDeleteWaypoint={handleDeleteWaypoint}
+          onMoveWaypoint={handleMoveWaypoint}
+          onOptimize={handleOptimizeRoute}
+          onToggleMode={handleToggleRoutingMode}
+          isActive={isRoutingMode}
+        />
       </div>
       <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>
         <div className={css.sheetHeader} onClick={() => setIsSheetOpen(!isSheetOpen)}>

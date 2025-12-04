@@ -16,11 +16,16 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect,
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');
 
   // Группируем клиентов по первой букве
-  const sortedClients = [...filteredClients].sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  const sortedClients = [...filteredClients].sort((a, b) => {
+    const clientA = a.client || "";
+    const clientB = b.client || "";
+    return clientA.localeCompare(clientB, 'uk');
+  });
   
   const groupedByLetter = {};
   sortedClients.forEach(item => {
-    const firstLetter = item.client[0].toUpperCase();
+    const clientName = item.client || "";
+    const firstLetter = clientName.length > 0 ? clientName[0].toUpperCase() : "#";
     if (!groupedByLetter[firstLetter]) {
       groupedByLetter[firstLetter] = [];
     }

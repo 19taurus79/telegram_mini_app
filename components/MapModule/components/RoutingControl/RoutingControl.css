@@ -1,0 +1,14 @@
+/* Hide Leaflet Routing Machine default container */
+.leaflet-routing-container {
+  display: none !important;
+}
+
+/* Hide routing alternatives container */
+.leaflet-routing-alternatives-container {
+  display: none !important;
+}
+
+/* Ensure routing markers are visible */
+.routing-marker {
+  z-index: 1000 !important;
+}

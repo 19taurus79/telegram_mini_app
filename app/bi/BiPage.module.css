@@ -2,14 +2,8 @@
   padding: 20px;
 }
 
-/* .topContainer {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 40px; /* Space between top and bottom sections 
-} */
 .topContainer {
   display: grid;
-  /* max-height: 100hv; */
   gap: 10px;
   height: 80vh;
   overflow: auto;
@@ -19,28 +13,29 @@
     "topLeft topRight"
     "bottom bottom";
 }
+
 .mainTableContainer {
-  /* flex-basis: 60%; */
   grid-area: topLeft;
-  max-height: 500px;
+  height: 100%;
   overflow: auto;
-  /* min-width: 0; */
 }
 
 .bottomContainer {
   margin-top: 40px;
 }
+
 .stockDetailsContainer {
-  /* flex-basis: 40%; */
   grid-area: topRight;
-  max-height: 500px;
+  height: 100%;
   overflow: auto;
 }
+
 .ordersContainer {
   grid-area: bottom;
 }
+
 .toggleFilterButton {
-    display: block; /* Чтобы кнопка занимала всю ширину и имела отступы */
+    display: block;
     padding: 10px 20px;
     font-size: 16px;
     font-weight: bold;
@@ -51,17 +46,34 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     margin-top: 15px;
-    margin-bottom: 20px; /* Отступ от контента ниже */
-    width: 100%; /* Растягиваем на всю ширину для мобильного вида */
-    max-width: 250px; /* Ограничиваем максимальную ширину на больших экранах */
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 250px;
 }
 
 .toggleFilterButton:hover {
     background-color: var(--primary-hover-color);
 }
+
 .headerContainer{
     display: flex;
   justify-content: space-between;
   align-items: center;
+}
 
+@media (max-width: 768px) {
+  .topContainer {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .mainTableContainer,
+  .stockDetailsContainer,
+  .ordersContainer {
+    max-height: 400px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
 }

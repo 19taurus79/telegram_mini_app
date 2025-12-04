@@ -13,6 +13,7 @@ import RecommendationsTable from "@/components/Bi/RecommendationsTable/Recommend
 import OrdersTable from "@/components/Bi/OrdersTable/OrdersTable";
 import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
 import Loader from "@/components/Loader/Loader";
+import MobileDrawer from "@/components/Bi/MobileDrawer/MobileDrawer";
 
 interface Recommendation {
   product: string;
@@ -174,6 +175,26 @@ export default function BiPage() {
     setFilters(newFilters);
   };
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState<'none' | 'stock' | 'orders'>('none');
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleSwipeRight = (product: BiOrdersItem) => {
+    setSelectedProduct(product);
+    setActiveDrawer('orders'); // Swipe Right (→) opens Left Drawer
+  };
+
+  const handleSwipeLeft = (product: BiOrdersItem) => {
+    setSelectedProduct(product);
+    setActiveDrawer('stock'); // Swipe Left (←) opens Right Drawer
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return <Loader />;
@@ -191,18 +212,28 @@ export default function BiPage() {
               <ProductTable
                 title="Потрібно замовити (є на складах)"
                 data={data.missing_but_available}
-                onRowClick={setSelectedProduct}
+                onRowClick={(product) => {
+                  setSelectedProduct(product);
+                  if (isMobile) setActiveDrawer('stock'); // Default action on click for mobile
+                }}
+                onSwipeRight={handleSwipeRight}
+                onSwipeLeft={handleSwipeLeft}
                 selectedProduct={selectedProduct}
               />
             </div>
-            <div className={styles.stockDetailsContainer}>
-              <StockDetails selectedProduct={selectedProduct} />
-            </div>
-            <div className={styles.ordersContainer}>
-              <OrdersTable
-                orders={selectedProduct ? selectedProduct.orders : []}
-              />
-            </div>
+            
+            {!isMobile && (
+              <>
+                <div className={styles.stockDetailsContainer}>
+                  <StockDetails selectedProduct={selectedProduct} />
+                </div>
+                <div className={styles.ordersContainer}>
+                  <OrdersTable
+                    orders={selectedProduct ? selectedProduct.orders : []}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className={styles.bottomContainer}>
@@ -215,6 +246,31 @@ export default function BiPage() {
           <div className={styles.bottomContainer}>
             <RecommendationsTable recommendations={recommendations} />
           </div>
+
+          {/* Mobile Drawers */}
+          {isMobile && (
+            <>
+              <MobileDrawer
+                isOpen={activeDrawer === 'stock'}
+                onClose={() => setActiveDrawer('none')}
+                position="right"
+                title="Вільні залишки"
+              >
+                <StockDetails selectedProduct={selectedProduct} />
+              </MobileDrawer>
+
+              <MobileDrawer
+                isOpen={activeDrawer === 'orders'}
+                onClose={() => setActiveDrawer('none')}
+                position="left"
+                title="Деталізація по замовленнях"
+              >
+                <OrdersTable
+                  orders={selectedProduct ? selectedProduct.orders : []}
+                />
+              </MobileDrawer>
+            </>
+          )}
         </>
       );
     }

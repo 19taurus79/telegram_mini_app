@@ -1,6 +1,7 @@
 .detailsContainer {
   flex-basis: 40%;
   min-width: 0;
+  overflow-x: auto; /* Enable horizontal scrolling */
 }
 
 .title {
@@ -16,6 +17,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  min-width: 300px; /* Ensure table has minimum width */
 }
 
 .th,
@@ -64,4 +66,87 @@
 
 .copyableRow:hover {
   background-color: var(--hover-bg-color);
+}
+
+@media (max-width: 768px) {
+  .th, .td {
+    padding: 6px;
+    font-size: 14px;
+  }
+  
+  .title {
+      font-size: 1rem;
+      white-space: normal;
+  }
+
+  .mobileList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobileCard {
+    background: #f8f8f8;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobileCard:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .cardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .cardRow:last-of-type {
+    border-bottom: none;
+    padding-bottom: 4px;
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--foreground);
+    opacity: 0.7;
+  }
+
+  .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+    text-align: right;
+  }
+
+  .availableValue {
+    color: #10b981;
+  }
+
+  .copyHint {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    font-size: 10px;
+    text-align: center;
+    color: var(--foreground);
+    opacity: 0.5;
+  }
+}
+
+/* Dark theme overrides for mobile */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  .mobileCard {
+    background: #404040;
+    border: 2px solid #555555;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
 }

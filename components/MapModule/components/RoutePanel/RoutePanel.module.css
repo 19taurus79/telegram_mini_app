@@ -282,3 +282,117 @@
   text-align: center;
   margin-top: 8px;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    min-width: unset;
+    max-height: 50vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .header h3 {
+    font-size: 18px;
+  }
+
+  .waypoints {
+    max-height: 25vh;
+    overflow-y: auto;
+  }
+
+  .waypointContainer {
+    padding: 8px;
+    background: var(--hover-bg-color);
+    border-radius: 8px;
+    margin-bottom: 4px;
+  }
+
+  .marker {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .label {
+    font-size: 15px;
+  }
+
+  .type {
+    font-size: 13px;
+  }
+
+  .actions {
+    opacity: 1;
+  }
+
+  .actionBtn,
+  .deleteBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .dragHandle {
+    font-size: 20px;
+    opacity: 0.5;
+  }
+
+  .optimizeBtn,
+  .clearBtn,
+  .closeBtn {
+    font-size: 24px;
+    padding: 8px 12px;
+  }
+
+  .optimizeDialog {
+    margin-bottom: 16px;
+  }
+
+  .optimizeOption {
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .optionTitle {
+    font-size: 15px;
+  }
+
+  .optionDesc {
+    font-size: 13px;
+  }
+
+  .info {
+    padding-top: 16px;
+  }
+
+  .value {
+    font-size: 20px;
+  }
+
+  .sublabel {
+    font-size: 13px;
+  }
+
+  .hint {
+    font-size: 14px;
+    padding: 14px;
+  }
+}

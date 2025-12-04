@@ -13,8 +13,16 @@ interface ProductTableProps {
   selectedProduct?: BiOrdersItem | null;
 }
 
+interface SwipeableRowProps {
+  children: React.ReactNode;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+  onClick?: () => void;
+  isSelected: boolean;
+}
+
 // Helper component for Swipeable Row
-const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected }: any) => {
+const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected }: SwipeableRowProps) => {
   const swipeHandlers = useSwipe({
     onSwipedLeft: onSwipeLeft,
     onSwipedRight: onSwipeRight,

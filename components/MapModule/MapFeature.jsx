@@ -575,40 +575,42 @@ export default function MapFeature({ onAddressSelect }) {
                     },
                   }}
                 >
-                  <Popup>
-                    {isGroup ? (
-                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <strong>Знайдено {group.length} заявок:</strong>
-                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                          {group.map((groupItem, i) => (
-                            <li 
-                              key={i}
-                              onClick={() => {
-                                setSelectedClient(groupItem);
-                                setIsSheetOpen(true);
-                              }}
-                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
-                            >
-                              {groupItem.client} ({groupItem.count})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => {
-                          setSelectedClient(item);
-                          setIsSheetOpen(true);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <strong>{item.client}</strong><br />
-                        {item.address.city}, {item.address.area}<br />
-                        <strong>Количество заявок: {item.count}</strong><br />
-                        <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
-                      </div>
-                    )}
-                  </Popup>
+                  {!isRoutingMode && (
+                    <Popup>
+                      {isGroup ? (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <strong>Знайдено {group.length} заявок:</strong>
+                          <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                            {group.map((groupItem, i) => (
+                              <li 
+                                key={i}
+                                onClick={() => {
+                                  setSelectedClient(groupItem);
+                                  setIsSheetOpen(true);
+                                }}
+                                style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                              >
+                                {groupItem.client} ({groupItem.count})
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => {
+                            setSelectedClient(item);
+                            setIsSheetOpen(true);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <strong>{item.client}</strong><br />
+                          {item.address.city}, {item.address.area}<br />
+                          <strong>Количество заявок: {item.count}</strong><br />
+                          <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
+                        </div>
+                      )}
+                    </Popup>
+                  )}
                 </Marker>
               );
             });
@@ -640,35 +642,37 @@ export default function MapFeature({ onAddressSelect }) {
                     },
                   }}
                 >
-                  <Popup>
-                    {isGroup ? (
-                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <strong>Знайдено {group.length} контрагентів:</strong>
-                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                          {group.map((groupClient, i) => (
-                            <li 
-                              key={i}
-                              onClick={() => {
-                                setSelectedClient(groupClient);
-                                setIsSheetOpen(true);
-                              }}
-                              style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
-                            >
-                              {groupClient.client}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div>
-                        <strong>{client.client}</strong><br />
-                        {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
-                        {`Менеджер: ${client.manager}`}<br />
-                        {`Контактна особа: ${client.representative}`}<br />
-                        {`Телефон: ${client.phone1}`}<br />
-                      </div>
-                    )}
-                  </Popup>
+                  {!isRoutingMode && (
+                    <Popup>
+                      {isGroup ? (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <strong>Знайдено {group.length} контрагентів:</strong>
+                          <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                            {group.map((groupClient, i) => (
+                              <li 
+                                key={i}
+                                onClick={() => {
+                                  setSelectedClient(groupClient);
+                                  setIsSheetOpen(true);
+                                }}
+                                style={{ cursor: 'pointer', marginBottom: '5px', textDecoration: 'underline', color: 'blue' }}
+                              >
+                                {groupClient.client}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div>
+                          <strong>{client.client}</strong><br />
+                          {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
+                          {`Менеджер: ${client.manager}`}<br />
+                          {`Контактна особа: ${client.representative}`}<br />
+                          {`Телефон: ${client.phone1}`}<br />
+                        </div>
+                      )}
+                    </Popup>
+                  )}
                 </Marker>
               );
             });

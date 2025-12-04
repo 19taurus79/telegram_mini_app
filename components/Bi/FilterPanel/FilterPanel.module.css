@@ -78,3 +78,22 @@
 .clearButton:hover {
   background-color: var(--hover-bg-color);
 }
+
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .buttonGroup {
+    margin-left: 0;
+    align-self: stretch;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .applyButton,
+  .clearButton {
+    flex: 1;
+  }
+}

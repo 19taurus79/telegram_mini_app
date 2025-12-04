@@ -1,5 +1,6 @@
 .tableWrapper {
   width: 100%;
+  overflow-x: auto;
 }
 
 .title {
@@ -15,6 +16,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  min-width: 600px;
 }
 
 .th,
@@ -32,11 +34,11 @@
   background-color: var(--header-bg-color);
   position: sticky;
   top: 0;
-  z-index: 1; /* Ensure the header stays above scrolling content */
+  z-index: 1;
 }
 
 .productColumn {
-  width: 60%;
+  width: 40%;
 }
 
 .qtyColumn {
@@ -63,4 +65,135 @@
   font-size: 1.1rem;
   font-weight: bold;
   color: var(--foreground);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .th, .td {
+    padding: 6px;
+    font-size: 14px;
+  }
+  
+  .title {
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  .mobileList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 20px;
+  }
+
+  .mobileCard {
+    background: #f8f8f8;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .mobileCard:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .selectedCard {
+    border-color: var(--primary-color);
+    background-color: rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 0 2px var(--primary-color), 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+
+  .cardHeader {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .productName {
+    font-weight: 600;
+    color: var(--foreground);
+    font-size: 15px;
+    line-height: 1.4;
+    display: block;
+  }
+
+  .cardStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .statItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 8px 4px;
+    border-radius: 8px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--foreground);
+    opacity: 0.6;
+    margin-bottom: 4px;
+  }
+
+  .statValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .missingValue {
+    color: #ef4444;
+  }
+
+  .swipeHint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.04);
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--foreground);
+    pointer-events: none;
+  }
+  
+  .swipeLeftHint, .swipeRightHint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* Dark theme overrides for mobile */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  .mobileCard {
+    background: #404040;
+    border: 2px solid #555555;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .statItem {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .swipeHint {
+    background: rgba(255, 255, 255, 0.05);
+  }
 }

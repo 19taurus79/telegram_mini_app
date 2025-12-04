@@ -1,5 +1,6 @@
 .tableWrapper {
   width: 100%;
+  overflow-x: auto;
 }
 
 .title {
@@ -15,6 +16,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  min-width: 600px;
 }
 
 .th,
@@ -38,4 +40,107 @@
 
 .copyableRow {
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .th, .td {
+    padding: 6px;
+    font-size: 14px;
+  }
+  
+  .title {
+      font-size: 1rem;
+      white-space: normal;
+  }
+
+  .mobileList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobileCard {
+    background: #f8f8f8;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobileCard:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .cardHeader {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .clientName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: 4px;
+  }
+
+  .contractInfo {
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  .cardGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .gridItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--foreground);
+    opacity: 0.6;
+  }
+
+  .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .qtyValue {
+    color: #3b82f6;
+  }
+
+  .copyHint {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    font-size: 10px;
+    text-align: center;
+    color: var(--foreground);
+    opacity: 0.5;
+  }
+}
+
+/* Dark theme overrides for mobile */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  .mobileCard {
+    background: #404040;
+    border: 2px solid #555555;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
 }

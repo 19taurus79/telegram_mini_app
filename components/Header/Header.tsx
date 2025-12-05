@@ -9,23 +9,18 @@ import css from "./Header.module.css";
 import Link from "next/link";
 import { useInitData } from "@/store/InitData";
 import { useUser } from "@/store/User";
-import { useMapControlStore } from "@/components/MapModule/store/mapControlStore";
 
 function Header() {
   const { searchValue, setSearchValue } = useFilter();
   const inputRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const pathname = usePathname(); // Get the current path
+  const pathname = usePathname();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const initData = useInitData((state) => state.initData);
   const setInitData = useInitData((state) => state.setInitData);
   const userData = useUser((state) => state.userData);
   const setUserData = useUser((state) => state.setUserData);
-  const areApplicationsVisible = useMapControlStore((state) => state.areApplicationsVisible);
-  const toggleApplications = useMapControlStore((state) => state.toggleApplications);
-  const showHeatmap = useMapControlStore((state) => state.showHeatmap);
-  const toggleHeatmap = useMapControlStore((state) => state.toggleHeatmap);
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -38,8 +33,7 @@ function Header() {
   }, []);
 
   useEffect(() => {
-    updateHeaderHeight(); // Initial calculation
-
+    updateHeaderHeight();
     window.addEventListener("resize", updateHeaderHeight);
     return () => {
       window.removeEventListener("resize", updateHeaderHeight);
@@ -49,8 +43,7 @@ function Header() {
   useEffect(() => {
     const timer = setTimeout(() => {
       updateHeaderHeight();
-    }, 300); // Match the CSS transition duration
-
+    }, 300);
     return () => {
       clearTimeout(timer);
     };
@@ -81,8 +74,6 @@ function Header() {
     };
     fetchUser();
   }, [initData, setUserData]);
-  // console.log("initData from store:", initData);
-  // console.log("userData from store:", userData);
 
   const handleInputChange = useDebouncedCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,7 +107,6 @@ function Header() {
         ☰
       </button>
 
-      {/* Список маршрутов, где должен отображаться поиск */}
       {["/remains", "/orders", "/av_stock"].some((path) =>
         pathname.startsWith(path)
       ) && (
@@ -167,7 +157,6 @@ function Header() {
               Доставка
             </Link>
           </li>
-
           <li>
             <Link href="/events" onClick={handleNavClick}>
               Події
@@ -178,59 +167,25 @@ function Header() {
               Задачи
             </Link>
           </li>
-          {/* {userData?.is_admin && (
-            <> */}
-          {/* </>
-          )} */}
-            {userData?.is_admin && (
-                <>
-                <li>
-                    <Link href="/bi" onClick={handleNavClick}>
-                        Замовити товар
-                    </Link>
-                </li>
-                <li>
-                <Link href="/admin/upload" onClick={handleNavClick}>
-            Завантажити дані
+          {userData?.is_admin && (
+            <>
+              <li>
+                <Link href="/bi" onClick={handleNavClick}>
+                  Замовити товар
                 </Link>
-                
+              </li>
+              <li>
+                <Link href="/admin/upload" onClick={handleNavClick}>
+                  Завантажити дані
+                </Link>
               </li>
               <li>
                 <Link href="/map" onClick={handleNavClick}>
-            Мапа
+                  Мапа
                 </Link>
               </li>
-              {pathname === '/map' && (
-                <>
-                  <li>
-                    <button 
-                      onClick={() => {
-                        toggleApplications();
-                        handleNavClick();
-                      }}
-                      style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit', textAlign: 'left', width: '100%' }}
-                    >
-                      {areApplicationsVisible ? 'Приховати заявки' : 'Показати заявки'}
-                    </button>
-                  </li>
-                  {areApplicationsVisible && (
-                    <li>
-                      <button 
-                        onClick={() => {
-                          toggleHeatmap();
-                          handleNavClick();
-                        }}
-                        style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit', textAlign: 'left', width: '100%' }}
-                      >
-                        {showHeatmap ? 'Показати маркери' : 'Показати теплову карту'}
-                      </button>
-                    </li>
-                  )}
-                </>
-              )}
-                </>
-            )
-            }
+            </>
+          )}
         </ul>
       </nav>
     </header>

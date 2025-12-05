@@ -1,0 +1,80 @@
+.controlsPanel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.controlBtn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  border: 1px solid #ccc;
+  transition: all 0.2s ease;
+}
+
+.controlBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.controlBtn:active {
+  transform: scale(0.95);
+}
+
+.controlBtn svg {
+  flex-shrink: 0;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  right: 100%;
+  margin-right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.controlBtn:hover .tooltip {
+  opacity: 1;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .controlsPanel {
+    top: 70px;
+    right: 8px;
+  }
+
+  .controlBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .controlBtn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Hide tooltips on mobile */
+  .tooltip {
+    display: none;
+  }
+}

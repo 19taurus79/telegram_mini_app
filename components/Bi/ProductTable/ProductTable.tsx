@@ -19,12 +19,13 @@ interface SwipeableRowProps {
   onSwipeRight?: () => void;
   onClick?: () => void;
   isSelected: boolean;
+  hasStock?: boolean; // Whether product has available stock
 }
 
 // Helper component for Swipeable Row
-const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected }: SwipeableRowProps) => {
+const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected, hasStock = true }: SwipeableRowProps) => {
   const swipeHandlers = useSwipe({
-    onSwipedLeft: onSwipeLeft,
+    onSwipedLeft: hasStock ? onSwipeLeft : undefined,
     onSwipedRight: onSwipeRight,
   });
 
@@ -40,10 +41,12 @@ const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected
           <span>Замовлення</span>
           <span>→</span>
         </div>
-        <div className={css.swipeLeftHint}>
-          <span>←</span>
-          <span>Склад</span>
-        </div>
+        {hasStock && (
+          <div className={css.swipeLeftHint}>
+            <span>←</span>
+            <span>Склад</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -104,6 +107,7 @@ const ProductTable = ({
                     onSwipeRight={() => onSwipeRight?.(order)}
                     onClick={() => onRowClick?.(order)}
                     isSelected={selectedProduct?.product === order.product}
+                    hasStock={order.available_stock && order.available_stock.length > 0}
                   >
                     <div className={css.cardHeader}>
                       <span className={css.productName}>{order.product}</span>

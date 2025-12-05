@@ -240,6 +240,12 @@ export default function BiPage() {
             <ProductTable
               title="Не вистачає під заявки (немає на складах)"
               data={data.missing_and_unavailable}
+              onRowClick={(product) => {
+                setSelectedProduct(product);
+                if (isMobile) setActiveDrawer('orders'); // Only orders available for unavailable products
+              }}
+              onSwipeRight={handleSwipeRight}
+              selectedProduct={selectedProduct}
             />
           </div>
 

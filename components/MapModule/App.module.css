@@ -122,27 +122,6 @@
   .header {
     display: none;
   }
-
-  .heatmapToggle {
-    display: none;
-  }
-
-  .clientsToggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background-color: white;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-    cursor: pointer;
-    border: 1px solid #ccc;
-  }
 }
 
 /* Mobile Layout */
@@ -223,59 +202,6 @@
   .searchOpen {
     transform: translateY(0);
   }
-
-  .searchToggle {
-    position: fixed;
-    top: 80px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background-color: var(--background);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    z-index: 1400; /* Below search panel */
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-  }
-
-  .heatmapToggle {
-    position: fixed;
-    top: 130px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background-color: var(--background);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    z-index: 1400;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-  }
-
-  .clientsToggle {
-    position: fixed;
-    top: 80px;
-    right: 60px; /* Left of search toggle */
-    width: 40px;
-    height: 40px;
-    background-color: var(--background);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    z-index: 1400;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-  }
-
-
 
   .bottomSheet {
     position: fixed; /* Fixed to viewport to avoid 100vh scroll issues */

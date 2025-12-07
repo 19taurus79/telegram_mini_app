@@ -1,0 +1,163 @@
+.dashboardContainer {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.toolbarRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+.resetButton {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.gridLayout {
+  width: 100%;
+}
+
+/* Grid Item Styles */
+.gridItem {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gridItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: #393b3f;
+  color: white;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.dragHandle {
+  cursor: grab;
+  font-size: 16px;
+  opacity: 0.7;
+  user-select: none;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.dragHandle:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.gridItemTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gridItemContent {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+/* Override react-grid-layout styles */
+:global(.react-grid-item) {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+
+:global(.react-grid-item.cssTransforms) {
+  transition-property: transform;
+}
+
+:global(.react-grid-item.resizing) {
+  z-index: 1;
+  will-change: width, height;
+}
+
+:global(.react-grid-item.react-draggable-dragging) {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+:global(.react-grid-item > .react-resizable-handle) {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
+  border-bottom-right-radius: 8px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+:global(.react-grid-item > .react-resizable-handle:hover) {
+  opacity: 1;
+}
+
+:global(.react-grid-placeholder) {
+  background: var(--primary-color);
+  opacity: 0.2;
+  border-radius: 8px;
+  transition-duration: 100ms;
+  z-index: 2;
+}
+
+/* Mobile Layout */
+.mobileLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobileSection {
+  width: 100%;
+}
+
+.mobileSectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 16px 0 8px 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--header-bg-color) 0%, var(--secondary-bg-color) 100%);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.mobileSectionTitle:first-child {
+  margin-top: 0;
+}

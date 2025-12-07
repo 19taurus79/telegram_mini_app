@@ -2,6 +2,7 @@
 import { useFilter } from "@/context/FilterContext";
 import css from "./RemainsSidebar.module.css";
 import clsx from "clsx";
+import { RotateCcw } from "lucide-react";
 
 const RemainsSidebar = () => {
   const { setSelectedGroup, selectedGroup } = useFilter();
@@ -19,28 +20,45 @@ const RemainsSidebar = () => {
     setSelectedGroup(item);
     console.log(item);
   };
-  return (
-    <ul className={css.sidebarList}>
-      {cat.map((item) => {
-        // Определяем, является ли текущий элемент активным
-        // "Всі" соответствует пустой строке в selectedGroup
-        const isActive =
-          (item === "Всі" && selectedGroup === "") || item === selectedGroup;
 
-        return (
-          <li
-            key={item}
-            // Используем библиотеку clsx для условного добавления классов
-            className={clsx(css.sidebarItem, {
-              [css.active]: isActive,
-            })}
-            onClick={() => handleClick(item)}
-          >
-            {item}
-          </li>
-        );
-      })}
-    </ul>
+  const handleReset = () => {
+    localStorage.removeItem("remains-dashboard-layouts");
+    window.location.reload();
+  };
+
+  return (
+    <div>
+      <ul className={css.sidebarList}>
+        {cat.map((item) => {
+          // Определяем, является ли текущий элемент активным
+          // "Всі" соответствует пустой строке в selectedGroup
+          const isActive =
+            (item === "Всі" && selectedGroup === "") || item === selectedGroup;
+
+          return (
+            <li
+              key={item}
+              // Используем библиотеку clsx для условного добавления классов
+              className={clsx(css.sidebarItem, {
+                [css.active]: isActive,
+              })}
+              onClick={() => handleClick(item)}
+            >
+              {item}
+            </li>
+          );
+        })}
+      </ul>
+      
+      <button 
+        className={css.resetButton}
+        onClick={handleReset}
+        title="Скинути розташування віджетів"
+      >
+        <RotateCcw size={16} />
+        Скинути макет
+      </button>
+    </div>
   );
 };
 

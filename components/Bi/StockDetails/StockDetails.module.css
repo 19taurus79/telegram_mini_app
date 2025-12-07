@@ -16,8 +16,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
-  min-width: 300px; /* Ensure table has minimum width */
+  min-width: 300px;
 }
 
 .th,
@@ -35,7 +34,11 @@
   background-color: var(--header-bg-color);
   position: sticky;
   top: 0;
-  z-index: 1; /* Ensure the header stays above scrolling content */
+  z-index: 1;
+  resize: horizontal;
+  overflow: auto;
+  min-width: 60px;
+  cursor: col-resize;
 }
 
 .divisionColumn {

@@ -14,6 +14,7 @@ import OrdersTable from "@/components/Bi/OrdersTable/OrdersTable";
 import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
 import Loader from "@/components/Loader/Loader";
 import MobileDrawer from "@/components/Bi/MobileDrawer/MobileDrawer";
+import BiDashboard from "@/components/Bi/BiDashboard/BiDashboard";
 
 interface Recommendation {
   product: string;
@@ -42,6 +43,7 @@ export default function BiPage() {
   });
 
   const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const {
     data,
@@ -175,6 +177,12 @@ export default function BiPage() {
     setFilters(newFilters);
   };
 
+  // Reset dashboard layout to default
+  const handleResetLayout = () => {
+    localStorage.removeItem('bi-dashboard-layouts');
+    window.location.reload();
+  };
+
   const [isMobile, setIsMobile] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState<'none' | 'stock' | 'orders'>('none');
 
@@ -205,53 +213,53 @@ export default function BiPage() {
     }
 
     if (data) {
+      // Components for grid
+      const productsAvailableComponent = (
+        <ProductTable
+          title="Потрібно замовити (є на складах)"
+          data={data.missing_but_available}
+          onRowClick={!isMobile ? (product) => setSelectedProduct(product) : undefined}
+          onSwipeRight={handleSwipeRight}
+          onSwipeLeft={handleSwipeLeft}
+          selectedProduct={selectedProduct}
+          hideTitle
+        />
+      );
+
+      const productsUnavailableComponent = (
+        <ProductTable
+          title="Не вистачає під заявки (немає на складах)"
+          data={data.missing_and_unavailable}
+          onRowClick={!isMobile ? (product) => setSelectedProduct(product) : undefined}
+          onSwipeRight={handleSwipeRight}
+          selectedProduct={selectedProduct}
+          hideTitle
+        />
+      );
+
+      const stockDetailsComponent = (
+        <StockDetails selectedProduct={selectedProduct} />
+      );
+
+      const ordersTableComponent = (
+        <OrdersTable orders={selectedProduct ? selectedProduct.orders : []} />
+      );
+
+      const recommendationsComponent = (
+        <RecommendationsTable recommendations={recommendations} hideTitle />
+      );
+
       return (
         <>
-          <div className={styles.topContainer}>
-            <div className={styles.mainTableContainer}>
-              <ProductTable
-                title="Потрібно замовити (є на складах)"
-                data={data.missing_but_available}
-                onRowClick={(product) => {
-                  setSelectedProduct(product);
-                  if (isMobile) setActiveDrawer('stock'); // Default action on click for mobile
-                }}
-                onSwipeRight={handleSwipeRight}
-                onSwipeLeft={handleSwipeLeft}
-                selectedProduct={selectedProduct}
-              />
-            </div>
-            
-            {!isMobile && (
-              <>
-                <div className={styles.stockDetailsContainer}>
-                  <StockDetails selectedProduct={selectedProduct} />
-                </div>
-                <div className={styles.ordersContainer}>
-                  <OrdersTable
-                    orders={selectedProduct ? selectedProduct.orders : []}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className={styles.bottomContainer}>
-            <ProductTable
-              title="Не вистачає під заявки (немає на складах)"
-              data={data.missing_and_unavailable}
-              onRowClick={(product) => {
-                setSelectedProduct(product);
-                if (isMobile) setActiveDrawer('orders'); // Only orders available for unavailable products
-              }}
-              onSwipeRight={handleSwipeRight}
-              selectedProduct={selectedProduct}
-            />
-          </div>
-
-          <div className={styles.bottomContainer}>
-            <RecommendationsTable recommendations={recommendations} />
-          </div>
+          <BiDashboard
+            productsAvailable={productsAvailableComponent}
+            productsUnavailable={productsUnavailableComponent}
+            stockDetails={stockDetailsComponent}
+            ordersTable={ordersTableComponent}
+            recommendations={recommendationsComponent}
+            isMobile={isMobile}
+            showRecommendations={showRecommendations}
+          />
 
           {/* Mobile Drawers */}
           {isMobile && (
@@ -299,7 +307,10 @@ export default function BiPage() {
           options={filterOptions}
           onApply={handleApplyFilters}
           isSubmitting={isFetching}
-          appliedFilters={filters} // Передаємо поточні фільтри
+          appliedFilters={filters}
+          onResetLayout={handleResetLayout}
+          showRecommendations={showRecommendations}
+          onToggleRecommendations={setShowRecommendations}
         />
       )}
       {renderContent()}

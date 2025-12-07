@@ -93,6 +93,7 @@ export type Contract = {
   contract_supplement: string;
   line_of_business: string;
   document_status: string;
+  delivery_status: string;
 };
 export type AvRemains = {
   id: string;

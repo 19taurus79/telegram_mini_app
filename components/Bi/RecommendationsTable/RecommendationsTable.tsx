@@ -10,13 +10,15 @@ interface Recommendation {
 
 interface RecommendationsTableProps {
   recommendations: Recommendation[];
+  hideTitle?: boolean;
 }
 
 const RecommendationsTable = ({
   recommendations,
+  hideTitle = false,
 }: RecommendationsTableProps) => (
   <div className={styles.tableWrapper}>
-    <h2 className={styles.title}>Рекомендації</h2>
+    {!hideTitle && <h2 className={styles.title}>Рекомендації</h2>}
     {recommendations.length > 0 ? (
       <table className={styles.table}>
         <thead>

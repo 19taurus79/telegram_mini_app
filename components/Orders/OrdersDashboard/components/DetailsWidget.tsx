@@ -2,9 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getOrders, getRemainsForBi, getOrdersDetailsById } from "@/lib/api";
-import { Client, Contract, Order, OrdersDetails } from "@/types/types";
+import { Client, Contract, Order } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -16,12 +16,10 @@ interface DetailsWidgetProps {
 // Підкомпонент для ефективного завантаження деталей рядка
 const OrderRow = ({
   order,
-  idx,
   initData,
   remainsMap,
 }: {
   order: Order;
-  idx: number;
   initData: string;
   remainsMap: Map<string, { buh: number; skl: number }>;
 }) => {
@@ -138,7 +136,6 @@ export default function DetailsWidget({
             <OrderRow
               key={order.id || idx}
               order={order}
-              idx={idx}
               initData={initData}
               remainsMap={remainsMap}
             />

@@ -1,0 +1,281 @@
+/* Reusing core dashboard styles */
+.dashboardContainer {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.gridLayout {
+  width: 100%;
+}
+
+.gridItem {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gridItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #393b3f;
+  color: white;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dragHandle {
+  cursor: grab;
+  font-size: 16px;
+  opacity: 0.7;
+  user-select: none;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.dragHandle:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.gridItemTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gridItemContent {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* React Grid Layout Overrides */
+/* Override react-grid-layout styles */
+.gridLayout :global(.react-grid-item) {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+
+.gridLayout :global(.react-grid-item.cssTransforms) {
+  transition-property: transform;
+}
+
+.gridLayout :global(.react-grid-item.resizing) {
+  z-index: 1;
+  will-change: width, height;
+}
+
+.gridLayout :global(.react-grid-item.react-draggable-dragging) {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.gridLayout :global(.react-grid-item > .react-resizable-handle) {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
+  border-bottom-right-radius: 8px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.gridLayout :global(.react-grid-item > .react-resizable-handle:hover) {
+  opacity: 1;
+}
+
+.gridLayout :global(.react-grid-placeholder) {
+  background: var(--primary-color);
+  opacity: 0.2;
+  border-radius: 8px;
+  transition-duration: 100ms;
+  z-index: 2;
+}
+
+/* Specific Widget Styles */
+
+/* Search Input */
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--foreground);
+  margin-bottom: 12px;
+}
+
+/* Lists */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listItem {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: var(--background);
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.listItem:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.listItemSelected {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.listItemSelected:hover {
+  background-color: var(--primary-color);
+}
+
+/* Contract Card */
+.contractCard {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contractCard:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.contractCardSelected {
+  border: 2px solid var(--primary-color);
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.contractHeader {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.contractSub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Status Badges */
+.statusBadge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusOk {
+  background-color: #22c55e;
+  color: white;
+}
+
+.statusWaiting {
+  background-color: #eab308;
+  color: black;
+}
+
+.statusFailed {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Header Toggle */
+.toggleButton {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toggleButtonActive {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Table Styles (similar to others) */
+.tableContainer {
+    flex: 1;
+    overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.th {
+  position: sticky;
+  top: 0;
+  background-color: var(--header-bg-color);
+  z-index: 10;
+  padding: 8px;
+  text-align: left;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  resize: horizontal;
+  overflow: auto;
+}
+
+.td {
+  padding: 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile Layout */
+.mobileLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}

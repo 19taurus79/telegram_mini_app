@@ -90,28 +90,29 @@
 }
 
 /* Override react-grid-layout styles */
-:global(.react-grid-item) {
+/* Override react-grid-layout styles */
+.gridLayout :global(.react-grid-item) {
   transition: all 200ms ease;
   transition-property: left, top;
 }
 
-:global(.react-grid-item.cssTransforms) {
+.gridLayout :global(.react-grid-item.cssTransforms) {
   transition-property: transform;
 }
 
-:global(.react-grid-item.resizing) {
+.gridLayout :global(.react-grid-item.resizing) {
   z-index: 1;
   will-change: width, height;
 }
 
-:global(.react-grid-item.react-draggable-dragging) {
+.gridLayout :global(.react-grid-item.react-draggable-dragging) {
   transition: none;
   z-index: 3;
   will-change: transform;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-:global(.react-grid-item > .react-resizable-handle) {
+.gridLayout :global(.react-grid-item > .react-resizable-handle) {
   position: absolute;
   width: 20px;
   height: 20px;
@@ -124,11 +125,11 @@
   transition: opacity 0.2s;
 }
 
-:global(.react-grid-item > .react-resizable-handle:hover) {
+.gridLayout :global(.react-grid-item > .react-resizable-handle:hover) {
   opacity: 1;
 }
 
-:global(.react-grid-placeholder) {
+.gridLayout :global(.react-grid-placeholder) {
   background: var(--primary-color);
   opacity: 0.2;
   border-radius: 8px;

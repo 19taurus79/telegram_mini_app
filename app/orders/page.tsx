@@ -1,34 +1,28 @@
 "use client";
 
-// import { getProductOnWarehouse } from "@/lib/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useFilter } from "@/context/FilterContext";
-import Link from "next/link";
-import css from "./Orders.module.css";
-import { getClients } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
+import { useInitData } from "@/store/InitData";
+import { InitData } from "@/store/InitData";
+import OrdersDashboard from "@/components/Orders/OrdersDashboard/OrdersDashboard";
+
+// Keep imports for old version just in case, but we are replacing whole render
+// import { useFilter } from "@/context/FilterContext";
+// import Link from "next/link";
+// import css from "./Orders.module.css";
+// import { getClients } from "@/lib/api";
+// import { keepPreviousData, useQuery } from "@tanstack/react-query";
+
 function Orders() {
-  const { selectedGroup, searchValue } = useFilter();
-  console.log("page group", selectedGroup);
-  console.log("page search", selectedGroup);
-  const fill = useFilter();
-  console.log(fill);
-  const initData = getInitData();
-  const { data } = useQuery({
-    queryKey: ["clients", selectedGroup, searchValue],
-    queryFn: () => getClients({ searchValue, initData }),
-    placeholderData: keepPreviousData,
-  });
+  // const { selectedGroup, searchValue } = useFilter();
+  const initData = useInitData((state: InitData) => state.initData);
+
   return (
-    <ul className={css.listContainer}>
-      {data?.map((item, index) => (
-        <li className={css.listItemButton} key={`${item.client}-${index}`}>
-          <Link className={css.ref} href={`/orders/${item.id}`}>
-            {item.client}
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <>
+      {initData ? (
+        <OrdersDashboard initData={initData} />
+      ) : (
+        <div style={{ padding: "20px" }}>Завантаження...</div>
+      )}
+    </>
   );
 }
 

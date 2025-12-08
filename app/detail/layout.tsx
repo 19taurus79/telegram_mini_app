@@ -27,9 +27,10 @@ type DeliveryComponentProps = {
 };
 
 type Props = {
-  children: ReactElement<ChildProps>;
-  delivery: ReactElement<DeliveryComponentProps>;
+  children: React.ReactNode;
+  delivery: React.ReactNode;
 };
+
 const RemainsLayout = ({ children, delivery }: Props) => {
   const [deliveryArr, setDeliveryArr] = useState<DeliveryProps[]>([]);
   const updateDelivery = (newDelivery: DeliveryProps) => {
@@ -39,10 +40,18 @@ const RemainsLayout = ({ children, delivery }: Props) => {
     <section>
       {/* <SideBar sidebar={sidebar}> */}
       {/* <div>{children}</div> */}
-      <div>{children && React.cloneElement(children, { updateDelivery })}</div>
+      <div>
+        {React.isValidElement(children)
+          ? React.cloneElement(children as ReactElement<any>, { updateDelivery })
+          : children}
+      </div>
       {/* </SideBar> */}
       {/* <div>{delivery}</div> */}
-      <div>{delivery && React.cloneElement(delivery, { deliveryArr })}</div>
+      <div>
+        {React.isValidElement(delivery)
+          ? React.cloneElement(delivery as ReactElement<any>, { deliveryArr })
+          : delivery}
+      </div>
     </section>
   );
 };

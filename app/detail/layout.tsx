@@ -42,14 +42,16 @@ const RemainsLayout = ({ children, delivery }: Props) => {
       {/* <div>{children}</div> */}
       <div>
         {React.isValidElement(children)
-          ? React.cloneElement(children as ReactElement<any>, { updateDelivery })
+          ? React.cloneElement(children as ReactElement<ChildProps>, { updateDelivery })
           : children}
       </div>
       {/* </SideBar> */}
       {/* <div>{delivery}</div> */}
       <div>
         {React.isValidElement(delivery)
-          ? React.cloneElement(delivery as ReactElement<any>, { deliveryArr })
+          ? React.cloneElement(delivery as ReactElement<DeliveryComponentProps>, {
+              deliveryArr,
+            })
           : delivery}
       </div>
     </section>

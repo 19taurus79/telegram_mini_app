@@ -67,7 +67,7 @@ function Remains() {
 
     // Повертаємо повну структуру з класами, як було раніше
     return (
-      <ul>
+      <ul className={css.listContainerUl}>
         {data.map((item) => (
           <li className={css.listItemButton} key={item.id}>
             <Link

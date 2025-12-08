@@ -101,7 +101,7 @@ export default function DetailsRemains({
                                     <p><strong>Рік врожаю:</strong> {item.crop_year}</p>
                                     <p><strong>Схожість:</strong> {item.germination}</p>
                                     <p><strong>МТН:</strong> {item.mtn}</p>
-                                    <p><strong>Вага мішку:</strong> {item.weight}</p>
+                                    <p><strong>Вага одиниці:</strong> {item.weight}</p>
                                 </div>
                             </details>
                         </td>

@@ -90,7 +90,7 @@ export default async function filteredRemains({ params }: Props) {
                 <p>Схожість: {item.germination}</p>
                 <p>Країна походження: {item.origin_country}</p>
                 <p>Рік урожаю: {item.crop_year}</p>
-                <p>Вага мішку: {item.weight}</p>
+                <p>Вага одиниці: {item.weight}</p>
               </>
             )}
             <br />

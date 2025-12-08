@@ -4,7 +4,7 @@
   height: 40vh; /* Висота для десктопної версії */
 }
 
-.listContainer ul {
+.listContainerUl {
   list-style: none;
   padding: 0; /* Скидаємо відступи за замовчуванням */
   margin: 0;

@@ -26,3 +26,23 @@
   display: block;
   width: 100%;
 }
+
+.desktopOnly {
+  display: block;
+  height: 100%;
+}
+
+.mobileOnly {
+  display: none;
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .desktopOnly {
+    display: none;
+  }
+  
+  .mobileOnly {
+    display: block;
+  }
+}

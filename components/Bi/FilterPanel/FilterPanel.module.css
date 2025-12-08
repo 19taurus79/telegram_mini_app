@@ -79,6 +79,24 @@
   background-color: var(--hover-bg-color);
 }
 
+.resetLayoutButton {
+  padding: 10px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  background-color: var(--secondary-bg-color);
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.resetLayoutButton:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
   .wrapper {
     flex-direction: column;
@@ -89,11 +107,17 @@
     margin-left: 0;
     align-self: stretch;
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: space-between;
   }
 
   .applyButton,
   .clearButton {
     flex: 1;
+  }
+
+  .resetLayoutButton {
+    width: 100%;
+    margin-top: 10px;
   }
 }

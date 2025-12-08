@@ -24,6 +24,7 @@ import DrawControl from "./components/DrawControl/DrawControl";
 import SelectionList from "./components/SelectionList/SelectionList";
 import RoutingControl from "./components/RoutingControl/RoutingControl";
 import RoutePanel from "./components/RoutePanel/RoutePanel";
+import MapControls from "./components/MapControls/MapControls";
 import { useMap } from "react-leaflet"; // Импортируем useMap
 
 // Компонент для управления картой (flyTo)
@@ -365,7 +366,7 @@ export default function MapFeature({ onAddressSelect }) {
       </div>
 
       {/* Heatmap Toggle Button */}
-      {areApplicationsVisible && (
+      {/* {areApplicationsVisible && (
         <div 
           className={css.heatmapToggle} 
           onClick={toggleHeatmap}
@@ -387,7 +388,7 @@ export default function MapFeature({ onAddressSelect }) {
             </svg>
           )}
         </div>
-      )}
+      )} */}
 
 
 
@@ -429,39 +430,6 @@ export default function MapFeature({ onAddressSelect }) {
         </div>
       </div>
       <div className={css.map}>
-        {/* Clients Toggle Button */}
-        <div 
-          className={css.clientsToggle} 
-          onClick={toggleClients}
-          title={areClientsVisible ? "Скрити контрагентів" : "Показати контрагентів"}
-          style={{
-            background: areClientsVisible ? '#4caf50' : 'white',
-            color: areClientsVisible ? 'white' : 'black',
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-        </div>
-        {/* Routing Toggle Button */}
-        <div 
-          className={css.clientsToggle} 
-          onClick={handleToggleRoutingMode}
-          title={isRoutingMode ? "Вимкнути режим маршруту" : "Увімкнути режим маршруту"}
-          style={{
-            background: isRoutingMode ? '#2196f3' : 'white',
-            color: isRoutingMode ? 'white' : 'black',
-            top: '130px', // Position below clients toggle
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 11 12 14 22 4"></polyline>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-          </svg>
-        </div>
         <MapContainer
           className={css.leafletMap}
           ref={mapRef}
@@ -472,6 +440,18 @@ export default function MapFeature({ onAddressSelect }) {
           }
           zoom={13}
         >
+          {/* Map Controls */}
+          <MapControls
+            areApplicationsVisible={areApplicationsVisible}
+            toggleApplications={() => setAreApplicationsVisible(!areApplicationsVisible)}
+            showHeatmap={showHeatmap}
+            toggleHeatmap={toggleHeatmap}
+            areClientsVisible={areClientsVisible}
+            toggleClients={toggleClients}
+            isRoutingMode={isRoutingMode}
+            toggleRoutingMode={handleToggleRoutingMode}
+          />
+          
           <LayersControl position="bottomright">
             {/* Обычные карты */}
             <BaseLayer checked name="OpenStreetMap">

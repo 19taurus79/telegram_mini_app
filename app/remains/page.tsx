@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getProductOnWarehouse } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
@@ -11,6 +11,7 @@ import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsO
 import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedProducts";
 import { useInitData } from "@/store/InitData";
 import type { InitData } from "@/store/InitData";
+import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashboard";
 
 const DESKTOP_BREAKPOINT = 768;
 
@@ -30,6 +31,16 @@ function Remains() {
     enabled: !!initData,
     placeholderData: keepPreviousData,
   });
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check generic mobile state for dashboard layout
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleProductClick = (
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -73,12 +84,13 @@ function Remains() {
   };
 
   return (
-    <div className={css.wrapper}>
-      <div className={css.listContainer}>{renderProductList()}</div>
-      <DetailsRemains selectedProductId={selectedProductId} />
-      <DetailsOrdersByProduct selectedProductId={selectedProductId} />
-      <DetailsMovedProducts selectedProductId={selectedProductId} />
-    </div>
+    <RemainsDashboard
+      isMobile={isMobile}
+      productList={renderProductList()}
+      detailsRemains={<DetailsRemains selectedProductId={selectedProductId} />}
+      detailsOrders={<DetailsOrdersByProduct selectedProductId={selectedProductId} />}
+      detailsMoved={<DetailsMovedProducts selectedProductId={selectedProductId} />}
+    />
   );
 }
 

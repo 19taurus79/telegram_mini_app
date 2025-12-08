@@ -44,6 +44,16 @@ export default async function filteredOrders({ params }: Props) {
               >
                 {item.document_status}
               </span>
+              <span
+                className={clsx(
+                  css.businessSpan,
+                  item.delivery_status?.includes("Так")
+                    ? css.statusOk
+                    : css.statusFailed
+                )}
+              >
+                До постачання: {item.delivery_status}
+              </span>
             </Link>
           </li>
         ))}

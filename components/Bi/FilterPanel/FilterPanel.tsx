@@ -14,14 +14,20 @@ interface FilterPanelProps {
   options: FilterOptions;
   onApply: (filters: FiltersState) => void;
   isSubmitting: boolean;
-  appliedFilters: FiltersState; // Новий пропс для синхронізації
+  appliedFilters: FiltersState;
+  onResetLayout?: () => void;
+  showRecommendations?: boolean;
+  onToggleRecommendations?: (show: boolean) => void;
 }
 
 const FilterPanel = ({
   options,
   onApply,
   isSubmitting,
-  appliedFilters, // Отримуємо новий пропс
+  appliedFilters,
+  onResetLayout,
+  showRecommendations = false,
+  onToggleRecommendations,
 }: FilterPanelProps) => {
   const [selectedDocStatuses, setSelectedDocStatuses] = useState<string[]>([]);
   const [selectedDeliveryStatuses, setSelectedDeliveryStatuses] = useState<
@@ -113,6 +119,21 @@ const FilterPanel = ({
             </label>
           ))}
         </div>
+        
+        {onToggleRecommendations && (
+          <div className={css.filterGroup}>
+            <h4>Відображення</h4>
+            <label className={css.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={showRecommendations}
+                onChange={(e) => onToggleRecommendations(e.target.checked)}
+              />
+              Показати рекомендації
+            </label>
+          </div>
+        )}
+
         <div className={css.buttonGroup}>
           <button
             onClick={handleApplyClick}
@@ -128,6 +149,15 @@ const FilterPanel = ({
               disabled={isSubmitting}
             >
               Очистити
+            </button>
+          )}
+          {onResetLayout && (
+            <button
+              onClick={onResetLayout}
+              className={css.resetLayoutButton}
+              type="button"
+            >
+              🔄 Скинути розташування
             </button>
           )}
         </div>

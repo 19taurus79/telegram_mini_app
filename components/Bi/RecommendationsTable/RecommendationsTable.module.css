@@ -28,6 +28,13 @@
 
 .th {
   background-color: var(--header-bg-color);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  resize: horizontal;
+  overflow: auto;
+  min-width: 60px;
+  cursor: col-resize;
 }
 
 @media (max-width: 768px) {

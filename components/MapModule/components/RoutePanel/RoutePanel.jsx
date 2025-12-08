@@ -1,9 +1,18 @@
 import css from './RoutePanel.module.css';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function RoutePanel({ routeInfo, waypoints, onClear, onDeleteWaypoint, onMoveWaypoint, onOptimize, onToggleMode, isActive }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
+  
+  // Desktop drag and resize state
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [position, setPosition] = useState({ x: null, y: null });
+  const [size, setSize] = useState({ width: 300, height: 400 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const panelRef = useRef(null);
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
@@ -32,11 +41,126 @@ export default function RoutePanel({ routeInfo, waypoints, onClear, onDeleteWayp
     setShowOptimizeDialog(false);
   };
 
+  // Detect desktop vs mobile
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth > 768);
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
+  // Panel drag handlers
+  const handlePanelDragStart = (e) => {
+    if (!isDesktop) return;
+    
+    setIsDragging(true);
+    const rect = panelRef.current.getBoundingClientRect();
+    setDragStart({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handlePanelDrag = (e) => {
+    if (!isDragging || !isDesktop) return;
+    
+    e.preventDefault();
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Constrain to viewport
+    const maxX = window.innerWidth - size.width;
+    const maxY = window.innerHeight - size.height;
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handlePanelDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Panel resize handlers
+  const handleResizeStart = (e) => {
+    if (!isDesktop) return;
+    
+    e.stopPropagation();
+    setIsResizing(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY
+    });
+  };
+
+  const handleResize = (e) => {
+    if (!isResizing || !isDesktop) return;
+    
+    e.preventDefault();
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+    
+    const newWidth = Math.max(250, size.width + deltaX);
+    const newHeight = Math.max(300, size.height + deltaY);
+    
+    setSize({ width: newWidth, height: newHeight });
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+  };
+
+  // Global mouse event listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handlePanelDrag);
+      document.addEventListener('mouseup', handlePanelDragEnd);
+      return () => {
+        document.removeEventListener('mousemove', handlePanelDrag);
+        document.removeEventListener('mouseup', handlePanelDragEnd);
+      };
+    }
+  }, [isDragging, dragStart, size]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResize);
+      document.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [isResizing, dragStart, size]);
+
   if (!isActive) return null;
 
+  // Calculate inline styles for desktop
+  const panelStyle = isDesktop && position.x !== null ? {
+    left: `${position.x}px`,
+    top: `${position.y}px`,
+    right: 'auto',
+    width: `${size.width}px`,
+    height: `${size.height}px`,
+    maxHeight: `${size.height}px`,
+    overflow: 'auto'
+  } : {};
+
   return (
-    <div className={css.panel}>
-      <div className={css.header}>
+    <div 
+      ref={panelRef}
+      className={css.panel} 
+      style={panelStyle}
+    >
+      <div 
+        className={`${css.header} ${isDesktop ? css.headerDraggable : ''}`}
+        onMouseDown={handlePanelDragStart}
+      >
         <h3>📍 Маршрут</h3>
         <div className={css.headerButtons}>
           {waypoints && waypoints.length >= 2 && (
@@ -192,6 +316,13 @@ export default function RoutePanel({ routeInfo, waypoints, onClear, onDeleteWayp
             ? 'Кликните на маркер для выбора начальной точки'
             : 'Кликните на маркер для выбора конечной точки'}
         </div>
+      )}
+      
+      {isDesktop && (
+        <div 
+          className={css.resizeHandle}
+          onMouseDown={handleResizeStart}
+        />
       )}
     </div>
   );

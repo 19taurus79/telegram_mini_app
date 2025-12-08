@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import css from './MobileDrawer.module.css';
+import useSwipe from '@/hooks/useSwipe';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -22,6 +23,12 @@ export default function MobileDrawer({ isOpen, onClose, position, children, titl
     };
   }, [isOpen]);
 
+  // Swipe to close: left drawer closes on swipe left, right drawer closes on swipe right
+  const swipeHandlers = useSwipe({
+    onSwipedLeft: position === 'left' ? onClose : undefined,
+    onSwipedRight: position === 'right' ? onClose : undefined,
+  });
+
   return (
     <>
       {/* Backdrop */}
@@ -31,7 +38,10 @@ export default function MobileDrawer({ isOpen, onClose, position, children, titl
       />
       
       {/* Drawer */}
-      <div className={`${css.drawer} ${css[position]} ${isOpen ? css.open : ''}`}>
+      <div 
+        className={`${css.drawer} ${css[position]} ${isOpen ? css.open : ''}`}
+        {...swipeHandlers}
+      >
         <div className={css.header}>
           {title && <h3 className={css.title}>{title}</h3>}
           <button className={css.closeBtn} onClick={onClose}>✕</button>

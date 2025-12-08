@@ -366,7 +366,7 @@ export default function MapFeature({ onAddressSelect }) {
       </div>
 
       {/* Heatmap Toggle Button */}
-      {areApplicationsVisible && (
+      {/* {areApplicationsVisible && (
         <div 
           className={css.heatmapToggle} 
           onClick={toggleHeatmap}
@@ -388,7 +388,7 @@ export default function MapFeature({ onAddressSelect }) {
             </svg>
           )}
         </div>
-      )}
+      )} */}
 
 
 

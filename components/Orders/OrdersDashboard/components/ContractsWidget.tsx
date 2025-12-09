@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getContracts } from "@/lib/api";
 import { Client, Contract } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import clsx from "clsx";
@@ -9,25 +7,19 @@ import clsx from "clsx";
 interface ContractsWidgetProps {
   initData: string;
   selectedClient: Client | null;
-  selectedContract: Contract | null;
+  contracts: Contract[];
+  selectedContracts: Contract[];
   onSelectContract: (contract: Contract) => void;
 }
 
 export default function ContractsWidget({
   initData,
   selectedClient,
-  selectedContract,
+  contracts,
+  selectedContracts,
   onSelectContract,
 }: ContractsWidgetProps) {
-  // Запит на отримання контрактів обраного клієнта
-  const { data: contracts, isLoading } = useQuery({
-    queryKey: ["contracts", selectedClient?.id],
-    queryFn: () =>
-      selectedClient
-        ? getContracts({ client: selectedClient.id, initData })
-        : Promise.resolve([]),
-    enabled: !!selectedClient && !!initData, // Активний тільки якщо обрано клієнта
-  });
+
 
   // Якщо клієнт не обраний, показуємо підказку
   if (!selectedClient) {
@@ -38,9 +30,7 @@ export default function ContractsWidget({
     );
   }
 
-  if (isLoading) {
-    return <div style={{ padding: "20px" }}>Завантаження контрактів...</div>;
-  }
+
 
   return (
     <div className={styles.tableContainer}>
@@ -49,9 +39,9 @@ export default function ContractsWidget({
           <div
             key={contract.contract_supplement}
             className={clsx(styles.contractCard, {
-              [styles.contractCardSelected]:
-                selectedContract?.contract_supplement ===
-                contract.contract_supplement,
+              [styles.contractCardSelected]: selectedContracts.some(
+                (c) => c.contract_supplement === contract.contract_supplement
+              ),
             })}
             onClick={() => onSelectContract(contract)}
           >

@@ -279,3 +279,20 @@
   gap: 16px;
   padding: 16px;
 }
+.checkmarkGreen {
+  color: #28a745; /* Яскравий зелений */
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.checkmarkYellow {
+  color: #ffc107; /* Яскравий жовтий/бурштиновий */
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.checkmarkRed {
+  color: #dc3545; /* Яскравий червоний */
+  font-size: 22px;
+  font-weight: 900;
+}

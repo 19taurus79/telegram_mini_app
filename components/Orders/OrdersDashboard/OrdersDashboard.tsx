@@ -8,6 +8,8 @@ import styles from "./OrdersDashboard.module.css";
 import ClientsWidget from "./components/ClientsWidget";
 import ContractsWidget from "./components/ContractsWidget";
 import DetailsWidget from "./components/DetailsWidget";
+import { useQuery } from "@tanstack/react-query";
+import { getContracts } from "@/lib/api";
 import { Client, Contract } from "@/types/types";
 import { Layers, RotateCcw } from "lucide-react";
 
@@ -40,9 +42,19 @@ interface OrdersDashboardProps {
 export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [selectedContracts, setSelectedContracts] = useState<Contract[]>([]);
   const [showAllContracts, setShowAllContracts] = useState(false);
   const [isClient, setIsClient] = useState(false);
+
+  // Запит на отримання контрактів обраного клієнта (підняли стан сюди)
+  const { data: contracts } = useQuery({
+    queryKey: ["contracts", selectedClient?.id],
+    queryFn: () =>
+      selectedClient
+        ? getContracts({ client: selectedClient.id, initData })
+        : Promise.resolve([]),
+    enabled: !!selectedClient && !!initData,
+  });
 
   // Завантаження збереженого макету з localStorage
   useEffect(() => {
@@ -74,24 +86,33 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
 
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
-    setSelectedContract(null); // Скидаємо обраний контракт при зміні клієнта
+    setSelectedContracts([]); // Скидаємо обрані контракти при зміні клієнта
     setShowAllContracts(false);
   };
 
   const handleSelectContract = (contract: Contract) => {
-    if (
-      selectedContract?.contract_supplement === contract.contract_supplement
-    ) {
-      // Логіка перемикання (залишимо поки що без змін)
-    }
-    setSelectedContract(contract);
-    setShowAllContracts(false); // Вимикаємо режим "Всі контракти", якщо обрано конкретний
+      setSelectedContracts((prev) => {
+          const isSelected = prev.some(c => c.contract_supplement === contract.contract_supplement);
+          if (isSelected) {
+              return prev.filter(c => c.contract_supplement !== contract.contract_supplement);
+          } else {
+              return [...prev, contract];
+          }
+      });
+    setShowAllContracts(false); // Вимикаємо прапорець "Всі", бо це ручний вибір. Хоча логіка може бути іншою.
   };
 
   const toggleShowAll = () => {
     setShowAllContracts((prev) => !prev);
     if (!showAllContracts) {
-      setSelectedContract(null); // Скидаємо конкретний контракт, якщо увімкнули "Всі"
+      // Якщо вмикаємо "Всі", то виділяємо всі доступні контракти
+      if (contracts) {
+          setSelectedContracts(contracts);
+      }
+    } else {
+        // Якщо вимикаємо "Всі", скидаємо виділення? Або залишаємо як є?
+        // Зазвичай "Select All" -> "Deselect All".
+        setSelectedContracts([]);
     }
   };
 
@@ -166,7 +187,8 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
               <ContractsWidget
                 initData={initData}
                 selectedClient={selectedClient}
-                selectedContract={selectedContract}
+                contracts={contracts || []}
+                selectedContracts={selectedContracts}
                 onSelectContract={handleSelectContract}
               />
             </div>
@@ -180,7 +202,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                 <span className={styles.dragHandle}>⋮⋮</span>
                 <span className={styles.gridItemTitle}>
                   Деталі замовлення 
-                  {selectedContract ? ` (${selectedContract.contract_supplement})` : ""}
+                  {selectedContracts.length > 0 && !showAllContracts ? ` (${selectedContracts.length})` : ""}
                   {showAllContracts ? " (Всі контракти)" : ""}
                 </span>
               </div>
@@ -189,7 +211,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
               <DetailsWidget
                 initData={initData}
                 selectedClient={selectedClient}
-                selectedContract={selectedContract}
+                selectedContracts={selectedContracts}
                 showAllContracts={showAllContracts}
               />
             </div>

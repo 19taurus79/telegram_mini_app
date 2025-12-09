@@ -16,6 +16,7 @@ import { Layers, RotateCcw } from "lucide-react";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const STORAGE_KEY = "orders-dashboard-layouts";
+const STORAGE_STATE_KEY = "orders-dashboard-state";
 
 const defaultLayouts: Layouts = {
   lg: [
@@ -56,7 +57,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
     enabled: !!selectedClient && !!initData,
   });
 
-  // Завантаження збереженого макету з localStorage
+  // Завантаження збереженого макету та стану з localStorage
   useEffect(() => {
     setIsClient(true);
     const savedLayouts = localStorage.getItem(STORAGE_KEY);
@@ -68,7 +69,31 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
         console.error("Failed to parse saved layouts:", e);
       }
     }
+
+    const savedState = localStorage.getItem(STORAGE_STATE_KEY);
+    if (savedState) {
+        try {
+            const parsedState = JSON.parse(savedState);
+            if (parsedState.selectedClient) setSelectedClient(parsedState.selectedClient);
+            if (parsedState.selectedContracts) setSelectedContracts(parsedState.selectedContracts);
+            if (parsedState.showAllContracts) setShowAllContracts(parsedState.showAllContracts);
+        } catch (e) {
+             console.error("Failed to parse saved state:", e);
+        }
+    }
   }, []);
+
+  // Збереження стану при зміні
+  useEffect(() => {
+    if (isClient) { // Зберігаємо тільки якщо ми вже на клієнті (після гідратації)
+        const stateToSave = {
+            selectedClient,
+            selectedContracts,
+            showAllContracts
+        };
+        localStorage.setItem(STORAGE_STATE_KEY, JSON.stringify(stateToSave));
+    }
+  }, [selectedClient, selectedContracts, showAllContracts, isClient]);
 
   // Збереження макету при його зміні
   const handleLayoutChange = useCallback(

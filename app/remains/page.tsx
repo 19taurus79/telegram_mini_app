@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { getProductOnWarehouse } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
@@ -17,7 +17,7 @@ import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashb
 
 const DESKTOP_BREAKPOINT = 768;
 
-function Remains() {
+function RemainsContent() {
   const { selectedGroup, searchValue, setSearchValue } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -156,4 +156,10 @@ function Remains() {
   );
 }
 
-export default Remains;
+export default function Remains() {
+  return (
+    <Suspense fallback={<div>Завантаження...</div>}>
+        <RemainsContent />
+    </Suspense>
+  );
+}

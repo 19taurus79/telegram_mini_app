@@ -13,7 +13,6 @@ interface ContractsWidgetProps {
 }
 
 export default function ContractsWidget({
-  initData,
   selectedClient,
   contracts,
   selectedContracts,

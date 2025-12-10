@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClients } from "@/lib/api";
 import { Client } from "@/types/types";
@@ -19,6 +19,8 @@ export default function ClientsWidget({
   onSelectClient,
 }: ClientsWidgetProps) {
   const [searchValue, setSearchValue] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+  const STORAGE_SCROLL_KEY = "clients-widget-scroll-top";
 
   // Запит на отримання списку клієнтів
   // Використовує React Query для кешування та управління станом завантаження
@@ -27,6 +29,26 @@ export default function ClientsWidget({
     queryFn: () => getClients({ searchValue, initData }),
     enabled: !!initData, // Запит активний тільки якщо є initData
   });
+
+  // Відновлення позиції скролу
+  useEffect(() => {
+    if (clients && listRef.current) {
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                const savedScroll = localStorage.getItem(STORAGE_SCROLL_KEY);
+                if (savedScroll && listRef.current) {
+                    listRef.current.scrollTop = parseInt(savedScroll, 10);
+                }
+            }, 100);
+        });
+    }
+  }, [clients]);
+
+  const handleScroll = () => {
+      if (listRef.current) {
+          localStorage.setItem(STORAGE_SCROLL_KEY, listRef.current.scrollTop.toString());
+      }
+  };
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -50,7 +72,11 @@ export default function ClientsWidget({
         />
       </div>
 
-      <div className={styles.tableContainer}>
+      <div 
+        className={styles.tableContainer}
+        ref={listRef}
+        onScroll={handleScroll}
+      >
         {isLoading ? (
           <p style={{ padding: "10px", color: "var(--foreground)" }}>
             Завантаження...

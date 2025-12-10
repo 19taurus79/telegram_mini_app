@@ -5,6 +5,7 @@ import { getOrdersDetailsById } from "@/lib/api";
 import { Client, Contract, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -25,6 +26,21 @@ export default function DetailsWidget({
   const contractsIds = useMemo(() => {
      return selectedContracts.map(c => c.contract_supplement).sort().join(",");
   }, [selectedContracts]);
+
+  const router = useRouter();
+
+  const handleRemainsClick = (item: OrdersDetails) => {
+      // Переходимо тільки якщо є залишки по бухгалтерії
+      if (item.buh > 0) {
+          // Формуємо пошуковий запит: Номенклатура + Ознака партії + Рік врожаю
+          const searchParts = [item.nomenclature, item.party_sign, item.buying_season]
+            .filter(part => part && part.trim() !== '') // Прибираємо пусті частини
+            .join(' ');
+            
+          const searchQuery = encodeURIComponent(searchParts);
+          router.push(`/remains?search=${searchQuery}`);
+      }
+  };
 
   const { data: detailsList, isLoading } = useQuery({
     queryKey: ["ordersDetailsFull", selectedClient?.id, contractsIds],
@@ -102,7 +118,15 @@ console.log(detailsList)
                   <span style={{ opacity: 0.5 }}>-</span>
                 )}
               </td>
-              <td className={styles.td}>
+              <td 
+                className={styles.td} 
+                onClick={() => handleRemainsClick(item)}
+                style={{ 
+                    cursor: item.buh > 0 ? "pointer" : "default",
+                    backgroundColor: item.buh > 0 ? "var(--hover-bg, rgba(0,0,0,0.02))" : "inherit"
+                }}
+                title={item.buh > 0 ? "Перейти до залишків" : ""}
+              >
                 {/* Залишки приходять прямо в об'єкті details */}
                 <div style={{ fontSize: "11px" }}>
                   <div>Бух: {item.buh}</div>

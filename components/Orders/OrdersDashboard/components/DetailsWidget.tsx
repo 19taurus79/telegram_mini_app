@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getOrdersDetailsById } from "@/lib/api";
 import { Client, Contract, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Modal from "@/components/Modal/Modal";
+import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -27,6 +29,8 @@ export default function DetailsWidget({
      return selectedContracts.map(c => c.contract_supplement).sort().join(",");
   }, [selectedContracts]);
 
+  const [selectedProductForModal, setSelectedProductForModal] = useState<string | null>(null);
+
   const router = useRouter();
 
   const handleRemainsClick = (item: OrdersDetails) => {
@@ -40,6 +44,17 @@ export default function DetailsWidget({
           const searchQuery = encodeURIComponent(searchParts);
           router.push(`/remains?search=${searchQuery}`);
       }
+  };
+
+  const handleDemandClick = (item: OrdersDetails) => {
+      // Судячи з логів, item.product містить ID товару
+      if (item.product) {
+          setSelectedProductForModal(item.product);
+      }
+  };
+
+  const closeModal = () => {
+      setSelectedProductForModal(null);
   };
 
   const { data: detailsList, isLoading } = useQuery({
@@ -133,7 +148,14 @@ console.log(detailsList)
                   <div>Скл: {item.skl}</div>
                 </div>
               </td>
-              <td className={styles.td}>{item.orders_q}</td> 
+              <td 
+                className={styles.td}
+                onClick={() => handleDemandClick(item)}
+                style={{ cursor: "pointer" }}
+                title="Переглянути деталі заявок"
+              >
+                  {item.orders_q}
+              </td> 
               {/* Ячейка з галочкою */}
                 <td className={styles.td}>
                   {(() => {
@@ -165,6 +187,12 @@ console.log(detailsList)
           )}
         </tbody>
       </table>
+
+      {selectedProductForModal && (
+          <Modal onClose={closeModal}>
+              <DetailsOrdersByProduct selectedProductId={selectedProductForModal} />
+          </Modal>
+      )}
     </div>
   );
 }

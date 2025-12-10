@@ -11,14 +11,18 @@
 }
 
 .modalContent {
-  background-color: white;
+  background-color: var(--modal-bg-color, white);
+  color: var(--modal-text-color, inherit);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--modal-border-radius, 8px);
   max-width: 90%;
   max-height: 90%;
   overflow-y: auto;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--modal-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.3));
   position: relative;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
 }
 
 .closeButton {
@@ -27,6 +31,13 @@
   right: 10px;
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
+  color: var(--modal-text-color, inherit);
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: var(--primary-color);
 }

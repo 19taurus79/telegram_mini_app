@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { getProductOnWarehouse } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -15,9 +17,11 @@ import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashb
 
 const DESKTOP_BREAKPOINT = 768;
 
-function Remains() {
-  const { selectedGroup, searchValue } = useFilter();
+function RemainsContent() {
+  const { selectedGroup, searchValue, setSearchValue } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const initData = useInitData((state: InitData) => state.initData);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -33,6 +37,47 @@ function Remains() {
   });
 
   const [isMobile, setIsMobile] = useState(false);
+
+  // Синхронізація URL search параметра з контекстом фільтра
+  useEffect(() => {
+      const searchParam = searchParams.get('search');
+      if (searchParam && searchParam !== searchValue) {
+          setSearchValue(searchParam);
+      }
+  }, [searchParams, setSearchValue]);
+
+  // Автовибір елемента, який відповідає пошуку
+  useEffect(() => {
+      const searchParam = searchParams.get('search');
+      // Прибираємо умову !selectedProductId, щоб дозволити перемикання при зміні пошуку
+      if (searchParam && data && data.length > 0) {
+           // Шукаємо збіг (точний або входження)
+           // Припускаємо, що searchParam = "Nomenclature Party Season", а item.product це "Nomenclature Party Season ..."
+           // Або навпаки, якщо item.product коротший.
+           const searchLower = searchParam.toLowerCase();
+           
+           // Спробуємо знайти елемент, ім'я якого містить пошуковий запит
+           // Або пошуковий запит міститься в імені елемента (на випадок якщо запит довгий)
+           const match = data.find(item => {
+               const productLower = item.product.toLowerCase();
+               return productLower.includes(searchLower) || searchLower.includes(productLower);
+           });
+           
+           if (match) {
+                // Встановлюємо ID тільки якщо він відрізняється від поточного, щоб уникнути циклів
+                if (selectedProductId !== match.id) {
+                    setSelectedProductId(match.id);
+                }
+           } else {
+               // Якщо точного збігу немає, беремо перший як фолбек (тільки якщо нічого не вибрано або це новий пошук)
+                // Але щоб не стрибало при кожному рендері, краще робити це тільки якщо це явно новий пошук
+                // Поки залишимо логіку "якщо нічого не знайдено - вибираємо перший"
+                if (!selectedProductId || !data.find(d => d.id === selectedProductId)) {
+                     setSelectedProductId(data[0].id);
+                }
+           }
+      }
+  }, [data, searchParams, selectedProductId]);
 
   // Check generic mobile state for dashboard layout
   useEffect(() => {
@@ -52,6 +97,12 @@ function Remains() {
     }
   };
 
+  const handleBackToOrders = () => {
+    setSearchValue("");
+    setSelectedProductId(null);
+    router.push("/orders");
+  };
+
   const renderProductList = () => {
     if (isLoading) {
       return <p>Завантаження продуктів...</p>;
@@ -67,7 +118,17 @@ function Remains() {
 
     // Повертаємо повну структуру з класами, як було раніше
     return (
-      <ul className={css.listContainerUl}>
+      <div className={css.listContainerUl}>
+        {searchParams.get('search') && (
+            <button 
+                className={css.backButton}
+                onClick={handleBackToOrders}
+            >
+                <ArrowLeft size={16} />
+                Назад до заявок
+            </button>
+        )}
+        <ul className={css.listContainerUl} style={{ padding: 0 }}>
         {data.map((item) => (
           <li className={css.listItemButton} key={item.id}>
             <Link
@@ -80,6 +141,7 @@ function Remains() {
           </li>
         ))}
       </ul>
+      </div>
     );
   };
 
@@ -94,4 +156,10 @@ function Remains() {
   );
 }
 
-export default Remains;
+export default function Remains() {
+  return (
+    <Suspense fallback={<div>Завантаження...</div>}>
+        <RemainsContent />
+    </Suspense>
+  );
+}

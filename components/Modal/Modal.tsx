@@ -1,17 +1,40 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useEffect } from "react";
 import styles from "./Modal.module.css";
 
 type Props = {
   children: React.ReactNode;
+  onClose?: () => void;
 };
 
-const Modal = ({ children }: Props) => {
+const Modal = ({ children, onClose }: Props) => {
   const router = useRouter();
 
-  const close = () => router.back();
+  const close = () => {
+      if (onClose) {
+          onClose();
+      } else {
+          router.back();
+      }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = "auto"; // Or ""
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, router]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const onBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

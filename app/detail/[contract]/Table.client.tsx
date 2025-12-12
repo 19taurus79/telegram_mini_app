@@ -1,42 +1,16 @@
 "use client";
 import { useDelivery } from "@/store/Delivery";
-// import { useDelivery } from "@/context/DeliveryContext";
 import css from "./Detail.module.css";
-// import { useEffect, useState } from "react";
 import {
-  // getEnoughRemains,
-  // getGroupRemainsById,
   getIdRemainsByParty,
-  // getMovedData,
-  // getTotalSumOrderByProduct,
 } from "@/lib/api";
-import {} from // EnoughtRemains,
-// GroupRemains,
-// MergedData,
-// MovedData,
-// TotalOrder,
-"@/types/types";
+
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
-
-// type Detail = {
-//   details: {
-//     product: string;
-//     quantity: number;
-//     client: string;
-//     manager: string;
-//     order: string;
-//     id: string;
-//     product_id: string;
-//     moved?: MovedData;
-//   }[];
-// };
 type Detail = {
   details: {
     orders_q: number;
-    // moved_q: number;
-    // party: string;
     buh: number;
     skl: number;
     qok: string;
@@ -86,7 +60,7 @@ function TableOrderDetail({ details }: Detail) {
             <React.Fragment key={item.id}>
               <tr
                 key={item.id}
-                style={isSelected(item.id) ? { color: "green" } : {}}
+                style={isSelected(item.id) ? { backgroundColor: "green" } : {}}
               >
                 <td onClick={() => setDelivery(item)}>
                   <span>{item.product}</span>

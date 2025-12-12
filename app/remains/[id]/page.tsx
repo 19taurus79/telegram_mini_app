@@ -3,9 +3,8 @@ import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";
 import OrdersByProduct from "@/components/OrdersByProduct/OrderByProduct";
 import { getInitData } from "@/lib/getInitData";
-// type Props = {
-//   params: Promise<{ slug: string[] }>;
-// };
+import RemainsCard from "@/components/Remains/RemainsCard";
+
 type Props = {
   params: Promise<{ id: string }>;
 };
@@ -19,17 +18,30 @@ export default async function filteredRemains({ params }: Props) {
     (acc, item) => {
       acc.buh += item.buh;
       acc.skl += item.skl;
+      acc.storage += item.storage;
+
 
       return acc;
     },
-    { buh: 0, skl: 0 }
+    { buh: 0, skl: 0, storage: 0 }
   );
   const sumOrder = await getTotalSumOrderByProduct({
     product: id.id,
     initData,
   });
-  console.log("sumorder", sumOrder);
-  const seedBusiness = ["Насіння", "Власне виробництво насіння"];
+  // console.log("sumorder", sumOrder);
+  // const seedBusiness = ["Насіння", "Власне виробництво насіння"];
+
+  // Групуємо залишки по складах
+  const groupedRemains = remains.reduce((groups, item) => {
+    const warehouse = item.warehouse || "Інше";
+    if (!groups[warehouse]) {
+      groups[warehouse] = [];
+    }
+    groups[warehouse].push(item);
+    return groups;
+  }, {} as Record<string, typeof remains>);
+
 
   return (
     <>
@@ -37,6 +49,9 @@ export default async function filteredRemains({ params }: Props) {
         <h2>Номенклатура: {remains[0].nomenclature}</h2>
         <h3>Бух облік: {remainsSummary.buh}</h3>
         <h3>Складський облік: {remainsSummary.skl}</h3>
+        {remainsSummary.storage > 0 && (
+          <h3>Зберегання: {remainsSummary.storage}</h3>
+        )}
         {remainsSummary.buh > remainsSummary.skl ? (
           <h3 className={css.warning}>
             Увага! Бух облік більший за складський облік! Схоже що{" "}
@@ -78,24 +93,18 @@ export default async function filteredRemains({ params }: Props) {
           </h3>
         )}
 
-        {remains.map((item) => (
-          <li key={item.id} className={css.remainsItem}>
-            {/* <p>Номенклатура: {item.nomenclature}</p> */}
-            <p>Партия: {item.nomenclature_series}</p>
-            <p>Бух: {item.buh}</p>
-            <p>Склад: {item.skl}</p>
-            {seedBusiness.includes(item.line_of_business) && (
-              <>
-                <p>МТН: {item.mtn}</p>
-                <p>Схожість: {item.germination}</p>
-                <p>Країна походження: {item.origin_country}</p>
-                <p>Рік урожаю: {item.crop_year}</p>
-                <p>Вага одиниці: {item.weight}</p>
-              </>
-            )}
-            <br />
-          </li>
-        ))}
+        {/* --- Новий рендер з групуванням --- */}
+        <div style={{ marginTop: "24px" }}>
+            {Object.entries(groupedRemains).map(([warehouse, items]) => (
+                <div key={warehouse} style={{ marginBottom: "24px" }}>
+                    <h4 className={css.warehouseTitle}>{warehouse}</h4>
+                    {items.map(item => (
+                        <RemainsCard key={item.id} item={item} />
+                    ))}
+                </div>
+            ))}
+        </div>
+
       </ul>
       <BackBtn />
       {sumOrder[0].total_orders !== 0 && <OrdersByProduct product={id.id} />}

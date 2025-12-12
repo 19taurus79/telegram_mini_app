@@ -42,6 +42,7 @@ export type Remains = {
   certificate_end_date: string;
   buh: number;
   skl: number;
+  storage: number;
   weight: string;
   product: string;
 };

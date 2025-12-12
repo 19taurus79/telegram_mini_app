@@ -162,3 +162,31 @@
 .mobileSectionTitle:first-child {
   margin-top: 0;
 }
+
+/* Стилі для акордеону */
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px;
+  background-color: var(--header-bg-color, #f7f9fc);
+  border-radius: 8px;
+  margin: 16px 0 8px 0;
+  transition: background-color 0.2s ease;
+}
+
+.accordionHeader:hover {
+  background-color: var(--hover-bg-color, #e8f0fe);
+}
+
+.accordionIcon {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+  color: var(--foreground, #666);
+  margin-left: 8px;
+}
+
+.accordionIcon.open {
+  transform: rotate(180deg);
+}

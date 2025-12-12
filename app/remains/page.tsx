@@ -37,6 +37,9 @@ function RemainsContent() {
   });
 
   const [isMobile, setIsMobile] = useState(false);
+  // const [showButtons, setShowButtons] = useState(true);
+  // const [lastScrollY, setLastScrollY] = useState(0);
+
 
   // Синхронізація URL search параметра з контекстом фільтра
   useEffect(() => {
@@ -91,10 +94,18 @@ function RemainsContent() {
     event: React.MouseEvent<HTMLAnchorElement>,
     productId: string
   ) => {
-    if (window.innerWidth >= DESKTOP_BREAKPOINT) {
-      event.preventDefault();
-      setSelectedProductId(productId);
+    // На мобілці також блокуємо перехід і встановлюємо вибраний товар
+    event.preventDefault();
+    setSelectedProductId(productId);
+    
+    // На мобілці прокручуємо до початку для перегляду деталей
+    if (window.innerWidth < DESKTOP_BREAKPOINT) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleClearFilter = () => {
+    setSelectedProductId(null);
   };
 
   const handleBackToOrders = () => {
@@ -116,9 +127,24 @@ function RemainsContent() {
       return <p>Продуктів не знайдено.</p>;
     }
 
+    // Фільтрація списку на мобілці
+    const filteredData = selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT
+      ? data.filter(item => item.id === selectedProductId)
+      : data;
+
     // Повертаємо повну структуру з класами, як було раніше
     return (
       <div className={css.listContainerUl}>
+        {/* Кнопка скидання фільтра на мобілці */}
+        {selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT && (
+          <button 
+            className={css.clearFilterButton}
+            onClick={handleClearFilter}
+          >
+            ← Показати всі товари
+          </button>
+        )}
+        
         {searchParams.get('search') && (
             <button 
                 className={css.backButton}
@@ -129,7 +155,7 @@ function RemainsContent() {
             </button>
         )}
         <ul className={css.listContainerUl} style={{ padding: 0 }}>
-        {data.map((item) => (
+        {filteredData.map((item) => (
           <li className={css.listItemButton} key={item.id}>
             <Link
               href={`/remains/${item.id}`}

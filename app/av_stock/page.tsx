@@ -26,8 +26,8 @@ function AvStock() {
   return (
     <ul className={css.listContainer}>
       {data?.map((item) => (
-        <li className={css.listItemButton} key={item.id}>
-          <Link href={`/av_stock/${item.id}`} className={css.link}>
+        <li key={item.id}>
+          <Link href={`/av_stock/${item.id}`} className={`${css.listItemButton} ${css.link}`}>
             {item.product}
           </Link>
         </li>

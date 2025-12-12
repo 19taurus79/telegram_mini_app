@@ -97,6 +97,12 @@
   padding: 8px;
   font-size: 16px;
   margin-top: 8px;
+  resize: none; /* Убирает уголок растягивания */
+  field-sizing: content; /* Магия: высота подстраивается под контент */
+  min-height: 40px; /* Минимальная высота */
+  border-radius: 6px;
+  border: 1px solid #5b5b5b;
+  box-shadow: 9px -6px 11px 0px #000;
 }
 
 .modalActions {
@@ -117,12 +123,14 @@
   color: var(--foreground);
   border: 1px solid var(--border-color);
   border-radius: 4px;
+  box-shadow: 9px -6px 11px 0px #000;
 }
 
 .buttonCancel {
   background-color: red;
   border: 1px solid var(--border-color);
   border-radius: 4px;
+  box-shadow: 9px -6px 11px 0px #000;
 }
 .quantityCell {
   width: 80px; /* или min-width: 60px; */

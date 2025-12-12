@@ -6,7 +6,6 @@ import { getOrdersByProduct } from "@/lib/api";
 import css from "./DetailsOrdersByProduct.module.css";
 import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
-// import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedProducts";
 
 export default function DetailsOrdersByProduct({
   selectedProductId,
@@ -18,43 +17,30 @@ export default function DetailsOrdersByProduct({
     "ascending" | "descending" | null
   >(null);
   const setOrders = useDetailsDataStore((state) => state.setOrders);
-  const { movedProducts } = useDetailsDataStore();
+  const movedProducts = useDetailsDataStore((state) => state.movedProducts);
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["ordersByProduct", selectedProductId],
-    queryFn: () =>
-      getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
-    enabled: !!selectedProductId,
+    queryFn: () => getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
+    enabled: !!selectedProductId && !!initData,
     placeholderData: keepPreviousData,
   });
 
-  // Записуємо дані в стор при їх оновленні
   useEffect(() => {
     setOrders(data ?? null);
   }, [data, setOrders]);
-
-  // Створюємо Map, де ключ - контракт, а значення - сума переміщеної кількості
-  const movedContractsMap = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!movedProducts) {
-      return map;
-    }
-    for (const item of movedProducts) {
-      const currentQty = map.get(item.contract) || 0;
-      map.set(item.contract, Number(currentQty + item.qt_moved));
-    }
-    return map;
-  }, [movedProducts]);
 
   const sortedData = useMemo(() => {
     if (!data) return [];
     if (sortDirection === null) return data;
 
-    // Створюємо копію масиву, щоб не мутувати кешовані дані
     return [...data].sort((a, b) => {
-      if (a.delivery_status < b.delivery_status) {
+      const dateA = new Date(a.delivery_status).getTime();
+      const dateB = new Date(b.delivery_status).getTime();
+      if (dateA < dateB) {
         return sortDirection === "ascending" ? -1 : 1;
       }
-      if (a.delivery_status > b.delivery_status) {
+      if (dateA > dateB) {
         return sortDirection === "ascending" ? 1 : -1;
       }
       return 0;
@@ -71,6 +57,17 @@ export default function DetailsOrdersByProduct({
     }
   };
 
+  const movedContractsMap = useMemo(() => {
+    if (!movedProducts) return new Map<string, number>();
+    
+    const map = new Map<string, number>();
+    movedProducts.forEach(item => {
+      const currentQty = map.get(item.contract) || 0;
+      map.set(item.contract, currentQty + parseFloat(item.qt_moved));
+    });
+    return map;
+  }, [movedProducts]);
+
   if (!selectedProductId) {
     return (
       <div className={css.container}>
@@ -86,11 +83,13 @@ export default function DetailsOrdersByProduct({
   if (isError) {
     return <div className={css.container}>Помилка: {error.message}</div>;
   }
+
 console.log("MOVED",movedProducts)
   return (
     <div className={css.container}>
       <h3>Заявки по товару:</h3>
       {sortedData && sortedData.length > 0 ? (
+        <>
         <table className={css.table}>
           <thead>
             <tr>
@@ -138,6 +137,42 @@ console.log("MOVED",movedProducts)
             ))}
           </tbody>
         </table>
+
+        {/* Карткове відображення для мобілки */}
+        <div className={css.mobileCards}>
+          {sortedData.map((order) => {
+            const movedQty = movedContractsMap.get(order.contract_supplement) || 0;
+            return (
+              <div key={order.id} className={css.card}>
+                <div className={css.cardHeader}>
+                  <span className={css.cardTitle}>{order.client}</span>
+                  {movedQty > 0 && (
+                    <span className={movedQty >= order.different ? css.checkmarkGreen : css.checkmarkYellow}>
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <div className={css.cardRow}>
+                  <span className={css.cardLabel}>Менеджер:</span>
+                  <span className={css.cardValue}>{order.manager}</span>
+                </div>
+                <div className={css.cardRow}>
+                  <span className={css.cardLabel}>Доповнення:</span>
+                  <span className={css.cardValue}>{order.contract_supplement}</span>
+                </div>
+                <div className={css.cardRow}>
+                  <span className={css.cardLabel}>До постачання:</span>
+                  <span className={css.cardValue}>{order.delivery_status}</span>
+                </div>
+                <div className={css.cardRow}>
+                  <span className={css.cardLabel}>Кількість:</span>
+                  <span className={css.cardValue}>{order.different}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </>
       ) : (
         <p>По цьому товару немає заявок.</p>
       )}

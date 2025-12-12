@@ -67,6 +67,10 @@ export default function RemainsDashboard({
 }: RemainsDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);
+  const [isRemainsOpen, setIsRemainsOpen] = useState(true);
+  const [isMovedOpen, setIsMovedOpen] = useState(false);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+
 
   // Load layouts from localStorage on mount
   useEffect(() => {
@@ -98,14 +102,32 @@ export default function RemainsDashboard({
         <h2 className={styles.mobileSectionTitle}>📦 Список продуктів</h2>
         <div className={styles.mobileSection}>{productList}</div>
         
-        <h2 className={styles.mobileSectionTitle}>🏭 Залишки на складах</h2>
-        <div className={styles.mobileSection}>{detailsRemains}</div>
+        {/* Залишки на складах - розгорнутий за замовчуванням */}
+        <div className={styles.accordionHeader} onClick={() => setIsRemainsOpen(!isRemainsOpen)}>
+          <h2 className={styles.mobileSectionTitle}>🏭 Залишки на складах</h2>
+          <span className={`${styles.accordionIcon} ${isRemainsOpen ? styles.open : ''}`}>▼</span>
+        </div>
+        {isRemainsOpen && (
+          <div className={styles.mobileSection}>{detailsRemains}</div>
+        )}
         
-        <h2 className={styles.mobileSectionTitle}>🔄 Переміщені товари</h2>
-        <div className={styles.mobileSection}>{detailsMoved}</div>
+        {/* Переміщені товари - згорнутий за замовчуванням */}
+        <div className={styles.accordionHeader} onClick={() => setIsMovedOpen(!isMovedOpen)}>
+          <h2 className={styles.mobileSectionTitle}>🔄 Переміщено під заявки</h2>
+          <span className={`${styles.accordionIcon} ${isMovedOpen ? styles.open : ''}`}>▼</span>
+        </div>
+        {isMovedOpen && (
+          <div className={styles.mobileSection}>{detailsMoved}</div>
+        )}
         
-        <h2 className={styles.mobileSectionTitle}>📑 Замовлення по продукту</h2>
-        <div className={styles.mobileSection}>{detailsOrders}</div>
+        {/* Замовлення по продукту - згорнутий за замовчуванням */}
+        <div className={styles.accordionHeader} onClick={() => setIsOrdersOpen(!isOrdersOpen)}>
+          <h2 className={styles.mobileSectionTitle}>📑 Замовлення по товару</h2>
+          <span className={`${styles.accordionIcon} ${isOrdersOpen ? styles.open : ''}`}>▼</span>
+        </div>
+        {isOrdersOpen && (
+          <div className={styles.mobileSection}>{detailsOrders}</div>
+        )}
       </div>
     );
   }

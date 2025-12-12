@@ -37,8 +37,8 @@ function RemainsContent() {
   });
 
   const [isMobile, setIsMobile] = useState(false);
-  const [showButtons, setShowButtons] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  // const [showButtons, setShowButtons] = useState(true);
+  // const [lastScrollY, setLastScrollY] = useState(0);
 
 
   // Синхронізація URL search параметра з контекстом фільтра

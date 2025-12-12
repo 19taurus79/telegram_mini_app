@@ -29,8 +29,8 @@ export default async function filteredRemains({ params }: Props) {
     product: id.id,
     initData,
   });
-  console.log("sumorder", sumOrder);
-  const seedBusiness = ["Насіння", "Власне виробництво насіння"];
+  // console.log("sumorder", sumOrder);
+  // const seedBusiness = ["Насіння", "Власне виробництво насіння"];
 
   // Групуємо залишки по складах
   const groupedRemains = remains.reduce((groups, item) => {

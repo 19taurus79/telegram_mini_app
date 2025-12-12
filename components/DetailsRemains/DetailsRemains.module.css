@@ -4,8 +4,80 @@
     height: 40vh;
     overflow: auto;
 }
+/* Адаптивні стилі для мобільних пристроїв */
 @media (max-width: 768px) {
   .container {
+    height: auto;
+    max-height: 60vh;
+    padding: 8px;
+  }
+
+  .header h3 {
+    font-size: 0.95rem;
+    margin: 0.5rem 0;
+  }
+
+  .header h4 {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  /* Приховуємо таблицю на мобілці */
+  .table {
+    display: none;
+  }
+
+  /* Показуємо карткове відображення */
+  .mobileCards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background-color: var(--background, #fff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+  }
+
+  .warehouse {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--foreground, #111);
+  }
+
+  .cardRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.85rem;
+  }
+
+  .cardLabel {
+    color: var(--foreground, #666);
+    font-weight: 500;
+  }
+
+  .cardValue {
+    font-weight: 600;
+    color: var(--foreground, #111);
+  }
+}
+
+/* Для десктопу приховуємо мобільні картки */
+@media (min-width: 769px) {
+  .mobileCards {
     display: none;
   }
 }

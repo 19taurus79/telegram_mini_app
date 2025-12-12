@@ -1,0 +1,100 @@
+/* components/Remains/RemainsCard.module.css */
+
+.card {
+  background-color: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.partyInfo {
+  flex: 1;
+}
+
+.partyName {
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+
+.counts {
+  display: flex;
+  gap: 16px;
+  font-size: 0.9em;
+  color: var(--secondary-text-color);
+}
+
+.countItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.value {
+  font-weight: 500;
+}
+
+.expandIcon {
+  margin-left: 12px;
+  color: var(--secondary-text-color);
+  transition: transform 0.3s ease;
+}
+
+.expanded .expandIcon {
+  transform: rotate(180deg);
+}
+
+.details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-color);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  font-size: 0.9em;
+}
+
+/* Анимация раскрытия */
+.detailsWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+
+.detailsWrapper.open {
+  grid-template-rows: 1fr;
+}
+
+.detailsContent {
+  overflow: hidden;
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailLabel {
+  opacity: 0.6;
+  font-size: 0.85em;
+  margin-bottom: 2px;
+}

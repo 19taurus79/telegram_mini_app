@@ -2,7 +2,7 @@
 
 .remainsList {
   list-style: none; /* Убираем стандартные маркеры списка */
-  padding: 0; /* Убираем внутренние отступы списка */
+  padding: 10px; /* Убираем внутренние отступы списка */
   margin: 20px 0; /* Внешние отступы сверху и снизу */
   background-color: var(--background);
   border-radius: 8px;

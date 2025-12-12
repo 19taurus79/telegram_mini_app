@@ -12,17 +12,10 @@ type Props = {
 
 export default async function filteredOrdersDetail({ params }: Props) {
   const { contract } = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
-  // const newData = await getOrdersDetailsById({
-  //   orderId: contract.contract,
-  // });
-  // console.log("newData", newData);
   const originalList = await getOrdersDetailsById({
     orderId: contract,
     initData: await getInitData(),
   });
-  // const originalList = await getOrdersDetailsById({
-  //   orderId: contract.contract,
-  // });
   console.log("contract details", originalList);
   // debugger;
   const details = originalList.map((item) => {

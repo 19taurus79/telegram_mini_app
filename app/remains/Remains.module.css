@@ -64,6 +64,34 @@
   background-color: var(--hover-bg-color);
 }
 
+.clearFilterButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: var(--primary-color, #007bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clearFilterButton:hover {
+  background-color: var(--primary-hover-color, #0056b3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clearFilterButton:active {
+  transform: translateY(0);
+}
+
+
 @media (max-width: 768px) {
     .wrapper{
         display: block;

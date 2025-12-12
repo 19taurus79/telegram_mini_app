@@ -83,6 +83,39 @@ export default function RemainsCard({ item }: { item: Remains }) {
                         </div>
                     </>
                 )}
+                
+                {!isSeed && (
+                    <>
+                        <div className={css.detailRow}>
+                            <span className={css.detailLabel}>Активна речовина</span>
+                            <span>{item.active_substance || '-'}</span>
+                        </div>
+                        <div className={css.detailRow}>
+                            <span className={css.detailLabel}>Сертифікат</span>
+                            <span>{item.certificate || '-'}</span>
+                        </div>
+                        {item.certificate_start_date && (
+                            <div className={css.detailRow}>
+                                <span className={css.detailLabel}>Дата початку</span>
+                                <span>{item.certificate_start_date}</span>
+                            </div>
+                        )}
+                        {item.certificate_end_date && (
+                            <div className={css.detailRow}>
+                                <span className={css.detailLabel}>Дата закінчення</span>
+                                <span>{item.certificate_end_date}</span>
+                            </div>
+                        )}
+                        <div className={css.detailRow}>
+                            <span className={css.detailLabel}>К-сть на палеті</span>
+                            <span>{item.quantity_per_pallet || '-'}</span>
+                        </div>
+                        <div className={css.detailRow}>
+                            <span className={css.detailLabel}>Вага (од)</span>
+                            <span>{item.weight || '-'}</span>
+                        </div>
+                    </>
+                )}
                  {/* Інші поля, якщо потрібно */}
                  {/* <div className={css.detailRow}>
                     <span className={css.detailLabel}>ID</span>

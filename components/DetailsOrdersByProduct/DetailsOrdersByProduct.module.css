@@ -5,11 +5,127 @@
     overflow: auto;
 }
 
+/* Адаптивні стилі для мобільних пристроїв */
 @media (max-width: 768px) {
   .container {
+    height: auto;
+    max-height: 60vh;
+    padding: 8px;
+  }
+
+  /* Приховуємо таблицю на мобілці */
+  .table {
+    display: none;
+  }
+
+  /* Показуємо карткове відображення */
+  .mobileCards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background-color: var(--background, #fff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+  }
+
+  .cardTitle {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .cardRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+  }
+
+  .cardRow:last-child {
+    border-bottom: none;
+  }
+
+  .cardLabel {
+    color: var(--foreground, #666);
+    font-weight: 500;
+  }
+
+  .cardValue {
+    font-weight: 600;
+    color: var(--foreground, #111);
+    text-align: right;
+  }
+}
+
+/* Приховуємо картки на десктопі */
+@media (min-width: 769px) {
+  .mobileCards {
     display: none;
   }
 }
+
+/* Стилі для акордеону */
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  background-color: var(--header-bg-color, #f7f9fc);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.accordionHeader:hover {
+  background-color: var(--hover-bg-color, #e8f0fe);
+}
+
+.accordionHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.accordionIcon {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+  color: var(--foreground, #666);
+}
+
+.accordionIcon.open {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+
 
 .table {
   width: 100%;

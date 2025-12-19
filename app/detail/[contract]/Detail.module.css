@@ -1,86 +1,97 @@
-/* ваш-файл-таблиці.module.css */
-
-.tableContainer {
-  /* width: 100%; */
-  overflow-x: auto;
-  margin: 20px 10px;
-  border: 1px solid var(--border-color); /* Використовуємо змінну */
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
+/* --- Main Container --- */
+.listContainer {
+  padding: 10px;
   font-family: Arial, sans-serif;
   font-size: 0.95rem;
-  color: var(--text-color); /* Використовуємо змінну */
+  color: var(--foreground);
 }
 
-/* Стили для заголовків таблицы */
-.table thead {
-  background-color: var(--header-bg-color); /* Використовуємо змінну */
-  border-bottom: 2px solid var(--border-color); /* Використовуємо змінну */
-}
-
-.table th {
+/* --- Header Row --- */
+.listHeader {
+  display: flex;
   padding: 12px 15px;
-  text-align: left;
   font-weight: bold;
-  color: var(
-    --text-color
-  ); /* Можна використовувати --text-color або окрему змінну */
-  white-space: nowrap;
+  color: var(--foreground);
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 8px;
 }
 
-/* Стили для строк тела таблицы */
-.table tbody tr {
-  border-bottom: 1px solid var(--border-color); /* Використовуємо змінну */
+/* --- Card Styles --- */
+.productCard {
+  background-color: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: background-color 0.2s;
 }
 
-/* Цвет фона для каждой второй строки (зебра) */
-.table tbody tr:nth-of-type(even) {
-  background-color: var(--row-even-bg); /* Використовуємо змінну */
-}
+/*.productCard:hover {*/
+/*  background-color: var(--background); !* Use a subtle hover color *!*/
+/*}*/
 
-/* Стили при наведении на строку */
-.table tbody tr:hover {
-  background-color: var(--hover-bg-color); /* Використовуємо змінну */
+/* --- Row and Cell Flexbox Layout --- */
+.cardRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color); /* Use lighter internal border */
   cursor: pointer;
 }
 
-/* Стили для ячеек данных */
-.table td {
-  padding: 10px 15px;
-  vertical-align: top;
+.productCard .cardRow:last-child {
+  border-bottom: none;
 }
 
+.cardCellProduct {
+  flex: 1;
+  padding: 12px 15px;
+}
+
+.cardCellQuantity {
+  flex: 0 0 80px;
+  padding: 12px 15px;
+  text-align: center;
+}
+
+.headerCellProduct {
+  flex: 1;
+}
+
+.headerCellQuantity {
+  flex: 0 0 80px;
+  text-align: center;
+}
+
+/* --- Party Section Styles --- */
+.partySection {
+  border-top: 1px solid var(--gray-alpha-200);
+}
+
+.partyRow {
+  font-size: 0.9em;
+}
+
+.party {
+  color: var(--primary-color, #0070f3);
+}
+
+.qParty {
+  color: var(--primary-color, #0070f3);
+  font-weight: bold;
+}
+
+/* --- NEW: Selection Style --- */
+.selected {
+  background-color: #406939;
+}
+
+/* --- Utility classes (kept from original) --- */
 .centr {
   text-align: center;
 }
-.submitButton {
-  margin-top: 16px;
-  padding: 10px 16px;
-  background-color: #0070f3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
+
 .btnWrapper {
   display: flex;
   justify-content: space-between;
-  margin: 16px 0;
-}
-.party {
-  font-weight: bold;
-  color: var(--primary-color);
-  margin-bottom: 8px;
-}
-.qParty {
-  font-weight: bold;
-  color: var(--primary-color);
-  margin-bottom: 8px;
-  text-align: center;
+  margin: 16px 10px;
 }

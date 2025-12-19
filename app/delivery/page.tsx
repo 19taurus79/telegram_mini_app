@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, CSSProperties } from "react";
+import React, { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
@@ -126,89 +126,95 @@ export default function DeliveryData() {
   return (
     <div className={styles.wrapper}>
       {grouped.map((client) => (
-        <>
-          <div key={client.client} className={styles.clientBlock}>
-            <div className={styles.clientHeader}>
-              <span className={styles.clientTitle}>Контрагент:</span>
-              <span>{client.client}</span>
-            </div>
+        <div key={client.client} className={styles.clientBlock}>
+          <div className={styles.clientHeader}>
+            <span className={styles.clientTitle}>Контрагент:</span>
+            <span>{client.client}</span>
+          </div>
 
-            {client.orders.map((order) => (
-              <div key={order.order} className={styles.orderBlock}>
-                <div className={styles.orderHeader}>
-                  <span className={styles.clientTitle}>Доповнення:</span>
-                  <span>{order.order}</span>
+          {client.orders.map((order) => (
+            <div key={order.order} className={styles.orderBlock}>
+              <div className={styles.orderHeader}>
+                <span className={styles.clientTitle}>Доповнення:</span>
+                <span>{order.order}</span>
+              </div>
+
+              <div className={styles.table}>
+                <div className={styles.rowHeader}>
+                  <div className={styles.headerProduct}>Товар</div>
+                  <div className={styles.headerQuantity}>Кількість</div>
                 </div>
-
-                <div className={styles.table}>
-                  <div className={styles.rowHeader}>
-                    <div className={styles.headerProduct}>Товар</div>
-                    <div className={styles.headerQuantity}>Кількість</div>
-                  </div>
-                  {order.items.map((item) => (
-                    <div className={styles.row} key={item.id}>
-                      <div className={styles.cell}>{item.product}</div>
-                      <div className={styles.quantityCell}>
-                        <span
-                          className={styles.quantity}
-                          onClick={() =>
-                            openModal({
-                              id: item.id,
-                              quantity: item.quantity,
-                              max: item.quantity,
-                            })
-                          }
-                        >
-                          {item.quantity}
-                        </span>
+                {order.items.map((item) => (
+                  <div className={styles.row} key={item.id}>
+                    <div className={styles.cell}>
+                      {/* Product Name */}
+                      {item.product}
+                      {/* Party details rendered underneath the product name */}
+                      <div style={{ paddingTop: "5px" }}>
+                        {item.parties &&
+                          item.parties.length > 0 &&
+                          item.parties.map(
+                            (party, index) =>
+                              party.moved_q > 0 && (
+                                <div
+                                  key={index}
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#888",
+                                  }}
+                                >
+                                  ↳ {party.party}: {party.moved_q}
+                                </div>
+                              )
+                          )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className={styles.quantityCell}>
+                      <span
+                        className={styles.quantity}
+                        onClick={() =>
+                          openModal({
+                            id: item.id,
+                            quantity: item.quantity,
+                            max: item.quantity,
+                          })
+                        }
+                      >
+                        {item.quantity}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div className={styles.deliveryActions}>
-              <button
-                className={styles.sendButton}
-                onClick={() => {
-                  setFormClient(client.client);
-                  
-                  // Find client in directory
-                  const clientData = clientsDirectory.find(
-                    (c) => c.client === client.client
-                  );
-                  
-                  if (clientData) {
-                    // Auto-fill form with directory data
-                    const addressText = `${clientData.region} обл., ${clientData.area || ''} район, ${clientData.commune || ''} громада, ${clientData.city || ''}`;
-                    setFormData({
-                      address: addressText.trim(),
-                      contact: clientData.representative || "",
-                      phone: clientData.phone1 || "",
-                      date: "",
-                      comment: "",
-                    });
-                  } else {
-                    // No data in directory - leave empty
-                    setFormData({
-                      address: "",
-                      contact: "",
-                      phone: "",
-                      date: "",
-                      comment: "",
-                    });
-                  }
-                  
-                  setFormError(null);
-                }}
-              >
-                Відправити дані для доставки
-              </button>
-              <button
-                className={styles.deleteButton}
-                onClick={() => {
-                  removeClientDelivery(client.client); // ❌ Удаление данных
-                  setFormClient(null);
+            </div>
+          ))}
+          <div className={styles.deliveryActions}>
+            <button
+              className={styles.sendButton}
+              onClick={() => {
+                setFormClient(client.client);
+
+                // Find client in directory
+                const clientData = clientsDirectory.find(
+                  (c) => c.client === client.client
+                );
+
+                if (clientData) {
+                  // Auto-fill form with directory data
+                  const addressText = `${clientData.region} обл., ${
+                    clientData.area || ""
+                  } район, ${clientData.commune || ""} громада, ${
+                    clientData.city || ""
+                  }`;
+                  setFormData({
+                    address: addressText.trim(),
+                    contact: clientData.representative || "",
+                    phone: clientData.phone1 || "",
+                    date: "",
+                    comment: "",
+                  });
+                } else {
+                  // No data in directory - leave empty
                   setFormData({
                     address: "",
                     contact: "",
@@ -216,14 +222,32 @@ export default function DeliveryData() {
                     date: "",
                     comment: "",
                   });
-                  setFormError(null);
-                }}
-              >
-                Видалити дані
-              </button>
-            </div>
+                }
+
+                setFormError(null);
+              }}
+            >
+              Відправити дані для доставки
+            </button>
+            <button
+              className={styles.deleteButton}
+              onClick={() => {
+                removeClientDelivery(client.client); // ❌ Удаление данных
+                setFormClient(null);
+                setFormData({
+                  address: "",
+                  contact: "",
+                  phone: "",
+                  date: "",
+                  comment: "",
+                });
+                setFormError(null);
+              }}
+            >
+              Видалити дані
+            </button>
           </div>
-        </>
+        </div>
       ))}
       <BackBtn />
 
@@ -359,6 +383,7 @@ export default function DeliveryData() {
                       items: order.items.map((item) => ({
                         product: item.product,
                         quantity: item.quantity,
+                        parties: item.parties,
                       })),
                     })) ?? [];
 

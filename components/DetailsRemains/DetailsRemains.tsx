@@ -82,44 +82,46 @@ export default function DetailsRemains({
           )}
         </h4>
         
-        {/* Надписи-попередження */}
-        {totalBuh > totalSkl ? (
-          <p className={css.warning}>
-            ⚠️ Увага! Бух облік більший за складський облік! Схоже що {totalBuh - totalSkl} ще десь в дорозі!
-          </p>
-        ) : (
-          <p className={css.success}>
-            ✓ Все в порядку! Вся номенклатура на складі!
-          </p>
-        )}
-        
-        {totalOrdered === 0 ? (
-          <p className={css.info}>
-            ℹ️ Немає жодної заявки на цю номенклатуру, тому весь залишок вільний
-          </p>
-        ) : (
-          <>
-            {totalOrdered > totalBuh ? (
-              <p className={css.warning}>
-                ⚠️ Увага! Для виконання всіх заявок не вистачає {totalOrdered - totalBuh}!
-              </p>
-            ) : (
-              <p className={css.success}>
-                ✓ Все в порядку! Замовленої кількості вистачає для виконання всіх заявок!
-              </p>
-            )}
-            
-            {availableStock > 0 ? (
-              <p className={css.success}>
-                ✓ Вільного залишку: {availableStock}
-              </p>
-            ) : (
-              <p className={css.warning}>
-                ⚠️ Вільного залишку немає, всі залишки під заявки!
-              </p>
-            )}
-          </>
-        )}
+        <div className={css.mobileOnly}>
+          {/* Надписи-попередження */}
+          {totalBuh > totalSkl ? (
+            <p className={css.warning}>
+              ⚠️ Увага! Бух облік більший за складський облік! Схоже що {totalBuh - totalSkl} ще десь в дорозі!
+            </p>
+          ) : (
+            <p className={css.success}>
+              ✓ Все в порядку! Вся номенклатура на складі!
+            </p>
+          )}
+
+          {totalOrdered === 0 ? (
+            <p className={css.info}>
+              ℹ️ Немає жодної заявки на цю номенклатуру, тому весь залишок вільний
+            </p>
+          ) : (
+            <>
+              {totalOrdered > totalBuh ? (
+                <p className={css.warning}>
+                  ⚠️ Увага! Для виконання всіх заявок не вистачає {totalOrdered - totalBuh}!
+                </p>
+              ) : (
+                <p className={css.success}>
+                  ✓ Все в порядку! Замовленої кількості вистачає для виконання всіх заявок!
+                </p>
+              )}
+
+              {availableStock > 0 ? (
+                <p className={css.success}>
+                  ✓ Вільного залишку: {availableStock}
+                </p>
+              ) : (
+                <p className={css.warning}>
+                  ⚠️ Вільного залишку немає, всі залишки під заявки!
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </div>
       
       {data && data.length > 0 ? (

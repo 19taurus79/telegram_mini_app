@@ -335,15 +335,36 @@ export default function InputAddress({ onAddressSelect }) {
         onClose={() => setShowAmbiguousDialog(false)}
         maxWidth="sm"
         fullWidth
+        sx={{ zIndex: 10100 }}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'var(--background)',
+            color: 'var(--foreground)',
+            borderRadius: 'var(--modal-border-radius, 8px)',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--modal-box-shadow)'
+          }
+        }}
       >
-        <DialogTitle>Знайдено декілька варіантів</DialogTitle>
+        <DialogTitle sx={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+          Знайдено декілька варіантів
+        </DialogTitle>
         <List>
           {ambiguousResults.map((result, index) => (
             <ListItem key={index} disablePadding>
-              <ListItemButton onClick={() => handleAmbiguousSelect(result)}>
+              <ListItemButton 
+                onClick={() => handleAmbiguousSelect(result)}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'var(--hover-bg-color)'
+                  }
+                }}
+              >
                 <ListItemText 
                   primary={result.display_name} 
-                  secondary={`Координати: ${result.lat}, ${result.lon}`} 
+                  secondary={`Координати: ${result.lat}, ${result.lon}`}
+                  primaryTypographyProps={{ sx: { color: 'var(--foreground)' } }}
+                  secondaryTypographyProps={{ sx: { color: 'var(--foreground)', opacity: 0.7 } }}
                 />
               </ListItemButton>
             </ListItem>

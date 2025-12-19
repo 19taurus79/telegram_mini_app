@@ -76,6 +76,7 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  font-family: var(--font-geist-sans);
 }
 
 /* Remove padding for map page */
@@ -126,4 +127,3 @@ a {
 .measurement-tooltip::before {
   display: none !important;
 }
-

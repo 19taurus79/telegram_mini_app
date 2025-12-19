@@ -45,59 +45,75 @@ function TableOrderDetail({ details }: Detail) {
     router.push(`/party_data/${remainsId[0].id}`);
   };
   // debugger;
+  console.log("delivery", delivery);
   return (
-    <div className={css.tableContainer}>
-      <table className={css.table}>
-        <thead>
-          <tr>
-            <th>Номенклатура</th>
+    <div className={css.listContainer}>
+      {/* Header */}
+      <div className={css.listHeader}>
+        <div className={css.headerCellProduct}>Номенклатура</div>
+        <div className={css.headerCellQuantity}>Кількість</div>
+      </div>
 
-            <th>Кількість</th>
-          </tr>
-        </thead>
-        <tbody>
-          {details.map((item) => (
-            <React.Fragment key={item.id}>
-              <tr
-                key={item.id}
-                style={isSelected(item.id) ? { backgroundColor: "green" } : {}}
-              >
-                <td onClick={() => setDelivery(item)}>
-                  <span>{item.product}</span>
-                  <br />
-                </td>
-                <td
-                  className={css.centr}
-                  style={
-                    item.qok === "2"
-                      ? { color: "green" } // ✅ Если 'qok' равен "2", цвет зелёный
-                      : item.qok === "1"
-                        ? { color: "orange" } // ✅ Иначе, если 'qok' равен "1", цвет оранжевый
-                        : { color: "red" } // ✅ Иначе, цвет красный
-                  }
-                >
-                  {item.quantity}
-                </td>
-              </tr>
-              {item.parties && item.parties[0].moved_q > 0 && (
-                <>
-                  {item.parties.map((party, index) => (
-                    <tr key={index}>
-                      <td
-                        className={css.party}
-                        onClick={() => HandleClick(party)}
+      {/* List of Cards */}
+      {details.map((item) => (
+        <div
+          key={item.id}
+          className={`${css.productCard} ${
+            isSelected(item.id) ? css.selected : ""
+          }`}
+        >
+          {/* Main Product Row */}
+          <div className={css.cardRow}>
+            <div
+              className={css.cardCellProduct}
+              onClick={() => setDelivery(item)}
+            >
+              <span>{item.product}</span>
+            </div>
+            <div
+              className={`${css.cardCellQuantity} ${css.centr}`}
+              style={
+                item.qok === "2"
+                  ? { color: "green" }
+                  : item.qok === "1"
+                  ? { color: "orange" }
+                  : { color: "red" }
+              }
+            >
+              {item.quantity}
+            </div>
+          </div>
+
+          {/* Party Rows */}
+          {item.parties &&
+            item.parties.length > 0 &&
+            item.parties.some((p) => p.moved_q > 0) && (
+              <div className={css.partySection}>
+                {item.parties.map(
+                  (party, index) =>
+                    party.moved_q > 0 && (
+                      <div
+                        className={`${css.cardRow} ${css.partyRow}`}
+                        key={index}
                       >
-                        {party.party}
-                      </td>
-                      <td className={css.qParty}>{party.moved_q}</td>
-                    </tr>
-                  ))}
-                </>
-              )}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
+                        <div
+                          className={`${css.cardCellProduct} ${css.party}`}
+                          onClick={() => HandleClick(party)}
+                        >
+                          {party.party}
+                        </div>
+                        <div
+                          className={`${css.cardCellQuantity} ${css.qParty}`}
+                        >
+                          {party.moved_q}
+                        </div>
+                      </div>
+                    )
+                )}
+              </div>
+            )}
+        </div>
+      ))}
     </div>
   );
 }

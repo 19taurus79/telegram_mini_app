@@ -1,0 +1,33 @@
+.switchContainer {
+    display: flex;
+    background-color: var(--row-even-bg, #f0f0f0);
+    border-radius: 6px;
+    padding: 3px;
+    border: 1px solid var(--border-color);
+}
+
+.switchButton {
+    padding: 6px 12px;
+    border: none;
+    background-color: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.switchButton.active {
+    background-color: var(--background);
+    color: var(--primary-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+    .switchContainer {
+        display: none;
+    }
+}

@@ -19,7 +19,7 @@ export default function DetailsRemains({
   const setRemains = useDetailsDataStore((state) => state.setRemains);
   const orders = useDetailsDataStore((state) => state.orders);
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
+  const { data, isError, isFetching } = useQuery({
     queryKey: ["remainsById", selectedProductId],
     queryFn: () => getRemainsById({ productId: selectedProductId!, initData: initData! }),
     enabled: !!selectedProductId,

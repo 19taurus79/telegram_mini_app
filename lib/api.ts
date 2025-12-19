@@ -283,6 +283,28 @@ export const getAllProduct = async ({
   return data;
 };
 
+export const getAllProductByGuide = async ({
+                                      group,
+                                      searchValue,
+                                      initData,
+                                    }: {
+  group: string | null;
+  searchValue: string | null;
+  initData: string;
+}) => {
+  const { data } = await axios.get<Product[]>("/data/all_products", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      category: group,
+      name_part: searchValue,
+    },
+  });
+  return data;
+};
+
 export const getPartyData = async ({
   party,
   initData,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { getProductOnWarehouse } from "@/lib/api";
+import { getProductOnWarehouse, getAllProductByGuide } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
@@ -14,24 +14,32 @@ import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedP
 import { useInitData } from "@/store/InitData";
 import type { InitData } from "@/store/InitData";
 import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashboard";
+import DataSourceSwitch from "@/components/DataSourceSwitch/DataSourceSwitch";
 
 const DESKTOP_BREAKPOINT = 768;
 
 function RemainsContent() {
   const { selectedGroup, searchValue, setSearchValue } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all'>('warehouse');
   const searchParams = useSearchParams();
   const router = useRouter();
   const initData = useInitData((state: InitData) => state.initData);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["products", selectedGroup, searchValue, initData],
-    queryFn: () =>
-      getProductOnWarehouse({
-        group: selectedGroup || null,
-        searchValue: searchValue || null,
-        initData: initData || "",
-      }),
+    queryKey: ["products", dataSourceType, selectedGroup, searchValue, initData],
+    queryFn: () => {
+        const params = {
+            group: selectedGroup || null,
+            searchValue: searchValue || null,
+            initData: initData || "",
+        };
+        if (dataSourceType === 'warehouse') {
+            return getProductOnWarehouse(params);
+        } else {
+            return getAllProductByGuide(params);
+        }
+    },
     enabled: !!initData,
     placeholderData: keepPreviousData,
   });
@@ -174,6 +182,7 @@ function RemainsContent() {
   return (
     <RemainsDashboard
       isMobile={isMobile}
+      headerContent={<DataSourceSwitch dataSource={dataSourceType} setDataSource={setDataSourceType} />}
       productList={renderProductList()}
       detailsRemains={<DetailsRemains selectedProductId={selectedProductId} />}
       detailsOrders={<DetailsOrdersByProduct selectedProductId={selectedProductId} />}

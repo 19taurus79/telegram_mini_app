@@ -35,14 +35,20 @@ const STORAGE_KEY = "remains-dashboard-layouts";
 interface GridItemProps {
   title: string;
   children: React.ReactNode;
+  headerContent?: React.ReactNode;
 }
 
-const GridItem: React.FC<GridItemProps> = ({ title, children }) => {
+const GridItem: React.FC<GridItemProps> = ({ title, children, headerContent }) => {
   return (
     <div className={styles.gridItem}>
       <div className={styles.gridItemHeader}>
-        <span className={styles.dragHandle}>⋮⋮</span>
-        <h3 className={styles.gridItemTitle}>{title}</h3>
+        <div className={styles.titleContainer}>
+          <span className={styles.dragHandle}>⋮⋮</span>
+          <h3 className={styles.gridItemTitle}>{title}</h3>
+        </div>
+        <div className={styles.headerContentContainer}>
+          {headerContent}
+        </div>
       </div>
       <div className={styles.gridItemContent}>{children}</div>
     </div>
@@ -56,6 +62,7 @@ interface RemainsDashboardProps {
   detailsMoved: React.ReactNode;
   isMobile?: boolean;
   onResetLayout?: () => void;
+  headerContent?: React.ReactNode;
 }
 
 export default function RemainsDashboard({
@@ -64,6 +71,7 @@ export default function RemainsDashboard({
   detailsOrders,
   detailsMoved,
   isMobile = false,
+  headerContent,
 }: RemainsDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);
@@ -148,7 +156,7 @@ export default function RemainsDashboard({
         containerPadding={[0, 0]}
       >
         <div key="product-list">
-          <GridItem title="Список продуктів">
+          <GridItem title="Список продуктів" headerContent={headerContent}>
             {productList}
           </GridItem>
         </div>

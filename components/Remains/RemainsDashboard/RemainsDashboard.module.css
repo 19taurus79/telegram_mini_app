@@ -46,14 +46,26 @@
 
 .gridItemHeader {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background-color: var(--header-bg-color, #f9f9f9);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.titleContainer {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  background-color: #393b3f;
-  color: white;
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
 }
+
+.headerContentContainer {
+  display: flex;
+  align-items: center;
+}
+
 
 .dragHandle {
   cursor: grab;

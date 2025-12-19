@@ -8,6 +8,8 @@ import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
 import RemainsCard from "@/components/Remains/RemainsCard";
 
+import Loader from "@/components/Loader/Loader";
+
 export default function DetailsRemains({
   selectedProductId,
 }: {
@@ -17,7 +19,7 @@ export default function DetailsRemains({
   const setRemains = useDetailsDataStore((state) => state.setRemains);
   const orders = useDetailsDataStore((state) => state.orders);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ["remainsById", selectedProductId],
     queryFn: () => getRemainsById({ productId: selectedProductId!, initData: initData! }),
     enabled: !!selectedProductId,
@@ -62,12 +64,12 @@ export default function DetailsRemains({
     );
   }
 
-  if (isLoading) {
-    return <div className={css.container}>Завантаження деталей...</div>;
+  if (isFetching) {
+    return <Loader />;
   }
 
   if (isError) {
-    return <div className={css.container}>Помилка: {error.message}</div>;
+    return <div className={css.container}>Для вибраного товару не знайдено даних по залишках.</div>;
   }
 
   return (

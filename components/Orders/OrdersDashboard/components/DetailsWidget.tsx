@@ -32,7 +32,7 @@ export default function DetailsWidget({
   const [selectedProductForModal, setSelectedProductForModal] = useState<string | null>(null);
 
   const router = useRouter();
-  const { delivery, setDelivery, hasItem } = useDelivery();
+  const { setDelivery, hasItem } = useDelivery();
 
   const handleRemainsClick = (item: OrdersDetails) => {
       // Переходимо тільки якщо є залишки по бухгалтерії
@@ -85,8 +85,7 @@ export default function DetailsWidget({
       qok: item.qok,
     };
     
-    // @ts-ignore - Тип DeliveryItem в сторе может немного отличаться от нашего расширенного объекта, но для JS это ок.
-    // Главное что совпадают id и основные поля.
+    // @ts-expect-error - Тип DeliveryItem в сторе может немного отличаться от нашего расширенного объекта
     setDelivery(deliveryItem);
   };
 

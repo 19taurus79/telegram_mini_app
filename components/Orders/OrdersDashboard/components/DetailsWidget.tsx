@@ -85,7 +85,6 @@ export default function DetailsWidget({
       qok: item.qok,
     };
     
-    // @ts-expect-error - Тип DeliveryItem в сторе может немного отличаться от нашего расширенного объекта
     setDelivery(deliveryItem);
   };
 

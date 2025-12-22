@@ -291,8 +291,12 @@
   font-weight: 900;
 }
 
-.checkmarkRed {
-  color: #dc3545; /* Яскравий червоний */
-  font-size: 22px;
-  font-weight: 900;
+
+.selectedRow {
+  background-color: #406939;
+  color: white;
+}
+
+.selectedRow .td {
+  color: white;
 }

@@ -64,11 +64,47 @@
   background-color: var(--background);
   border-radius: 4px;
   border-left: 3px solid var(--primary-color);
+  position: relative;
+}
+
+.inDelivery {
+  border-left-color: #ff9800 !important;
+  background-color: rgba(255, 152, 0, 0.05);
+}
+
+.deliveryBadge {
+  background-color: #4caf50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: bold;
+  margin-left: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.deliveryBadgePartial {
+  background-color: #ff9800;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: bold;
+  margin-left: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.inDeliveryRow {
+  border-left: 3px solid #4caf50;
 }
 
 .productName {
   font-weight: 500;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .orderDetails {
@@ -91,5 +127,181 @@
 
 .editButton:hover {
   background-color: #1976d2;
+}
+
+/* Delivery specific styles */
+.deliveryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.statusBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7em;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.statusCreated { background-color: #e3f2fd; color: #1976d2; }
+.statusInProgress { background-color: #fff3e0; color: #ef6c00; }
+.statusCompleted { background-color: #e8f5e9; color: #2e7d32; }
+
+.addressInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.weight {
+  font-weight: bold;
+}
+
+.comment {
+  font-style: italic;
+  font-size: 0.9em;
+  opacity: 0.8;
+  padding: 8px;
+  border-left: 2px solid var(--primary-color);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.itemsSection {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.itemsTitle {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.itemRow {
+  background: var(--hover-bg-color);
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.itemProductRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+.itemNameCol {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding-right: 10px;
+}
+
+.itemName {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.itemTotalQuantity {
+  font-weight: bold;
+  color: var(--primary-color);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.partiesList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(var(--primary-color-rgb, 0, 122, 255), 0.2);
+  width: 100%;
+}
+
+.partyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+
+.partyLabel {
+  font-style: italic;
+}
+
+.partyAmount {
+  font-weight: 500;
+}
+
+.itemRef {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.deliverySubList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.multiDeliveryBox {
+  border-radius: 6px;
+  background: var(--hover-bg-color);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.accordionHeader {
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.accordionHeader:hover {
+  background: rgba(var(--primary-color-rgb, 33, 150, 243), 0.1);
+}
+
+.accordionContent {
+  padding: 8px;
+  border-top: 1px solid var(--border-color);
+  background: var(--background);
+}
+
+.deliveryEditBtn {
+  padding: 6px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.deliveryEditBtn:hover {
+  opacity: 0.85;
 }
 

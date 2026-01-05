@@ -9,7 +9,8 @@ import {
     OrdersDetails,
     PartyData,
     Product,
-    Remains,
+    DeliveryUpdateItem,
+    Remains, WeightCalculationItem,
     // TaskGoogle,
     TotalOrder,
     Event,
@@ -20,7 +21,7 @@ import {
     TaskGoogle,
     BiRemains,
     BiOrders,
-    FiltersState, MovedData,
+    FiltersState, MovedData, DeliveryRequest
 } from "@/types/types";
 import axios from "axios";
 
@@ -41,6 +42,22 @@ export const getRemainsById = async ({
     },
   });
   console.log(data);
+  return data;
+};
+
+export const getRemainsByProduct = async ({
+  product,
+  initData,
+}: {
+  product: string;
+  initData: string;
+}) => {
+  const { data } = await axios.get<Remains[]>(`/data/remains_by_product/${encodeURIComponent(product)}`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
   return data;
 };
 export const getGroupRemainsById = async ({
@@ -199,6 +216,30 @@ export const sendDeliveryData = async (
   return data;
 };
 
+export const updateDeliveryData = async (
+  deliveryId: string,
+  status: string,
+  items: DeliveryUpdateItem[],
+  initData: string
+) => {
+  const { data } = await axios.post<{ status: string }>(
+    "/delivery/update",
+    {
+       delivery_id: deliveryId,
+       status: status,
+       items: items
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};
+
 export const getTotalSumOrderByProduct = async ({
   product,
   initData,
@@ -307,12 +348,14 @@ export const getAllProductByGuide = async ({
 
 export const getPartyData = async ({
   party,
+  id,
   initData,
 }: {
-  party: string;
+  party?: string;
+  id?: string;
   initData: string;
 }) => {
-  console.log("party", party);
+  // console.log("party", party);
   const { data } = await axios.get<PartyData[]>(`/data/party_data`, {
     headers: {
       "Content-Type": "application/json",
@@ -320,6 +363,7 @@ export const getPartyData = async ({
     },
     params: {
       party: party,
+      id: id,
     },
   });
   return data;
@@ -677,4 +721,103 @@ export const updateClientAddress = async ({
 };
 
 // Додаємо експорт за замовчуванням
+// Helper to parse weight string (e.g. "100 кг" -> 100)
+const parseWeight = (weightStr: string | number | null | undefined): number => {
+  if (typeof weightStr === "number") return weightStr;
+  if (!weightStr || typeof weightStr !== "string") return 0;
+  // Видаляємо все, що не є цифрою або крапкою/комою
+  const cleaned = weightStr.replace(/[^0-9.,]/g, "").replace(",", ".");
+  return parseFloat(cleaned) || 0;
+};
+
+export const getWeightForProduct = async ({
+  item,
+  initData,
+}: { item: WeightCalculationItem,
+  initData: string;
+}) => {
+  let calculatedWeight = 0;
+
+  try {
+    // Спочатку отримуємо деталі товару, щоб дізнатись line_of_business
+    // item.product - це ID товару в даному контексті (або назва, перевіримо)
+    // В OrdersDetails product: string. Спробуємо отримати по ньому.
+    let lineOfBusiness = "";
+    
+    // Спробуємо отримати деталі продукту
+    try {
+        if (item.product_id && item.product_id !== 'undefined') {
+            const productDetails = await getProductDetailsById({ product: item.product_id, initData });
+            if (productDetails) {
+                lineOfBusiness = productDetails.line_of_business;
+            }
+        }
+    } catch (e) {
+        console.warn("Could not fetch product details for weight calc", e);
+    }
+
+    const isSeed = ["Насіння", "Власне виробництво насіння"].includes(
+      lineOfBusiness
+    );
+
+    // 1. Якщо у нас є specific parties в item.parties, пробуємо взяти їх вагу
+    const firstSpecificParty = item.parties?.find((p) => p.party);
+    
+    if (firstSpecificParty) {
+      const partyData = await getPartyData({
+        party: firstSpecificParty.party,
+        initData,
+      });
+      if (partyData && partyData.length > 0) {
+        calculatedWeight = parseWeight(partyData[0].weight);
+        if (calculatedWeight > 0) return calculatedWeight;
+      }
+    }
+
+    const isValidProductId = item.product_id && item.product_id !== 'undefined' && item.product_id !== 'null';
+
+    // 2. Якщо партія не вказана (або не знайшли даних)
+    if (isSeed && isValidProductId) {
+      // Для насіння беремо середню вагу по всім залишкам
+      const remains = await getRemainsById({ productId: item.product_id, initData });
+      if (remains && remains.length > 0) {
+        const weights = remains
+          .map((r) => parseWeight(r.weight))
+          .filter((w) => w > 0);
+        
+        if (weights.length > 0) {
+           const sum = weights.reduce((a, b) => a + b, 0);
+           calculatedWeight = sum / weights.length;
+           if (calculatedWeight > 0) return calculatedWeight;
+        }
+      }
+    } else if (isValidProductId) {
+      // Для інших товарів - беремо вагу першої доступної партії (із залишків або random)
+       const remains = await getRemainsById({ productId: item.product_id, initData });
+       if (remains && remains.length > 0) {
+         // Шукаємо першу валідну вагу
+         const validRemain = remains.find(r => parseWeight(r.weight) > 0);
+         if (validRemain) {
+           calculatedWeight = parseWeight(validRemain.weight);
+           if (calculatedWeight > 0) return calculatedWeight;
+         }
+       }
+    }
+  } catch (error) {
+    console.error("Error calculating weight:", error);
+  }
+
+  return calculatedWeight;
+};
+
+export const getDeliveries = async (initData: string) => {
+  const { data } = await axios.get<DeliveryRequest[]>("/delivery/get_data_for_delivery", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
 export default axios;

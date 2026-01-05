@@ -5,7 +5,7 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 
 export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect, onAddClient }) {
   const letterRefs = useRef({});
-  const { selectedManager } = useApplicationsStore();
+  const { selectedManager, deliveries } = useApplicationsStore();
 
   // Filter clients based on selected manager
   const filteredClients = selectedManager
@@ -104,7 +104,10 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect,
             className={css.item}
             onClick={() => handleItemClick(item)}
           >
-            <div className={css.clientName}>{item.client}</div>
+            <div className={css.clientName}>
+              {item.client}
+              {deliveries.some(d => d.client === item.client) && <span title="Вже у доставці"> 🚚</span>}
+            </div>
             <div className={css.address}>
               {item.region} обл., {item.city}
             </div>

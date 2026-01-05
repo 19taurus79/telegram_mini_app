@@ -59,11 +59,18 @@
   display: flex;
   align-items: center;
   transition: max-height 0.3s ease-in-out;
-  overflow: hidden;
+  /* overflow: hidden; -- Removed to prevent clipping badges on desktop */
 }
 
 .navOpen {
   max-height: 500px;
+  overflow: visible !important; /* Ensure visibility when open */
+}
+
+@media (max-width: 768px) {
+  .nav {
+    overflow: hidden; /* Keep hidden on mobile when transition is needed */
+  }
 }
 
 .navList {
@@ -114,3 +121,44 @@
     padding: 1rem 0;
   }
 }
+
+.deliveryLinkWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding-right: 4px; /* Space for the badge */
+}
+
+.badge {
+  position: absolute;
+  top: -10px;
+  right: -14px;
+  background-color: #ff3b30;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.vibrate {
+  animation: vibrate 2.5s ease-in-out infinite;
+}
+
+@keyframes vibrate {
+  0%, 80%, 100% { transform: scale(1); }
+  82% { transform: scale(1.05) rotate(1deg); }
+  84% { transform: scale(1.05) rotate(-1deg); }
+  86% { transform: scale(1.05) rotate(1deg); }
+  88% { transform: scale(1.05) rotate(-1deg); }
+}
+
+

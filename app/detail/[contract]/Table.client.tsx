@@ -2,35 +2,67 @@
 import { useDelivery } from "@/store/Delivery";
 import css from "./Detail.module.css";
 import {
+  getDeliveries,
   getIdRemainsByParty,
+  getWeightForProduct,
 } from "@/lib/api";
+import { DeliveryRequest } from "@/types/types";
+import { Loader2 } from "lucide-react"; // Import Loader2
 
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
-type Detail = {
-  details: {
-    orders_q: number;
-    buh: number;
-    skl: number;
-    qok: string;
-    product: string;
-    quantity: number;
-    client: string;
-    manager: string;
-    order: string;
-    id: string;
-    product_id: string;
-    parties: [
-      {
-        party: string;
-        moved_q: number;
-      },
-    ];
+import toast from "react-hot-toast";
+type OrderDetailItem = {
+  orders_q: number;
+  buh: number;
+  skl: number;
+  qok: string;
+  product: string;
+  quantity: number;
+  client: string;
+  manager: string;
+  order: string;
+  id: string;
+  product_id: string;
+  nomenclature: string;
+  parties: {
+    party: string;
+    moved_q: number;
   }[];
+};
+
+type Detail = {
+  details: OrderDetailItem[];
 };
 function TableOrderDetail({ details }: Detail) {
   const { delivery, setDelivery } = useDelivery();
+  const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null); // State for loading
+  const [allDeliveries, setAllDeliveries] = React.useState<DeliveryRequest[]>([]);
+
+  React.useEffect(() => {
+    const loadDeliveries = async () => {
+        try {
+            const initData = getInitData();
+            const data = await getDeliveries(initData);
+            if (data) setAllDeliveries(data);
+        } catch (e) {
+            console.error("Error loading deliveries", e);
+        }
+    };
+    loadDeliveries();
+  }, []);
+
+   const getDeliveryForItem = (item: OrderDetailItem) => {
+    if (!allDeliveries || allDeliveries.length === 0) return null;
+    return allDeliveries.find(d => 
+        (d.status === "Створено" || d.status === "В роботі" || d.status === "created") &&
+        d.items?.some(di => 
+            di.order_ref?.trim() === item.order.trim() && 
+            di.product?.trim() === item.product.trim()
+        )
+    );
+  };
 
   const isSelected = (id: string) => delivery.some((el) => el.id === id);
 
@@ -38,11 +70,20 @@ function TableOrderDetail({ details }: Detail) {
 
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
-    const initData = await getInitData();
-    const remainsId = await getIdRemainsByParty({ party, initData });
-    console.log("remainsId", remainsId);
-    // debugger;
-    router.push(`/party_data/${remainsId[0].id}`);
+    try {
+      const initData = getInitData();
+      const remainsId = await getIdRemainsByParty({ party, initData });
+      console.log("remainsId", remainsId);
+      
+      if (remainsId && remainsId.length > 0 && remainsId[0]?.id) {
+          router.push(`/party_data/${remainsId[0].id}`);
+      } else {
+          toast.error("Дані про партію не знайдено");
+      }
+    } catch (e) {
+      console.error("Error fetching remains id", e);
+      toast.error("Помилка при отриманні даних партії");
+    }
   };
   // debugger;
   console.log("delivery", delivery);
@@ -60,15 +101,62 @@ function TableOrderDetail({ details }: Detail) {
           key={item.id}
           className={`${css.productCard} ${
             isSelected(item.id) ? css.selected : ""
-          }`}
+          } ${getDeliveryForItem(item) ? css.alreadyInDelivery : ""}`}
         >
           {/* Main Product Row */}
           <div className={css.cardRow}>
             <div
               className={css.cardCellProduct}
-              onClick={() => setDelivery(item)}
+              onClick={async () => {
+                 // Prevent multiple clicks
+                 if (addingToDeliveryId === item.id) return;
+                 
+                 // If already selected, just toggle (remove) - logic in store handles verify? 
+                 // Store setDelivery toggles if exists. 
+                 // If we are removing, we don't need weight.
+                  const isItemInDelivery = delivery.some((el) => el.id === item.id);
+                 const existingDelivery = getDeliveryForItem(item);
+                 
+                 if (!isItemInDelivery) {
+                     if (existingDelivery) {
+                         const confirmAdd = window.confirm(
+                             `Цей товар уже у доставці №${existingDelivery.id} (статус: ${existingDelivery.status}).\nВи впевнені, що хочете додати його ще раз?`
+                         );
+                         if (!confirmAdd) return;
+                     }
+
+                      setAddingToDeliveryId(item.id);
+                          try {
+                              const initData = getInitData();
+                              const weight = await getWeightForProduct({ item, initData });
+                              setDelivery({ ...item, weight });
+                             toast.success(`Додано: ${item.product}`);
+                         } catch (e) {
+                             console.error("Error adding to delivery", e);
+                             setDelivery({ ...item, weight: 0 });
+                             toast.error("Додано без ваги (помилка розрахунку)");
+                         } finally {
+                             setAddingToDeliveryId(null);
+                         }
+                     } else {
+                         // Removing
+                         try {
+                             setDelivery(item);
+                            toast.success(`Вилучено: ${item.product}`);
+                         } catch (e) {
+                            console.error("Error removing from delivery", e);
+                            toast.error("Помилка при видаленні");
+                         }
+                     }
+              }}
             >
-              <span>{item.product}</span>
+              <span className={css.productName}>{item.product}</span>
+              {getDeliveryForItem(item) && (
+                  <span className={css.deliveryBadge}>В доставці</span>
+              )}
+              {addingToDeliveryId === item.id && (
+                  <Loader2 className="animate-spin ml-2 h-4 w-4 inline" />
+              )}
             </div>
             <div
               className={`${css.cardCellQuantity} ${css.centr}`}

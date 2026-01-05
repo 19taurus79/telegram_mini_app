@@ -3,7 +3,11 @@ import css from './SelectionList.module.css';
 export default function SelectionList({ items, onClose, type }) {
   if (!items || items.length === 0) return null;
 
-  const title = type === 'clients' ? 'Выбранные контрагенты' : 'Выбранные заявки';
+  const title = {
+    'clients': 'Выбранные контрагенты',
+    'applications': 'Выбранные заявки',
+    'deliveries': 'Выбранные доставки'
+  }[type] || 'Выбранные элементы';
 
   return (
     <div className={css.overlay} onClick={onClose}>
@@ -14,6 +18,11 @@ export default function SelectionList({ items, onClose, type }) {
         </div>
         <div className={css.stats}>
           <strong>Всего найдено:</strong> {items.length}
+          {type === 'deliveries' && (
+              <div style={{marginTop: '5px'}}>
+                <strong>Загальна вага:</strong> {items.reduce((acc, item) => acc + (item.total_weight || 0), 0)} кг
+              </div>
+          )}
         </div>
         <div className={css.content}>
           {type === 'clients' ? (
@@ -28,6 +37,24 @@ export default function SelectionList({ items, onClose, type }) {
                     {client.manager && <div>👤 Менеджер: {client.manager}</div>}
                     {client.representative && <div>👨‍💼 Контактна особа: {client.representative}</div>}
                     {client.phone1 && <div>📞 {client.phone1}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : type === 'deliveries' ? (
+             <div className={css.list}>
+              {items.map((delivery, index) => (
+                <div key={index} className={css.item}>
+                  <div className={css.itemHeader}>
+                    <strong>{delivery.client}</strong>
+                  </div>
+                  <div className={css.itemDetails}>
+                    <div>📍 {delivery.address}</div>
+                    <div>📅 {delivery.date}</div>
+                    <div>📊 Вага: {delivery.total_weight} кг</div>
+                    <div style={{fontSize: '0.85em', color: '#666', marginTop: '4px'}}>
+                        Товарів: {delivery.items.length}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -54,6 +81,8 @@ export default function SelectionList({ items, onClose, type }) {
             // Экспорт в CSV
             const csvContent = type === 'clients' 
               ? generateClientsCSV(items)
+              : type === 'deliveries'
+              ? generateDeliveriesCSV(items)
               : generateApplicationsCSV(items);
             downloadCSV(csvContent, `selection_${type}_${new Date().toISOString().split('T')[0]}.csv`);
           }}>
@@ -87,6 +116,19 @@ function generateApplicationsCSV(applications) {
     a.address?.area || '',
     a.count || 0,
     a.totalQuantity || 0
+  ]);
+  
+  return [headers, ...rows].map(row => row.join(';')).join('\n');
+}
+
+function generateDeliveriesCSV(deliveries) {
+  const headers = ['Клиент', 'Адрес', 'Дата', 'Вес (кг)', 'Товары'];
+  const rows = deliveries.map(d => [
+    d.client || '',
+    d.address || '',
+    d.date || '',
+    d.total_weight || 0,
+    d.items.map(i => `${(i.product || "").replace(/\s*рік\s*$/i, "").trim()} (${i.quantity})`).join(', ')
   ]);
   
   return [headers, ...rows].map(row => row.join(';')).join('\n');

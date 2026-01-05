@@ -291,6 +291,12 @@
   font-weight: 900;
 }
 
+.checkmarkRed {
+  color: #ef4444; /* Яскравий червоний */
+  font-size: 22px;
+  font-weight: 900;
+}
+
 
 .selectedRow {
   background-color: #406939;
@@ -299,4 +305,21 @@
 
 .selectedRow .td {
   color: white;
+}
+
+.alreadyInDeliveryRow {
+  outline: 2px solid #00c4cc;
+  outline-offset: -2px;
+}
+
+.deliveryBadge {
+  background-color: #00c4cc;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 6px;
+  display: inline-block;
+  vertical-align: middle;
 }

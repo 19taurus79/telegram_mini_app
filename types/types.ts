@@ -1,21 +1,35 @@
-export type DeliveryItem = {
+export type DeliveryPayloadParty = {
+  party: string;
+  moved_q: number;
+};
+
+export type DeliveryPayloadItem = {
   product: string;
   quantity: number;
+  order_ref: string;
+  parties: DeliveryPayloadParty[];
+  weight: number;
 };
 
 export type DeliveryOrder = {
   order: string;
-  items: DeliveryItem[];
+  items: DeliveryPayloadItem[];
 };
 
 export type DeliveryPayload = {
-  client: string;
+  client: string | null;
   manager: string;
   address: string;
   contact: string;
   phone: string;
   date: string;
+  comment: string;
+  total_weight: number;
+  latitude?: number;
+  longitude?: number;
+  is_custom_address: boolean;
   orders: DeliveryOrder[];
+  status: string;
 };
 export type Product = {
   id: string;
@@ -169,12 +183,10 @@ export type OrdersDetails = {
   buh: number;
   skl: number;
   qok: string;
-  parties: [
-    {
-      party: string;
-      moved_q: number;
-    },
-  ];
+  parties: {
+    party: string;
+    moved_q: number;
+  }[];
   // party: string;
   // moved_q: number;
 };
@@ -376,4 +388,56 @@ export type GeocodedAddress = {
     [key: string]: string | undefined;
   };
   [key: string]: any;
+};
+
+export type DeliveryItemParty = {
+  party: string;
+  party_quantity: number;
+};
+
+export type DeliveryRequestItem = {
+  id?: number;
+  delivery?: number;
+  order_ref?: string;
+  product: string;
+  quantity: number;
+  parties: DeliveryItemParty[];
+};
+
+export type DeliveryRequest = {
+  id: number;
+  client: string;
+  manager: string;
+  address: string;
+  contact: string;
+  phone: string;
+  delivery_date: string;
+  comment: string;
+  total_weight: number;
+  is_custom_address: boolean;
+  latitude: number;
+  longitude: number;
+  created_by: number;
+  status: string;
+  created_at: string;
+  items: DeliveryRequestItem[];
+};
+
+export type DeliveryUpdateItem = {
+  product: string;
+  quantity: number;
+  order_ref: string;
+  parties: {
+    party: string;
+    moved_q: number;
+  }[];
+  weight: number;
+};
+
+export type WeightCalculationItem = {
+  product_id: string;
+  parties: {
+    party: string;
+    moved_q: number;
+  }[];
 };

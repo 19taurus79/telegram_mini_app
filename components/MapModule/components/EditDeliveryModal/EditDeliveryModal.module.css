@@ -1,0 +1,309 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal {
+  background-color: var(--background);
+  color: var(--foreground);
+  width: 95vw;
+  max-width: 1200px;
+  height: 90vh;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+}
+
+.header {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--header-bg-color);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--foreground);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding: 20px;
+  gap: 20px;
+}
+
+.leftPanel, .rightPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background);
+}
+
+.panelTitle {
+  padding: 10px 15px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--header-bg-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tableContainer {
+  flex: 1;
+  overflow: auto;
+}
+
+.tableContainer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tableContainer th {
+  position: sticky;
+  top: 0;
+  background: var(--header-bg-color);
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.tableContainer td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tableContainer tr:hover {
+  background: var(--hover-bg-color);
+}
+
+.tableContainer tr.selectedRow {
+  background: rgba(var(--primary-color-rgb, 33, 150, 243), 0.1);
+  border-left: 3px solid var(--primary-color);
+}
+
+.nestedTable {
+  margin: 10px 0;
+  background: rgba(var(--primary-color-rgb, 33, 150, 243), 0.05);
+  border-radius: 4px;
+}
+
+.inputNumber {
+  width: 70px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.footer {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.button {
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deletePartyBtn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  font-size: 1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.deletePartyBtn:hover {
+  opacity: 1;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  font-size: 1.2rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.deleteButton:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.remainRow:hover {
+  background-color: rgba(var(--primary-color-rgb, 33, 150, 243), 0.1);
+  cursor: pointer;
+}
+
+.cancelButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--foreground);
+}
+
+.saveButton {
+  background-color: var(--primary-color);
+  border: none;
+  color: white;
+}
+
+.saveButton:hover {
+  filter: brightness(1.1);
+}
+
+.weightInfo {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.inputDate {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  margin-top: 15px;
+  font-family: inherit;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    flex-direction: column;
+  }
+}
+
+/* Print Styles */
+.printableArea {
+  background: white;
+  color: black;
+  padding: 20px;
+}
+
+.printGroup {
+  border: 1px solid #333;
+  margin-bottom: 25px;
+  break-inside: avoid;
+}
+
+.printDeliveryHeader {
+  background-color: #f2f2f2;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #333;
+  font-size: 0.95rem;
+}
+
+.printTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.printTable th, .printTable td {
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.printTable th:last-child, .printTable td:last-child {
+  border-right: none;
+}
+
+.printTable tr:last-child td {
+  border-bottom: none;
+}
+
+.printTable th {
+  background-color: #f9f9f9;
+}
+
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+  
+  /* Reset modal/overlay styles for print */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white !important;
+    z-index: 9999;
+    display: block !important;
+  }
+
+  .modal {
+    box-shadow: none;
+    border: none;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    position: static;
+    background: white !important;
+  }
+
+  .content {
+    padding: 0;
+    margin: 0;
+    display: block !important;
+  }
+
+  .printableArea {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}

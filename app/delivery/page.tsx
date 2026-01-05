@@ -4,6 +4,7 @@ import React, { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
+import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
@@ -16,6 +17,30 @@ type SelectedItem = {
   max: number;
 };
 
+type Party = {
+  party: string;
+  moved_q: number;
+  party_quantity?: number;
+};
+
+type DeliveryItem = {
+  id: string;
+  client: string;
+  order: string;
+  product: string;
+  nomenclature: string;
+  quantity: number;
+  orders_q?: number;
+  manager: string;
+  weight: number;
+  parties: Party[];
+};
+
+type GroupedOrder = {
+  order: string;
+  items: DeliveryItem[];
+};
+
 type ClientAddress = {
   client: string;
   representative: string;
@@ -24,6 +49,22 @@ type ClientAddress = {
   area: string;
   commune: string;
   city: string;
+  latitude: number;
+  longitude: number;
+};
+
+type GroupedClient = {
+  client: string;
+  orders: GroupedOrder[];
+};
+
+type ReducerAccumulator = {
+  [clientName: string]: {
+    client: string;
+    orders: {
+      [orderRef: string]: GroupedOrder;
+    };
+  };
 };
 
 const override: CSSProperties = {
@@ -93,33 +134,26 @@ export default function DeliveryData() {
     setError(null);
   };
 
-  const grouped = Object.values(
-    delivery.reduce(
-      (acc, item) => {
-        if (!acc[item.client]) {
-          acc[item.client] = { client: item.client, orders: {} };
-        }
-        if (!acc[item.client].orders[item.order]) {
-          acc[item.client].orders[item.order] = {
-            order: item.order,
-            items: [],
-          };
-        }
-        acc[item.client].orders[item.order].items.push(item);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          client: string;
-          orders: Record<string, { order: string; items: typeof delivery }>;
-        }
-      >
-    )
+  const grouped: GroupedClient[] = Object.values(
+    (delivery as DeliveryItem[]).reduce((acc: ReducerAccumulator, item) => {
+      const clientName = item.client || "Невідомий клієнт";
+      const orderRef = item.order || "Без доповнення";
+
+      if (!acc[clientName]) {
+        acc[clientName] = { client: clientName, orders: {} };
+      }
+
+      if (!acc[clientName].orders[orderRef]) {
+        acc[clientName].orders[orderRef] = { order: orderRef, items: [] };
+      }
+      acc[clientName].orders[orderRef].items.push(item);
+      return acc;
+    }, {})
   ).map((clientObj) => ({
     client: clientObj.client,
     orders: Object.values(clientObj.orders),
   }));
+
   if (isLoading) {
     return <FadeLoader color="#0ef18e" cssOverride={override} />;
   }
@@ -176,7 +210,7 @@ export default function DeliveryData() {
                           openModal({
                             id: item.id,
                             quantity: item.quantity,
-                            max: item.quantity,
+                            max: item.orders_q || item.quantity || 999999,
                           })
                         }
                       >
@@ -377,17 +411,59 @@ export default function DeliveryData() {
                   );
                   const manager =
                     clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
-                  const orders =
-                    clientData?.orders.map((order) => ({
-                      order: order.order,
-                      items: order.items.map((item) => ({
-                        product: item.product,
-                        quantity: item.quantity,
-                        parties: item.parties,
-                      })),
-                    })) ?? [];
+                  const orders = (clientData?.orders.map((order) => {
+                      const validItems = order.items
+                          .filter(item => item.quantity > 0)
+                          .map((item) => ({
+                              product: item.product || item.nomenclature,
+                              quantity: item.quantity,
+                              order_ref: order.order,
+                              parties: (() => {
+                                  const activeParties = (item.parties || []).map((p: Party) => ({
+                                      party: p.party || "",
+                                      moved_q: p.moved_q ?? p.party_quantity ?? 0
+                                  })).filter((p) => p.moved_q > 0);
 
-                  const payload = {
+                                  if (activeParties.length === 0 && item.quantity > 0) {
+                                      return [{
+                                          party: "", // Віртуальна партія
+                                          moved_q: item.quantity
+                                      }];
+                                  }
+                                  return activeParties;
+                              })(),
+                              weight: item.weight,
+                          }));
+                      
+                      return {
+                          order: order.order,
+                          items: validItems
+                      };
+                  }).filter((o) => o.items.length > 0)) ?? [];
+
+                  if (orders.length === 0) {
+                      setFormError("Немає товарів з кількістю > 0 для відправки");
+                      setIsLoading(false);
+                      return;
+                  }
+                  
+                  const total_weight = Math.round((orders.reduce((acc: number, order) => {
+                      return acc + order.items.reduce((orderAcc: number, item) => {
+                          return orderAcc + (item.quantity * (item.weight || 0));
+                      }, 0);
+                  }, 0) || 0) * 100) / 100;
+
+                  const directoryData = clientsDirectory.find((c) => c.client === formClient);
+                  
+                  const defaultAddress = directoryData
+                    ? `${directoryData.region} обл., ${
+                        directoryData.area || ""
+                      } район, ${directoryData.commune || ""} громада, ${directoryData.city || ""}`.trim()
+                    : "";
+
+                  const is_custom_address = address.trim() !== defaultAddress;
+
+                  const payload: DeliveryPayload = {
                     client: formClient,
                     manager,
                     address,
@@ -395,17 +471,20 @@ export default function DeliveryData() {
                     phone,
                     date,
                     comment,
+                    total_weight,
+                    latitude: directoryData?.latitude,
+                    longitude: directoryData?.longitude,
+                    is_custom_address,
                     orders,
+                    status: "Створено",
                   };
                   const initData = getInitData();
 
                   try {
-                    const result = await sendDeliveryData(payload, initData); // Проверка статуса ответа от сервера
+                    const result = await sendDeliveryData(payload, initData);
 
                     if (result.status === "ok") {
-                      // Успешный сценарий
-                      console.log("✅ Данные успешно отправлены", result);
-                      removeClientDelivery(formClient);
+                      removeClientDelivery(formClient as string);
                       setFormClient(null);
                       setFormData({
                         address: "",
@@ -415,16 +494,13 @@ export default function DeliveryData() {
                         comment: "",
                       });
                     } else {
-                      // Сценарий, где запрос успешен, но сервер вернул ошибку в теле ответа
                       setFormError(
-                        "Сталася помилка, дані не відправлені. Спробуйте пізніше, або зверніться до розробника"
+                        "Сталася помилка, дані не відправлені. Спробуйте пізніше"
                       );
                     }
                   } catch (error) {
-                    // Сценарий, где произошла ошибка сети или сервера
-                    console.error("Помилка відправки даних:", error);
-                    setFormError(
-                      "Сталася помилка мережі, дані не відправлені. Перевірте з'єднання."
+                    console.error("Network error during delivery data submission:", error); setFormError(
+                      "Сталася помилка мережі, дані не відправлені."
                     );
                   } finally {
                     setIsLoading(false);

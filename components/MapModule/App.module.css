@@ -256,3 +256,59 @@
     max-height: none;
   }
 }
+
+.deliveryStatusFilter {
+  position: absolute;
+  top: 70px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-width: 200px;
+  color: #333;
+}
+
+.deliveryStatusFilter h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+
+.statusLabel {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusLabel input {
+  cursor: pointer;
+}
+
+.deliveryPopup {
+  min-width: 200px;
+  font-family: inherit;
+}
+
+.deliveryPopup strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #000;
+}
+
+@media (max-width: 768px) {
+  .deliveryStatusFilter {
+    top: auto;
+    bottom: 60px;
+    right: 10px;
+    left: auto;
+    font-size: 12px;
+    padding: 8px;
+  }
+}

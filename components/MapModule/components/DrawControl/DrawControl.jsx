@@ -7,18 +7,20 @@ import 'leaflet-geometryutil';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
-export default function DrawControl({ applications = [], clients = [], onSelectionCreate }) {
+export default function DrawControl({ applications = [], clients = [], deliveries = [], onSelectionCreate }) {
   const map = useMap();
   const applicationsRef = useRef(applications);
   const clientsRef = useRef(clients);
+  const deliveriesRef = useRef(deliveries);
   const onSelectionCreateRef = useRef(onSelectionCreate);
 
   // Обновляем рефы при изменении пропсов
   useEffect(() => {
     applicationsRef.current = applications;
     clientsRef.current = clients;
+    deliveriesRef.current = deliveries;
     onSelectionCreateRef.current = onSelectionCreate;
-  }, [applications, clients, onSelectionCreate]);
+  }, [applications, clients, deliveries, onSelectionCreate]);
 
   useEffect(() => {
     // Исправляем иконки маркеров для Leaflet.PM
@@ -160,12 +162,15 @@ export default function DrawControl({ applications = [], clients = [], onSelecti
       // Используем актуальные данные из рефов
       const currentApps = applicationsRef.current;
       const currentClients = clientsRef.current;
+      const currentDeliveries = deliveriesRef.current;
       
       console.log('Applications доступно:', currentApps.length);
       console.log('Clients доступно:', currentClients.length);
+      console.log('Deliveries доступно:', currentDeliveries.length);
       
       const selectedApplications = [];
       const selectedClients = [];
+      const selectedDeliveries = [];
 
       if (shape === 'Polygon' || shape === 'Rectangle') {
         const latlngs = layer.getLatLngs()[0];
@@ -193,6 +198,18 @@ export default function DrawControl({ applications = [], clients = [], onSelecti
               selectedClients.push(client);
             }
           }
+        });
+
+        // Проверяем доставки
+        currentDeliveries.forEach(delivery => {
+            if (delivery.latitude && delivery.longitude) {
+                const point = { lat: delivery.latitude, lng: delivery.longitude };
+                const isInside = isPointInPolygon(point, latlngs);
+                if (isInside) {
+                  console.log('Доставка внутри:', delivery.client);
+                  selectedDeliveries.push(delivery);
+                }
+            }
         });
       } else if (shape === 'Circle') {
         const center = layer.getLatLng();
@@ -222,24 +239,38 @@ export default function DrawControl({ applications = [], clients = [], onSelecti
             }
           }
         });
+
+         // Проверяем доставки
+         currentDeliveries.forEach(delivery => {
+            if (delivery.latitude && delivery.longitude) {
+                const point = { lat: delivery.latitude, lng: delivery.longitude };
+                const isInside = isPointInCircle(point, center, radius);
+                if (isInside) {
+                  console.log('Доставка внутри круга:', delivery.client);
+                  selectedDeliveries.push(delivery);
+                }
+            }
+        });
       }
 
       console.log('Найдено заявок:', selectedApplications.length);
       console.log('Найдено клиентов:', selectedClients.length);
+      console.log('Найдено доставок:', selectedDeliveries.length);
 
       // Вызываем callback с результатами через реф
-      if (onSelectionCreateRef.current && (selectedApplications.length > 0 || selectedClients.length > 0)) {
+      if (onSelectionCreateRef.current && (selectedApplications.length > 0 || selectedClients.length > 0 || selectedDeliveries.length > 0)) {
         console.log('Вызываем onSelectionCreate');
         onSelectionCreateRef.current({
           applications: selectedApplications,
           clients: selectedClients,
+          deliveries: selectedDeliveries,
           shape: shape
         });
       } else {
-        console.log('Callback не вызван. onSelectionCreate:', !!onSelectionCreateRef.current, 'Есть результаты:', (selectedApplications.length > 0 || selectedClients.length > 0));
+        console.log('Callback не вызван. onSelectionCreate:', !!onSelectionCreateRef.current, 'Есть результаты:', (selectedApplications.length > 0 || selectedClients.length > 0 || selectedDeliveries.length > 0));
       }
 
-      console.log(`Найдено в фигуре: ${selectedApplications.length} заявок, ${selectedClients.length} клиентов`);
+      console.log(`Найдено в фигуре: ${selectedApplications.length} заявок, ${selectedClients.length} клиентов, ${selectedDeliveries.length} доставок`);
     };
 
     // Обработчик создания фигуры

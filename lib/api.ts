@@ -9,7 +9,8 @@ import {
     OrdersDetails,
     PartyData,
     Product,
-    Remains,
+    DeliveryUpdateItem,
+    Remains, WeightCalculationItem,
     // TaskGoogle,
     TotalOrder,
     Event,
@@ -218,7 +219,7 @@ export const sendDeliveryData = async (
 export const updateDeliveryData = async (
   deliveryId: string,
   status: string,
-  items: any[],
+  items: DeliveryUpdateItem[],
   initData: string
 ) => {
   const { data } = await axios.post<{ status: string }>(
@@ -721,7 +722,7 @@ export const updateClientAddress = async ({
 
 // Додаємо експорт за замовчуванням
 // Helper to parse weight string (e.g. "100 кг" -> 100)
-const parseWeight = (weightStr: any): number => {
+const parseWeight = (weightStr: string | number | null | undefined): number => {
   if (typeof weightStr === "number") return weightStr;
   if (!weightStr || typeof weightStr !== "string") return 0;
   // Видаляємо все, що не є цифрою або крапкою/комою
@@ -732,17 +733,10 @@ const parseWeight = (weightStr: any): number => {
 export const getWeightForProduct = async ({
   item,
   initData,
-}: {
-  item: {
-    product_id: string;
-    parties: {
-      party: string;
-      moved_q: number;
-    }[];
-  };
+}: { item: WeightCalculationItem,
   initData: string;
 }) => {
-  let weight = 0;
+  let calculatedWeight = 0;
 
   try {
     // Спочатку отримуємо деталі товару, щоб дізнатись line_of_business
@@ -775,7 +769,8 @@ export const getWeightForProduct = async ({
         initData,
       });
       if (partyData && partyData.length > 0) {
-        return parseWeight(partyData[0].weight);
+        calculatedWeight = parseWeight(partyData[0].weight);
+        if (calculatedWeight > 0) return calculatedWeight;
       }
     }
 
@@ -792,7 +787,8 @@ export const getWeightForProduct = async ({
         
         if (weights.length > 0) {
            const sum = weights.reduce((a, b) => a + b, 0);
-           return sum / weights.length;
+           calculatedWeight = sum / weights.length;
+           if (calculatedWeight > 0) return calculatedWeight;
         }
       }
     } else if (isValidProductId) {
@@ -802,7 +798,8 @@ export const getWeightForProduct = async ({
          // Шукаємо першу валідну вагу
          const validRemain = remains.find(r => parseWeight(r.weight) > 0);
          if (validRemain) {
-           return parseWeight(validRemain.weight);
+           calculatedWeight = parseWeight(validRemain.weight);
+           if (calculatedWeight > 0) return calculatedWeight;
          }
        }
     }
@@ -810,7 +807,7 @@ export const getWeightForProduct = async ({
     console.error("Error calculating weight:", error);
   }
 
-  return weight;
+  return calculatedWeight;
 };
 
 export const getDeliveries = async (initData: string) => {

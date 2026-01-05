@@ -1,27 +1,35 @@
-export type DeliveryItem = {
+export type DeliveryPayloadParty = {
+  party: string;
+  moved_q: number;
+};
+
+export type DeliveryPayloadItem = {
   product: string;
   quantity: number;
+  order_ref: string;
+  parties: DeliveryPayloadParty[];
+  weight: number;
 };
 
 export type DeliveryOrder = {
   order: string;
-  items: DeliveryItem[];
+  items: DeliveryPayloadItem[];
 };
 
 export type DeliveryPayload = {
-  client: string;
+  client: string | null;
   manager: string;
   address: string;
   contact: string;
   phone: string;
   date: string;
-  comment?: string;
-  total_weight?: number;
+  comment: string;
+  total_weight: number;
   latitude?: number;
   longitude?: number;
-  is_custom_address?: boolean;
+  is_custom_address: boolean;
   orders: DeliveryOrder[];
-  status?: string;
+  status: string;
 };
 export type Product = {
   id: string;
@@ -413,4 +421,23 @@ export type DeliveryRequest = {
   status: string;
   created_at: string;
   items: DeliveryRequestItem[];
+};
+
+export type DeliveryUpdateItem = {
+  product: string;
+  quantity: number;
+  order_ref: string;
+  parties: {
+    party: string;
+    moved_q: number;
+  }[];
+  weight: number;
+};
+
+export type WeightCalculationItem = {
+  product_id: string;
+  parties: {
+    party: string;
+    moved_q: number;
+  }[];
 };

@@ -4,6 +4,7 @@ import React, { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { sendDeliveryData } from "@/lib/api";
+import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
@@ -16,6 +17,30 @@ type SelectedItem = {
   max: number;
 };
 
+type Party = {
+  party: string;
+  moved_q: number;
+  party_quantity?: number;
+};
+
+type DeliveryItem = {
+  id: string;
+  client: string;
+  order: string;
+  product: string;
+  nomenclature: string;
+  quantity: number;
+  orders_q?: number;
+  manager: string;
+  weight: number;
+  parties: Party[];
+};
+
+type GroupedOrder = {
+  order: string;
+  items: DeliveryItem[];
+};
+
 type ClientAddress = {
   client: string;
   representative: string;
@@ -26,6 +51,20 @@ type ClientAddress = {
   city: string;
   latitude: number;
   longitude: number;
+};
+
+type GroupedClient = {
+  client: string;
+  orders: GroupedOrder[];
+};
+
+type ReducerAccumulator = {
+  [clientName: string]: {
+    client: string;
+    orders: {
+      [orderRef: string]: GroupedOrder;
+    };
+  };
 };
 
 const override: CSSProperties = {
@@ -95,22 +134,22 @@ export default function DeliveryData() {
     setError(null);
   };
 
-  const grouped = (Object.values(
-    delivery.reduce((acc: any, item: any) => {
+  const grouped: GroupedClient[] = Object.values(
+    (delivery as DeliveryItem[]).reduce((acc: ReducerAccumulator, item) => {
       const clientName = item.client || "Невідомий клієнт";
       const orderRef = item.order || "Без доповнення";
 
       if (!acc[clientName]) {
         acc[clientName] = { client: clientName, orders: {} };
       }
-      
+
       if (!acc[clientName].orders[orderRef]) {
         acc[clientName].orders[orderRef] = { order: orderRef, items: [] };
       }
       acc[clientName].orders[orderRef].items.push(item);
       return acc;
     }, {})
-  ) as any[]).map((clientObj: any) => ({
+  ).map((clientObj) => ({
     client: clientObj.client,
     orders: Object.values(clientObj.orders),
   }));
@@ -120,14 +159,14 @@ export default function DeliveryData() {
   }
   return (
     <div className={styles.wrapper}>
-      {grouped.map((client: any) => (
+      {grouped.map((client) => (
         <div key={client.client} className={styles.clientBlock}>
           <div className={styles.clientHeader}>
             <span className={styles.clientTitle}>Контрагент:</span>
             <span>{client.client}</span>
           </div>
 
-          {(client.orders as any[]).map((order: any) => (
+          {client.orders.map((order) => (
             <div key={order.order} className={styles.orderBlock}>
               <div className={styles.orderHeader}>
                 <span className={styles.clientTitle}>Доповнення:</span>
@@ -139,7 +178,7 @@ export default function DeliveryData() {
                   <div className={styles.headerProduct}>Товар</div>
                   <div className={styles.headerQuantity}>Кількість</div>
                 </div>
-                {(order.items as any[]).map((item: any) => (
+                {order.items.map((item) => (
                   <div className={styles.row} key={item.id}>
                     <div className={styles.cell}>
                       {/* Product Name */}
@@ -149,7 +188,7 @@ export default function DeliveryData() {
                         {item.parties &&
                           item.parties.length > 0 &&
                           item.parties.map(
-                            (party: any, index: number) =>
+                            (party, index) =>
                               party.moved_q > 0 && (
                                 <div
                                   key={index}
@@ -371,61 +410,60 @@ export default function DeliveryData() {
                     (c) => c.client === formClient
                   );
                   const manager =
-                    (clientData as any)?.orders?.[0]?.items?.[0]?.manager ?? "";
-                  const orders =
-                    (clientData as any)?.orders.map((order: any) => {
-                        const validItems = (order.items as any[])
-                            .filter(item => item.quantity > 0)
-                            .map((item) => ({
-                                product: item.product || item.nomenclature,
-                                quantity: item.quantity,
-                                order_ref: order.order,
-                                parties: (() => {
-                                    const activeParties = (item.parties || []).map((p: any) => ({
-                                        party: p.party || "",
-                                        moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                    })).filter((p: any) => p.moved_q > 0);
+                    clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
+                  const orders = (clientData?.orders.map((order) => {
+                      const validItems = order.items
+                          .filter(item => item.quantity > 0)
+                          .map((item) => ({
+                              product: item.product || item.nomenclature,
+                              quantity: item.quantity,
+                              order_ref: order.order,
+                              parties: (() => {
+                                  const activeParties = (item.parties || []).map((p: Party) => ({
+                                      party: p.party || "",
+                                      moved_q: p.moved_q ?? p.party_quantity ?? 0
+                                  })).filter((p) => p.moved_q > 0);
 
-                                    if (activeParties.length === 0 && item.quantity > 0) {
-                                        return [{
-                                            party: "", // Віртуальна партія
-                                            moved_q: item.quantity
-                                        }];
-                                    }
-                                    return activeParties;
-                                })(),
-                                weight: item.weight,
-                            }));
-                        
-                        return {
-                            order: order.order,
-                            items: validItems
-                        };
-                    }).filter((o: any) => o.items.length > 0) ?? [];
+                                  if (activeParties.length === 0 && item.quantity > 0) {
+                                      return [{
+                                          party: "", // Віртуальна партія
+                                          moved_q: item.quantity
+                                      }];
+                                  }
+                                  return activeParties;
+                              })(),
+                              weight: item.weight,
+                          }));
+                      
+                      return {
+                          order: order.order,
+                          items: validItems
+                      };
+                  }).filter((o) => o.items.length > 0)) ?? [];
 
                   if (orders.length === 0) {
                       setFormError("Немає товарів з кількістю > 0 для відправки");
                       setIsLoading(false);
                       return;
                   }
-
-                  const total_weight = Math.round((orders.reduce((acc: number, order: any) => {
-                      return acc + order.items.reduce((orderAcc: number, item: any) => {
+                  
+                  const total_weight = Math.round((orders.reduce((acc: number, order) => {
+                      return acc + order.items.reduce((orderAcc: number, item) => {
                           return orderAcc + (item.quantity * (item.weight || 0));
                       }, 0);
                   }, 0) || 0) * 100) / 100;
 
-                  const directoryData = clientsDirectory.find((c: any) => c.client === formClient);
+                  const directoryData = clientsDirectory.find((c) => c.client === formClient);
                   
-                  const defaultAddress = (directoryData as any) ? `${(directoryData as any).region} обл., ${
-                    (directoryData as any).area || ""
-                  } район, ${(directoryData as any).commune || ""} громада, ${
-                    (directoryData as any).city || ""
-                  }`.trim() : "";
+                  const defaultAddress = directoryData
+                    ? `${directoryData.region} обл., ${
+                        directoryData.area || ""
+                      } район, ${directoryData.commune || ""} громада, ${directoryData.city || ""}`.trim()
+                    : "";
 
                   const is_custom_address = address.trim() !== defaultAddress;
 
-                  const payload = {
+                  const payload: DeliveryPayload = {
                     client: formClient,
                     manager,
                     address,
@@ -434,8 +472,8 @@ export default function DeliveryData() {
                     date,
                     comment,
                     total_weight,
-                    latitude: (directoryData as any)?.latitude,
-                    longitude: (directoryData as any)?.longitude,
+                    latitude: directoryData?.latitude,
+                    longitude: directoryData?.longitude,
                     is_custom_address,
                     orders,
                     status: "Створено",
@@ -443,7 +481,7 @@ export default function DeliveryData() {
                   const initData = getInitData();
 
                   try {
-                    const result = await sendDeliveryData(payload as any, initData);
+                    const result = await sendDeliveryData(payload, initData);
 
                     if (result.status === "ok") {
                       removeClientDelivery(formClient as string);
@@ -461,7 +499,7 @@ export default function DeliveryData() {
                       );
                     }
                   } catch (error) {
-                    setFormError(
+                    console.error("Network error during delivery data submission:", error); setFormError(
                       "Сталася помилка мережі, дані не відправлені."
                     );
                   } finally {

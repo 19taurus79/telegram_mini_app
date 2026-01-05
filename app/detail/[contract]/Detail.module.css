@@ -95,3 +95,18 @@
   justify-content: space-between;
   margin: 16px 10px;
 }
+
+.alreadyInDelivery {
+  border: 1px solid #00c4cc;
+}
+
+.deliveryBadge {
+  background-color: #00c4cc;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}

@@ -7,6 +7,8 @@ export default function MapControls({
   toggleHeatmap,
   areClientsVisible,
   toggleClients,
+  areDeliveriesVisible,
+  toggleDeliveries,
   isRoutingMode,
   toggleRoutingMode
 }) {
@@ -30,6 +32,28 @@ export default function MapControls({
         </svg>
         <span className={css.tooltip}>
           {areClientsVisible ? 'Скрити контрагентів' : 'Показати контрагентів'}
+        </span>
+      </div>
+
+      {/* Deliveries Toggle */}
+      <div 
+        className={css.controlBtn}
+        onClick={toggleDeliveries}
+        title={areDeliveriesVisible ? 'Приховати доставки' : 'Показати доставки'}
+        style={{
+          background: areDeliveriesVisible ? '#ff5722' : 'white',
+          color: areDeliveriesVisible ? 'white' : 'black',
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M42 32V19H33V9H6V32" />
+            <path d="M6 32H13.6829M42 32H35.8049M23.3659 32H13.6829M23.3659 32H35.8049" />
+            <circle cx="18.5" cy="35" r="3.5" />
+            <circle cx="31" cy="35" r="3.5" />
+            <path d="M33 19H42L37.8 13H33V19Z" fill="currentColor" />
+        </svg>
+        <span className={css.tooltip}>
+          {areDeliveriesVisible ? 'Приховати доставки' : 'Показати доставки'}
         </span>
       </div>
 

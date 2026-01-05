@@ -24,6 +24,8 @@ type ClientAddress = {
   area: string;
   commune: string;
   city: string;
+  latitude: number;
+  longitude: number;
 };
 
 const override: CSSProperties = {
@@ -93,46 +95,39 @@ export default function DeliveryData() {
     setError(null);
   };
 
-  const grouped = Object.values(
-    delivery.reduce(
-      (acc, item) => {
-        if (!acc[item.client]) {
-          acc[item.client] = { client: item.client, orders: {} };
-        }
-        if (!acc[item.client].orders[item.order]) {
-          acc[item.client].orders[item.order] = {
-            order: item.order,
-            items: [],
-          };
-        }
-        acc[item.client].orders[item.order].items.push(item);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          client: string;
-          orders: Record<string, { order: string; items: typeof delivery }>;
-        }
-      >
-    )
-  ).map((clientObj) => ({
+  const grouped = (Object.values(
+    delivery.reduce((acc: any, item: any) => {
+      const clientName = item.client || "Невідомий клієнт";
+      const orderRef = item.order || "Без доповнення";
+
+      if (!acc[clientName]) {
+        acc[clientName] = { client: clientName, orders: {} };
+      }
+      
+      if (!acc[clientName].orders[orderRef]) {
+        acc[clientName].orders[orderRef] = { order: orderRef, items: [] };
+      }
+      acc[clientName].orders[orderRef].items.push(item);
+      return acc;
+    }, {})
+  ) as any[]).map((clientObj: any) => ({
     client: clientObj.client,
     orders: Object.values(clientObj.orders),
   }));
+
   if (isLoading) {
     return <FadeLoader color="#0ef18e" cssOverride={override} />;
   }
   return (
     <div className={styles.wrapper}>
-      {grouped.map((client) => (
+      {grouped.map((client: any) => (
         <div key={client.client} className={styles.clientBlock}>
           <div className={styles.clientHeader}>
             <span className={styles.clientTitle}>Контрагент:</span>
             <span>{client.client}</span>
           </div>
 
-          {client.orders.map((order) => (
+          {(client.orders as any[]).map((order: any) => (
             <div key={order.order} className={styles.orderBlock}>
               <div className={styles.orderHeader}>
                 <span className={styles.clientTitle}>Доповнення:</span>
@@ -144,7 +139,7 @@ export default function DeliveryData() {
                   <div className={styles.headerProduct}>Товар</div>
                   <div className={styles.headerQuantity}>Кількість</div>
                 </div>
-                {order.items.map((item) => (
+                {(order.items as any[]).map((item: any) => (
                   <div className={styles.row} key={item.id}>
                     <div className={styles.cell}>
                       {/* Product Name */}
@@ -154,7 +149,7 @@ export default function DeliveryData() {
                         {item.parties &&
                           item.parties.length > 0 &&
                           item.parties.map(
-                            (party, index) =>
+                            (party: any, index: number) =>
                               party.moved_q > 0 && (
                                 <div
                                   key={index}
@@ -176,7 +171,7 @@ export default function DeliveryData() {
                           openModal({
                             id: item.id,
                             quantity: item.quantity,
-                            max: item.quantity,
+                            max: item.orders_q || item.quantity || 999999,
                           })
                         }
                       >
@@ -376,16 +371,59 @@ export default function DeliveryData() {
                     (c) => c.client === formClient
                   );
                   const manager =
-                    clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
+                    (clientData as any)?.orders?.[0]?.items?.[0]?.manager ?? "";
                   const orders =
-                    clientData?.orders.map((order) => ({
-                      order: order.order,
-                      items: order.items.map((item) => ({
-                        product: item.product,
-                        quantity: item.quantity,
-                        parties: item.parties,
-                      })),
-                    })) ?? [];
+                    (clientData as any)?.orders.map((order: any) => {
+                        const validItems = (order.items as any[])
+                            .filter(item => item.quantity > 0)
+                            .map((item) => ({
+                                product: item.product || item.nomenclature,
+                                quantity: item.quantity,
+                                order_ref: order.order,
+                                parties: (() => {
+                                    const activeParties = (item.parties || []).map((p: any) => ({
+                                        party: p.party || "",
+                                        moved_q: p.moved_q ?? p.party_quantity ?? 0
+                                    })).filter((p: any) => p.moved_q > 0);
+
+                                    if (activeParties.length === 0 && item.quantity > 0) {
+                                        return [{
+                                            party: "", // Віртуальна партія
+                                            moved_q: item.quantity
+                                        }];
+                                    }
+                                    return activeParties;
+                                })(),
+                                weight: item.weight,
+                            }));
+                        
+                        return {
+                            order: order.order,
+                            items: validItems
+                        };
+                    }).filter((o: any) => o.items.length > 0) ?? [];
+
+                  if (orders.length === 0) {
+                      setFormError("Немає товарів з кількістю > 0 для відправки");
+                      setIsLoading(false);
+                      return;
+                  }
+
+                  const total_weight = Math.round((orders.reduce((acc: number, order: any) => {
+                      return acc + order.items.reduce((orderAcc: number, item: any) => {
+                          return orderAcc + (item.quantity * (item.weight || 0));
+                      }, 0);
+                  }, 0) || 0) * 100) / 100;
+
+                  const directoryData = clientsDirectory.find((c: any) => c.client === formClient);
+                  
+                  const defaultAddress = (directoryData as any) ? `${(directoryData as any).region} обл., ${
+                    (directoryData as any).area || ""
+                  } район, ${(directoryData as any).commune || ""} громада, ${
+                    (directoryData as any).city || ""
+                  }`.trim() : "";
+
+                  const is_custom_address = address.trim() !== defaultAddress;
 
                   const payload = {
                     client: formClient,
@@ -395,17 +433,20 @@ export default function DeliveryData() {
                     phone,
                     date,
                     comment,
+                    total_weight,
+                    latitude: (directoryData as any)?.latitude,
+                    longitude: (directoryData as any)?.longitude,
+                    is_custom_address,
                     orders,
+                    status: "Створено",
                   };
                   const initData = getInitData();
 
                   try {
-                    const result = await sendDeliveryData(payload, initData); // Проверка статуса ответа от сервера
+                    const result = await sendDeliveryData(payload as any, initData);
 
                     if (result.status === "ok") {
-                      // Успешный сценарий
-                      console.log("✅ Данные успешно отправлены", result);
-                      removeClientDelivery(formClient);
+                      removeClientDelivery(formClient as string);
                       setFormClient(null);
                       setFormData({
                         address: "",
@@ -415,16 +456,13 @@ export default function DeliveryData() {
                         comment: "",
                       });
                     } else {
-                      // Сценарий, где запрос успешен, но сервер вернул ошибку в теле ответа
                       setFormError(
-                        "Сталася помилка, дані не відправлені. Спробуйте пізніше, або зверніться до розробника"
+                        "Сталася помилка, дані не відправлені. Спробуйте пізніше"
                       );
                     }
                   } catch (error) {
-                    // Сценарий, где произошла ошибка сети или сервера
-                    console.error("Помилка відправки даних:", error);
                     setFormError(
-                      "Сталася помилка мережі, дані не відправлені. Перевірте з'єднання."
+                      "Сталася помилка мережі, дані не відправлені."
                     );
                   } finally {
                     setIsLoading(false);

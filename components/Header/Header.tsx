@@ -9,6 +9,7 @@ import css from "./Header.module.css";
 import Link from "next/link";
 import { useInitData } from "@/store/InitData";
 import { useUser } from "@/store/User";
+import { useDelivery } from "@/store/Delivery";
 
 function Header() {
   const { searchValue, setSearchValue } = useFilter();
@@ -21,6 +22,14 @@ function Header() {
   const setInitData = useInitData((state) => state.setInitData);
   const userData = useUser((state) => state.userData);
   const setUserData = useUser((state) => state.setUserData);
+  
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  const { delivery } = useDelivery();
+  const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -153,8 +162,15 @@ function Header() {
             </Link>
           </li>
           <li>
-            <Link href="/delivery" onClick={handleNavClick}>
+            <Link 
+              href="/delivery" 
+              onClick={handleNavClick}
+              className={`${deliveryCount > 0 ? css.vibrate : ""} ${css.deliveryLinkWrapper}`}
+            >
               Доставка
+              {deliveryCount > 0 && (
+                <div className={css.badge}>{deliveryCount}</div>
+              )}
             </Link>
           </li>
           <li>

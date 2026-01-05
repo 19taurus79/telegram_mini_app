@@ -32,7 +32,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
 
     // Добавляем "рік закупівлі", если он не пустой и не состоит только из пробелов
     if (item.buying_season && item.buying_season.trim() !== "") {
-      parts.push(`${item.buying_season.trim()} рік`); // Добавлено " рік"
+      parts.push(item.buying_season.trim());
     }
 
     // Объединяем все части пробелами
@@ -40,6 +40,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
     // debugger;
     return {
       product: combinedName, // Собираем название продукта из номенклатуры, ознаки партії и року закупівлі
+      nomenclature: item.nomenclature,
       quantity: item.different,
       manager: item.manager,
       order: item.contract_supplement,

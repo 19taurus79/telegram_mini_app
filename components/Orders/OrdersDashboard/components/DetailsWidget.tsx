@@ -1,13 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { getOrdersDetailsById } from "@/lib/api";
-import { Client, Contract, OrdersDetails } from "@/types/types";
+import { getOrdersDetailsById, getDeliveries } from "@/lib/api";
+import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { getInitData } from "@/lib/getInitData";
+import React from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
-import { Truck } from "lucide-react";
+import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
+import { getWeightForProduct } from "@/lib/api";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -31,8 +34,50 @@ export default function DetailsWidget({
 
   const [selectedProductForModal, setSelectedProductForModal] = useState<string | null>(null);
 
-  const router = useRouter();
+   const router = useRouter();
   const { setDelivery, hasItem } = useDelivery();
+  const [allDeliveries, setAllDeliveries] = useState<DeliveryRequest[]>([]);
+
+  const getItemId = (item: OrdersDetails) => {
+    return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
+  };
+
+  const getProductName = (item: OrdersDetails) => {
+    const parts = [];
+    parts.push(item.nomenclature);
+    if (item.party_sign && item.party_sign.trim() !== "") {
+      parts.push(item.party_sign.trim());
+    }
+    if (item.buying_season && item.buying_season.trim() !== "") {
+      parts.push(item.buying_season.trim());
+    }
+    return parts.join(" ").trim();
+  };
+
+  useEffect(() => {
+    const loadDeliveries = async () => {
+        try {
+            const initDataVal = await getInitData();
+            const data = await getDeliveries(initDataVal);
+            if (data) setAllDeliveries(data);
+        } catch (e) {
+            console.error("Error loading deliveries", e);
+        }
+    };
+    loadDeliveries();
+  }, [initData]);
+
+  const getDeliveryForItem = (item: OrdersDetails) => {
+    if (!allDeliveries || allDeliveries.length === 0) return null;
+    const currentName = getProductName(item);
+    return allDeliveries.find(d => 
+        (d.status === "Створено" || d.status === "В роботі" || d.status === "created") &&
+        d.items?.some(di => 
+            di.order_ref?.trim() === item.contract_supplement.trim() && 
+            di.product?.trim() === currentName
+        )
+    );
+  };
 
   const handleRemainsClick = (item: OrdersDetails) => {
       // Переходимо тільки якщо є залишки по бухгалтерії
@@ -58,34 +103,75 @@ export default function DetailsWidget({
       setSelectedProductForModal(null);
   };
 
-  const handleDeliveryClick = (item: OrdersDetails) => {
-    // Логика формирования имени продукта как в мобильной версии
-    const parts = [];
-    parts.push(item.nomenclature);
-    if (item.party_sign && item.party_sign.trim() !== "") {
-      parts.push(item.party_sign.trim());
+  // State to track which item is currently adding to delivery (for loading spinner)
+  const [addingToDeliveryId, setAddingToDeliveryId] = useState<string | null>(null);
+
+   const handleDeliveryClick = async (item: OrdersDetails) => {
+    const combinedName = getProductName(item);
+    const itemId = getItemId(item);
+    
+    // Check if already in delivery
+    if (hasItem(itemId)) {
+        // Removing - no need to fetch weight
+        setDelivery({
+            product: combinedName,
+            nomenclature: item.nomenclature,
+            quantity: item.different,
+            manager: item.manager,
+            order: item.contract_supplement,
+            client: item.client,
+            id: itemId,
+            orders_q: item.orders_q,
+            parties: item.parties,
+            buh: item.buh,
+            skl: item.skl,
+            qok: item.qok,
+            weight: 0 
+        });
+        return;
     }
-    if (item.buying_season && item.buying_season.trim() !== "") {
-      parts.push(`${item.buying_season.trim()} рік`);
+
+    // Adding - fetch weight
+    const existingDelivery = getDeliveryForItem(item);
+    if (existingDelivery) {
+        const confirmAdd = window.confirm(
+            `Цей товар уже у доставці №${existingDelivery.id} (статус: ${existingDelivery.status}).\nВи впевнені, що хочете додати його ще раз?`
+        );
+        if (!confirmAdd) return;
     }
-    const combinedName = parts.join(" ");
+
+    setAddingToDeliveryId(itemId);
+    
+    // Calculate weight
+    const weight = await getWeightForProduct({ 
+      item: {
+        product_id: item.product,
+        parties: item.parties
+      }, 
+      initData 
+    });
 
     // Формируем объект для доставки с теми же полями и ID
+    const initialQty = item.different > 0 ? item.different : item.orders_q;
+
     const deliveryItem = {
       product: combinedName,
-      quantity: item.different,
+      nomenclature: item.nomenclature,
+      quantity: initialQty,
       manager: item.manager,
       order: item.contract_supplement,
       client: item.client,
-      id: item.contract_supplement + item.nomenclature, // ID как в Table.client.tsx
+      id: itemId, 
       orders_q: item.orders_q,
       parties: item.parties,
       buh: item.buh,
       skl: item.skl,
       qok: item.qok,
+      weight: weight,
     };
     
     setDelivery(deliveryItem);
+    setAddingToDeliveryId(null);
   };
 
   const { data: detailsList, isLoading } = useQuery({
@@ -103,7 +189,7 @@ export default function DetailsWidget({
             return results.flat();
         }
         
-        return [];
+         return [];
     },
     enabled: !!selectedClient && !!initData && (selectedContracts.length > 0 || showAllContracts)
   });
@@ -139,14 +225,21 @@ export default function DetailsWidget({
             
           {detailsList?.map((item: OrdersDetails) => {
             // Генерируем ID для проверки в сторе
-            const itemId = item.contract_supplement + item.nomenclature;
+             const itemId = getItemId(item);
             const isSelected = hasItem(itemId);
+            const inDelivery = getDeliveryForItem(item);
 
             return (
-              <tr key={item.id} className={isSelected ? styles.selectedRow : ""}>
+              <tr 
+                key={item.id} 
+                className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""}`}
+              >
                 <td className={styles.td}>{item.contract_supplement}</td>
-                <td className={styles.td} title={item.nomenclature}>
-                  {`${item.nomenclature} ${item.party_sign} ${item.buying_season}`}
+                 <td className={styles.td} title={item.nomenclature}>
+                  {getProductName(item)}
+                  {inDelivery && (
+                    <span className={styles.deliveryBadge}>В доставці</span>
+                  )}
                 </td>
                 {/* <td className={styles.td}>{item.orders_q}</td> */}
                 <td className={styles.td}>{item.different}</td> {/* Припускаємо, що different = Fact/Moved */}
@@ -190,9 +283,16 @@ export default function DetailsWidget({
                   <td className={styles.td}>
                     {(() => {
                       const sumMovedQ = calculateTotalPartiesMoved(item.parties);
-                      if (sumMovedQ === 0 && item.orders_q>item.buh ) return <span className={styles.checkmarkRed}>✓</span>;
+                      const ordersQ = Number(item.orders_q) || 0;
+                      const buhQ = Number(item.buh) || 0;
+                      const sklQ = Number(item.skl) || 0;
+                      const diffQ = Number(item.different) || 0;
 
-                      if ((sumMovedQ >= item.different && item.buh<=item.skl)|| item.orders_q<=item.buh&&item.buh<=item.skl) {
+                      if (sumMovedQ === 0 && ordersQ > buhQ) {
+                        return <span className={styles.checkmarkRed}>✓</span>;
+                      }
+
+                      if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ>=sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
                         return <span className={styles.checkmarkGreen}>✓</span>;
                       } else {
                         return <span className={styles.checkmarkYellow}>✓</span>;
@@ -211,11 +311,15 @@ export default function DetailsWidget({
                    onClick={() => handleDeliveryClick(item)}
                    title={isSelected ? "Видалити з доставки" : "Додати до доставки"}
                 >
-                   <Truck 
-                     size={18} 
-                     fill={isSelected ? "currentColor" : "none"}
-                     strokeWidth={isSelected ? 0 : 2}
-                   />
+                   {addingToDeliveryId === itemId ? (
+                       <Loader2 size={18} className="animate-spin" />
+                   ) : (
+                       <Truck 
+                         size={18} 
+                         fill={isSelected ? "currentColor" : "none"}
+                         strokeWidth={isSelected ? 0 : 2}
+                       />
+                   )}
                 </td>
 
               </tr>

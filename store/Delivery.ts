@@ -10,12 +10,18 @@ type Party = {
 // Обновляем DeliveryItem, добавляя поле `parties`
 type DeliveryItem = {
   product: string;
+  nomenclature: string; // Номенклатура для бекенду
   quantity: number;
   client: string;
   manager: string;
   order: string;
   id: string;
-  parties: Party[]; // <--- ВАШЕ ДОБАВЛЕНИЕ
+  parties: Party[];
+  orders_q: number;
+  buh: number;
+  skl: number;
+  qok: string;
+  weight?: number; // Вага одиниці товару (або середня)
 };
 
 type DeliveryState = {
@@ -31,7 +37,6 @@ export const useDelivery = create<DeliveryState>()(
   persist(
     (set, get) => ({
       delivery: [],
-      // Логика setDelivery не меняется, т.к. она работает со всем объектом `item`
       setDelivery: (item) =>
         set((state) => {
           if (get().hasItem(item.id)) {

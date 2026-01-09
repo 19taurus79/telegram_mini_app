@@ -8,7 +8,6 @@ import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
-import { useEffect } from "react";
 
 type SelectedItem = {
   id: string;
@@ -78,8 +77,7 @@ export default function DeliveryData() {
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [clientsDirectory, setClientsDirectory] = useState<ClientAddress[]>([]);
-
+  
   const [formClient, setFormClient] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     address: "",
@@ -213,37 +211,13 @@ export default function DeliveryData() {
               className={styles.sendButton}
               onClick={() => {
                 setFormClient(client.client);
-
-                // Find client in directory
-                const clientData = clientsDirectory.find(
-                  (c) => c.client === client.client
-                );
-
-                if (clientData) {
-                  // Auto-fill form with directory data
-                  const addressText = `${clientData.region} обл., ${
-                    clientData.area || ""
-                  } район, ${clientData.commune || ""} громада, ${
-                    clientData.city || ""
-                  }`;
-                  setFormData({
-                    address: addressText.trim(),
-                    contact: clientData.representative || "",
-                    phone: clientData.phone1 || "",
-                    date: "",
-                    comment: "",
-                  });
-                } else {
-                  // No data in directory - leave empty
-                  setFormData({
-                    address: "",
-                    contact: "",
-                    phone: "",
-                    date: "",
-                    comment: "",
-                  });
-                }
-
+                setFormData({
+                  address: "",
+                  contact: "",
+                  phone: "",
+                  date: "",
+                  comment: "",
+                });
                 setFormError(null);
               }}
             >
@@ -440,18 +414,6 @@ export default function DeliveryData() {
                       }, 0);
                   }, 0) || 0) * 100) / 100;
 
-                  const directoryData = clientsDirectory.find((c) => c.client === formClient);
-                  
-                  const defaultAddress = directoryData
-                    ? `${directoryData.region} обл., ${
-                        directoryData.area || ""
-                      } район, ${directoryData.commune || ""} громада, ${
-                        directoryData.city || ""
-                      }`.trim()
-                    : "";
-
-                  const is_custom_address = address.trim() !== defaultAddress;
-
                   const payload: DeliveryPayload = {
                     client: formClient,
                     manager,
@@ -461,9 +423,6 @@ export default function DeliveryData() {
                     date,
                     comment,
                     total_weight,
-                    latitude: directoryData?.latitude,
-                    longitude: directoryData?.longitude,
-                    is_custom_address,
                     orders,
                     status: "Створено",
                   };

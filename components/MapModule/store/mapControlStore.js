@@ -2,7 +2,6 @@ import { create } from "zustand";
 
 export const useMapControlStore = create((set) => ({
   areApplicationsVisible: false,
-  showHeatmap: false,
   areClientsVisible: false,
   areDeliveriesVisible: true,
   selectedStatuses: [],
@@ -14,11 +13,6 @@ export const useMapControlStore = create((set) => ({
   })),
   toggleApplications: () => set((state) => ({ areApplicationsVisible: !state.areApplicationsVisible })),
   
-  setShowHeatmap: (show) => set((state) => ({ 
-    showHeatmap: typeof show === 'function' ? show(state.showHeatmap) : show 
-  })),
-  toggleHeatmap: () => set((state) => ({ showHeatmap: !state.showHeatmap })),
-
   setClientsVisible: (visible) => set((state) => ({ 
     areClientsVisible: typeof visible === 'function' ? visible(state.areClientsVisible) : visible 
   })),

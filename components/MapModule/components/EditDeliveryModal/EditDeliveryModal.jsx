@@ -281,8 +281,16 @@ export default function EditDeliveryModal() {
         console.log("Ready updated deliveries:", updatedDeliveries);
         toast.success("Доставки оновлено та переведено в роботу");
         
+        // Filter out deliveries with no items or zero quantity items
+        const validDeliveries = updatedDeliveries.filter(d => 
+          d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
+        ).map(d => ({
+          ...d,
+          items: d.items.filter(i => i.quantity > 0) // Also filter items inside delivery
+        }));
+
         // Sort by manager
-        const sorted = [...updatedDeliveries].sort((a, b) => 
+        const sorted = [...validDeliveries].sort((a, b) => 
           (a.manager || "").localeCompare(b.manager || "")
         );
 
@@ -354,37 +362,41 @@ export default function EditDeliveryModal() {
                 <div style={{ fontSize: '0.9rem', marginTop: '5px' }}>Дата: {new Date().toLocaleDateString('uk-UA')}</div>
               </div>
 
-              {printData.map((delivery, dIdx) => (
-                <div key={dIdx} className={css.printGroup}>
-                  <div className={css.printDeliveryHeader}>
-                    <div><strong>Менеджер:</strong> {delivery.manager}</div>
-                    <div><strong>Клієнт:</strong> {delivery.client}</div>
-                    <div><strong>Дата доставки:</strong> {new Date(printDeliveryDate).toLocaleDateString('uk-UA')}</div>
-                  </div>
-                  <table className={css.printTable}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: '15%' }}>Заявка</th>
-                        <th style={{ width: '40%' }}>Товар</th>
-                        <th style={{ width: '10%', textAlign: 'center' }}>К-сть</th>
-                        <th>Партії</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {delivery.items.map((item, idx) => (
-                        <tr key={idx}>
-                          <td>{item.orderRef || item.order}</td>
-                          <td style={{ fontWeight: 500 }}>{item.product}</td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                          <td style={{ fontSize: '0.85rem' }}>
-                            {item.parties?.map(p => `${p.party} (${p.moved_q})`).join(", ")}
-                          </td>
+              {printData.length > 0 ? (
+                printData.map((delivery, dIdx) => (
+                  <div key={dIdx} className={css.printGroup}>
+                    <div className={css.printDeliveryHeader}>
+                      <div><strong>Менеджер:</strong> {delivery.manager}</div>
+                      <div><strong>Клієнт:</strong> {delivery.client}</div>
+                      <div><strong>Дата доставки:</strong> {new Date(printDeliveryDate).toLocaleDateString('uk-UA')}</div>
+                    </div>
+                    <table className={css.printTable}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '15%' }}>Заявка</th>
+                          <th style={{ width: '40%' }}>Товар</th>
+                          <th style={{ width: '10%', textAlign: 'center' }}>К-сть</th>
+                          <th>Партії</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+                      </thead>
+                      <tbody>
+                        {delivery.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>{item.orderRef || item.order}</td>
+                            <td style={{ fontWeight: 500 }}>{item.product}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                            <td style={{ fontSize: '0.85rem' }}>
+                              {item.parties?.map(p => `${p.party} (${p.moved_q})`).join(", ")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px' }}>Немає товарів для друку</div>
+              )}
             </div>
           </div>
           <div className={`${css.footer} ${css.noPrint}`}>

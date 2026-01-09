@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getOrdersDetailsById, getDeliveries } from "@/lib/api";
+import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
@@ -10,7 +10,6 @@ import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
-import { getWeightForProduct } from "@/lib/api";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -26,8 +25,6 @@ export default function DetailsWidget({
   showAllContracts,
 }: DetailsWidgetProps) {
   
-  // useMemo не потрібен для queryId, бо ми тепер працюємо з масивом обраних контрактів
-  // Але щоб React Query коректно оновлювався, сформуємо ключ залежно від списку ID
   const contractsIds = useMemo(() => {
      return selectedContracts.map(c => c.contract_supplement).sort().join(",");
   }, [selectedContracts]);
@@ -57,7 +54,7 @@ export default function DetailsWidget({
   useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initDataVal = await getInitData();
+            const initDataVal = getInitData();
             const data = await getDeliveries(initDataVal);
             if (data) setAllDeliveries(data);
         } catch (e) {
@@ -80,11 +77,9 @@ export default function DetailsWidget({
   };
 
   const handleRemainsClick = (item: OrdersDetails) => {
-      // Переходимо тільки якщо є залишки по бухгалтерії
       if (item.buh > 0) {
-          // Формуємо пошуковий запит: Номенклатура + Ознака партії + Рік врожаю
           const searchParts = [item.nomenclature, item.party_sign, item.buying_season]
-            .filter(part => part && part.trim() !== '') // Прибираємо пусті частини
+            .filter(part => part && part.trim() !== '')
             .join(' ');
             
           const searchQuery = encodeURIComponent(searchParts);
@@ -93,7 +88,6 @@ export default function DetailsWidget({
   };
 
   const handleDemandClick = (item: OrdersDetails) => {
-      // Судячи з логів, item.product містить ID товару
       if (item.product) {
           setSelectedProductForModal(item.product);
       }
@@ -103,16 +97,14 @@ export default function DetailsWidget({
       setSelectedProductForModal(null);
   };
 
-  // State to track which item is currently adding to delivery (for loading spinner)
   const [addingToDeliveryId, setAddingToDeliveryId] = useState<string | null>(null);
 
    const handleDeliveryClick = async (item: OrdersDetails) => {
+
     const combinedName = getProductName(item);
     const itemId = getItemId(item);
     
-    // Check if already in delivery
     if (hasItem(itemId)) {
-        // Removing - no need to fetch weight
         setDelivery({
             product: combinedName,
             nomenclature: item.nomenclature,
@@ -126,12 +118,11 @@ export default function DetailsWidget({
             buh: item.buh,
             skl: item.skl,
             qok: item.qok,
-            weight: 0 
+            weight: 0
         });
         return;
     }
 
-    // Adding - fetch weight
     const existingDelivery = getDeliveryForItem(item);
     if (existingDelivery) {
         const confirmAdd = window.confirm(
@@ -142,7 +133,7 @@ export default function DetailsWidget({
 
     setAddingToDeliveryId(itemId);
     
-    // Calculate weight
+
     const weight = await getWeightForProduct({ 
       item: {
         product_id: item.product,
@@ -151,7 +142,7 @@ export default function DetailsWidget({
       initData 
     });
 
-    // Формируем объект для доставки с теми же полями и ID
+
     const initialQty = item.different > 0 ? item.different : item.orders_q;
 
     const deliveryItem = {
@@ -170,6 +161,7 @@ export default function DetailsWidget({
       weight: weight,
     };
     
+    console.log('Final object sent to store:', deliveryItem);
     setDelivery(deliveryItem);
     setAddingToDeliveryId(null);
   };
@@ -179,13 +171,11 @@ export default function DetailsWidget({
     queryFn: async () => {
         if (!selectedClient) return [];
         
-        // Якщо обрано контракти, вантажимо їх деталі паралельно
         if (selectedContracts.length > 0) {
             const promises = selectedContracts.map(contract => 
                 getOrdersDetailsById({ orderId: contract.contract_supplement, initData })
             );
             const results = await Promise.all(promises);
-            // Об'єднуємо всі результати в один плоский масив
             return results.flat();
         }
         
@@ -194,8 +184,6 @@ export default function DetailsWidget({
     enabled: !!selectedClient && !!initData && (selectedContracts.length > 0 || showAllContracts)
   });
 
-
-  // Функція для підрахунку суми moved_q зі списку партій
   const calculateTotalPartiesMoved = (parties: { moved_q: number }[] | undefined) => {
     return parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
   };
@@ -207,7 +195,6 @@ export default function DetailsWidget({
           <tr>
             <th className={styles.th}>Доповнення</th>
             <th className={styles.th}>Товар</th>
-            {/* <th className={styles.th} style={{ width: "60px" }}>План</th> */}
             <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
             <th className={styles.th}>Переміщено (Партії)</th>
             <th className={styles.th}>Залишки (Загальні)</th>
@@ -224,7 +211,6 @@ export default function DetailsWidget({
             )}
             
           {detailsList?.map((item: OrdersDetails) => {
-            // Генерируем ID для проверки в сторе
              const itemId = getItemId(item);
             const isSelected = hasItem(itemId);
             const inDelivery = getDeliveryForItem(item);
@@ -241,10 +227,8 @@ export default function DetailsWidget({
                     <span className={styles.deliveryBadge}>В доставці</span>
                   )}
                 </td>
-                {/* <td className={styles.td}>{item.orders_q}</td> */}
-                <td className={styles.td}>{item.different}</td> {/* Припускаємо, що different = Fact/Moved */}
+                <td className={styles.td}>{item.different}</td>
                 <td className={styles.td}>
-                  {/* Партії */}
                   {item.parties?.length > 0 ? (
                     <div style={{ fontSize: "11px" }}>
                       {item.parties.map((p, i) => (
@@ -279,7 +263,6 @@ export default function DetailsWidget({
                 >
                     {item.orders_q}
                 </td> 
-                {/* Ячейка з галочкою */}
                   <td className={styles.td}>
                     {(() => {
                       const sumMovedQ = calculateTotalPartiesMoved(item.parties);
@@ -300,7 +283,6 @@ export default function DetailsWidget({
                     })()}
                 </td>
                 
-                {/* Ячейка з іконкою доставки */}
                 <td 
                    className={styles.td}
                    style={{ 

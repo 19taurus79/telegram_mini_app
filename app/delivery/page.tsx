@@ -8,7 +8,7 @@ import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
-import { fetchOrdersAndAddresses } from "@/components/MapModule/fetchOrdersWithAddresses";
+import {fetchAllAddresses, fetchOrdersAndAddresses} from "@/components/MapModule/fetchOrdersWithAddresses";
 import { useEffect } from "react";
 
 type SelectedItem = {
@@ -95,7 +95,8 @@ export default function DeliveryData() {
   useEffect(() => {
     const loadClientsDirectory = async () => {
       try {
-        const { addresses } = await fetchOrdersAndAddresses();
+        const addresses  = await fetchAllAddresses();
+        // console.log(addresses)
         setClientsDirectory(addresses);
       } catch (error) {
         console.error("Failed to load clients directory:", error);
@@ -229,6 +230,7 @@ export default function DeliveryData() {
                 setFormClient(client.client);
 
                 // Find client in directory
+                console.log(clientsDirectory)
                 const clientData = clientsDirectory.find(
                   (c) => c.client === client.client
                 );
@@ -458,7 +460,9 @@ export default function DeliveryData() {
                   const defaultAddress = directoryData
                     ? `${directoryData.region} обл., ${
                         directoryData.area || ""
-                      } район, ${directoryData.commune || ""} громада, ${directoryData.city || ""}`.trim()
+                      } район, ${directoryData.commune || ""} громада, ${
+                        directoryData.city || ""
+                      }`.trim()
                     : "";
 
                   const is_custom_address = address.trim() !== defaultAddress;

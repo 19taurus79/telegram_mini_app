@@ -6,6 +6,19 @@ export const useApplicationsStore = create((set) => ({
   selectedClient: null,
   selectedDelivery: null,
   selectedDeliveries: [],
+  
+  // --- НОВЫЕ ПОЛЯ ---
+  multiSelectedItems: [], // Хранилище для выделенных элементов
+  selectionType: null, // 'applications', 'clients', etc.
+  setMultiSelectedItems: (items, type) => set({ 
+    multiSelectedItems: items, 
+    selectionType: type,
+    selectedClient: null, // Сбрасываем одиночное выделение
+    selectedDeliveries: [] 
+  }),
+  clearMultiSelectedItems: () => set({ multiSelectedItems: [], selectionType: null }),
+  // --- КОНЕЦ НОВЫХ ПОЛЕЙ ---
+
   setApplications: (applications) => {
     const applicationsArray = Array.isArray(applications) ? applications : [];
     set({ applications: applicationsArray });
@@ -14,16 +27,26 @@ export const useApplicationsStore = create((set) => ({
     const applicationsArray = Array.isArray(applications) ? applications : [];
     set({ unmappedApplications: applicationsArray });
   },
-  setSelectedClient: (client) => set({ selectedClient: client, selectedDelivery: null, selectedDeliveries: [] }),
+  setSelectedClient: (client) => set({ 
+    selectedClient: client, 
+    selectedDelivery: null, 
+    selectedDeliveries: [],
+    multiSelectedItems: [], // Сбрасываем множественное выделение
+    selectionType: null
+  }),
   setSelectedDelivery: (delivery) => set({ 
     selectedDelivery: delivery, 
     selectedClient: null, 
-    selectedDeliveries: delivery ? [delivery] : [] 
+    selectedDeliveries: delivery ? [delivery] : [],
+    multiSelectedItems: [], // Сбрасываем множественное выделение
+    selectionType: null
   }),
   setSelectedDeliveries: (deliveries) => set({
     selectedDeliveries: Array.isArray(deliveries) ? deliveries : [],
     selectedDelivery: deliveries?.length === 1 ? deliveries[0] : null,
-    selectedClient: null
+    selectedClient: null,
+    multiSelectedItems: [], // Сбрасываем множественное выделение
+    selectionType: null
   }),
   toggleSelectedDelivery: (delivery) => set((state) => {
     const isSelected = state.selectedDeliveries.some(d => d.id === delivery.id);
@@ -34,7 +57,9 @@ export const useApplicationsStore = create((set) => ({
     return {
       selectedDeliveries: newSelection,
       selectedDelivery: newSelection.length === 1 ? newSelection[0] : null,
-      selectedClient: null
+      selectedClient: null,
+      multiSelectedItems: [],
+      selectionType: null
     };
   }),
   clearSelectedDeliveries: () => set({ selectedDeliveries: [], selectedDelivery: null }),

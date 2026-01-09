@@ -16,19 +16,14 @@ export default function DetailsOrdersByProduct({
   const [sortDirection, setSortDirection] = useState<
     "ascending" | "descending" | null
   >(null);
-  const setOrders = useDetailsDataStore((state) => state.setOrders);
   const movedProducts = useDetailsDataStore((state) => state.movedProducts);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["ordersByProduct", selectedProductId],
+    queryKey: ["ordersByProduct", selectedProductId, initData],
     queryFn: () => getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
     enabled: !!selectedProductId && !!initData,
     placeholderData: keepPreviousData,
   });
-
-  useEffect(() => {
-    setOrders(data ?? null);
-  }, [data, setOrders]);
 
   const sortedData = useMemo(() => {
     if (!data) return [];

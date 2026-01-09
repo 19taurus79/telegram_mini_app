@@ -5,70 +5,49 @@ import { getRegions, searchAddresses } from "../../services/addressService";
 import fetchGeocode from "../../geocode";
 import { Autocomplete, TextField, CircularProgress, Box, Typography, Dialog, DialogTitle, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
 import css from "./InputAddress.module.css";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from 'use-debounce';
+
+const DEFAULT_REGION_NAME = "Харківська";
 
 export default function InputAddress({ onAddressSelect }) {
   const { setGeocodeData } = useGeocodeStore();
   const { setAddressData } = useDisplayAddressStore();
   
-  // Region state
-  const [regions, setRegions] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const [loadingRegions, setLoadingRegions] = useState(false);
+  const { data: regions = [], isLoading: loadingRegions } = useQuery({
+    queryKey: ['regions'],
+    queryFn: getRegions,
+    staleTime: Infinity,
+  });
 
-  // Address state
-  const [addressOptions, setAddressOptions] = useState([]);
+  const [selectedRegion, setSelectedRegion] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [inputValue, setInputValue] = useState("");
-  const [loadingAddress, setLoadingAddress] = useState(false);
+  const [debouncedInputValue] = useDebounce(inputValue, 500);
 
-  // Ambiguous results state
+  const { data: addressOptions = [], isLoading: loadingAddress } = useQuery({
+    queryKey: ['addresses', debouncedInputValue, selectedRegion?.level_1_id],
+    queryFn: () => searchAddresses(debouncedInputValue, selectedRegion.level_1_id),
+    enabled: debouncedInputValue.length >= 3 && !!selectedRegion,
+    staleTime: 1000 * 60 * 5, // Кэшируем результаты поиска на 5 минут
+  });
+
   const [ambiguousResults, setAmbiguousResults] = useState([]);
   const [showAmbiguousDialog, setShowAmbiguousDialog] = useState(false);
 
-  // Load regions on mount
   useEffect(() => {
-    async function loadRegions() {
-      setLoadingRegions(true);
-      try {
-        const data = await getRegions();
-        setRegions(data);
-      } catch (e) {
-        console.error("Failed to load regions", e);
-      }
-      setLoadingRegions(false);
-    }
-    loadRegions();
-  }, []);
-
-  // Search addresses
-  useEffect(() => {
-    let active = true;
-
-    if (inputValue.length < 3 || !selectedRegion) {
-      setAddressOptions(selectedAddress ? [selectedAddress] : []);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoadingAddress(true);
-      try {
-        const results = await searchAddresses(inputValue, selectedRegion.level_1_id);
-        if (active) {
-          setAddressOptions(results);
+    // Ждем, пока useQuery закончит загрузку и в regions появятся данные
+    if (regions && regions.length > 0) {
+      // Проверяем, не выбран ли уже регион (включая ручной выбор пользователя)
+      if (!selectedRegion) {
+        const defaultRegion = regions.find(region => region.name === DEFAULT_REGION_NAME);
+        if (defaultRegion) {
+          setSelectedRegion(defaultRegion);
         }
-      } catch (e) {
-        console.error(e);
       }
-      setLoadingAddress(false);
-    }, 500);
+    }
+  }, [regions, selectedRegion]);
 
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [inputValue, selectedRegion, selectedAddress]);
-
-  // Helper to process geocoded data
   const processGeocodedData = (geocodedData, newValue) => {
     return {
       ...geocodedData,
@@ -85,21 +64,16 @@ export default function InputAddress({ onAddressSelect }) {
     };
   };
 
-  // Recursive geocoding function with fallback
   const tryGeocode = async (addresses, newValue) => {
     for (const address of addresses) {
       try {
-        console.log("Trying to geocode:", address);
         const rawGeocodeResult = await fetchGeocode(address);
         
         if (Array.isArray(rawGeocodeResult) && rawGeocodeResult.length > 0) {
-          // Если найдено несколько результатов и это не самый точный поиск (по полному адресу)
-          // или если результаты существенно отличаются (например, разные координаты)
           if (rawGeocodeResult.length > 1) {
-             console.log("Found multiple results:", rawGeocodeResult);
              setAmbiguousResults(rawGeocodeResult.map(res => processGeocodedData(res, newValue)));
              setShowAmbiguousDialog(true);
-             return true; // Stop processing, wait for user selection
+             return true; 
           }
 
           const geocodedData = rawGeocodeResult[0];
@@ -108,9 +82,8 @@ export default function InputAddress({ onAddressSelect }) {
           setGeocodeData(finalData);
           setAddressData(finalData);
           if (onAddressSelect) onAddressSelect(finalData);
-          return true; // Success
+          return true;
         } else if (rawGeocodeResult && !Array.isArray(rawGeocodeResult) && rawGeocodeResult.lat) {
-           // Single object result
            const finalData = processGeocodedData(rawGeocodeResult, newValue);
            setGeocodeData(finalData);
            setAddressData(finalData);
@@ -119,50 +92,27 @@ export default function InputAddress({ onAddressSelect }) {
         }
       } catch (e) {
         console.warn(`Failed to geocode address: ${address}`, e);
-        // Continue to next address variant
       }
     }
-    return false; // All attempts failed
+    return false;
   };
 
-  // Handle selection
   const handleAddressSelect = async (event, newValue) => {
     setSelectedAddress(newValue);
     setAmbiguousResults([]);
     setShowAmbiguousDialog(false);
     
     if (newValue) {
-      // Create address variants from most specific to least specific
       const addressVariants = [];
-      
-      // 1. Full address from object if available
-      if (newValue.full_address) {
-        addressVariants.push(newValue.full_address);
-      }
-
-      // 2. Constructed full address
+      if (newValue.full_address) addressVariants.push(newValue.full_address);
       addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.community || ""}, ${newValue.name}`);
-
-      // 3. Without community (often redundant or missing in geocoder)
-      if (newValue.community) {
-        addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.name}`);
-      }
-
-      // 4. Without district (some cities are districts themselves)
-      if (newValue.district) {
-        addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
-      }
-
-      // 5. Just name and region
+      if (newValue.community) addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.name}`);
+      if (newValue.district) addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
       addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
 
       try {
         const success = await tryGeocode(addressVariants, newValue);
-
-        if (!success) {
-          throw new Error("All geocode attempts failed");
-        }
-
+        if (!success) throw new Error("All geocode attempts failed");
       } catch (error) {
         console.error("Geocoding failed:", error);
         const fallbackData = {
@@ -172,17 +122,12 @@ export default function InputAddress({ onAddressSelect }) {
         };
         setGeocodeData(fallbackData);
         setAddressData(fallbackData);
-        
-        if (onAddressSelect) {
-          onAddressSelect(fallbackData);
-        }
+        if (onAddressSelect) onAddressSelect(fallbackData);
       }
     } else {
       setGeocodeData({});
       setAddressData({});
-      if (onAddressSelect) {
-        onAddressSelect(null);
-      }
+      if (onAddressSelect) onAddressSelect(null);
     }
   };
 
@@ -242,7 +187,6 @@ export default function InputAddress({ onAddressSelect }) {
           onChange={(e, v) => {
             setSelectedRegion(v);
             setSelectedAddress(null);
-            setAddressOptions([]);
             setInputValue("");
           }}
           loading={loadingRegions}
@@ -265,20 +209,13 @@ export default function InputAddress({ onAddressSelect }) {
               }}
             />
           )}
-          slotProps={{
-            popper: {
-              sx: { zIndex: 10100 }
-            }
-          }}
+          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
         />
 
         <Autocomplete
           disabled={!selectedRegion}
           options={addressOptions}
-          getOptionLabel={(option) => {
-             if (typeof option === 'string') return option;
-             return option.full_address || option.name;
-          }}
+          getOptionLabel={(option) => option.full_address || option.name || ""}
           filterOptions={(x) => x}
           autoComplete
           includeInputInList
@@ -311,7 +248,7 @@ export default function InputAddress({ onAddressSelect }) {
           renderOption={(props, option) => {
             const { key, ...optionProps } = props;
             return (
-              <li key={key || option.full_address} {...optionProps}>
+              <li key={option.full_address || option.name} {...optionProps}>
                 <Box>
                   <Typography variant="body1" sx={{ color: "inherit" }}>{option.name}</Typography>
                   <Typography variant="caption" sx={{ color: "inherit", opacity: 0.7 }}>
@@ -321,13 +258,8 @@ export default function InputAddress({ onAddressSelect }) {
               </li>
             );
           }}
-          slotProps={{
-            popper: {
-              sx: { zIndex: 10100 }
-            }
-          }}
+          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
         />
-
       </Box>
 
       <Dialog 
@@ -354,11 +286,7 @@ export default function InputAddress({ onAddressSelect }) {
             <ListItem key={index} disablePadding>
               <ListItemButton 
                 onClick={() => handleAmbiguousSelect(result)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'var(--hover-bg-color)'
-                  }
-                }}
+                sx={{ '&:hover': { backgroundColor: 'var(--hover-bg-color)' } }}
               >
                 <ListItemText 
                   primary={result.display_name} 

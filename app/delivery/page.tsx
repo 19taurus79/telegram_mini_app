@@ -8,7 +8,6 @@ import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
-import {fetchAllAddresses, fetchOrdersAndAddresses} from "@/components/MapModule/fetchOrdersWithAddresses";
 import { useEffect } from "react";
 
 type SelectedItem = {
@@ -90,20 +89,6 @@ export default function DeliveryData() {
     comment: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
-
-  // Fetch client directory on mount
-  useEffect(() => {
-    const loadClientsDirectory = async () => {
-      try {
-        const addresses  = await fetchAllAddresses();
-        // console.log(addresses)
-        setClientsDirectory(addresses);
-      } catch (error) {
-        console.error("Failed to load clients directory:", error);
-      }
-    };
-    loadClientsDirectory();
-  }, []);
 
   const openModal = (item: SelectedItem) => {
     setSelectedItem(item);
@@ -230,7 +215,6 @@ export default function DeliveryData() {
                 setFormClient(client.client);
 
                 // Find client in directory
-                console.log(clientsDirectory)
                 const clientData = clientsDirectory.find(
                   (c) => c.client === client.client
                 );
@@ -451,7 +435,8 @@ export default function DeliveryData() {
                   
                   const total_weight = Math.round((orders.reduce((acc: number, order) => {
                       return acc + order.items.reduce((orderAcc: number, item) => {
-                          return orderAcc + (item.quantity * (item.weight || 0));
+                          const unitWeight = (item.weight && item.orders_q) ? (item.weight / item.orders_q) : 0;
+                          return orderAcc + (item.quantity * unitWeight);
                       }, 0);
                   }, 0) || 0) * 100) / 100;
 

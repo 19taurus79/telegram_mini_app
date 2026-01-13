@@ -1,28 +1,28 @@
 import {
-    AvRemains,
-    Client,
-    Contract,
-    ContractDetails,
-    DeliveryPayload,
-    GroupRemains,
-    Order,
-    OrdersDetails,
-    PartyData,
-    Product,
-    DeliveryUpdateItem,
-    Remains,
-    WeightCalculationItem,
-    // TaskGoogle,
-    TotalOrder,
-    Event,
-    User,
-    TaskStatus,
-    InnerEvent,
-    TaskInner,
-    TaskGoogle,
-    BiRemains,
-    BiOrders,
-    FiltersState, MovedData, DeliveryRequest
+  AvRemains,
+  Client,
+  Contract,
+  ContractDetails,
+  DeliveryPayload,
+  GroupRemains,
+  Order,
+  OrdersDetails,
+  PartyData,
+  Product,
+  DeliveryUpdateItem,
+  Remains,
+  WeightCalculationItem,
+  // TaskGoogle,
+  TotalOrder,
+  Event,
+  User,
+  TaskStatus,
+  InnerEvent,
+  TaskInner,
+  TaskGoogle,
+  BiRemains,
+  BiOrders,
+  FiltersState, MovedData, DeliveryRequest, ClientAddress
 } from "@/types/types";
 import axios from "axios";
 
@@ -636,6 +636,11 @@ export const createTask = async (
 
 export const getRemainsForBi = async () => {
   const { data } = await axios.get<BiRemains>("/api/remains");
+  return data;
+};
+
+export const getAddressByClient = async (client: string)=>{
+  const { data }=await axios.get<ClientAddress[]>(`/get_address_by_client/${client}`);
   return data;
 };
 

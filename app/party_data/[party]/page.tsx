@@ -11,7 +11,7 @@ export default async function PartyData({ params }: Props) {
   const initData = await getInitData();
   //   const decodedParam = decodeURIComponent(party.party);
   //   console.log("decoded", decodedParam);
-  const data = await getPartyData({ party: party.party, initData });
+  const data = await getPartyData({ id: party.party, initData });
   return (
     <>
       {/* <div>

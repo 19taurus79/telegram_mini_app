@@ -19,6 +19,12 @@
 }
 
 .orderCount {
+  margin: 0 0 5px 0;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.totalWeight {
   margin: 0 0 15px 0;
   font-weight: 500;
   color: var(--primary-color);
@@ -305,3 +311,121 @@
   opacity: 0.85;
 }
 
+/* Styles for Multi-Selection Summary */
+.selectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--foreground);
+  opacity: 0.6;
+}
+.closeButton:hover {
+  opacity: 1;
+}
+
+.selectionTotals {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--hover-bg-color);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.selectionTotals div {
+  flex: 1;
+}
+
+.selectionActions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.actionButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.actionButton:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.selectionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.managerGroup {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.managerName {
+  background-color: var(--header-bg-color);
+  padding: 10px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.selectionTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.selectionTable th,
+.selectionTable td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.selectionTable th {
+  background-color: var(--hover-bg-color);
+  font-size: 0.9rem;
+}
+
+.selectionTable tfoot td {
+  font-weight: bold;
+  background-color: var(--header-bg-color);
+}
+
+.selectionTable tr:last-child td {
+  border-bottom: none;
+}
+
+.nestedRow > td {
+  padding: 0 !important;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+}
+
+.nestedTable {
+  width: 100%;
+  background-color: rgba(0,0,0,0.02);
+}
+
+.nestedTable th, .nestedTable td {
+  padding: 6px 12px;
+  font-size: 0.9em;
+}

@@ -17,66 +17,6 @@ export async function fetchOrdersAndAddresses() {
   }
 }
 
-// Вспомогательная функция для парсинга веса
-const parseWeight = (weightStr) => {
-  if (typeof weightStr === "number") return weightStr;
-  if (!weightStr || typeof weightStr !== "string") return 0;
-  const cleaned = weightStr.replace(/[^0-9.,]/g, "").replace(",", ".");
-  return parseFloat(cleaned) || 0;
-};
-
-// Функция для получения веса продуктов (с кешированием)
-async function getProductWeights(productIds, initData) {
-  const weightsCache = {};
-  const url = process.env.NEXT_PUBLIC_URL_API;
-  const headers = { "X-Telegram-Init-Data": initData };
-
-  // Ограничим количество параллельных запросов для стабильности
-  const batchSize = 10;
-  for (let i = 0; i < productIds.length; i += batchSize) {
-    const batch = productIds.slice(i, i + batchSize);
-    await Promise.all(batch.map(async (id) => {
-      try {
-        if (!id || id === 'undefined' || id === 'null') {
-          weightsCache[id] = 0;
-          return;
-        }
-
-        // 1. Получаем детали продукта
-        const prodRes = await axios.get(`${url}/data/product/${id}`, { headers });
-        const lineOfBusiness = prodRes.data?.line_of_business || "";
-        const isSeed = ["Насіння", "Власне виробництво насіння"].includes(lineOfBusiness);
-
-        // 2. Получаем остатки
-        const remainsRes = await axios.get(`${url}/data/remains/${id}`, { headers });
-        const remains = remainsRes.data || [];
-
-        if (remains.length > 0) {
-          const weights = remains.map(r => parseWeight(r.weight)).filter(w => w > 0);
-          if (weights.length > 0) {
-            if (isSeed) {
-              // Для семян - среднее
-              const sum = weights.reduce((a, b) => a + b, 0);
-              weightsCache[id] = sum / weights.length;
-            } else {
-              // Для остального - первый попавшийся валидный вес
-              weightsCache[id] = weights[0];
-            }
-          } else {
-            weightsCache[id] = 0;
-          }
-        } else {
-          weightsCache[id] = 0;
-        }
-      } catch (e) {
-        console.warn(`Error fetching weight for product ${id}:`, e.message);
-        weightsCache[id] = 0;
-      }
-    }));
-  }
-  return weightsCache;
-}
-
 // Объединить заявки с адресами и сгруппировать по клиентам
 export function mergeOrdersWithAddresses(orders, addresses) {
   console.log('Merging orders with addresses...');
@@ -92,7 +32,9 @@ export function mergeOrdersWithAddresses(orders, addresses) {
   orders.forEach(order => {
     const clientName = order.client;
     const address = addressMap.get(clientName);
-    const weight = order.calculatedWeight || 0;
+    
+    // Используем total_weight, который приходит напрямую от бэкенда, и гарантируем, что это число
+    const weight = parseFloat(order.total_weight) || 0;
     
     const targetMap = address ? clientOrdersMap : clientsWithoutAddress;
     
@@ -103,7 +45,7 @@ export function mergeOrdersWithAddresses(orders, addresses) {
         orders: [],
         uniqueContracts: new Set(),
         totalQuantity: 0,
-        totalWeight: 0
+        totalWeight: 0 // Инициализируем общий вес
       });
     }
     
@@ -114,10 +56,12 @@ export function mergeOrdersWithAddresses(orders, addresses) {
       clientData.uniqueContracts.add(order.contract_supplement);
     }
     
+    // Суммируем общий вес напрямую, без перемножения
+    clientData.totalWeight += weight;
+
     if (order.different && !isNaN(order.different)) {
-      const g = parseFloat(order.different);
-      clientData.totalQuantity += g;
-      clientData.totalWeight += (g * weight);
+      const quantity = parseFloat(order.different);
+      clientData.totalQuantity += quantity;
     }
   });
 
@@ -142,34 +86,16 @@ export function mergeOrdersWithAddresses(orders, addresses) {
   return { withAddresses, withoutAddresses };
 }
 
-// Получить данные для тепловой карты
-export async function fetchOrdersHeatmapData(initData) {
+// Получить данные для заявок (старое название, но теперь без тепловой карты)
+export async function fetchOrdersHeatmapData() {
+  // 1. Получаем данные. Бэкенд уже посчитал total_weight для каждой заявки.
   const { orders, addresses } = await fetchOrdersAndAddresses();
 
-  // Рассчитываем веса для всех ордеров
-  const uniqueProductIds = [...new Set(orders.map(o => o.product).filter(Boolean))];
-  console.log(`Calculating weights for ${uniqueProductIds.length} unique products...`);
-  const weightsMap = await getProductWeights(uniqueProductIds, initData);
-
-  const ordersWithWeight = orders.map(o => ({
-    ...o,
-    calculatedWeight: weightsMap[o.product] || 0
-  }));
-
-  const { withAddresses, withoutAddresses } = mergeOrdersWithAddresses(ordersWithWeight, addresses);
+  // 2. Сразу передаем данные на группировку.
+  const { withAddresses, withoutAddresses } = mergeOrdersWithAddresses(orders, addresses);
   
-  // Формируем точки для тепловой карты: [lat, lon, intensity]
-  const heatmapPoints = withAddresses.map(item => [
-    item.address.latitude,
-    item.address.longitude,
-    item.totalWeight // Интенсивность = ОБЩИЙ ВЕС товара
-  ]);
-
-  console.log('Heatmap points generated (by weight):', heatmapPoints.length);
-
   return {
     mergedData: withAddresses,
     unmappedData: withoutAddresses,
-    heatmapPoints
   };
 }

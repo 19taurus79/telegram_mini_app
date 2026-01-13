@@ -3,61 +3,55 @@
 import React, { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
-import { sendDeliveryData } from "@/lib/api";
+import {getAddressByClient, sendDeliveryData} from "@/lib/api";
 import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
-import { fetchOrdersAndAddresses } from "@/components/MapModule/fetchOrdersWithAddresses";
-import { useEffect } from "react";
+import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
+// import {display, width} from "@mui/system";
 
+// Тип для выбранного элемента для редактирования в модальном окне.
 type SelectedItem = {
-  id: string;
-  quantity: number;
-  max: number;
+  id: string; // Уникальный идентификатор товара.
+  quantity: number; // Текущее количество товара.
+  max: number; // Максимально доступное количество товара.
 };
 
+// Тип для партии товара.
 type Party = {
-  party: string;
-  moved_q: number;
-  party_quantity?: number;
+  party: string; // Название или идентификатор партии.
+  moved_q: number; // Количество товара, перемещаемое из этой партии.
+  party_quantity?: number; // Общее количество в партии (опционально).
 };
 
+// Тип для элемента доставки (товара).
 type DeliveryItem = {
-  id: string;
-  client: string;
-  order: string;
-  product: string;
-  nomenclature: string;
-  quantity: number;
-  orders_q?: number;
-  manager: string;
-  weight: number;
-  parties: Party[];
+  id: string; // Уникальный идентификатор.
+  client: string; // Имя клиента.
+  order: string; // Номер заказа.
+  product: string; // Название товара.
+  nomenclature: string; // Номенклатурное название.
+  quantity: number; // Выбранное количество для доставки.
+  orders_q?: number; // Общее заказанное количество.
+  manager: string; // Имя менеджера.
+  weight: number; // Вес единицы товара.
+  parties: Party[]; // Массив партий.
 };
 
+// Тип для сгруппированного по номеру заказа.
 type GroupedOrder = {
-  order: string;
-  items: DeliveryItem[];
+  order: string; // Номер заказа.
+  items: DeliveryItem[]; // Список товаров в этом заказе.
 };
 
-type ClientAddress = {
-  client: string;
-  representative: string;
-  phone1: string;
-  region: string;
-  area: string;
-  commune: string;
-  city: string;
-  latitude: number;
-  longitude: number;
-};
-
+// Тип для сгруппированного по клиенту.
 type GroupedClient = {
-  client: string;
-  orders: GroupedOrder[];
+  client: string; // Имя клиента.
+  orders: GroupedOrder[]; // Список заказов этого клиента.
 };
 
+// Тип для аккумулятора в `reduce` для группировки данных.
 type ReducerAccumulator = {
   [clientName: string]: {
     client: string;
@@ -67,20 +61,37 @@ type ReducerAccumulator = {
   };
 };
 
+// Стили для оверлея загрузчика.
 const override: CSSProperties = {
   display: "block",
   margin: "0 auto",
   borderColor: "red",
 };
+
+type AddressData = {
+  display_name:string,
+  lat:string,
+  lon:string,
+};
+
+/**
+ * Компонент страницы "DeliveryData" для отображения и управления данными о доставке.
+ * Позволяет просматривать сгруппированные по клиентам и заказам товары,
+ * изменять их количество, а также отправлять данные для оформления доставки.
+ */
 export default function DeliveryData() {
+  // Получение состояния и действий из хранилища Zustand.
   const { delivery, updateQuantity, removeClientDelivery } = useDelivery();
 
+  // Состояние для модального окна редактирования количества.
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [clientsDirectory, setClientsDirectory] = useState<ClientAddress[]>([]);
 
+  // Состояние для индикатора загрузки.
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Состояние для формы отправки данных о доставке.
   const [formClient, setFormClient] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     address: "",
@@ -88,28 +99,37 @@ export default function DeliveryData() {
     phone: "",
     date: "",
     comment: "",
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
   });
   const [formError, setFormError] = useState<string | null>(null);
+  const [isAddressChange, setIsAddressChange] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
 
-  // Fetch client directory on mount
-  useEffect(() => {
-    const loadClientsDirectory = async () => {
-      try {
-        const { addresses } = await fetchOrdersAndAddresses();
-        setClientsDirectory(addresses);
-      } catch (error) {
-        console.error("Failed to load clients directory:", error);
-      }
-    };
-    loadClientsDirectory();
-  }, []);
 
+  /**
+   * Открывает модальное окно для изменения количества товара.
+   * @param {SelectedItem} item - Выбранный товар.
+   */
   const openModal = (item: SelectedItem) => {
     setSelectedItem(item);
     setInputValue(String(item.quantity));
     setError(null);
   };
+  const fetchAddress = async (client: string)=>{
+    try {
+      return await getAddressByClient(client)
+    } catch (error) {
+      console.log(error);
+      return []
+    }
 
+
+  };
+  /**
+   * Сохраняет новое количество товара после редактирования в модальном окне.
+   */
   const handleSave = () => {
     if (!selectedItem) return;
     const newQuantity = Number(inputValue);
@@ -134,6 +154,7 @@ export default function DeliveryData() {
     setError(null);
   };
 
+  // Группировка данных о доставке по клиентам и заказам.
   const grouped: GroupedClient[] = Object.values(
     (delivery as DeliveryItem[]).reduce((acc: ReducerAccumulator, item) => {
       const clientName = item.client || "Невідомий клієнт";
@@ -154,11 +175,47 @@ export default function DeliveryData() {
     orders: Object.values(clientObj.orders),
   }));
 
+  // Отображение загрузчика, если данные отправляются.
   if (isLoading) {
     return <FadeLoader color="#0ef18e" cssOverride={override} />;
   }
+
+
+  const addressChange = ()=>{
+    console.log('change');
+    setIsAddressChange(!isAddressChange);
+    setIsGeocoding(false);
+
+
+  };
+
+  const handleAddressData = (data: AddressData | null)=>{
+    if (data && data.display_name){
+      console.log("AddressData",data.display_name, data.lat, data.lon);
+      setCustomAddressData(data);
+      setIsGeocoding(true);
+    } else {
+      setCustomAddressData(null);
+      setIsGeocoding(false);
+    }
+  };
+
+  const handleCustomAddressApply = ()=>{
+    if (customAddressData) {
+      console.log('Address before', customAddressData)
+      setFormData({
+        ...formData,
+        address: customAddressData.display_name,
+        latitude: parseFloat(customAddressData.lat),
+        longitude: parseFloat(customAddressData.lon)
+      });
+      setIsAddressChange(false); // Скрываем блок выбора адреса после применения
+    }
+  };
+
   return (
     <div className={styles.wrapper}>
+      {/* Отображение сгруппированных данных */}
       {grouped.map((client) => (
         <div key={client.client} className={styles.clientBlock}>
           <div className={styles.clientHeader}>
@@ -181,9 +238,7 @@ export default function DeliveryData() {
                 {order.items.map((item) => (
                   <div className={styles.row} key={item.id}>
                     <div className={styles.cell}>
-                      {/* Product Name */}
                       {item.product}
-                      {/* Party details rendered underneath the product name */}
                       <div style={{ paddingTop: "5px" }}>
                         {item.parties &&
                           item.parties.length > 0 &&
@@ -225,39 +280,29 @@ export default function DeliveryData() {
           <div className={styles.deliveryActions}>
             <button
               className={styles.sendButton}
-              onClick={() => {
+              onClick={ async () => {
+                console.log(client.client);
                 setFormClient(client.client);
-
-                // Find client in directory
-                const clientData = clientsDirectory.find(
-                  (c) => c.client === client.client
-                );
-
-                if (clientData) {
-                  // Auto-fill form with directory data
-                  const addressText = `${clientData.region} обл., ${
-                    clientData.area || ""
-                  } район, ${clientData.commune || ""} громада, ${
-                    clientData.city || ""
-                  }`;
+                const address=  await fetchAddress(client.client);
+                console.log(address);
+                if(address && address.length > 0){
                   setFormData({
-                    address: addressText.trim(),
-                    contact: clientData.representative || "",
-                    phone: clientData.phone1 || "",
-                    date: "",
-                    comment: "",
-                  });
-                } else {
-                  // No data in directory - leave empty
-                  setFormData({
-                    address: "",
-                    contact: "",
-                    phone: "",
-                    date: "",
-                    comment: "",
-                  });
-                }
-
+                    ...formData,
+                    address: `${address[0].region} обл., ${address[0].area} р-н,  ${address[0].commune} громада, ${address[0].city}`,
+                    contact: address[0].representative,
+                    phone: address[0].phone1,
+                    latitude: address[0].latitude,
+                    longitude: address[0].longitude,
+                  } );
+                } else
+                setFormData({
+                  ...formData,
+                  address: "",
+                  contact: "",
+                  phone: "",
+                  date: "",
+                  comment: "",
+                });
                 setFormError(null);
               }}
             >
@@ -266,7 +311,7 @@ export default function DeliveryData() {
             <button
               className={styles.deleteButton}
               onClick={() => {
-                removeClientDelivery(client.client); // ❌ Удаление данных
+                removeClientDelivery(client.client);
                 setFormClient(null);
                 setFormData({
                   address: "",
@@ -274,6 +319,8 @@ export default function DeliveryData() {
                   phone: "",
                   date: "",
                   comment: "",
+                  latitude: undefined,
+                  longitude: undefined,
                 });
                 setFormError(null);
               }}
@@ -285,7 +332,7 @@ export default function DeliveryData() {
       ))}
       <BackBtn />
 
-      {/* Модалка изменения количества */}
+      {/* Модальное окно для изменения количества */}
       {selectedItem && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -315,8 +362,7 @@ export default function DeliveryData() {
         </div>
       )}
 
-      {/* Модалка отправки данных */}
-
+      {/* Модальное окно для отправки данных о доставке */}
       {formClient && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -324,16 +370,29 @@ export default function DeliveryData() {
               Данні для доставки: {formClient}
             </h3>
 
+            {/* Поля формы для данных о доставке */}
             <label>
               Адреса доставки:
+              <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
               <textarea
                 className={styles.modalInput}
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
+                  readOnly={isAddressChange}
               />
+              <button style={{width: '100px', marginTop:'8px', color: 'var(--foreground)', backgroundColor:"red", border:"none", borderRadius:'5px'}}
+                      onClick={addressChange}>{isAddressChange ? 'Назад' : 'Інша адреса'}</button>
+              </div>
             </label>
+            {isAddressChange && (
+                <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
+                <InputAddress onAddressSelect={handleAddressData}/>
+                  {isGeocoding && (<button onClick={handleCustomAddressApply} style={{width: '100px', marginTop:'24px', marginBottom:'24px', color: 'var(--foreground)', backgroundColor:"green", border:"none", borderRadius:'5px'}}>Ok</button>)}
+
+                </div>
+            )}
 
             <label>
               Контактна особа:
@@ -379,7 +438,6 @@ export default function DeliveryData() {
                 }
               />
             </label>
-
             {formError && <div className={styles.error}>{formError}</div>}
 
             <div className={styles.modalActions}>
@@ -390,15 +448,18 @@ export default function DeliveryData() {
                   setIsLoading(true);
                   setFormError(null);
                   const { address, contact, phone, date, comment } = formData;
+
+                  // Валидация полей формы.
                   if (!address || !contact || !phone || !date) {
                     setFormError("Будь ласка, заповніть всі поля");
                     setIsLoading(false);
                     return;
                   }
-                  // Проверка даты
+
+                  // Проверка, что дата доставки не в прошлом.
                   const selectedDate = new Date(date);
                   const today = new Date();
-                  today.setHours(0, 0, 0, 0); // чтобы сравнивать только по дню
+                  today.setHours(0, 0, 0, 0);
 
                   if (selectedDate < today) {
                     setFormError("Дата доставки не може бути в минулому");
@@ -406,6 +467,48 @@ export default function DeliveryData() {
                     return;
                   }
 
+                  let latitude = formData.latitude;
+                  let longitude = formData.longitude;
+
+                  // Геокодирование адреса, если координаты не были установлены вручную
+                  if (latitude === undefined || longitude === undefined) {
+                    try {
+                      const geocodeResponse = await fetch(
+                        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+                          address
+                        )}&format=json&limit=1`
+                      );
+                      if (geocodeResponse.ok) {
+                        const geocodeData = await geocodeResponse.json();
+                        if (geocodeData && geocodeData.length > 0) {
+                          latitude = parseFloat(geocodeData[0].lat);
+                          longitude = parseFloat(geocodeData[0].lon);
+                        } else {
+                          setFormError(
+                            "Не вдалося визначити координати для вказаної адреси. Перевірте правильність вводу."
+                          );
+                          setIsLoading(false);
+                          return;
+                        }
+                      } else {
+                        setFormError(
+                          "Помилка сервісу геокодування. Спробуйте пізніше."
+                        );
+                        setIsLoading(false);
+                        return;
+                      }
+                    } catch (e) {
+                      console.error("Geocoding request failed:", e);
+                      setFormError(
+                        "Помилка при визначенні координат. Перевірте з'єднання з інтернетом."
+                      );
+                      setIsLoading(false);
+                      return;
+                    }
+                  }
+
+
+                  // Подготовка данных для отправки на сервер.
                   const clientData = grouped.find(
                     (c) => c.client === formClient
                   );
@@ -426,13 +529,14 @@ export default function DeliveryData() {
 
                                   if (activeParties.length === 0 && item.quantity > 0) {
                                       return [{
-                                          party: "", // Віртуальна партія
+                                          party: "", // Виртуальная партия
                                           moved_q: item.quantity
                                       }];
                                   }
                                   return activeParties;
                               })(),
                               weight: item.weight,
+                              orders_q: item.orders_q,
                           }));
                       
                       return {
@@ -449,37 +553,29 @@ export default function DeliveryData() {
                   
                   const total_weight = Math.round((orders.reduce((acc: number, order) => {
                       return acc + order.items.reduce((orderAcc: number, item) => {
-                          return orderAcc + (item.quantity * (item.weight || 0));
+                          const unitWeight = (item.weight && item.orders_q) ? (item.weight) : 0;
+                          return orderAcc + (item.quantity * unitWeight);
                       }, 0);
                   }, 0) || 0) * 100) / 100;
 
-                  const directoryData = clientsDirectory.find((c) => c.client === formClient);
-                  
-                  const defaultAddress = directoryData
-                    ? `${directoryData.region} обл., ${
-                        directoryData.area || ""
-                      } район, ${directoryData.commune || ""} громада, ${directoryData.city || ""}`.trim()
-                    : "";
-
-                  const is_custom_address = address.trim() !== defaultAddress;
-
                   const payload: DeliveryPayload = {
-                    client: formClient,
+                    client: formClient as string,
                     manager,
                     address,
+                    latitude,
+                    longitude,
                     contact,
                     phone,
                     date,
                     comment,
                     total_weight,
-                    latitude: directoryData?.latitude,
-                    longitude: directoryData?.longitude,
-                    is_custom_address,
                     orders,
                     status: "Створено",
+                    is_custom_address: true,
                   };
                   const initData = getInitData();
 
+                  // Отправка данных на сервер.
                   try {
                     const result = await sendDeliveryData(payload, initData);
 
@@ -492,6 +588,8 @@ export default function DeliveryData() {
                         phone: "",
                         date: "",
                         comment: "",
+                        latitude: undefined,
+                        longitude: undefined,
                       });
                     } else {
                       setFormError(

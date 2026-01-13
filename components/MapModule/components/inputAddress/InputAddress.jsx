@@ -1,74 +1,82 @@
+// Импорт основных хуков React для управления состоянием и жизненным циклом компонента.
 import { useState, useEffect } from "react";
+// Импорт хранилищ Zustand для глобального управления состоянием геоданных и отображаемого адреса.
 import { useGeocodeStore } from "../../store/geocodData";
 import { useDisplayAddressStore } from "../../store/displayAddress";
+// Импорт сервисных функций для взаимодействия с API адресов.
 import { getRegions, searchAddresses } from "../../services/addressService";
+// Импорт функции для выполнения запросов геокодирования.
 import fetchGeocode from "../../geocode";
+// Импорт компонентов из библиотеки Material-UI для построения интерфейса.
 import { Autocomplete, TextField, CircularProgress, Box, Typography, Dialog, DialogTitle, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
+// Импорт стилей для компонента.
 import css from "./InputAddress.module.css";
+// Импорт useQuery из TanStack Query для управления серверным состоянием (загрузка, кэширование).
+import { useQuery } from "@tanstack/react-query";
+// Импорт хука для "отложенного" выполнения (дебаунса) ввода пользователя.
+import { useDebounce } from 'use-debounce';
 
+// Название региона, который будет выбран по умолчанию при загрузке.
+const DEFAULT_REGION_NAME = "Харківська";
+
+/**
+ * Компонент InputAddress предоставляет пользователю интерфейс для выбора адреса
+ * с автодополнением, геокодированием и обработкой неоднозначных результатов.
+ * @param {object} props - Пропсы компонента.
+ * @param {function} props.onAddressSelect - Callback-функция, которая вызывается при выборе
+ * и успешном геокодировании адреса. Передает данные адреса родительскому компоненту.
+ */
 export default function InputAddress({ onAddressSelect }) {
+  // Подключение к хранилищам Zustand для обновления глобального состояния.
   const { setGeocodeData } = useGeocodeStore();
   const { setAddressData } = useDisplayAddressStore();
   
-  // Region state
-  const [regions, setRegions] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const [loadingRegions, setLoadingRegions] = useState(false);
+  // Загрузка списка регионов с помощью TanStack Query.
+  // Данные кэшируются навсегда (staleTime: Infinity), так как они редко меняются.
+  const { data: regions = [], isLoading: loadingRegions } = useQuery({
+    queryKey: ['regions'],
+    queryFn: getRegions,
+    staleTime: Infinity,
+  });
 
-  // Address state
-  const [addressOptions, setAddressOptions] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [inputValue, setInputValue] = useState("");
-  const [loadingAddress, setLoadingAddress] = useState(false);
+  // Локальное состояние компонента.
+  const [selectedRegion, setSelectedRegion] = useState(null); // Выбранный регион.
+  const [selectedAddress, setSelectedAddress] = useState(null); // Выбранный адрес из автодополнения.
+  const [inputValue, setInputValue] = useState(""); // Текущее значение в поле ввода адреса.
+  
+  // Создание "отложенного" значения inputValue. Запрос на поиск будет отправлен только через 500мс после того, как пользователь прекратит ввод.
+  const [debouncedInputValue] = useDebounce(inputValue, 500);
 
-  // Ambiguous results state
-  const [ambiguousResults, setAmbiguousResults] = useState([]);
-  const [showAmbiguousDialog, setShowAmbiguousDialog] = useState(false);
+  // Запрос на поиск адресов на основе отложенного ввода и выбранного региона.
+  const { data: addressOptions = [], isLoading: loadingAddress } = useQuery({
+    queryKey: ['addresses', debouncedInputValue, selectedRegion?.level_1_id],
+    queryFn: () => searchAddresses(debouncedInputValue, selectedRegion.level_1_id),
+    // Запрос выполняется только если введено 3 или более символов и выбран регион.
+    enabled: debouncedInputValue.length >= 3 && !!selectedRegion,
+    // Результаты поиска кэшируются на 5 минут.
+    staleTime: 1000 * 60 * 5,
+  });
 
-  // Load regions on mount
+  // Состояние для обработки неоднозначных результатов геокодирования.
+  const [ambiguousResults, setAmbiguousResults] = useState([]); // Список вариантов, если найдено несколько.
+  const [showAmbiguousDialog, setShowAmbiguousDialog] = useState(false); // Флаг для отображения диалога выбора.
+
+  // useEffect для установки региона по умолчанию после их загрузки.
   useEffect(() => {
-    async function loadRegions() {
-      setLoadingRegions(true);
-      try {
-        const data = await getRegions();
-        setRegions(data);
-      } catch (e) {
-        console.error("Failed to load regions", e);
+    if (regions && regions.length > 0 && !selectedRegion) {
+      const defaultRegion = regions.find(region => region.name === DEFAULT_REGION_NAME);
+      if (defaultRegion) {
+        setSelectedRegion(defaultRegion);
       }
-      setLoadingRegions(false);
     }
-    loadRegions();
-  }, []);
+  }, [regions, selectedRegion]);
 
-  // Search addresses
-  useEffect(() => {
-    let active = true;
-
-    if (inputValue.length < 3 || !selectedRegion) {
-      setAddressOptions(selectedAddress ? [selectedAddress] : []);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoadingAddress(true);
-      try {
-        const results = await searchAddresses(inputValue, selectedRegion.level_1_id);
-        if (active) {
-          setAddressOptions(results);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-      setLoadingAddress(false);
-    }, 500);
-
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [inputValue, selectedRegion, selectedAddress]);
-
-  // Helper to process geocoded data
+  /**
+   * Обогащает данные, полученные от геокодера, дополнительной информацией из выбранного элемента.
+   * @param {object} geocodedData - Данные от сервиса геокодирования.
+   * @param {object} newValue - Объект адреса, выбранный пользователем в автодополнении.
+   * @returns {object} - Финальный объект с полными данными об адресе.
+   */
   const processGeocodedData = (geocodedData, newValue) => {
     return {
       ...geocodedData,
@@ -85,32 +93,35 @@ export default function InputAddress({ onAddressSelect }) {
     };
   };
 
-  // Recursive geocoding function with fallback
+  /**
+   * Пытается геокодировать адрес, перебирая несколько вариантов написания.
+   * @param {string[]} addresses - Массив вариантов адреса для геокодирования.
+   * @param {object} newValue - Выбранный пользователем объект адреса.
+   * @returns {Promise<boolean>} - true, если геокодирование прошло успешно, иначе false.
+   */
   const tryGeocode = async (addresses, newValue) => {
     for (const address of addresses) {
       try {
-        console.log("Trying to geocode:", address);
         const rawGeocodeResult = await fetchGeocode(address);
         
         if (Array.isArray(rawGeocodeResult) && rawGeocodeResult.length > 0) {
-          // Если найдено несколько результатов и это не самый точный поиск (по полному адресу)
-          // или если результаты существенно отличаются (например, разные координаты)
+          // Если геокодер вернул несколько результатов, показываем диалог для выбора.
           if (rawGeocodeResult.length > 1) {
-             console.log("Found multiple results:", rawGeocodeResult);
              setAmbiguousResults(rawGeocodeResult.map(res => processGeocodedData(res, newValue)));
              setShowAmbiguousDialog(true);
-             return true; // Stop processing, wait for user selection
+             return true; // Считаем успешным, так как предоставили выбор.
           }
 
+          // Если результат один, обрабатываем и сохраняем его.
           const geocodedData = rawGeocodeResult[0];
           const finalData = processGeocodedData(geocodedData, newValue);
           
           setGeocodeData(finalData);
           setAddressData(finalData);
           if (onAddressSelect) onAddressSelect(finalData);
-          return true; // Success
+          return true;
         } else if (rawGeocodeResult && !Array.isArray(rawGeocodeResult) && rawGeocodeResult.lat) {
-           // Single object result
+           // Обработка случая, когда результат не массив, а одиночный объект.
            const finalData = processGeocodedData(rawGeocodeResult, newValue);
            setGeocodeData(finalData);
            setAddressData(finalData);
@@ -118,53 +129,35 @@ export default function InputAddress({ onAddressSelect }) {
            return true;
         }
       } catch (e) {
-        console.warn(`Failed to geocode address: ${address}`, e);
-        // Continue to next address variant
+        console.warn(`Не удалось геокодировать адрес: ${address}`, e);
       }
     }
-    return false; // All attempts failed
+    return false; // Все попытки провалились.
   };
 
-  // Handle selection
+  /**
+   * Обработчик выбора адреса из списка автодополнения.
+   */
   const handleAddressSelect = async (event, newValue) => {
     setSelectedAddress(newValue);
     setAmbiguousResults([]);
     setShowAmbiguousDialog(false);
     
     if (newValue) {
-      // Create address variants from most specific to least specific
+      // Формируем несколько вариантов написания адреса для повышения шансов на успешное геокодирование.
       const addressVariants = [];
-      
-      // 1. Full address from object if available
-      if (newValue.full_address) {
-        addressVariants.push(newValue.full_address);
-      }
-
-      // 2. Constructed full address
+      if (newValue.full_address) addressVariants.push(newValue.full_address);
       addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.community || ""}, ${newValue.name}`);
-
-      // 3. Without community (often redundant or missing in geocoder)
-      if (newValue.community) {
-        addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.name}`);
-      }
-
-      // 4. Without district (some cities are districts themselves)
-      if (newValue.district) {
-        addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
-      }
-
-      // 5. Just name and region
+      if (newValue.community) addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.district || ""}, ${newValue.name}`);
+      if (newValue.district) addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
       addressVariants.push(`Україна, ${newValue.region || ""}, ${newValue.name}`);
 
       try {
         const success = await tryGeocode(addressVariants, newValue);
-
-        if (!success) {
-          throw new Error("All geocode attempts failed");
-        }
-
+        if (!success) throw new Error("Все попытки геокодирования провалились");
       } catch (error) {
-        console.error("Geocoding failed:", error);
+        // В случае полной неудачи создаем "заглушку" с нулевыми координатами.
+        console.error("Ошибка геокодирования:", error);
         const fallbackData = {
             display_name: newValue.full_address || newValue.name,
             lat: "0",
@@ -172,20 +165,20 @@ export default function InputAddress({ onAddressSelect }) {
         };
         setGeocodeData(fallbackData);
         setAddressData(fallbackData);
-        
-        if (onAddressSelect) {
-          onAddressSelect(fallbackData);
-        }
+        if (onAddressSelect) onAddressSelect(fallbackData);
       }
     } else {
+      // Если поле очищено, сбрасываем данные в хранилищах.
       setGeocodeData({});
       setAddressData({});
-      if (onAddressSelect) {
-        onAddressSelect(null);
-      }
+      if (onAddressSelect) onAddressSelect(null);
     }
   };
 
+  /**
+   * Обработчик выбора одного из неоднозначных результатов в диалоговом окне.
+   * @param {object} result - Выбранный пользователем результат.
+   */
   const handleAmbiguousSelect = (result) => {
     setGeocodeData(result);
     setAddressData(result);
@@ -193,6 +186,8 @@ export default function InputAddress({ onAddressSelect }) {
     setShowAmbiguousDialog(false);
   };
 
+  // Объект со стилями для кастомизации компонентов Autocomplete от MUI.
+  // Использует CSS переменные для поддержки тем.
   const autocompleteSx = {
     "& .MuiOutlinedInput-root": {
       color: "var(--foreground)",
@@ -235,14 +230,14 @@ export default function InputAddress({ onAddressSelect }) {
   return (
     <div className={css.container}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+        {/* Компонент для выбора региона */}
         <Autocomplete
           options={regions}
           getOptionLabel={(option) => option.name}
           value={selectedRegion}
           onChange={(e, v) => {
             setSelectedRegion(v);
-            setSelectedAddress(null);
-            setAddressOptions([]);
+            setSelectedAddress(null); // Сбрасываем адрес при смене региона
             setInputValue("");
           }}
           loading={loadingRegions}
@@ -265,21 +260,15 @@ export default function InputAddress({ onAddressSelect }) {
               }}
             />
           )}
-          slotProps={{
-            popper: {
-              sx: { zIndex: 10100 }
-            }
-          }}
+          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
         />
 
+        {/* Компонент для поиска и выбора населенного пункта */}
         <Autocomplete
-          disabled={!selectedRegion}
+          disabled={!selectedRegion} // Неактивен, пока не выбран регион
           options={addressOptions}
-          getOptionLabel={(option) => {
-             if (typeof option === 'string') return option;
-             return option.full_address || option.name;
-          }}
-          filterOptions={(x) => x}
+          getOptionLabel={(option) => option.full_address || option.name || ""}
+          filterOptions={(x) => x} // Отключаем встроенную фильтрацию, так как она происходит на сервере
           autoComplete
           includeInputInList
           filterSelectedOptions
@@ -308,10 +297,11 @@ export default function InputAddress({ onAddressSelect }) {
               }}
             />
           )}
+          // Кастомное отображение элемента в списке, чтобы показать название и полный адрес
           renderOption={(props, option) => {
             const { key, ...optionProps } = props;
             return (
-              <li key={key || option.full_address} {...optionProps}>
+              <li key={option.full_address || option.name} {...optionProps}>
                 <Box>
                   <Typography variant="body1" sx={{ color: "inherit" }}>{option.name}</Typography>
                   <Typography variant="caption" sx={{ color: "inherit", opacity: 0.7 }}>
@@ -321,15 +311,11 @@ export default function InputAddress({ onAddressSelect }) {
               </li>
             );
           }}
-          slotProps={{
-            popper: {
-              sx: { zIndex: 10100 }
-            }
-          }}
+          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
         />
-
       </Box>
 
+      {/* Диалоговое окно для выбора из нескольких найденных вариантов адреса */}
       <Dialog 
         open={showAmbiguousDialog} 
         onClose={() => setShowAmbiguousDialog(false)}
@@ -354,11 +340,7 @@ export default function InputAddress({ onAddressSelect }) {
             <ListItem key={index} disablePadding>
               <ListItemButton 
                 onClick={() => handleAmbiguousSelect(result)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'var(--hover-bg-color)'
-                  }
-                }}
+                sx={{ '&:hover': { backgroundColor: 'var(--hover-bg-color)' } }}
               >
                 <ListItemText 
                   primary={result.display_name} 

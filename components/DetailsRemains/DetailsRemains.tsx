@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import css from "./DetailsRemains.module.css";
-import { getRemainsById } from "@/lib/api";
+import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
@@ -17,43 +17,45 @@ export default function DetailsRemains({
 }) {
   const initData = useInitData((state) => state.initData);
   const setRemains = useDetailsDataStore((state) => state.setRemains);
-  const orders = useDetailsDataStore((state) => state.orders);
 
-  const { data, isError, isFetching } = useQuery({
-    queryKey: ["remainsById", selectedProductId],
+  const { data: remainsData, isError: isRemainsError, isFetching: isRemainsFetching } = useQuery({
+    queryKey: ["remainsById", selectedProductId, initData],
     queryFn: () => getRemainsById({ productId: selectedProductId!, initData: initData! }),
-    enabled: !!selectedProductId,
+    enabled: !!selectedProductId && !!initData,
     placeholderData: keepPreviousData,
   });
 
-  // ВСІ ХУКИ ТА ОБЧИСЛЕННЯ ПЕРЕД УМОВНИМИ RETURN
-  const totalOrdered = useMemo(() => {
-    if (!orders) return 0;
-    return orders.reduce((sum, order) => sum + order.different, 0);
-  }, [orders]);
+  const { data: ordersSumData, isFetching: isOrdersSumFetching } = useQuery({
+    queryKey: ["ordersSumByProduct", selectedProductId, initData],
+    queryFn: () => getTotalSumOrderByProduct({ product: selectedProductId!, initData: initData! }),
+    enabled: !!selectedProductId && !!initData,
+    placeholderData: keepPreviousData,
+  });
 
-  const totalBuh = data?.reduce((sum, item) => sum + item.buh, 0) || 0;
-  const totalSkl = data?.reduce((sum, item) => sum + item.skl, 0) || 0;
-  const totalStorage = data?.reduce((sum, item) => sum + item.storage, 0) || 0;
+  const totalOrdered = useMemo(() => ordersSumData?.[0]?.total_orders || 0, [ordersSumData]);
+
+  const totalBuh = remainsData?.reduce((sum, item) => sum + item.buh, 0) || 0;
+  const totalSkl = remainsData?.reduce((sum, item) => sum + item.skl, 0) || 0;
+  const totalStorage = remainsData?.reduce((sum, item) => sum + item.storage, 0) || 0;
   const availableStock = totalBuh - totalOrdered;
 
   // Групуємо залишки по складах
   const groupedRemains = useMemo(() => {
-    if (!data) return {};
-    return data.reduce((groups, item) => {
+    if (!remainsData) return {};
+    return remainsData.reduce((groups, item) => {
       const warehouse = item.warehouse || "Інше";
       if (!groups[warehouse]) {
         groups[warehouse] = [];
       }
       groups[warehouse].push(item);
       return groups;
-    }, {} as Record<string, typeof data>);
-  }, [data]);
+    }, {} as Record<string, typeof remainsData>);
+  }, [remainsData]);
 
   // Записуємо дані в стор при їх оновленні
   useEffect(() => {
-    setRemains(data ?? null);
-  }, [data, setRemains]);
+    setRemains(remainsData ?? null);
+  }, [remainsData, setRemains]);
 
   // УМОВНІ RETURN ПІСЛЯ ВСІХ ХУКІВ
   if (!selectedProductId) {
@@ -64,18 +66,18 @@ export default function DetailsRemains({
     );
   }
 
-  if (isFetching) {
+  if (isRemainsFetching || isOrdersSumFetching) {
     return <Loader />;
   }
 
-  if (isError) {
+  if (isRemainsError) {
     return <div className={css.container}>Для вибраного товару не знайдено даних по залишках.</div>;
   }
 
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <h3>Деталі по товару: {data && data.length>0 ? `${data[0].nomenclature} ${data[0].party_sign} ${data[0].buying_season}`:` `}</h3>
+        <h3>Деталі по товару: {remainsData && remainsData.length>0 ? `${remainsData[0].nomenclature} ${remainsData[0].party_sign} ${remainsData[0].buying_season}`:` `}</h3>
         <br/>
         <h4>
           Всього по Бух: {totalBuh} | Складу: {totalSkl} | {totalStorage>0 && `На збереганні: ${totalStorage} |`} Під заявками: {totalOrdered} | Вільний залишок: {Math.max(0, availableStock)}
@@ -126,7 +128,7 @@ export default function DetailsRemains({
         </div>
       </div>
       
-      {data && data.length > 0 ? (
+      {remainsData && remainsData.length > 0 ? (
         <>
           {/* Групування по складах */}
           <div className={css.warehouseGroups}>

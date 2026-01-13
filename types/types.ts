@@ -389,7 +389,20 @@ export type GeocodedAddress = {
   };
   [key: string]: any;
 };
-
+export type ClientAddress={
+  "id": number,
+  "manager": string,
+  "client": string,
+  "region": string,
+  "area": string,
+  "commune": string,
+  "city": string,
+  "latitude": number,
+  "longitude": number,
+  "representative":string,
+  "phone1": string,
+  "phone2": string
+}
 export type DeliveryItemParty = {
   party: string;
   party_quantity: number;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { getProductOnWarehouse, getAllProductByGuide } from "@/lib/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -24,6 +24,7 @@ function RemainsContent() {
   const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all'>('warehouse');
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const initData = useInitData((state: InitData) => state.initData);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -104,6 +105,19 @@ function RemainsContent() {
   ) => {
     // На мобілці також блокуємо перехід і встановлюємо вибраний товар
     event.preventDefault();
+
+    // Попередньо завантажуємо дані для деталей, щоб уникнути невірних проміжних станів
+    if (initData && productId) {
+      queryClient.prefetchQuery({
+        queryKey: ["remainsById", productId, initData],
+        queryFn: () => getRemainsById({ productId, initData }),
+      });
+      queryClient.prefetchQuery({
+        queryKey: ["ordersSumByProduct", productId, initData],
+        queryFn: () => getTotalSumOrderByProduct({ product: productId, initData }),
+      });
+    }
+
     setSelectedProductId(productId);
     
     // На мобілці прокручуємо до початку для перегляду деталей

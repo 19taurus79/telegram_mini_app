@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
 import toast from "react-hot-toast";
+
 type OrderDetailItem = {
   orders_q: number;
   buh: number;
@@ -26,6 +27,7 @@ type OrderDetailItem = {
   id: string;
   product_id: string;
   nomenclature: string;
+  total_weight?: number; // Предполагаем, что это поле будет приходить от бэкенда
   parties: {
     party: string;
     moved_q: number;
@@ -35,6 +37,7 @@ type OrderDetailItem = {
 type Detail = {
   details: OrderDetailItem[];
 };
+
 function TableOrderDetail({ details }: Detail) {
   const { delivery, setDelivery } = useDelivery();
   const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null); // State for loading
@@ -66,14 +69,11 @@ function TableOrderDetail({ details }: Detail) {
 
   const isSelected = (id: string) => delivery.some((el) => el.id === id);
 
-  console.log("details", details);
-
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
     try {
       const initData = getInitData();
       const remainsId = await getIdRemainsByParty({ party, initData });
-      console.log("remainsId", remainsId);
       
       if (remainsId && remainsId.length > 0 && remainsId[0]?.id) {
           router.push(`/party_data/${remainsId[0].id}`);
@@ -85,8 +85,7 @@ function TableOrderDetail({ details }: Detail) {
       toast.error("Помилка при отриманні даних партії");
     }
   };
-  // debugger;
-  console.log("delivery", delivery);
+
   return (
     <div className={css.listContainer}>
       {/* Header */}
@@ -108,16 +107,12 @@ function TableOrderDetail({ details }: Detail) {
             <div
               className={css.cardCellProduct}
               onClick={async () => {
-                 // Prevent multiple clicks
                  if (addingToDeliveryId === item.id) return;
                  
-                 // If already selected, just toggle (remove) - logic in store handles verify? 
-                 // Store setDelivery toggles if exists. 
-                 // If we are removing, we don't need weight.
-                  const isItemInDelivery = delivery.some((el) => el.id === item.id);
-                 const existingDelivery = getDeliveryForItem(item);
+                 const isItemInDelivery = delivery.some((el) => el.id === item.id);
                  
                  if (!isItemInDelivery) {
+                     const existingDelivery = getDeliveryForItem(item);
                      if (existingDelivery) {
                          const confirmAdd = window.confirm(
                              `Цей товар уже у доставці №${existingDelivery.id} (статус: ${existingDelivery.status}).\nВи впевнені, що хочете додати його ще раз?`
@@ -126,28 +121,22 @@ function TableOrderDetail({ details }: Detail) {
                      }
 
                       setAddingToDeliveryId(item.id);
-                          try {
-                              const initData = getInitData();
-                              const weight = await getWeightForProduct({ item, initData });
-                              setDelivery({ ...item, weight });
-                             toast.success(`Додано: ${item.product}`);
-                         } catch (e) {
-                             console.error("Error adding to delivery", e);
-                             setDelivery({ ...item, weight: 0 });
-                             toast.error("Додано без ваги (помилка розрахунку)");
-                         } finally {
-                             setAddingToDeliveryId(null);
-                         }
-                     } else {
-                         // Removing
-                         try {
-                             setDelivery(item);
-                            toast.success(`Вилучено: ${item.product}`);
-                         } catch (e) {
-                            console.error("Error removing from delivery", e);
-                            toast.error("Помилка при видаленні");
-                         }
-                     }
+                      try {
+                          const initData = getInitData();
+                          const weight = await getWeightForProduct({ item, initData });
+                          setDelivery({ ...item, weight });
+                          toast.success(`Додано: ${item.product}`);
+                      } catch (e) {
+                          console.error("Error adding to delivery", e);
+                          setDelivery({ ...item, weight: 0 });
+                          toast.error("Додано без ваги (помилка розрахунку)");
+                      } finally {
+                          setAddingToDeliveryId(null);
+                      }
+                 } else {
+                     setDelivery(item);
+                     toast.success(`Вилучено: ${item.product}`);
+                 }
               }}
             >
               <span className={css.productName}>{item.product}</span>

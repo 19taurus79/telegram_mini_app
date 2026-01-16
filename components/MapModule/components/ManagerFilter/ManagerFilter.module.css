@@ -4,14 +4,25 @@
     flex-direction: row;
     justify-content: flex-start;
     gap: 8px;
+    /*overflow-x: auto;*/
+    /*scrollbar-width: none;*/
+    /*-ms-overflow-style: none;*/
+
+    /* На мобілці - скрол */
     overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+
+    /* На десктопі - перенос */
+    @media (min-width: 768px) {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
 }
 
-.container::-webkit-scrollbar {
-    display: none;
-}
+/*.container::-webkit-scrollbar {*/
+/*    display: none;*/
+/*}*/
 
 .button {
     padding: 6px 12px;

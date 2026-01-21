@@ -1,7 +1,7 @@
 .container {
   padding: 10px;
   grid-area: orders;
-    height: 40vh;
+    /*height: 40vh;*/
     overflow: auto;
 }
 

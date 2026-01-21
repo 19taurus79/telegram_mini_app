@@ -814,4 +814,30 @@ export const getWeightForProduct = async ({
   return calculatedWeight;
 };
 
+export const getTelegramIdByEventId = async (id:string)=>{
+  const {data}=await axios.get(`/delivery/get_telegram_id_from_delivery_by_id/${id}`);
+  return data;
+}
+
+export const sendTelegramMessage = async (
+  telegramId: string,
+  text: string,
+  initData: string
+) => {
+  const { data } = await axios.post(
+    "/send_telegram_message_by_event",
+    {
+      chat_id: telegramId,
+      text: text,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export default axios;

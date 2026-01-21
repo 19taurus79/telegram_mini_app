@@ -2,7 +2,7 @@
 // import { InnerEvent } from "@/types/types";
 import css from "./detail.module.css";
 import { getInitData } from "@/lib/getInitData";
-import { getEventById, getUserByinitData } from "@/lib/api";
+import {getEventById, getTelegramIdByEventId, getUserByinitData} from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import AdminBtnInEvent from "@/components/AdminsBtnInEvent/AdminBtnInEvent";
 import { CSSProperties } from "react";
@@ -17,9 +17,11 @@ const fetchEventsDetail = async (id: string) => {
   const events = await getEventById(id);
   // Предполагаем, что вам нужно получить пользователя, если нет, то уберите эту строку
   const user = await getUserByinitData(initData);
+  const telegram_id = await getTelegramIdByEventId(id)
   return {
     ...events,
     user,
+    telegram_id
   };
 };
 
@@ -53,7 +55,7 @@ export default function DetailEvent({ id }: { id: string }) {
         </div>
       </div>
       {data?.user?.is_admin && (
-        <AdminBtnInEvent id={id} date={data.start} status={data.colorId} />
+        <AdminBtnInEvent id={id} date={data.start} status={data.colorId} telegramId={data.telegram_id} text={data.description}/>
       )}
     </>
   );

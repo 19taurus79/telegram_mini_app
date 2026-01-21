@@ -63,7 +63,7 @@ export default function AdminBtnInEvent({
     const escapedMessageText = escapeHtml(messageText);
 
     // Формируем текст с цитатой и выделением
-    const fullMessage = `<b>Повідомлення щодо події:</b>\n\n<blockquote>${escapedOriginalText}</blockquote>\n\n<b>Повідомлення:</b>\n\n<b>${escapedMessageText}</b>`;
+    const fullMessage = `<b>Повідомлення щодо події:</b>\n\n<b>Опис події:</b>\n<blockquote>${escapedOriginalText}</blockquote>\n\n<b>Ваше повідомлення:</b>\n<b>${escapedMessageText}</b>`;
 
     const promise = sendTelegramMessage(telegramId, fullMessage, initData);
 
@@ -130,7 +130,7 @@ export default function AdminBtnInEvent({
           <div className={css.modal}>
             <h3 className={css.modalTitle}>Відправити повідомлення</h3>
             <p className={css.quotedText}>
-              <strong>Відповідь на:</strong> "{text}"
+              <strong>Відповідь на:</strong> &ldquo;{text}&rdquo;
             </p>
             <textarea
               className={css.modalTextarea}

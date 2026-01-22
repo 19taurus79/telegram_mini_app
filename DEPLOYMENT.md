@@ -63,3 +63,29 @@ Tag: `v1.0-before-refactor` - стабільна версія перед реф�
 - **НЕ додавай** `NEXT_PUBLIC_DEV=true` на прод
 - Переконайся, що `https://taurus.pp.ua` доступний
 - Після додавання змінних - **обов'язково redeploy**
+
+## 🔧 Налаштування Backend (CORS)
+
+**Важливо!** Додай домен Vercel до CORS на бекенді:
+
+```python
+# backend/main.py (або де у тебе FastAPI app)
+origins = [
+    "http://localhost",
+    "http://localhost:80",
+    "https://telegram-mini-app-six-inky.vercel.app",  # Твій Vercel домен
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+**Або використай wildcard для всіх Vercel доменів:**
+```python
+allow_origins=["*"]  # Для тестування (не рекомендується для проду)
+```

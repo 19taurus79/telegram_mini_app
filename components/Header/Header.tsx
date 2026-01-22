@@ -20,15 +20,21 @@ function Header() {
   // useInitData больше не нужен для установки initData здесь,
   // так как это теперь управляется AuthGuard и getInitData.ts
   // const { setInitData } = useInitData(); 
-  const { user: authUser } = useAuthStore(); // Получаем пользователя напрямую из AuthStore
+  const { user: authUser, accessToken, logout } = useAuthStore(); 
 
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   const { delivery } = useDelivery();
   const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
+
+  const handleLogout = () => {
+    logout();
+    handleNavClick();
+    window.location.href = '/login';
+  };
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -207,14 +213,10 @@ function Header() {
             </>
           )}
           {/* Показуємо Logout тільки в browser режимі (коли є токен) */}
-          {useAuthStore.getState().accessToken && (
+          {accessToken && (
             <li>
               <button
-                onClick={() => {
-                  useAuthStore.getState().logout();
-                  handleNavClick();
-                  window.location.href = '/login';
-                }}
+                onClick={handleLogout}
                 className={css.logoutButton}
               >
                 Вийти

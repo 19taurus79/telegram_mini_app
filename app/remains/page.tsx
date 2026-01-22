@@ -11,10 +11,9 @@ import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsMovedProducts from "@/components/DetailsMovedProduts/DetailsMovedProducts";
-import { useInitData } from "@/store/InitData";
-import type { InitData } from "@/store/InitData";
 import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashboard";
 import DataSourceSwitch from "@/components/DataSourceSwitch/DataSourceSwitch";
+import { useAuthStore } from "@/store/Auth"; // Импортируем useAuthStore
 
 const DESKTOP_BREAKPOINT = 768;
 
@@ -25,15 +24,14 @@ function RemainsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const initData = useInitData((state: InitData) => state.initData);
+  const { isAuthenticated } = useAuthStore(); // Получаем статус аутентификации
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["products", dataSourceType, selectedGroup, searchValue, initData],
+    queryKey: ["products", dataSourceType, selectedGroup, searchValue],
     queryFn: () => {
         const params = {
             group: selectedGroup || null,
             searchValue: searchValue || null,
-            initData: initData || "",
         };
         if (dataSourceType === 'warehouse') {
             return getProductOnWarehouse(params);
@@ -41,16 +39,12 @@ function RemainsContent() {
             return getAllProductByGuide(params);
         }
     },
-    enabled: !!initData,
+    enabled: isAuthenticated, // Запрос выполняется только если пользователь аутентифицирован
     placeholderData: keepPreviousData,
   });
 
   const [isMobile, setIsMobile] = useState(false);
-  // const [showButtons, setShowButtons] = useState(true);
-  // const [lastScrollY, setLastScrollY] = useState(0);
 
-
-  // Синхронізація URL search параметра з контекстом фільтра
   useEffect(() => {
       const searchParam = searchParams.get('search');
       if (searchParam && searchParam !== searchValue) {
@@ -58,32 +52,20 @@ function RemainsContent() {
       }
   }, [searchParams, setSearchValue]);
 
-  // Автовибір елемента, який відповідає пошуку
   useEffect(() => {
       const searchParam = searchParams.get('search');
-      // Прибираємо умову !selectedProductId, щоб дозволити перемикання при зміні пошуку
       if (searchParam && data && data.length > 0) {
-           // Шукаємо збіг (точний або входження)
-           // Припускаємо, що searchParam = "Nomenclature Party Season", а item.product це "Nomenclature Party Season ..."
-           // Або навпаки, якщо item.product коротший.
            const searchLower = searchParam.toLowerCase();
-           
-           // Спробуємо знайти елемент, ім'я якого містить пошуковий запит
-           // Або пошуковий запит міститься в імені елемента (на випадок якщо запит довгий)
            const match = data.find(item => {
                const productLower = item.product.toLowerCase();
                return productLower.includes(searchLower) || searchLower.includes(productLower);
            });
            
            if (match) {
-                // Встановлюємо ID тільки якщо він відрізняється від поточного, щоб уникнути циклів
                 if (selectedProductId !== match.id) {
                     setSelectedProductId(match.id);
                 }
            } else {
-               // Якщо точного збігу немає, беремо перший як фолбек (тільки якщо нічого не вибрано або це новий пошук)
-                // Але щоб не стрибало при кожному рендері, краще робити це тільки якщо це явно новий пошук
-                // Поки залишимо логіку "якщо нічого не знайдено - вибираємо перший"
                 if (!selectedProductId || !data.find(d => d.id === selectedProductId)) {
                      setSelectedProductId(data[0].id);
                 }
@@ -91,7 +73,6 @@ function RemainsContent() {
       }
   }, [data, searchParams, selectedProductId]);
 
-  // Check generic mobile state for dashboard layout
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
@@ -103,24 +84,21 @@ function RemainsContent() {
     event: React.MouseEvent<HTMLAnchorElement>,
     productId: string
   ) => {
-    // На мобілці також блокуємо перехід і встановлюємо вибраний товар
     event.preventDefault();
 
-    // Попередньо завантажуємо дані для деталей, щоб уникнути невірних проміжних станів
-    if (initData && productId) {
+    if (isAuthenticated && productId) {
       queryClient.prefetchQuery({
-        queryKey: ["remainsById", productId, initData],
-        queryFn: () => getRemainsById({ productId, initData }),
+        queryKey: ["remainsById", productId],
+        queryFn: () => getRemainsById(productId),
       });
       queryClient.prefetchQuery({
-        queryKey: ["ordersSumByProduct", productId, initData],
-        queryFn: () => getTotalSumOrderByProduct({ product: productId, initData }),
+        queryKey: ["ordersSumByProduct", productId],
+        queryFn: () => getTotalSumOrderByProduct(productId),
       });
     }
 
     setSelectedProductId(productId);
     
-    // На мобілці прокручуємо до початку для перегляду деталей
     if (window.innerWidth < DESKTOP_BREAKPOINT) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -149,15 +127,12 @@ function RemainsContent() {
       return <p>Продуктів не знайдено.</p>;
     }
 
-    // Фільтрація списку на мобілці
     const filteredData = selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT
       ? data.filter(item => item.id === selectedProductId)
       : data;
 
-    // Повертаємо повну структуру з класами, як було раніше
     return (
       <div className={css.listContainerUl}>
-        {/* Кнопка скидання фільтра на мобілці */}
         {selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT && (
           <button 
             className={css.clearFilterButton}

@@ -15,6 +15,7 @@ import { getDeliveries } from "../../lib/api";
 import Header from "./components/Header/Header";
 import { getInitData } from "@/lib/getInitData";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/store/Auth"; // Импортируем useAuthStore
 import { customIcon, clientIcon, warehouseIcon, deliveryIcon } from "./leaflet-icon";
 import { getStatusColor } from "./statusUtils";
 import { warehouses } from "./warehouses";
@@ -220,6 +221,7 @@ export default function MapFeature({ onAddressSelect }) {
   const [flyToCoords, setFlyToCoords] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(13);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore(); // Получаем статус аутентификации
   const [editingClient, setEditingClient] = useState(null);
 
   const [isRoutingMode, setIsRoutingMode] = useState(false);
@@ -377,40 +379,40 @@ export default function MapFeature({ onAddressSelect }) {
 
   useEffect(() => {
     const getApplications = async () => {
-      if (areApplicationsVisible && applications.length === 0) {
-        const initData = getInitData();
-        const { mergedData, unmappedData } = await fetchOrdersHeatmapData(initData);
+      // Загружаем заявки только если слой видим, данные не загружены и пользователь аутентифицирован
+      if (areApplicationsVisible && applications.length === 0 && isAuthenticated) {
+        const { mergedData, unmappedData } = await fetchOrdersHeatmapData(); // initData не нужен, т.к. axios-интерцептор добавляет его
         setApplications(mergedData);
         setUnmappedApplications(unmappedData);
       }
     };
     getApplications();
-  }, [areApplicationsVisible, applications.length, setApplications]);
+  }, [areApplicationsVisible, applications.length, setApplications, setUnmappedApplications, isAuthenticated]);
 
   useEffect(() => {
     const getClients = async () => {
-      if (areClientsVisible && clients.length === 0) {
+      // Загружаем клиентов только если слой видим, данные не загружены и пользователь аутентифицирован
+      if (areClientsVisible && clients.length === 0 && isAuthenticated) {
         const { addresses } = await import("./fetchOrdersWithAddresses").then(mod => mod.fetchOrdersAndAddresses());
         const validClients = addresses.filter(addr => addr.latitude && addr.longitude);
         setClients(validClients);
       }
     };
     getClients();
-  }, [areClientsVisible, clients.length]);
+  }, [areClientsVisible, clients.length, isAuthenticated]);
 
   useEffect(() => {
     const processDeliveries = async () => {
-      if (areDeliveriesVisible && deliveries.length === 0) {
+      // Загружаем доставки только если слой видим, данные не загружены и пользователь аутентифицирован
+      if (areDeliveriesVisible && deliveries.length === 0 && isAuthenticated) {
         try {
-          const initData = getInitData();
-          const data = await getDeliveries(initData);
+          const data = await getDeliveries(); // initData не нужен, т.к. axios-интерцептор добавляет его
           if (data && Array.isArray(data)) {
             setDeliveries(data);
           }
         } catch (e) {
           console.error("❌ [MapFeature] Error fetching deliveries:", e);
         }
-        return;
       }
 
       if (deliveries.length > 0) {
@@ -432,7 +434,7 @@ export default function MapFeature({ onAddressSelect }) {
       }
     };
     processDeliveries();
-  }, [areDeliveriesVisible, deliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses]);
+  }, [areDeliveriesVisible, deliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses, isAuthenticated]);
 
   const filteredDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);

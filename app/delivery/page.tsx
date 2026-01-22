@@ -6,7 +6,6 @@ import styles from "./DeliveryData.module.css";
 import {getAddressByClient, sendDeliveryData} from "@/lib/api";
 import { DeliveryPayload } from "@/types/types";
 import BackBtn from "@/components/BackBtn/BackBtn";
-import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
 // import {display, width} from "@mui/system";
@@ -573,11 +572,10 @@ export default function DeliveryData() {
                     status: "Створено",
                     is_custom_address: true,
                   };
-                  const initData = getInitData();
 
                   // Отправка данных на сервер.
                   try {
-                    const result = await sendDeliveryData(payload, initData);
+                    const result = await sendDeliveryData(payload);
 
                     if (result.status === "ok") {
                       removeClientDelivery(formClient as string);

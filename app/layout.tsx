@@ -8,7 +8,9 @@ import { ScrollToTopButton } from "@/components/ScrollToTopButton/ScrollToTopBut
 import { DeliveryProvider } from "@/context/DeliveryContext";
 import Script from "next/script";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { Toaster } from "react-hot-toast"; // Import Toaster
+import { Toaster } from "react-hot-toast";
+import AuthGuard from "@/components/AuthGuard"; // Импортируем AuthGuard
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,10 +28,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  // modal,
 }: Readonly<{
   children: React.ReactNode;
-  // modal: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -43,10 +43,11 @@ export default function RootLayout({
         <TanStackProvider>
           <FilterProvider>
             <DeliveryProvider>
-              <Header />
-              {children}
-              {/* {modal} */}
-              <ScrollToTopButton />
+              <AuthGuard>
+                <Header />
+                {children}
+                <ScrollToTopButton />
+              </AuthGuard>
             </DeliveryProvider>
           </FilterProvider>
           <ReactQueryDevtools initialIsOpen={false} />
@@ -54,7 +55,7 @@ export default function RootLayout({
             containerStyle={{
               zIndex: 10001,
             }}
-          /> {/* Add Toaster component here */}
+          />
         </TanStackProvider>
       </body>
     </html>

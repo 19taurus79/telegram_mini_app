@@ -5,7 +5,7 @@ import css from "./DetailsRemains.module.css";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDetailsDataStore } from "@/store/DetailsDataStore";
-import { useInitData } from "@/store/InitData";
+import { useAuthStore } from "@/store/Auth";
 import RemainsCard from "@/components/Remains/RemainsCard";
 
 import Loader from "@/components/Loader/Loader";
@@ -15,20 +15,20 @@ export default function DetailsRemains({
 }: {
   selectedProductId: string | null;
 }) {
-  const initData = useInitData((state) => state.initData);
+  const { isAuthenticated } = useAuthStore();
   const setRemains = useDetailsDataStore((state) => state.setRemains);
 
   const { data: remainsData, isError: isRemainsError, isFetching: isRemainsFetching } = useQuery({
-    queryKey: ["remainsById", selectedProductId, initData],
-    queryFn: () => getRemainsById({ productId: selectedProductId!, initData: initData! }),
-    enabled: !!selectedProductId && !!initData,
+    queryKey: ["remainsById", selectedProductId],
+    queryFn: () => getRemainsById(selectedProductId!),
+    enabled: !!selectedProductId && isAuthenticated,
     placeholderData: keepPreviousData,
   });
 
   const { data: ordersSumData, isFetching: isOrdersSumFetching } = useQuery({
-    queryKey: ["ordersSumByProduct", selectedProductId, initData],
-    queryFn: () => getTotalSumOrderByProduct({ product: selectedProductId!, initData: initData! }),
-    enabled: !!selectedProductId && !!initData,
+    queryKey: ["ordersSumByProduct", selectedProductId],
+    queryFn: () => getTotalSumOrderByProduct(selectedProductId!),
+    enabled: !!selectedProductId && isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

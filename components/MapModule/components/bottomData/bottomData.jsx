@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
-import { getInitData } from "@/lib/getInitData";
 import { updateDeliveryData } from "@/lib/api";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
@@ -38,14 +37,13 @@ export default function BottomData({ onEditClient }) {
 
   const handleUpdateStatus = async (d, newStatus) => {
     try {
-        const initData = getInitData();
         const deliveryId = parseInt(d.id, 10);
         if (isNaN(deliveryId)) {
             toast.error("Некоректний ID доставки");
             return;
         }
 
-        const sanitizedItems = (d.items || []).map(item => ({
+const sanitizedItems = (d.items || []).map(item => ({
             product: String(item.product),
             nomenclature: String(item.nomenclature || item.product),
             quantity: Number(item.quantity) || 0,
@@ -62,7 +60,7 @@ export default function BottomData({ onEditClient }) {
                 : []
         }));
 
-        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, initData);
+        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems);
         
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         
@@ -71,6 +69,7 @@ export default function BottomData({ onEditClient }) {
             updateDeliveries([{ ...d, status: newStatus }]);
         } else {
             toast.success(`Статус оновлено: "${newStatus}"`);
+            updateDeliveries([{ ...d, status: newStatus }]            toast.success(`Статус оновлено: "${newStatus}"`);
             updateDeliveries([{ ...d, status: newStatus }]);
         }
     } catch (e) {

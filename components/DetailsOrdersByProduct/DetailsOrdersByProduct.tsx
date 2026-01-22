@@ -4,24 +4,24 @@ import { useState, useMemo} from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getOrdersByProduct } from "@/lib/api";
 import css from "./DetailsOrdersByProduct.module.css";
-import { useDetailsDataStore } from "@/store/DetailsDataStore";
-import { useInitData } from "@/store/InitData";
+import { useDetailsDataStore } from "@/store/DetailsDataStore"; 
+import { useAuthStore } from "@/store/Auth";
 
 export default function DetailsOrdersByProduct({
                                                  selectedProductId,
                                                }: {
   selectedProductId: string | null;
 }) {
-  const initData = useInitData((state) => state.initData);
+  const { isAuthenticated } = useAuthStore();
   const [sortDirection, setSortDirection] = useState<
       "ascending" | "descending" | null
   >(null);
   const movedProducts = useDetailsDataStore((state) => state.movedProducts);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["ordersByProduct", selectedProductId, initData],
-    queryFn: () => getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
-    enabled: !!selectedProductId && !!initData,
+    queryKey: ["ordersByProduct", selectedProductId],
+    queryFn: () => getOrdersByProduct(selectedProductId!),
+    enabled: !!selectedProductId && isAuthenticated,
     placeholderData: keepPreviousData,
   });
 

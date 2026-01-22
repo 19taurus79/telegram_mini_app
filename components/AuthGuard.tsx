@@ -53,30 +53,43 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (initData) {
         setInitData(initData);
         try {
+          console.log("AuthGuard: Attempting getUser() with initData...");
           const currentUser = await getUser();
+          console.log("AuthGuard: getUser() SUCCESS (TMA mode):", currentUser);
           setUser(currentUser, null);
-          console.log("AuthGuard: Mini App user fetched successfully.");
         } catch (error: unknown) {
-          console.error("AuthGuard: Failed to fetch user in Mini App mode.");
+          console.error("AuthGuard: Failed to fetch user in Mini App mode (initData).");
           let status = "Network Error";
+          let apiError = "";
           if (axios.isAxiosError(error)) {
             status = error.response?.status?.toString() || "Network Error";
+            apiError = JSON.stringify(error.response?.data);
+            console.error("AuthGuard axios error detail:", { status, data: error.response?.data });
           }
-          import('react-hot-toast').then(t => t.default.error(`Авторизація TMA збій: ${status}`));
+          import('react-hot-toast').then(t => t.default.error(`Авторизація TMA збій: ${status} ${apiError}`));
           setUser(null, null);
         }
       } else {
-        console.log("AuthGuard: Browser mode. Clearing initData in store.");
+        console.log("AuthGuard: Browser mode. Current store token:", useAuthStore.getState().accessToken ? "PRESENT" : "MISSING");
         if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData === "") {
-           import('react-hot-toast').then(t => t.default.error("initData відсутній у Telegram"));
+           // import('react-hot-toast').then(t => t.default.error("initData відсутній у Telegram"));
         }
         setInitData(null); // Очищаем initData, чтобы использовать accessToken в интерцепторе
         try {
+          console.log("AuthGuard: Attempting getUser() in browser mode...");
           const currentUser = await getUser();
+          console.log("AuthGuard: getUser() SUCCESS (Browser mode):", currentUser);
           setUser(currentUser, useAuthStore.getState().accessToken);
-          console.log("AuthGuard: User fetched successfully in browser mode.");
-        } catch {
+        } catch (error: unknown) {
           console.error("AuthGuard: Failed to fetch user in browser mode.");
+          if (axios.isAxiosError(error)) {
+            console.error("AuthGuard browser error detail:", { 
+              status: error.response?.status, 
+              text: error.response?.statusText,
+              data: error.response?.data,
+              header: error.config?.headers["Authorization"] ? "Bearer PRESENT" : "Bearer MISSING"
+            });
+          }
           setUser(null, null);
         }
       }

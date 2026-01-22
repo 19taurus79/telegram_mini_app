@@ -57,6 +57,9 @@ api.interceptors.request.use(
       config.headers["X-Telegram-Init-Data"] = initData;
     } else if (accessToken) {
       config.headers["Authorization"] = `Bearer ${accessToken}`;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Axios Interceptor] Added Auth header: Bearer ${accessToken.substring(0, 15)}...`);
+      }
     } else {
       if (process.env.NODE_ENV === 'development') console.log("[Axios Interceptor] No initData or accessToken found. Sending request without auth headers.");
     }

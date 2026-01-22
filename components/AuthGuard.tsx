@@ -26,6 +26,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     console.log("AuthGuard: useEffect triggered. Current state:", { user, isAuthenticated, isLoading, pathname });
 
     const checkAuth = async () => {
+      if (pathname === '/login') {
+        console.log("AuthGuard: On login page, skipping checkAuth.");
+        setLoading(false);
+        return;
+      }
       console.log("AuthGuard: checkAuth started.");
       setLoading(true);
 

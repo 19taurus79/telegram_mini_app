@@ -104,7 +104,7 @@ export default function LoginPage() {
           </ul>
 
           <div style={{ backgroundColor: '#e8f4fd', padding: '12px', borderRadius: '8px', marginTop: '15px', color: '#006699' }}>
-            <strong>Важливо:</strong> Якщо ви змінили домен у BotFather щойно, Telegram може "думати" до 5-10 хвилин. Спробуйте оновити сторінку через деякий час.
+            <strong>Важливо:</strong> Якщо ви змінили домен у BotFather щойно, Telegram може &quot;думати&quot; до 5-10 хвилин. Спробуйте оновити сторінку через деякий час.
           </div>
         </div>
       </div>

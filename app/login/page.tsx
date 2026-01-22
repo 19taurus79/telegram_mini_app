@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/Auth";
-import { loginWithWidget } from "@/lib/api";
+import { loginWithWidget, getUser } from "@/lib/api";
 import axios from "axios";
 
 declare global {
@@ -20,79 +20,66 @@ const TelegramLoginWidget = () => {
 
   useEffect(() => {
     const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME;
-    const currentWidgetRef = widgetRef.current;
-    
-    if (!botName) {
-      console.error("NEXT_PUBLIC_TELEGRAM_BOT_NAME is not defined in .env");
-      return;
-    }
+    if (!botName) return;
 
-    if (currentWidgetRef) {
-      currentWidgetRef.innerHTML = '';
-    }
-
-    // Присвоюємо функцію ДО додавання скрипта і робимо її максимально видимою
-    const authCallback = async (user: unknown) => {
-      console.log("!!! CALLBACK TRIGGERED !!! Data received from Telegram:", user);
-      // alert("Callback triggered!"); // Раскомментируйте для дебага на мобилках
-      
-      const toastId = toast.loading("Авторизація через Telegram...");
+    // Глобальная функция должна быть доступна СРАЗУ
+    (window as any).onTelegramAuth = async (user: any) => {
+      console.log("!!! TELEGRAM CALLBACK !!!", user);
+      const tid = toast.loading("Спроба входу...");
       
       try {
-        console.log("Auth: calling loginWithWidget...");
-        const responseData = await loginWithWidget(user);
-        console.log("Auth: response received", responseData);
-
-        if (responseData && responseData.user && responseData.access_token) {
-          setUser(responseData.user, responseData.access_token);
-          toast.success("Успішно!", { id: toastId });
-          
-          // Даем небольшую паузу для записи в стор перед редиректом
-          setTimeout(() => {
-            router.push('/');
-          }, 100);
+        const res = await loginWithWidget(user);
+        console.log("Server response:", res);
+        if (res?.access_token) {
+          setUser(res.user, res.access_token);
+          toast.success("Ви увійшли!", { id: tid });
+          setTimeout(() => window.location.href = '/', 500);
         } else {
-          throw new Error("Invalid response structure from server");
+          toast.error("Сервер не повернув токен", { id: tid });
         }
-      } catch (error) {
-        console.error("Auth error detail:", error);
-        let status = "Network Error";
-        if (axios.isAxiosError(error)) {
-          status = `API Error: ${error.response?.status || "Unknown"} ${error.message}`;
-          console.error("Axios Error Response:", error.response?.data);
-        } else if (error instanceof Error) {
-          status = error.message;
-        }
-        toast.error(`Помилка авторизації: ${status}`, { id: toastId });
-        setUser(null, null);
+      } catch (e: any) {
+        console.error("Login call failed", e);
+        toast.error(`Помилка API: ${e.message}`, { id: tid });
       }
     };
 
-    // Привязываем к window максимально надежно
-    window.onTelegramAuth = authCallback;
+    if (widgetRef.current) {
+      widgetRef.current.innerHTML = '';
+      const script = document.createElement("script");
+      script.src = "https://telegram.org/js/telegram-widget.js?22";
+      script.async = true;
+      script.setAttribute("data-telegram-login", botName);
+      script.setAttribute("data-size", "large");
+      script.setAttribute("data-onauth", "onTelegramAuth");
+      script.setAttribute("data-request-access", "write");
+      widgetRef.current.appendChild(script);
+    }
+  }, [setUser]);
 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.async = true;
-    script.setAttribute("data-telegram-login", botName);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-onauth", "onTelegramAuth");
-    script.setAttribute("data-request-access", "write");
-
-    currentWidgetRef?.appendChild(script);
-
-    return () => {
-      // Не удаляем коллбэк сразу, чтобы избежать проблем при быстрых перерендерах
-      // delete (window as any).onTelegramAuth; 
-    };
-  }, [router, setUser]);
+  const testApi = async () => {
+    const tid = toast.loading("Перевірка зв'язку з API...");
+    try {
+      // Простой запрос к getUser (он упадет с 401, если всё ок, или с CORS/Network, если нет)
+      await getUser();
+      toast.success("API доступний (ви вже в системі?)", { id: tid });
+    } catch (e: any) {
+      if (e.response?.status === 401) {
+        toast.success("Зв'язок з API є (вимагає авторизації)", { id: tid });
+      } else {
+        toast.error(`API недоступний: ${e.message}. Можливо, CORS?`, { id: tid });
+      }
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
       <div ref={widgetRef} style={{ minHeight: '40px' }}></div>
-      <p style={{ marginTop: '10px', fontSize: '10px', color: '#ccc' }}>
-        Widget initialized for: {process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME}
-      </p>
+      <button 
+        onClick={testApi}
+        style={{ padding: '8px 15px', borderRadius: '6px', border: '1px solid #0088cc', background: 'transparent', color: '#0088cc', cursor: 'pointer', fontSize: '12px' }}
+      >
+        Перевірити зв'язок з сервером (API)
+      </button>
     </div>
   );
 };

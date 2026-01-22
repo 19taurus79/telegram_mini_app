@@ -5,12 +5,9 @@ import {
   sendTelegramMessage,
 } from "@/lib/api";
 import css from "./AdminBtn.module.css";
-import { getInitData } from "@/lib/getInitData";
 import { useState } from "react";
 import { DateWithTimeZone } from "@/types/types";
 import toast from "react-hot-toast";
-
-const initData = getInitData();
 
 // Вспомогательная функция для экранирования HTML-символов
 const escapeHtml = (text: string) => {
@@ -39,17 +36,17 @@ export default function AdminBtnInEvent({
 
   const inProgres = (id: string) => {
     console.log("in progress", id);
-    checkEventInProgress(id, initData);
+    checkEventInProgress(id);
   };
 
   const doneEvent = (id: string) => {
     console.log("Done !");
-    checkEventCompleted(id, initData);
+    checkEventCompleted(id);
   };
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
-    chengedEventDate(id, initData, event.target.value);
+    chengedEventDate(id, event.target.value);
   };
 
   const handleSendMessage = async () => {
@@ -65,7 +62,7 @@ export default function AdminBtnInEvent({
     // Формируем текст с цитатой и выделением
     const fullMessage = `<b>Повідомлення щодо події:</b>\n\n<b>Опис події:</b>\n<blockquote>${escapedOriginalText}</blockquote>\n\n<b>Ваше повідомлення:</b>\n<b>${escapedMessageText}</b>`;
 
-    const promise = sendTelegramMessage(telegramId, fullMessage, initData);
+    const promise = sendTelegramMessage(telegramId, fullMessage);
 
     toast.promise(promise, {
       loading: "Відправка повідомлення...",

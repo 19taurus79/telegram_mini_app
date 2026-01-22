@@ -111,10 +111,20 @@ export default function LoginPage() {
         
         <TelegramLoginWidget />
 
+        {typeof window !== 'undefined' && window.location.hostname !== 'localhost' && process.env.NEXT_PUBLIC_URL_API?.includes('127.0.0.1') && (
+          <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '15px', borderRadius: '8px', marginTop: '20px', border: '1px solid #ffeeba' }}>
+            <strong>⚠️ Увага!</strong> Ви на домені <code>{window.location.hostname}</code>, але ваша API налаштована на <code>{process.env.NEXT_PUBLIC_URL_API}</code>.
+            Запити до локальної API не працюватимуть з віддаленого сервера. Перевірте змінні в панелі Vercel.
+          </div>
+        )}
+
         <div style={{ marginTop: '30px', textAlign: 'left', fontSize: '13px', lineHeight: '1.6', borderTop: '1px solid #eee', paddingTop: '20px' }}>
           <h3 style={{ fontSize: '14px', marginBottom: '10px', color: '#333' }}>🏁 Діагностика (перевірте ці пункти):</h3>
           
           <ul style={{ paddingLeft: '20px', color: '#555' }}>
+            <li style={{ marginBottom: '8px' }}>
+              <strong>API URL:</strong> <code style={{ backgroundColor: '#f4f4f4', padding: '2px 5px', borderRadius: '4px' }}>{process.env.NEXT_PUBLIC_URL_API}</code>
+            </li>
             <li style={{ marginBottom: '8px' }}>
               <strong>Назва бота:</strong> <code style={{ backgroundColor: '#f4f4f4', padding: '2px 5px', borderRadius: '4px' }}>{botName || 'НЕ ВКАЗАНО'}</code> 
               {!botName && <span style={{ color: 'red' }}> — Додайте NEXT_PUBLIC_TELEGRAM_BOT_NAME у Vercel!</span>}

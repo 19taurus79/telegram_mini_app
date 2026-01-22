@@ -105,6 +105,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       console.log("AuthGuard: Redirecting to /login.");
       router.push('/login');
     }
+    if (!isLoading && isAuthenticated && pathname === '/login') {
+      console.log("AuthGuard: Already authenticated on /login, redirecting to /.");
+      router.push('/');
+    }
   }, [isLoading, isAuthenticated, pathname, router]);
 
 

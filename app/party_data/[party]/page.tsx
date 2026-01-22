@@ -1,22 +1,38 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getPartyData } from "@/lib/api";
 import css from "./DataList.module.css";
-import { getInitData } from "@/lib/getInitData";
+
 type Props = {
   params: Promise<{ party: string }>;
 };
 
-export default async function PartyData({ params }: Props) {
-  const party = await params;
-  const initData = await getInitData();
-  //   const decodedParam = decodeURIComponent(party.party);
-  //   console.log("decoded", decodedParam);
-  const data = await getPartyData({ id: party.party, initData });
+export default function PartyData({ params }: Props) {
+  const [party, setParty] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setParty(p.party));
+  }, [params]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["partyData", party],
+    queryFn: () => getPartyData({ party: party! }),
+    enabled: !!party,
+  });
+
+  if (!party || isLoading) {
+    return <div className={css.list}>Завантаження...</div>;
+  }
+
+  if (!data || data.length === 0) {
+    return <div className={css.list}>Дані не знайдено</div>;
+  }
+
   return (
     <>
-      {/* <div>
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </div> */}
       {data.map((item) => (
         <ul key={item.crop_year} className={css.list}>
           <li className={css.listItem}>МТН: {item.mtn}</li>

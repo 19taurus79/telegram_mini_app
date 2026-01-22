@@ -1,38 +1,54 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";
 import OrdersByProduct from "@/components/OrdersByProduct/OrderByProduct";
-import { getInitData } from "@/lib/getInitData";
 import RemainsCard from "@/components/Remains/RemainsCard";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-export default async function filteredRemains({ params }: Props) {
-  const id = await params;
-  const initData = await getInitData();
-  console.log(id);
-  const remains = await getRemainsById({ productId: id.id, initData });
+export default function FilteredRemains({ params }: Props) {
+  const [id, setId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setId(p.id));
+  }, [params]);
+
+  const { data: remains, isLoading: isLoadingRemains } = useQuery({
+    queryKey: ["remains", id],
+    queryFn: () => getRemainsById(id!),
+    enabled: !!id,
+  });
+
+  const { data: sumOrder, isLoading: isLoadingSumOrder } = useQuery({
+    queryKey: ["totalSumOrder", id],
+    queryFn: () => getTotalSumOrderByProduct(id!),
+    enabled: !!id,
+  });
+
+  if (!id || isLoadingRemains || isLoadingSumOrder) {
+    return <div className={css.remainsList}>Завантаження...</div>;
+  }
+
+  if (!remains || remains.length === 0) {
+    return <div className={css.remainsList}>Дані не знайдено</div>;
+  }
+
   const remainsSummary = remains.reduce(
     (acc, item) => {
       acc.buh += item.buh;
       acc.skl += item.skl;
       acc.storage += item.storage;
-
-
       return acc;
     },
     { buh: 0, skl: 0, storage: 0 }
   );
-  const sumOrder = await getTotalSumOrderByProduct({
-    product: id.id,
-    initData,
-  });
-  // console.log("sumorder", sumOrder);
-  // const seedBusiness = ["Насіння", "Власне виробництво насіння"];
 
-  // Групуємо залишки по складах
   const groupedRemains = remains.reduce((groups, item) => {
     const warehouse = item.warehouse || "Інше";
     if (!groups[warehouse]) {
@@ -42,6 +58,7 @@ export default async function filteredRemains({ params }: Props) {
     return groups;
   }, {} as Record<string, typeof remains>);
 
+  const totalOrders = sumOrder?.[0]?.total_orders || 0;
 
   return (
     <>
@@ -62,30 +79,28 @@ export default async function filteredRemains({ params }: Props) {
             Все в порядку ! Вся номенклатура на складі !
           </h3>
         )}
-        {/* <h3>Під всі заяки потрібно: {sumOrder[0].sum}</h3> */}
-        {sumOrder[0].total_orders === 0 ? (
+        {totalOrders === 0 ? (
           <h3>
             Немає жодної заявки на цю номенклатуру, тому весь залишок вільний
           </h3>
         ) : (
-          <h3>Під всі заявки потрібно: {sumOrder[0].total_orders}</h3>
+          <h3>Під всі заявки потрібно: {totalOrders}</h3>
         )}
-        {/* Якщо немає жодної заявки, то виводимо попередження */}
 
-        {sumOrder[0].total_orders > remainsSummary.buh ? (
+        {totalOrders > remainsSummary.buh ? (
           <h3 className={css.warning}>
             Увага! Для виконання всіх заявок не вистачає&nbsp;
-            {sumOrder[0].total_orders - remainsSummary.buh} !
+            {totalOrders - remainsSummary.buh} !
           </h3>
-        ) : sumOrder[0].total_orders !== 0 ? (
+        ) : totalOrders !== 0 ? (
           <h3 className={css.success}>
             Все в порядку! Замовленної кількості вистачає для виконання всіх
             заявок !
           </h3>
         ) : null}
-        {remainsSummary.buh > sumOrder[0].total_orders ? (
+        {remainsSummary.buh > totalOrders ? (
           <h3 className={css.success}>
-            Вільного залишку: {remainsSummary.buh - sumOrder[0].total_orders}
+            Вільного залишку: {remainsSummary.buh - totalOrders}
           </h3>
         ) : (
           <h3 className={css.warning}>
@@ -93,7 +108,6 @@ export default async function filteredRemains({ params }: Props) {
           </h3>
         )}
 
-        {/* --- Новий рендер з групуванням --- */}
         <div style={{ marginTop: "24px" }}>
             {Object.entries(groupedRemains).map(([warehouse, items]) => (
                 <div key={warehouse} style={{ marginBottom: "24px" }}>
@@ -107,7 +121,7 @@ export default async function filteredRemains({ params }: Props) {
 
       </ul>
       <BackBtn />
-      {sumOrder[0].total_orders !== 0 && <OrdersByProduct product={id.id} />}
+      {totalOrders !== 0 && <OrdersByProduct product={id} />}
     </>
   );
 }

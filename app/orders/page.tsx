@@ -1,7 +1,5 @@
 "use client";
 
-import { useInitData } from "@/store/InitData";
-import { InitData } from "@/store/InitData";
 import OrdersDashboard from "@/components/Orders/OrdersDashboard/OrdersDashboard";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
@@ -10,14 +8,13 @@ import { getClients } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 // Old mobile version component
-function OrdersMobile({ initData }: { initData: string }) {
+function OrdersMobile() {
   const { searchValue } = useFilter();
   
   const { data: clients } = useQuery({
-    queryKey: ["clients", initData, searchValue],
-    queryFn: () => getClients({ searchValue: searchValue || null, initData }),
+    queryKey: ["clients", searchValue],
+    queryFn: () => getClients(searchValue || null),
     placeholderData: keepPreviousData,
-    enabled: !!initData
   });
 
   return (
@@ -34,22 +31,14 @@ function OrdersMobile({ initData }: { initData: string }) {
 }
 
 function Orders() {
-  const initData = useInitData((state: InitData) => state.initData);
-
   return (
     <>
-      {initData ? (
-        <>
-            <div className={css.desktopOnly} style={{height: '100%'}}>
-                 <OrdersDashboard initData={initData} />
-            </div>
-            <div className={css.mobileOnly}>
-                 <OrdersMobile initData={initData} />
-            </div>
-        </>
-      ) : (
-        <div style={{ padding: "20px" }}>Завантаження...</div>
-      )}
+        <div className={css.desktopOnly} style={{height: '100%'}}>
+             <OrdersDashboard />
+        </div>
+        <div className={css.mobileOnly}>
+             <OrdersMobile />
+        </div>
     </>
   );
 }

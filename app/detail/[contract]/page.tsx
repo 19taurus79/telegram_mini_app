@@ -1,45 +1,54 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getOrdersDetailsById } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
-import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
-import { getInitData } from "@/lib/getInitData";
 
 type Props = {
   params: Promise<{ contract: string }>;
-}; //Для получения деталей контракта
+};
 
-export default async function filteredOrdersDetail({ params }: Props) {
-  const { contract } = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
-  const originalList = await getOrdersDetailsById({
-    orderId: contract,
-    initData: await getInitData(),
+export default function FilteredOrdersDetail({ params }: Props) {
+  const [contract, setContract] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setContract(p.contract));
+  }, [params]);
+
+  const { data: originalList, isLoading } = useQuery({
+    queryKey: ["ordersDetails", contract],
+    queryFn: () => getOrdersDetailsById(contract!),
+    enabled: !!contract,
   });
-  console.log("contract details", originalList);
-  // debugger;
+
+  if (!contract || isLoading) {
+    return <div>Завантаження...</div>;
+  }
+
+  if (!originalList || originalList.length === 0) {
+    return <div>Дані не знайдено</div>;
+  }
+
   const details = originalList.map((item) => {
-    // Собираем все непустые части в массив
     const parts = [];
-
-    // Номенклатура всегда добавляется
     parts.push(item.nomenclature);
-
-    // Добавляем "ознака партії", если она не пустая и не состоит только из пробелов
+    
     if (item.party_sign && item.party_sign.trim() !== "") {
       parts.push(item.party_sign.trim());
     }
-
-    // Добавляем "рік закупівлі", если он не пустой и не состоит только из пробелов
+    
     if (item.buying_season && item.buying_season.trim() !== "") {
       parts.push(item.buying_season.trim());
     }
-
-    // Объединяем все части пробелами
+    
     const combinedName = parts.join(" ");
-    // debugger;
+    
     return {
-      product: combinedName, // Собираем название продукта из номенклатуры, ознаки партії и року закупівлі
+      product: combinedName,
       nomenclature: item.nomenclature,
       quantity: item.different,
       manager: item.manager,
@@ -49,14 +58,12 @@ export default async function filteredOrdersDetail({ params }: Props) {
       product_id: item.product,
       orders_q: item.orders_q,
       parties: item.parties,
-      // moved_q: item.moved_q,
-      // party: item.party,
       buh: item.buh,
       skl: item.skl,
       qok: item.qok,
     };
   });
-  console.log("details", details);
+
   return (
     <>
       <TableOrderDetail details={details} />

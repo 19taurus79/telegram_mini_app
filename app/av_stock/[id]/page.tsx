@@ -1,15 +1,36 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import css from "./AvRemainsList.module.css";
 import { getAvRemainsById } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
+
 type Props = {
   params: Promise<{ id: string }>;
 };
-export default async function AvStockPage({ params }: Props) {
-  const id = await params;
-  const initData = await getInitData();
-  const remains = await getAvRemainsById({ productId: id.id, initData });
-  console.log("av stock remains", remains);
+
+export default function AvStockPage({ params }: Props) {
+  const [id, setId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setId(p.id));
+  }, [params]);
+
+  const { data: remains, isLoading, isError } = useQuery({
+    queryKey: ["avRemains", id],
+    queryFn: () => getAvRemainsById(id!),
+    enabled: !!id,
+  });
+
+  if (!id || isLoading) {
+    return <div className={css.container}>Завантаження...</div>;
+  }
+
+  if (isError || !remains || remains.length === 0) {
+    return <div className={css.container}>Помилка завантаження даних</div>;
+  }
+
   return (
     <>
       <div className={css.container}>

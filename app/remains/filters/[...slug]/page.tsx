@@ -1,14 +1,34 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getRemainsById } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
 
 type Props = {
   params: Promise<{ slug: string[] }>;
 };
-async function filteredRemains({ params }: Props) {
-  const slug = await params;
-  console.log(slug);
-  const initData = await getInitData();
-  const remains = await getRemainsById({ productId: slug.slug[0], initData });
+
+export default function FilteredRemains({ params }: Props) {
+  const [productId, setProductId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setProductId(p.slug[0]));
+  }, [params]);
+
+  const { data: remains, isLoading } = useQuery({
+    queryKey: ["remains", productId],
+    queryFn: () => getRemainsById(productId!),
+    enabled: !!productId,
+  });
+
+  if (!productId || isLoading) {
+    return <div>Завантаження...</div>;
+  }
+
+  if (!remains || remains.length === 0) {
+    return <div>Дані не знайдено</div>;
+  }
+
   return (
     <ul>
       {remains.map((item) => (
@@ -23,5 +43,3 @@ async function filteredRemains({ params }: Props) {
     </ul>
   );
 }
-
-export default filteredRemains;

@@ -1,51 +1,54 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getOrdersByProduct, getProductDetailsById } from "@/lib/api";
 import css from "./OrdersByProduct.module.css";
-import React from "react";
-import { getInitData } from "@/lib/getInitData";
+
 type Props = {
   params: Promise<{ product: string }>;
 };
-export default async function OrdersByProduct({ params }: Props) {
-  const product = await params;
-  const orders = await getOrdersByProduct({
-    product: product.product,
-    initData: await getInitData(),
+
+export default function OrdersByProduct({ params }: Props) {
+  const [productId, setProductId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setProductId(p.product));
+  }, [params]);
+
+  const { data: orders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ["ordersByProduct", productId],
+    queryFn: () => getOrdersByProduct(productId!),
+    enabled: !!productId,
   });
-  const initData = await getInitData();
-  const productDetails = await getProductDetailsById({
-    product: product.product,
-    initData,
+
+  const { data: productDetails, isLoading: isLoadingDetails } = useQuery({
+    queryKey: ["productDetails", productId],
+    queryFn: () => getProductDetailsById(productId!),
+    enabled: !!productId,
   });
+
+  if (!productId || isLoadingOrders || isLoadingDetails) {
+    return <div className={css.wrapper}>Завантаження...</div>;
+  }
+
+  if (!orders || !productDetails) {
+    return <div className={css.wrapper}>Дані не знайдено</div>;
+  }
+
   return (
     <div className={css.wrapper}>
       <div className={css.clientBlock}>
         <div className={css.clientHeader}>
-          {/* <span className={css.clientTitle}>Номенклатура:</span> */}
           <span>{productDetails.product}</span>
         </div>
       </div>
-      {/* <ul className={css.orderBlock}>
-        {orders.map((item) => (
-          <React.Fragment key={item.id}>
-            <li key={`${item.id}-contract`}>{item.contract_supplement}</li>
-            <li key={`${item.id}-manager`}>{item.manager}</li>
-            <li key={`${item.id}-client`}>{item.client}</li>
-            <li key={`${item.id}-quantity`}>{item.different}</li>
-          </React.Fragment>
-        ))}
-      </ul> */}
       {orders.map((order) => (
         <div key={order.id} className={css.orderBlock}>
-          {/* <div className={css.orderHeader}>
-            <span className={css.clientTitle}>Менеджер:</span>
-            <span>{order.manager}</span>
-          </div> */}
-
           <div className={css.table}>
             <div className={css.rowHeader}>
               <div className={css.headerProduct}>{order.manager}</div>
-              {/* <div className={css.headerQuantity}>Кількість</div> */}
             </div>
 
             <div className={css.row} key={order.id}>

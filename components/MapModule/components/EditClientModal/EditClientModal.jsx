@@ -47,7 +47,6 @@ function MapUpdater({ position }) {
 import { fetchManagers } from "../../fetchManagers";
 import { fetchClientsList } from "../../services/fetchFormData";
 import { createClientAddress, updateClientAddress } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
 
 // ... (previous imports)
 
@@ -154,20 +153,15 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     if (client && client.id) {
       // Editing existing client - call API
       try {
-        const initData = getInitData();
-        await updateClientAddress({
-          id: client.id,
-          clientData: {
-            client: formData.client,
-            manager: formData.manager,
-            representative: formData.representative,
-            phone1: formData.phone1,
-            phone2: formData.phone2 || "",
-            address: formData.address,
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-          },
-          initData,
+        await updateClientAddress(client.id, {
+          client: formData.client,
+          manager: formData.manager,
+          representative: formData.representative,
+          phone1: formData.phone1,
+          phone2: formData.phone2 || "",
+          address: formData.address,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         });
         
         toast.success("Адресу клієнта оновлено успішно");
@@ -182,19 +176,15 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     } else {
       // Adding new client - call API
       try {
-        const initData = getInitData();
         await createClientAddress({
-          clientData: {
-            client: formData.client,
-            manager: formData.manager,
-            representative: formData.representative,
-            phone1: formData.phone1,
-            phone2: formData.phone2 || "",
-            address: formData.address,
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-          },
-          initData,
+          client: formData.client,
+          manager: formData.manager,
+          representative: formData.representative,
+          phone1: formData.phone1,
+          phone2: formData.phone2 || "",
+          address: formData.address,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         });
         
         toast.success("Адресу клієнта додано успішно");

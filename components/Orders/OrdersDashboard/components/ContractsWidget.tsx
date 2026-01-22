@@ -5,7 +5,6 @@ import styles from "../OrdersDashboard.module.css";
 import clsx from "clsx";
 
 interface ContractsWidgetProps {
-  initData: string;
   selectedClient: Client | null;
   contracts: Contract[];
   selectedContracts: Contract[];

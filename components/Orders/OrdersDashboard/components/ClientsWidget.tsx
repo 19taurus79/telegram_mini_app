@@ -8,13 +8,11 @@ import styles from "../OrdersDashboard.module.css";
 import { Search } from "lucide-react";
 
 interface ClientsWidgetProps {
-  initData: string;
   selectedClient: Client | null;
   onSelectClient: (client: Client) => void;
 }
 
 export default function ClientsWidget({
-  initData,
   selectedClient,
   onSelectClient,
 }: ClientsWidgetProps) {
@@ -25,9 +23,8 @@ export default function ClientsWidget({
   // Запит на отримання списку клієнтів
   // Використовує React Query для кешування та управління станом завантаження
   const { data: clients, isLoading } = useQuery({
-    queryKey: ["clients", searchValue], // Ключ запиту залежить від пошукового рядка
-    queryFn: () => getClients({ searchValue, initData }),
-    enabled: !!initData, // Запит активний тільки якщо є initData
+    queryKey: ["clients", searchValue],
+    queryFn: () => getClients(searchValue),
   });
 
   // Відновлення позиції скролу

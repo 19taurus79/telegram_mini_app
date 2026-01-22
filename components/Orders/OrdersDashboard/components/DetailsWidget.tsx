@@ -3,7 +3,6 @@ import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
-import { getInitData } from "@/lib/getInitData";
 import React from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
@@ -12,14 +11,12 @@ import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
 
 interface DetailsWidgetProps {
-  initData: string;
   selectedClient: Client | null;
   selectedContracts: Contract[];
   showAllContracts: boolean;
 }
 
 export default function DetailsWidget({
-  initData,
   selectedClient,
   selectedContracts,
   showAllContracts,
@@ -54,15 +51,14 @@ export default function DetailsWidget({
   useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initDataVal = getInitData();
-            const data = await getDeliveries(initDataVal);
+            const data = await getDeliveries();
             if (data) setAllDeliveries(data);
         } catch (e) {
             console.error("Error loading deliveries", e);
         }
     };
     loadDeliveries();
-  }, [initData]);
+  }, []);
 
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
@@ -135,11 +131,8 @@ export default function DetailsWidget({
     
 
     const weight = await getWeightForProduct({ 
-      item: {
-        product_id: item.product,
-        parties: item.parties
-      }, 
-      initData 
+      product_id: item.product,
+      parties: item.parties
     });
 
 
@@ -173,7 +166,7 @@ export default function DetailsWidget({
         
         if (selectedContracts.length > 0) {
             const promises = selectedContracts.map(contract => 
-                getOrdersDetailsById({ orderId: contract.contract_supplement, initData })
+                getOrdersDetailsById(contract.contract_supplement)
             );
             const results = await Promise.all(promises);
             return results.flat();
@@ -181,7 +174,7 @@ export default function DetailsWidget({
         
          return [];
     },
-    enabled: !!selectedClient && !!initData && (selectedContracts.length > 0 || showAllContracts)
+    enabled: !!selectedClient && (selectedContracts.length > 0 || showAllContracts)
   });
 
   const calculateTotalPartiesMoved = (parties: { moved_q: number }[] | undefined) => {

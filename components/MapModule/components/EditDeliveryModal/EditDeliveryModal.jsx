@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import css from "./EditDeliveryModal.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
-import { getInitData } from "@/lib/getInitData";
 import { getRemainsByProduct, updateDeliveryData } from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -124,9 +123,8 @@ export default function EditDeliveryModal() {
       if (!selectedProductId) return;
       setIsLoadingRemains(true);
       try {
-        const initData = getInitData();
         // Use the new endpoint that takes the product identifier (name or ID)
-        const data = await getRemainsByProduct({ product: selectedProductId, initData });
+        const data = await getRemainsByProduct(selectedProductId);
         setStockRemains(data || []);
         console.log("Stock remains:", data);
       } catch (error) {
@@ -256,7 +254,6 @@ export default function EditDeliveryModal() {
     });
 
     try {
-        const initData = getInitData();
         // Send updates to backend with clean payload
         await Promise.all(updatedDeliveries.map(d => {
             const cleanItems = d.items.map(item => ({
@@ -274,7 +271,7 @@ export default function EditDeliveryModal() {
                 }))
             }));
 
-            return updateDeliveryData(d.id, d.status, cleanItems, initData);
+            return updateDeliveryData(d.id, d.status, cleanItems);
         }));
 
         updateDeliveries(updatedDeliveries);

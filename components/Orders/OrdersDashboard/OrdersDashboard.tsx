@@ -36,11 +36,7 @@ const defaultLayouts: Layouts = {
   ],
 };
 
-interface OrdersDashboardProps {
-  initData: string;
-}
-
-export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
+export default function OrdersDashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<Contract[]>([]);
@@ -52,9 +48,9 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
     queryKey: ["contracts", selectedClient?.id],
     queryFn: () =>
       selectedClient
-        ? getContracts({ client: selectedClient.id, initData })
+        ? getContracts(selectedClient.id)
         : Promise.resolve([]),
-    enabled: !!selectedClient && !!initData,
+    enabled: !!selectedClient,
   });
 
   // Завантаження збереженого макету та стану з localStorage
@@ -181,7 +177,6 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             </div>
             <div className={styles.gridItemContent}>
               <ClientsWidget
-                initData={initData}
                 selectedClient={selectedClient}
                 onSelectClient={handleSelectClient}
               />
@@ -210,7 +205,6 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             </div>
             <div className={styles.gridItemContent}>
               <ContractsWidget
-                initData={initData}
                 selectedClient={selectedClient}
                 contracts={contracts || []}
                 selectedContracts={selectedContracts}
@@ -234,7 +228,6 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             </div>
             <div className={styles.gridItemContent}>
               <DetailsWidget
-                initData={initData}
                 selectedClient={selectedClient}
                 selectedContracts={selectedContracts}
                 showAllContracts={showAllContracts}

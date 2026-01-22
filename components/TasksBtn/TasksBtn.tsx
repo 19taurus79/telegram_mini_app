@@ -3,7 +3,6 @@ import { checkTaskCompleted, checkTaskInProgress } from "@/lib/api";
 import css from "./TasksBtn.module.css";
 import { useState } from "react";
 import { TaskStatus } from "@/types/types";
-import { getInitData } from "@/lib/getInitData";
 
 export default function TasksBtn({
   taskId,
@@ -15,15 +14,15 @@ export default function TasksBtn({
   const [taskStatusState, setTaskStatusState] = useState(
     taskStatus.task_status
   );
-  const initData = getInitData();
+  
   const inProgress = (taskId: string) => {
-    checkTaskInProgress(taskId, initData);
+    checkTaskInProgress(taskId);
     setTaskStatusState(1);
     // console.log(`task ${taskId} in progress`);
   };
   const close = (taskId: string) => {
     // console.log(`task ${taskId} close`);
-    checkTaskCompleted(taskId, initData);
+    checkTaskCompleted(taskId);
     setTaskStatusState(2);
   };
   console.log("taskStatus", taskStatus, typeof taskStatus);

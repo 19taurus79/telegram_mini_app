@@ -1,22 +1,37 @@
+"use client";
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import BackBtn from "@/components/BackBtn/BackBtn";
 import { getContracts } from "@/lib/api";
 import Link from "next/link";
 import css from "./OrdersList.module.css";
 import clsx from "clsx";
-import { getInitData } from "@/lib/getInitData";
-// type Props = {
-//   params: Promise<{ slug: string[] }>;
-// };
+
 type Props = {
   params: Promise<{ client: number }>;
 };
 
-export default async function filteredOrders({ params }: Props) {
-  const client = await params;
-  const initData = await getInitData();
-  console.log(client.client);
-  //   const remains = await getRemainsById({ productId: id.id });
-  const contracts = await getContracts({ client: client.client, initData });
+export default function FilteredOrders({ params }: Props) {
+  const [clientId, setClientId] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setClientId(p.client));
+  }, [params]);
+
+  const { data: contracts, isLoading } = useQuery({
+    queryKey: ["contracts", clientId],
+    queryFn: () => getContracts(clientId!),
+    enabled: !!clientId,
+  });
+
+  if (!clientId || isLoading) {
+    return <div className={css.list}>Завантаження...</div>;
+  }
+
+  if (!contracts || contracts.length === 0) {
+    return <div className={css.list}>Контракти не знайдено</div>;
+  }
 
   return (
     <>
@@ -38,7 +53,6 @@ export default async function filteredOrders({ params }: Props) {
                     css.statusWaiting,
                   item.document_status === "до розгляду" && css.statusWaiting,
                   item.document_status === "розглядається" && css.statusWaiting,
-
                   item.document_status === "відхилено" && css.statusFailed
                 )}
               >

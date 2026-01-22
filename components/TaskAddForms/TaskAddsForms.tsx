@@ -7,7 +7,6 @@ import {
   useMenuStore,
 } from "@/store/FormAndMenuTogls";
 import { createTask, getClients } from "@/lib/api";
-import { getInitData } from "@/lib/getInitData";
 import {
   useMutation,
   useQuery,
@@ -454,8 +453,6 @@ export default function TaskForm() {
   const { formType, toggleMenu } = useMenuStore();
   const { toggleModal } = useEventsModalStore();
 
-  const initData = getInitData();
-
   const [clientSearch, setClientSearch] = useState("");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
 
@@ -471,9 +468,8 @@ export default function TaskForm() {
 
   const { data: clients, isLoading: isClientsLoading } = useQuery({
     queryKey: ["clients", debouncedClientSearch],
-    queryFn: () =>
-      getClients({ initData: initData!, searchValue: debouncedClientSearch }),
-    enabled: !!initData && debouncedClientSearch.length > 1, // Changed to 2 characters
+    queryFn: () => getClients(debouncedClientSearch),
+    enabled: debouncedClientSearch.length > 1,
   });
 
   useEffect(() => {
@@ -482,9 +478,9 @@ export default function TaskForm() {
 
   const mutation = useMutation({
     mutationFn: ({ title, note }: { title: string; note: string }) =>
-      createTask(initData!, title, note),
+      createTask(title, note),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", initData] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 

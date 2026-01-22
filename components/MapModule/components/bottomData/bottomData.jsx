@@ -69,7 +69,6 @@ const sanitizedItems = (d.items || []).map(item => ({
             updateDeliveries([{ ...d, status: newStatus }]);
         } else {
             toast.success(`Статус оновлено: "${newStatus}"`);
-            updateDeliveries([{ ...d, status: newStatus }]            toast.success(`Статус оновлено: "${newStatus}"`);
             updateDeliveries([{ ...d, status: newStatus }]);
         }
     } catch (e) {

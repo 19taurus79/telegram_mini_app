@@ -5,16 +5,24 @@ import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/Auth";
 import { loginWithWidget, getUser } from "@/lib/api";
-import axios from "axios";
 
 declare global {
   interface Window {
-    onTelegramAuth?: (user: unknown) => void;
+    onTelegramAuth?: (user: TelegramUser) => void;
   }
 }
 
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
 const TelegramLoginWidget = () => {
-  const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   const widgetRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +31,7 @@ const TelegramLoginWidget = () => {
     if (!botName) return;
 
     // Глобальная функция должна быть доступна СРАЗУ
-    (window as any).onTelegramAuth = async (user: any) => {
+    window.onTelegramAuth = async (user: TelegramUser) => {
       console.log("!!! TELEGRAM CALLBACK !!!", user);
       const tid = toast.loading("Спроба входу...");
       
@@ -37,22 +45,25 @@ const TelegramLoginWidget = () => {
         } else {
           toast.error("Сервер не повернув токен", { id: tid });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("Login call failed", e);
-        toast.error(`Помилка API: ${e.message}`, { id: tid });
+        const errorMessage = e instanceof Error ? e.message : "Undefined error";
+        toast.error(`Помилка API: ${errorMessage}`, { id: tid });
       }
     };
 
     if (widgetRef.current) {
       widgetRef.current.innerHTML = '';
-      const script = document.createElement("script");
-      script.src = "https://telegram.org/js/telegram-widget.js?22";
-      script.async = true;
-      script.setAttribute("data-telegram-login", botName);
-      script.setAttribute("data-size", "large");
-      script.setAttribute("data-onauth", "onTelegramAuth");
-      script.setAttribute("data-request-access", "write");
-      widgetRef.current.appendChild(script);
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.async = true;
+    script.setAttribute("data-telegram-login", botName);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-onauth", "onTelegramAuth");
+    script.setAttribute("data-request-access", "write");
+    if (widgetRef.current) {
+        widgetRef.current.appendChild(script);
+    }
     }
   }, [setUser]);
 
@@ -62,11 +73,13 @@ const TelegramLoginWidget = () => {
       // Простой запрос к getUser (он упадет с 401, если всё ок, или с CORS/Network, если нет)
       await getUser();
       toast.success("API доступний (ви вже в системі?)", { id: tid });
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const error: any = e;
+      if (error.response?.status === 401) {
         toast.success("Зв'язок з API є (вимагає авторизації)", { id: tid });
       } else {
-        toast.error(`API недоступний: ${e.message}. Можливо, CORS?`, { id: tid });
+        const msg = error.message || "Unknown connectivity error";
+        toast.error(`API недоступний: ${msg}. Можливо, CORS?`, { id: tid });
       }
     }
   };

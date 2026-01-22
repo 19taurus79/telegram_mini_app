@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/Auth";
 import { loginWithWidget } from "@/lib/api";
+import axios from "axios";
 
 declare global {
   interface Window {
@@ -19,14 +20,14 @@ const TelegramLoginWidget = () => {
 
   useEffect(() => {
     const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME;
-    console.log("LoginPage: Initializing widget for bot:", botName);
+    const currentWidgetRef = widgetRef.current;
     
-    if (widgetRef.current) {
-      widgetRef.current.innerHTML = '';
+    if (currentWidgetRef) {
+      currentWidgetRef.innerHTML = '';
     }
 
     // Присвоюємо функцію ДО додавання скрипта
-    const authCallback = async (user: any) => {
+    const authCallback = async (user: unknown) => {
       console.log("!!! CALLBACK TRIGGERED !!! Data received from Telegram:", user);
       const toastId = toast.loading("Авторизація через Telegram...");
       
@@ -41,13 +42,16 @@ const TelegramLoginWidget = () => {
         }
       } catch (error) {
         console.error("Auth error:", error);
-        toast.error("Помилка авторизації. Перевірте Bot Token на бекенді.", { id: toastId });
+        let status = "Network Error";
+        if (axios.isAxiosError(error)) {
+          status = error.response?.status?.toString() || "Network Error";
+        }
+        toast.error(`Помилка авторизації: ${status}`, { id: toastId });
         setUser(null, null);
       }
     };
 
-    (window as any).onTelegramAuth = authCallback;
-    console.log("LoginPage: window.onTelegramAuth is now defined:", typeof (window as any).onTelegramAuth);
+    window.onTelegramAuth = authCallback;
 
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-widget.js?22";
@@ -57,10 +61,10 @@ const TelegramLoginWidget = () => {
     script.setAttribute("data-onauth", "onTelegramAuth");
     script.setAttribute("data-request-access", "write");
 
-    widgetRef.current?.appendChild(script);
+    currentWidgetRef?.appendChild(script);
 
     return () => {
-      if (widgetRef.current) widgetRef.current.innerHTML = '';
+      if (currentWidgetRef) currentWidgetRef.innerHTML = '';
       delete window.onTelegramAuth;
     };
   }, [router, setUser]);
@@ -74,7 +78,7 @@ export default function LoginPage() {
       <h1>Вхід в систему</h1>
       <p style={{ maxWidth: '400px', margin: '0 auto' }}>
         Зайдіть через Telegram для доступу до системи. 
-        Якщо кнопка не з'являється — перевірте з'єднання або спробуйте в іншому браузері.
+        Якщо кнопка не з&apos;являється — перевірте з&apos;єднання або спробуйте в іншому браузері.
       </p>
       <TelegramLoginWidget />
       <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>

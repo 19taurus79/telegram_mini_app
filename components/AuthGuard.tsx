@@ -90,7 +90,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [isLoading, isAuthenticated, pathname, router]);
 
 
-  if (isLoading) {
+  if (isLoading && pathname !== '/login') {
     console.log("AuthGuard: Rendering loader.");
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>

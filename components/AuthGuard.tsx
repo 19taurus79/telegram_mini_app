@@ -70,7 +70,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           const currentUser = await getUser();
           setUser(currentUser, useAuthStore.getState().accessToken);
           console.log("AuthGuard: User fetched successfully in browser mode.");
-        } catch (error) {
+        } catch {
           console.error("AuthGuard: Failed to fetch user in browser mode.");
           setUser(null, null);
         }

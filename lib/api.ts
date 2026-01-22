@@ -63,7 +63,7 @@ api.interceptors.request.use(
   }
 );
 
-export const loginWithWidget = async (user: any) => {
+export const loginWithWidget = async (user: unknown) => {
   const { data } = await api.post<{ status: string; access_token: string; token_type: string; user: User }>(
     "/auth/login-widget",
     user

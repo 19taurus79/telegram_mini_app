@@ -6,7 +6,7 @@ import { useFilter } from '@/context/FilterContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import css from "./Header.module.css";
 import Link from "next/link";
-import { useInitData } from "@/store/InitData";
+
 import { useDelivery } from "@/store/Delivery";
 import { useAuthStore } from "@/store/Auth"; // Импортируем useAuthStore
 

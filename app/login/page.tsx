@@ -6,13 +6,20 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/Auth";
 import { loginWithWidget } from "@/lib/api";
 
+// Extend Window interface
+declare global {
+  interface Window {
+    onTelegramAuth?: (user: unknown) => void;
+  }
+}
+
 const TelegramLoginWidget = () => {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   const widgetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    window.onTelegramAuth = async (user) => {
+    window.onTelegramAuth = async (user: unknown) => {
       console.log("Telegram authentication successful. Raw user data:", user);
       
       try {
@@ -22,31 +29,37 @@ const TelegramLoginWidget = () => {
         if (responseData && responseData.user && responseData.access_token) {
           console.log("User data to be stored:", responseData.user);
           console.log("Access token to be stored:", responseData.access_token);
-          setUser(responseData.user, responseData.access_token); // <-- Исправлено: передаем user и access_token
+          setUser(responseData.user, responseData.access_token);
           toast.success("Успішна аутентифікація!");
           router.push('/');
         } else {
           throw new Error("Некоректні дані користувача або токен від сервера.");
         }
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Authentication error:", error);
         let errorMessage = "Помилка аутентифікації. Спробуйте пізніше.";
-        if (error.response) {
-          if (error.response.status === 401 || error.response.status === 403) {
-            errorMessage = "Доступ заборонено. Перевірте свої права.";
-          } else if (error.response.data && error.response.data.detail) {
-            errorMessage = error.response.data.detail;
-          } else {
-            errorMessage = `Помилка аутентифікації (статус: ${error.response.status}).`;
+        
+        // Type guard for axios error
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number; data?: { detail?: string } }; request?: unknown; message?: string };
+          if (axiosError.response) {
+            if (axiosError.response.status === 401 || axiosError.response.status === 403) {
+              errorMessage = "Доступ заборонено. Перевірте свої права.";
+            } else if (axiosError.response.data?.detail) {
+              errorMessage = axiosError.response.data.detail;
+            } else {
+              errorMessage = `Помилка аутентифікації (статус: ${axiosError.response.status}).`;
+            }
+          } else if (axiosError.request) {
+            errorMessage = "Немає відповіді від сервера. Перевірте підключення.";
+          } else if (axiosError.message) {
+            errorMessage = axiosError.message;
           }
-        } else if (error.request) {
-          errorMessage = "Немає відповіді від сервера. Перевірте підключення.";
-        } else {
-          errorMessage = error.message;
         }
+        
         toast.error(errorMessage);
-        setUser(null, null); // Сбрасываем пользователя и токен в случае ошибки
+        setUser(null, null);
       }
     };
 

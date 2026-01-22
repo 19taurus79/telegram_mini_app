@@ -1,10 +1,10 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 // Получить заявки и адреса одним запросом
 export async function fetchOrdersAndAddresses() {
   try {
-    console.log('Fetching orders and addresses from:', `${process.env.NEXT_PUBLIC_URL_API}/get_all_orders_and_address`);
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_URL_API}/get_all_orders_and_address`);
+    console.log('Fetching orders and addresses from:', `/get_all_orders_and_address`);
+    const response = await api.get(`/get_all_orders_and_address`);
     
     const [orders, addresses] = response.data;
     console.log('Orders received:', orders.length, 'items');

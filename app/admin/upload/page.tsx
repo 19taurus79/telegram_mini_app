@@ -5,7 +5,7 @@ import MatchingUI from '@/components/Admin/MatchingUI';
 import { MatchingData } from '@/types/types';
 import { useState } from 'react';
 import styles from './UploadPage.module.css';
-import axios from 'axios';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function UploadPage() {
@@ -27,7 +27,7 @@ export default function UploadPage() {
     toast.loading("Отримання результатів співставлення...");
 
     try {
-      const resultsResponse = await axios.get(`/process/${currentSessionId}/results`);
+      const resultsResponse = await api.get(`/process/${currentSessionId}/results`);
       const manualMatchesJson = JSON.stringify(resultsResponse.data);
 
       toast.dismiss();
@@ -46,7 +46,7 @@ export default function UploadPage() {
       formData.append('manual_matches_json', manualMatchesJson);
 
       if (remainingFileCount > 0) {
-        await axios.post("/upload-data", formData, {
+        await api.post("/upload-data", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -82,7 +82,7 @@ export default function UploadPage() {
       }
 
       if (fileCount > 0) {
-        await axios.post("/upload-data", formData, {
+        await api.post("/upload-data", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },

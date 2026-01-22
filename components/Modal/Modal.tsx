@@ -12,13 +12,13 @@ type Props = {
 const Modal = ({ children, onClose }: Props) => {
   const router = useRouter();
 
-  const close = () => {
+  const close = React.useCallback(() => {
       if (onClose) {
           onClose();
       } else {
           router.back();
       }
-  };
+  }, [onClose, router]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,7 +34,7 @@ const Modal = ({ children, onClose }: Props) => {
       document.body.style.overflow = "auto"; // Or ""
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, router]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [close]);
 
   const onBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

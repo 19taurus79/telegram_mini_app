@@ -206,6 +206,21 @@ function Header() {
               </li>
             </>
           )}
+          {/* Показуємо Logout тільки в browser режимі (коли є токен) */}
+          {useAuthStore.getState().accessToken && (
+            <li>
+              <button
+                onClick={() => {
+                  useAuthStore.getState().logout();
+                  handleNavClick();
+                  window.location.href = '/login';
+                }}
+                className={css.logoutButton}
+              >
+                Вийти
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
     </header>

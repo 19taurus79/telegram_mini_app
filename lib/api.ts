@@ -41,14 +41,21 @@ api.interceptors.request.use(
       console.log(`[Axios Interceptor] Making request to: ${config.url}`);
     }
 
-    const initData = useInitData.getState().initData;
+    let initData = useInitData.getState().initData;
     const accessToken = useAuthStore.getState().accessToken;
 
+    // Резистентность к race condition: если в сторе еще нет, но в окне уже есть - берем из окна
+    if (!initData && typeof window !== "undefined" && (window as any).Telegram?.WebApp?.initData) {
+      initData = (window as any).Telegram.WebApp.initData;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Axios Interceptor] URL: ${config.url}, initData: ${initData ? 'PRESENT' : 'ABSENT'}, token: ${accessToken ? 'PRESENT' : 'ABSENT'}`);
+    }
+
     if (initData) {
-      if (process.env.NODE_ENV === 'development') console.log("[Axios Interceptor] Found initData. Attaching X-Telegram-Init-Data header.");
       config.headers["X-Telegram-Init-Data"] = initData;
     } else if (accessToken) {
-      if (process.env.NODE_ENV === 'development') console.log("[Axios Interceptor] No initData. Found accessToken. Attaching Authorization header.");
       config.headers["Authorization"] = `Bearer ${accessToken}`;
     } else {
       if (process.env.NODE_ENV === 'development') console.log("[Axios Interceptor] No initData or accessToken found. Sending request without auth headers.");

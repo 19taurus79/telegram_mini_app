@@ -1,8 +1,8 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 export const fetchManagers = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_URL_API}/data/managers`);
+        const response = await api.get("/data/managers");
         console.log(response.data);
         return response.data;
     } catch (error) {

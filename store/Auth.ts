@@ -9,6 +9,7 @@ type AuthState = {
   isLoading: boolean;
   setUser: (user: User | null, accessToken: string | null) => void;
   setLoading: (loading: boolean) => void;
+  logout: () => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +27,13 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         }),
       setLoading: (loading) => set({ isLoading: loading }),
+      logout: () =>
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+        }),
     }),
     {
       name: "auth-storage", // Имя, под которым состояние будет храниться в localStorage

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent, DragEvent } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import styles from "./FileUploadForm.module.css";
 import toast from 'react-hot-toast';
 import { MatchingData } from "@/types/types";
@@ -101,7 +101,7 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
     formData.append("moved_file", files.moved as File);
 
     try {
-      const response = await axios.post("/upload_ordered_moved", formData, {
+      const response = await api.post("/upload_ordered_moved", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

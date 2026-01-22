@@ -1,9 +1,9 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 export default async function fetchGeocode(address) {
   console.log("Fetching geocode for address:", address);
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_URL_API}/data/geocode`, {
+    const response = await api.get("/data/geocode", {
       params: { address },
     });
     const data = response.data;

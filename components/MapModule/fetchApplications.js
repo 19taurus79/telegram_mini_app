@@ -1,8 +1,8 @@
-import axios from "axios";
+import api from "@/lib/api";
 
 export default async function fetchApplications() {
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_URL_API}/api/applications`);
+    const response = await api.get("/api/applications");
     return response.data;
   } catch (error) {
     console.error("Ошибка при получении заявок:", error);

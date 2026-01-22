@@ -50,7 +50,7 @@ function RemainsContent() {
       if (searchParam && searchParam !== searchValue) {
           setSearchValue(searchParam);
       }
-  }, [searchParams, setSearchValue]);
+  }, [searchParams, setSearchValue, searchValue]);
 
   useEffect(() => {
       const searchParam = searchParams.get('search');

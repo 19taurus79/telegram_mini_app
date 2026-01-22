@@ -3,9 +3,9 @@ export function getInitData(): string {
   const forceBrowserAuth = process.env.NEXT_PUBLIC_FORCE_BROWSER_AUTH === "true";
 
   // Спочатку перевіряємо, чи це справжній Telegram Mini App
-  if (typeof window !== "undefined" && (window as any).Telegram?.WebApp?.initData) {
+  if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
     // Якщо є реальні initData від Telegram - завжди використовуємо їх
-    return (window as any).Telegram.WebApp.initData;
+    return window.Telegram.WebApp.initData;
   }
   
   // Якщо включен режим принудительной браузерной аутентификации і немає Telegram

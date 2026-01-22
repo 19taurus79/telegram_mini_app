@@ -45,8 +45,8 @@ api.interceptors.request.use(
     const accessToken = useAuthStore.getState().accessToken;
 
     // Резистентность к race condition: если в сторе еще нет, но в окне уже есть - берем из окна
-    if (!initData && typeof window !== "undefined" && (window as any).Telegram?.WebApp?.initData) {
-      initData = (window as any).Telegram.WebApp.initData;
+    if (!initData && typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
+      initData = window.Telegram.WebApp.initData;
     }
 
     if (process.env.NODE_ENV === 'development') {

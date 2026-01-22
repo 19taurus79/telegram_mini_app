@@ -8,6 +8,7 @@ import { getUser } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
 import { CSSProperties } from "react";
+import axios from "axios";
 
 const override: CSSProperties = {
   display: "block",
@@ -29,14 +30,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       setLoading(true);
 
       // Сигнализируем Telegram, что Мини-апп готов к отображению
-      if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
-        (window as any).Telegram.WebApp.ready();
+      if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
       }
 
       let initData = getInitData();
       
       // Если мы в Telegram (есть объект WebApp), но initData пустой - подождем немного
-      if (!initData && typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      if (!initData && typeof window !== "undefined" && window.Telegram?.WebApp) {
         console.log("AuthGuard: Telegram object found but initData is empty. Waiting 200ms...");
         await new Promise(resolve => setTimeout(resolve, 200));
         initData = getInitData();
@@ -50,15 +51,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           const currentUser = await getUser();
           setUser(currentUser, null);
           console.log("AuthGuard: Mini App user fetched successfully.");
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("AuthGuard: Failed to fetch user in Mini App mode.");
-          const status = error.response?.status || "Network Error";
+          let status = "Network Error";
+          if (axios.isAxiosError(error)) {
+            status = error.response?.status?.toString() || "Network Error";
+          }
           import('react-hot-toast').then(t => t.default.error(`Авторизація TMA збій: ${status}`));
           setUser(null, null);
         }
       } else {
         console.log("AuthGuard: Browser mode. Clearing initData in store.");
-        if (typeof window !== "undefined" && (window as any).Telegram?.WebApp?.initData === "") {
+        if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData === "") {
            import('react-hot-toast').then(t => t.default.error("initData відсутній у Telegram"));
         }
         setInitData(null); // Очищаем initData, чтобы использовать accessToken в интерцепторе
@@ -67,7 +71,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           setUser(currentUser, useAuthStore.getState().accessToken);
           console.log("AuthGuard: User fetched successfully in browser mode.");
         } catch (error) {
-          console.error("AuthGuard: Failed to fetch user in browser mode.", error);
+          console.error("AuthGuard: Failed to fetch user in browser mode.");
           setUser(null, null);
         }
       }
@@ -75,7 +79,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, [pathname, router, setUser, setLoading, setInitData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, setUser, setLoading, setInitData]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && pathname !== '/login') {

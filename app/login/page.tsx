@@ -81,8 +81,22 @@ export default function LoginPage() {
         Якщо кнопка не з&apos;являється — перевірте з&apos;єднання або спробуйте в іншому браузері.
       </p>
       <TelegramLoginWidget />
-      <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
-        Важливо: Ваш домен має бути зареєстрований у @BotFather (команда /setdomain)
+      
+      {!process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME && (
+        <p style={{ color: 'red', fontWeight: 'bold' }}>
+          ⚠️ Змінна NEXT_PUBLIC_TELEGRAM_BOT_NAME не знайдена! Перевірте налаштування Vercel.
+        </p>
+      )}
+
+      <p style={{ fontSize: '14px', color: '#666', marginTop: '20px', backgroundColor: '#f0f0f0', padding: '15px', borderRadius: '8px' }}>
+        <strong>Порада:</strong> Повідомлення для підтвердження приходить від системного акаунта 
+        <span style={{ color: '#0088cc', fontWeight: 'bold' }}> Telegram</span> (не від бота!), 
+        шукайте його у самому верху списку чатів.
+      </p>
+
+      <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
+        Бот: {process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'не вказано'} | 
+        Домен у @BotFather має бути: {typeof window !== 'undefined' ? window.location.hostname : '...'}
       </p>
     </div>
   );

@@ -7,7 +7,6 @@
 ```env
 NEXT_PUBLIC_URL_API=https://taurus.pp.ua
 NEXT_PUBLIC_TELEGRAM_BOT_NAME=EridonKharkiv_bot
-NEXT_PUBLIC_API_URL=https://taurus.pp.ua
 NEXT_PUBLIC_FORCE_BROWSER_AUTH=true
 ```
 

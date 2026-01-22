@@ -10,7 +10,7 @@ import { DeliveryRequest } from "@/types/types";
 import { Loader2 } from "lucide-react"; // Import Loader2
 
 import { useRouter } from "next/navigation";
-import { getInitData } from "@/lib/getInitData";
+
 import React from "react";
 import toast from "react-hot-toast";
 
@@ -46,8 +46,7 @@ function TableOrderDetail({ details }: Detail) {
   React.useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initData = getInitData();
-            const data = await getDeliveries(initData);
+            const data = await getDeliveries();
             if (data) setAllDeliveries(data);
         } catch (e) {
             console.error("Error loading deliveries", e);
@@ -72,8 +71,7 @@ function TableOrderDetail({ details }: Detail) {
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
     try {
-      const initData = getInitData();
-      const remainsId = await getIdRemainsByParty({ party, initData });
+      const remainsId = await getIdRemainsByParty(party);
       
       if (remainsId && remainsId.length > 0 && remainsId[0]?.id) {
           router.push(`/party_data/${remainsId[0].id}`);
@@ -122,8 +120,7 @@ function TableOrderDetail({ details }: Detail) {
 
                       setAddingToDeliveryId(item.id);
                       try {
-                          const initData = getInitData();
-                          const weight = await getWeightForProduct({ item, initData });
+                          const weight = await getWeightForProduct({ product_id: item.product_id, parties: item.parties });
                           setDelivery({ ...item, weight });
                           toast.success(`Додано: ${item.product}`);
                       } catch (e) {

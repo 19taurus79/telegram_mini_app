@@ -241,6 +241,20 @@ export const updateDeliveryData = async (
   return data;
 };
 
+export const deleteDeliveryData = async (deliveryId: string, initData: string) => {
+  const { data } = await axios.delete<{ status: string }>(
+    "/delivery/delete",
+    {
+      data: { delivery_id: deliveryId },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export const getTotalSumOrderByProduct = async ({
   product,
   initData,

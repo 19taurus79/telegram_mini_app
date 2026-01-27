@@ -19,7 +19,8 @@ export default function BottomData({ onEditClient }) {
     updateDeliveries,
     multiSelectedItems,
     selectionType,
-    clearMultiSelectedItems
+    clearMultiSelectedItems,
+    removeDelivery
   } = useApplicationsStore();
 
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
@@ -79,11 +80,31 @@ export default function BottomData({ onEditClient }) {
     }
   };
 
+  const handleDeleteDelivery = async (d) => {
+    setDeleteConfirmTarget(null);
+    try {
+      const initData = getInitData();
+      const res = await import("@/lib/api").then(m => m.deleteDeliveryData(String(d.id), initData));
+      
+      // Handle the case where the endpoint returns null on success
+      if (res === null || (res && (res.status === "success" || res.status === "ok"))) {
+        toast.success("Доставку видалено");
+        removeDelivery(d.id);
+      } else {
+        toast.error("Не вдалося видалити доставку");
+      }
+    } catch (e) {
+      console.error("Error deleting delivery:", e);
+      toast.error("Помилка при видаленні доставки");
+    }
+  };
+
   const { areApplicationsVisible, areClientsVisible, areDeliveriesVisible } = useMapControlStore();
   const { addressData } = useDisplayAddressStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); // Added this line
 
-  const toggleExpand = (id) => {
+  const toggleExpansion = (id) => { // Renamed from toggleExpand
     setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -442,7 +463,7 @@ export default function BottomData({ onEditClient }) {
                 <div className={css.deliverySubList}>
                   {data.deliveries.map(d => (
                     <div key={d.id} className={css.multiDeliveryBox}>
-                      <div className={css.accordionHeader} onClick={() => toggleExpand(d.id)}>
+                      <div className={css.accordionHeader} onClick={() => toggleExpansion(d.id)}>
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {expandedIds.has(d.id) ? '▼' : '▶'} ID: {d.id} | {d.address}
@@ -456,6 +477,7 @@ export default function BottomData({ onEditClient }) {
                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                               {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
                               <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: d.status === "Виконано" ? '#ff9800' : '#4caf50' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
+                              {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
                            </div>
                            {renderItems(d.items)}
                         </div>
@@ -466,6 +488,18 @@ export default function BottomData({ onEditClient }) {
               </div>
             ))}
           </div>
+          {deleteConfirmTarget && (
+            <div className={css.confirmOverlay} onClick={() => setDeleteConfirmTarget(null)}>
+              <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+                <h4>Видалення доставки</h4>
+                <p>Ви впевнені, що хочете видалити доставку №{deleteConfirmTarget.id}?</p>
+                <div className={css.confirmActions}>
+                  <button className={css.confirmCancel} onClick={() => setDeleteConfirmTarget(null)}>Скасувати</button>
+                  <button className={css.deleteBtn} onClick={() => handleDeleteDelivery(deleteConfirmTarget)}>Видалити</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -481,6 +515,7 @@ export default function BottomData({ onEditClient }) {
           <div style={{ display: 'flex', gap: '8px' }}>
             {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
             {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
+            {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
           </div>
         </div>
         <div className={css.addressInfo}>
@@ -495,6 +530,18 @@ export default function BottomData({ onEditClient }) {
           <div className={css.itemsSection}>
             <h4 className={css.itemsTitle}>📦 Товари у доставці:</h4>
             {renderItems(delivery.items)}
+          </div>
+        )}
+        {deleteConfirmTarget && (
+          <div className={css.confirmOverlay} onClick={() => setDeleteConfirmTarget(null)}>
+            <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+              <h4>Видалення доставки</h4>
+              <p>Ви впевнені, що хочете видалити доставку №{deleteConfirmTarget.id}?</p>
+              <div className={css.confirmActions}>
+                <button className={css.confirmCancel} onClick={() => setDeleteConfirmTarget(null)}>Скасувати</button>
+                <button className={css.deleteBtn} onClick={() => handleDeleteDelivery(deleteConfirmTarget)}>Видалити</button>
+              </div>
+            </div>
           </div>
         )}
       </div>

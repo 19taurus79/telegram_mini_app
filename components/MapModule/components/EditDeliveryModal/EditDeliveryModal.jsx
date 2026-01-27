@@ -11,13 +11,15 @@ export default function EditDeliveryModal() {
     setIsEditDeliveryModalOpen, 
     selectedDeliveries,
     updateDeliveries,
-    applications
+    applications,
+    removeDelivery
   } = useApplicationsStore();
 
   const [deliveryItems, setDeliveryItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [activeItemIdx, setActiveItemIdx] = useState(null); 
   const [stockRemains, setStockRemains] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLoadingRemains, setIsLoadingRemains] = useState(false);
   const [isPrintView, setIsPrintView] = useState(false);
   const [printData, setPrintData] = useState(null);
@@ -346,6 +348,35 @@ export default function EditDeliveryModal() {
     }
   };
 
+  const confirmGlobalDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      const initData = getInitData();
+      const results = await Promise.all(selectedDeliveries.map(d => 
+        import("@/lib/api").then(m => m.deleteDeliveryData(String(d.id), initData))
+      ));
+      
+      // Check if any deletion failed. Since we expect null or status "ok"/"success"
+      const allOk = results.every(res => res === null || (res && (res.status === "success" || res.status === "ok")));
+
+      if (allOk) {
+        toast.success("Доставки видалено");
+        selectedDeliveries.forEach(d => removeDelivery(d.id));
+        setIsEditDeliveryModalOpen(false);
+      } else {
+        toast.error("Деякі доставки не вдалося видалити");
+      }
+    } catch (e) {
+      console.error("Error deleting deliveries:", e);
+      toast.error("Помилка при видаленні");
+    }
+  };
+
+  const handleGlobalDelete = async () => {
+    if (selectedDeliveries.length === 0) return;
+    setShowDeleteConfirm(true);
+  };
+
 
   if (!isEditDeliveryModalOpen) return null;
 
@@ -616,6 +647,14 @@ export default function EditDeliveryModal() {
           >
             Скасувати
           </button>
+          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+            <button 
+              className={`${css.button} ${css.deleteDeliveryBtn}`}
+              onClick={handleGlobalDelete}
+            >
+              Видалити доставку
+            </button>
+          )}
           <button 
             className={`${css.button} ${css.saveButton}`}
             onClick={handleReady}
@@ -623,6 +662,26 @@ export default function EditDeliveryModal() {
             Готово
           </button>
         </div>
+ 
+        {/* Printable Area handled via CSS media print */}
+        <div className={css.noPrint} style={{ display: 'none' }}>
+          <div id="printable-delivery-area">
+            {/* Component content to be printed */}
+          </div>
+        </div>
+ 
+        {showDeleteConfirm && (
+          <div className={css.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
+            <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+              <h3>Видалення доставки</h3>
+              <p>Ви впевнені, що хочете видалити {selectedDeliveries.length > 1 ? 'ці доставки' : 'цю доставку'} ({selectedDeliveries.map(d => d.id).join(", ")})?</p>
+              <div className={css.confirmActions}>
+                <button className={css.confirmCancel} onClick={() => setShowDeleteConfirm(false)}>Скасувати</button>
+                <button className={css.confirmDeleteBtn} onClick={confirmGlobalDelete}>Видалити</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

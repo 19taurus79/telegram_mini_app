@@ -81,4 +81,14 @@ export const useApplicationsStore = create((set) => ({
       selectedDelivery: state.selectedDelivery ? (updatedMap.get(state.selectedDelivery.id) || state.selectedDelivery) : null
     };
   }),
+  removeDelivery: (deliveryId) => set((state) => {
+    const newDeliveries = state.deliveries.filter(d => d.id !== deliveryId);
+    const newSelectedDeliveries = state.selectedDeliveries.filter(d => d.id !== deliveryId);
+    
+    return {
+      deliveries: newDeliveries,
+      selectedDeliveries: newSelectedDeliveries,
+      selectedDelivery: state.selectedDelivery?.id === deliveryId ? null : state.selectedDelivery
+    };
+  }),
 }));

@@ -197,7 +197,78 @@
   color: white;
 }
 
-.saveButton:hover {
+.deleteDeliveryBtn {
+  background-color: #ef4444;
+  border: none;
+  color: white;
+  margin-right: auto;
+}
+
+.saveButton:hover, .deleteDeliveryBtn:hover {
+  filter: brightness(1.1);
+}
+
+.confirmOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.confirmModal {
+  background: var(--background);
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border: 1px solid var(--border-color);
+}
+
+.confirmModal h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+}
+
+.confirmModal p {
+  margin-bottom: 24px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirmCancel {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--foreground);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.confirmDeleteBtn {
+  padding: 8px 20px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.confirmDeleteBtn:hover {
   filter: brightness(1.1);
 }
 

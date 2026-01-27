@@ -215,31 +215,79 @@ export default function EditDeliveryModal() {
   const handlePartyQuantityChange = (itemIdx, partyIdx, newValue) => {
     const nextItems = [...deliveryItems];
     nextItems[itemIdx].parties[partyIdx].party_quantity = newValue === "" ? "" : (parseFloat(newValue) || 0);
-    
-    // Auto-update total quantity if all parties sum up? 
-    // Usually total quantity is independent or the sum of parties.
-    // Let's assume for now they are managed separately or user wants control.
     setDeliveryItems(nextItems);
   };
 
+  // Helper to validate items and highlight mismatches
+  const getItemsWithErrors = () => {
+    return deliveryItems.map(item => {
+      const totalQty = parseFloat(item.quantity) || 0;
+      const parties = item.parties || [];
+      
+      const partiesSum = parties.reduce((sum, p) => {
+        // Correct fallback: use party_quantity if it's not an empty string, otherwise use moved_q
+        const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) 
+          ? p.party_quantity 
+          : (p.moved_q || 0);
+        return sum + (parseFloat(qStr) || 0);
+      }, 0);
+      
+      const hasMismatch = totalQty > 0 && Math.abs(totalQty - partiesSum) > 0.0001;
+      
+      // noParties logic: Must have at least one party and it must have a non-empty name
+      const hasValidParties = parties.length > 0 && parties.some(p => p.party && p.party.trim() !== "");
+      const noParties = totalQty > 0 && !hasValidParties;
+
+      if (totalQty > 0) {
+        console.log(`Validating [${item.product}]: totalQty=${totalQty}, partiesSum=${partiesSum}, length=${parties.length}, hasMismatch=${hasMismatch}, noParties=${noParties}`, parties);
+      }
+
+      return {
+        ...item,
+        hasError: hasMismatch || noParties,
+        errorType: noParties ? 'no_parties' : (hasMismatch ? 'mismatch' : null)
+      };
+    });
+  };
+
+  const validatedItems = useMemo(() => getItemsWithErrors(), [deliveryItems]);
+
   const handleReady = async () => {
+    console.log("handleReady clicked. current validatedItems:", validatedItems);
+    // Final validation
+    const itemsWithErrors = validatedItems.filter(item => item.hasError);
+    console.log("itemsWithErrors count:", itemsWithErrors.length, itemsWithErrors);
+
+    if (itemsWithErrors.length > 0) {
+      const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+      if (mismatch) {
+        console.warn("Validation failed: mismatch", mismatch);
+        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}. Загальна кількість не збігається з сумою по партіях.`);
+      } else {
+        const noParties = itemsWithErrors.find(i => i.errorType === 'no_parties');
+        console.warn("Validation failed: no_parties", noParties);
+        toast.error(`Оберіть хоча б одну партію для товару: ${noParties.product}`);
+      }
+      return;
+    }
+
     // Reconstruct deliveries with updated items and status
     const updatedDeliveries = selectedDeliveries.map(delivery => {
-      const deliveryUpdatedItems = deliveryItems
+      const deliveryUpdatedItems = validatedItems
         .filter(item => item.deliveryId === delivery.id)
         .map(item => {
           const qty = parseFloat(item.quantity) || 0;
           let parties = (item.parties || [])
-            .map(p => ({
-              ...p,
-              moved_q: parseFloat(p.party_quantity || p.moved_q) || 0
-            }))
+            .map(p => {
+              const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                ? p.party_quantity
+                : (p.moved_q || 0);
+              return {
+                ...p,
+                moved_q: parseFloat(qStr) || 0
+              };
+            })
             .filter(p => p.moved_q > 0);
-
-          // If no active parties but quantity is set — create virtual party for the backend to see it
-          if (parties.length === 0 && qty > 0) {
-             parties = [{ party: "", moved_q: qty }];
-          }
 
           return {
             ...item,
@@ -250,14 +298,13 @@ export default function EditDeliveryModal() {
       
       return {
         ...delivery,
-        status: 'В роботі', // Set status as requested
+        status: 'В роботі',
         items: deliveryUpdatedItems
       };
     });
 
     try {
         const initData = getInitData();
-        // Send updates to backend with clean payload
         await Promise.all(updatedDeliveries.map(d => {
             const cleanItems = d.items.map(item => ({
                 product: String(item.product),
@@ -278,18 +325,15 @@ export default function EditDeliveryModal() {
         }));
 
         updateDeliveries(updatedDeliveries);
-        console.log("Ready updated deliveries:", updatedDeliveries);
         toast.success("Доставки оновлено та переведено в роботу");
         
-        // Filter out deliveries with no items or zero quantity items
         const validDeliveries = updatedDeliveries.filter(d => 
           d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
         ).map(d => ({
           ...d,
-          items: d.items.filter(i => i.quantity > 0) // Also filter items inside delivery
+          items: d.items.filter(i => i.quantity > 0)
         }));
 
-        // Sort by manager
         const sorted = [...validDeliveries].sort((a, b) => 
           (a.manager || "").localeCompare(b.manager || "")
         );
@@ -298,12 +342,7 @@ export default function EditDeliveryModal() {
         setIsAskingDate(true);
     } catch (error) {
         console.error("Failed to update deliveries:", error);
-        if (error.response && error.response.data) {
-            console.error("Validation errors:", error.response.data);
-            toast.error(`Помилка валідації: ${JSON.stringify(error.response.data)}`);
-        } else {
-            toast.error("Помилка при збереженні змін");
-        }
+        toast.error("Помилка при збереженні змін");
     }
   };
 
@@ -429,7 +468,6 @@ export default function EditDeliveryModal() {
         </div>
 
         <div className={css.content}>
-          {/* Левая таблица: Данные доставки */}
           <div className={css.leftPanel}>
             <h3 className={css.panelTitle}>📦 Товари у доставці</h3>
             <div className={css.tableContainer}>
@@ -444,10 +482,10 @@ export default function EditDeliveryModal() {
                   </tr>
                 </thead>
                 <tbody>
-                  {deliveryItems.map((item, idx) => (
+                  {validatedItems.map((item, idx) => (
                     <React.Fragment key={`${item.deliveryId}-${idx}`}>
                       <tr 
-                        className={activeItemIdx === idx ? css.selectedRow : ""}
+                        className={`${activeItemIdx === idx ? css.selectedRow : ""} ${item.hasError ? css.rowError : ""}`}
                         onClick={() => handleItemClick(item, idx)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -457,10 +495,11 @@ export default function EditDeliveryModal() {
                         <td>
                           <input 
                             type="number" 
-                            className={css.inputNumber}
+                            className={`${css.inputNumber} ${item.hasError ? css.inputError : ""}`}
                             value={item.quantity}
                             onChange={(e) => handleQuantityChange(idx, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
+                            title={item.errorType === 'mismatch' ? "Сума партій не збігається з загальною кількістю" : (item.errorType === 'no_parties' ? "Необхідно обрати партію" : "")}
                           />
                         </td>
                         <td>
@@ -495,7 +534,7 @@ export default function EditDeliveryModal() {
                                     <td>
                                       <input 
                                         type="number" 
-                                        className={css.inputNumber}
+                                        className={`${css.inputNumber} ${item.hasError && item.errorType === 'mismatch' ? css.inputError : ""}`}
                                         style={{ height: '24px', fontSize: '0.8rem' }}
                                         value={p.party_quantity}
                                         onChange={(e) => handlePartyQuantityChange(idx, pIdx, e.target.value)}

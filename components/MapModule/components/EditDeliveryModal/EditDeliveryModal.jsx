@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import css from "./EditDeliveryModal.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { getInitData } from "@/lib/getInitData";
@@ -25,6 +26,9 @@ export default function EditDeliveryModal() {
   const [printData, setPrintData] = useState(null);
   const [isAskingDate, setIsAskingDate] = useState(false);
   const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  const contentRef = useRef(null);
+  const reactToPrintFn = useReactToPrint({ contentRef });
 
   // Close on Escape
   useEffect(() => {
@@ -314,8 +318,7 @@ export default function EditDeliveryModal() {
                 quantity: parseFloat(item.quantity) || 0,
                 manager: String(item.manager || ""),
                 client: String(item.client),
-                orderRef: String(item.orderRef || item.order || ""),
-                order: String(item.orderRef || item.order || ""), 
+                order_ref: String(item.orderRef || item.order || item.order_ref || ""), 
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({
                     party: String(p.party),
@@ -346,6 +349,40 @@ export default function EditDeliveryModal() {
         console.error("Failed to update deliveries:", error);
         toast.error("Помилка при збереженні змін");
     }
+  };
+
+  const handlePrintPreview = () => {
+    // Basic validation: ensure at least some items have quantity > 0
+    const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
+    if (!hasItems) {
+      toast.error("Немає товарів з кількістю більше 0 для друку");
+      return;
+    }
+
+    // Prepare data
+    const validDeliveries = selectedDeliveries.map(delivery => {
+      const items = deliveryItems
+        .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
+        .map(item => ({
+          ...item,
+          quantity: parseFloat(item.quantity) || 0,
+          parties: (item.parties || []).map(p => {
+             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+               ? p.party_quantity
+               : (p.moved_q || 0);
+             return { ...p, moved_q: parseFloat(qStr) || 0 };
+          }).filter(p => p.moved_q > 0)
+        }));
+
+      return { ...delivery, items };
+    }).filter(d => d.items.length > 0);
+
+    const sorted = [...validDeliveries].sort((a, b) => 
+      (a.manager || "").localeCompare(b.manager || "")
+    );
+
+    setPrintData(sorted);
+    setIsAskingDate(true);
   };
 
   const confirmGlobalDelete = async () => {
@@ -426,7 +463,7 @@ export default function EditDeliveryModal() {
             </button>
           </div>
           <div className={css.content} style={{ overflow: 'auto', display: 'block' }}>
-            <div className={css.printableArea}>
+            <div className={css.printableArea} ref={contentRef}>
               <div style={{ textAlign: 'center', borderBottom: '2px solid #333', marginBottom: '20px', paddingBottom: '10px' }}>
                 <h2 style={{ margin: 0 }}>Відомість доставки</h2>
                 <div style={{ fontSize: '0.9rem', marginTop: '5px' }}>Дата: {new Date().toLocaleDateString('uk-UA')}</div>
@@ -478,7 +515,7 @@ export default function EditDeliveryModal() {
             </button>
             <button 
               className={`${css.button} ${css.saveButton}`}
-              onClick={() => window.print()}
+              onClick={() => reactToPrintFn()}
             >
               🖨️ Друк
             </button>
@@ -660,6 +697,12 @@ export default function EditDeliveryModal() {
             onClick={handleReady}
           >
             Готово
+          </button>
+          <button 
+            className={`${css.button} ${css.printButton}`}
+            onClick={handlePrintPreview}
+          >
+            🖨️ Друк
           </button>
         </div>
  

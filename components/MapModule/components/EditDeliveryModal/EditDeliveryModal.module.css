@@ -204,8 +204,20 @@
   margin-right: auto;
 }
 
-.saveButton:hover, .deleteDeliveryBtn:hover {
+.saveButton:hover, .deleteDeliveryBtn:hover, .printButton:hover, .readyButton:hover {
   filter: brightness(1.1);
+}
+
+.printButton {
+  background-color: #2196f3;
+  border: none;
+  color: white;
+}
+
+.readyButton {
+  background-color: #4caf50;
+  border: none;
+  color: white;
 }
 
 .confirmOverlay {

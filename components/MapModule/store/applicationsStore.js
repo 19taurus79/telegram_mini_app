@@ -67,6 +67,8 @@ export const useApplicationsStore = create((set) => ({
   setSelectedManager: (manager) => set({ selectedManager: manager }),
   isEditDeliveryModalOpen: false,
   setIsEditDeliveryModalOpen: (isOpen) => set({ isEditDeliveryModalOpen: isOpen }),
+  isPrintRequested: false,
+  setIsPrintRequested: (isRequested) => set({ isPrintRequested: isRequested }),
   deliveries: [],
   setDeliveries: (deliveries) => set({ deliveries: Array.isArray(deliveries) ? deliveries : [] }),
   updateDeliveries: (updatedBatch) => set((state) => {

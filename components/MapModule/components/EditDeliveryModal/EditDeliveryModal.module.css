@@ -357,6 +357,10 @@
 }
 
 @media print {
+  @page {
+    margin: 15mm;
+  }
+
   .noPrint {
     display: none !important;
   }
@@ -393,6 +397,6 @@
   .printableArea {
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 10mm;
   }
 }

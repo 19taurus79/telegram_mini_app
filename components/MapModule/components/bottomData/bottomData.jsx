@@ -20,7 +20,8 @@ export default function BottomData({ onEditClient }) {
     multiSelectedItems,
     selectionType,
     clearMultiSelectedItems,
-    removeDelivery
+    removeDelivery,
+    setIsPrintRequested
   } = useApplicationsStore();
 
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
@@ -52,8 +53,7 @@ export default function BottomData({ onEditClient }) {
             quantity: Number(item.quantity) || 0,
             manager: String(item.manager || d.manager || ""),
             client: String(item.client || d.client || ""),
-            orderRef: String(item.order_ref || item.order || ""),
-            order: String(item.order_ref || item.order || ""), 
+            order_ref: String(item.order_ref || item.order || ""),
             weight: Number(item.weight) || 0,
             parties: Array.isArray(item.parties) 
                 ? item.parties.map(p => ({
@@ -451,7 +451,12 @@ export default function BottomData({ onEditClient }) {
                 Всього: {totalWeight.toFixed(2)} кг
               </div>
             </div>
-            <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
+                <Printer size={14} /> Друк
+              </button>
+              <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
+            </div>
           </div>
           <div className={css.ordersContainer}>
             {Object.entries(groupingByClient).map(([client, data]) => (
@@ -512,10 +517,13 @@ export default function BottomData({ onEditClient }) {
             <h2 className={css.title}>🚀 Доставка: {delivery.client}</h2>
             <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : ""}`}>{delivery.status}</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
-            {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
-            {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+             <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
+               <Printer size={14} /> Друк
+             </button>
+             {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+             {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
+             {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
           </div>
         </div>
         <div className={css.addressInfo}>

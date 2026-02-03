@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Edit2, Trash2, Check } from 'lucide-react';
 import { getOrderComments, createOrderComment, updateOrderComment, deleteOrderComment } from '@/lib/api';
 import { OrderComment } from '@/types/types';
 import { getInitData } from '@/lib/getInitData';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './OrderCommentModal.module.css';
 
 interface OrderCommentModalProps {
@@ -25,45 +26,34 @@ export default function OrderCommentModal({
   onClose,
   readOnly = false,
 }: OrderCommentModalProps) {
-  const [comments, setComments] = useState<OrderComment[]>([]);
+  const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [selectedCommentType, setSelectedCommentType] = useState<'order' | 'product'>(commentType);
 
-  const loadComments = async () => {
-    setIsLoading(true);
-    try {
-      // Завантажуємо всі коментарі для заявки
-      const allComments = await getOrderComments(orderRef);
-      
-      // Фільтруємо: показуємо коментарі заявки + коментарі конкретного товару (якщо productId вказаний)
-      const filteredComments = allComments.filter(comment => {
-        // Завжди показуємо коментарі рівня заявки
-        if (comment.comment_type === 'order') {
-          return true;
-        }
-        // Якщо є productId, показуємо тільки коментарі цього товару
-        if (productId && comment.comment_type === 'product') {
-          // Порівнюємо по product_name (назва товару) для сумісності з BI та дашбордом
-          return comment.product_name === productId || comment.product_id === productId;
-        }
-        return false;
-      });
-      
-      setComments(filteredComments);
-    } catch (error) {
-      console.error('Error loading comments:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Завантаження коментарів через TanStack Query
+  const { data: allComments = [], isLoading } = useQuery({
+    queryKey: ['orderComments', orderRef],
+    queryFn: () => getOrderComments(orderRef),
+    staleTime: 30000, // 30 секунд
+  });
 
-  useEffect(() => {
-    loadComments();
-  }, [orderRef, productId, loadComments]);
+  // Фільтруємо коментарі
+  const comments = useMemo(() => {
+    return allComments.filter(comment => {
+      // Завжди показуємо коментарі рівня заявки
+      if (comment.comment_type === 'order') {
+        return true;
+      }
+      // Якщо є productId, показуємо тільки коментарі цього товару
+      if (productId && comment.comment_type === 'product') {
+        // Порівнюємо по product_name (назва товару) для сумісності з BI та дашбордом
+        return comment.product_name === productId || comment.product_id === productId;
+      }
+      return false;
+    });
+  }, [allComments, productId]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -76,38 +66,34 @@ export default function OrderCommentModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newComment.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const initData = getInitData();
-      const payload = {
-        comment_type: selectedCommentType,
-        order_ref: orderRef,
-        product_id: selectedCommentType === 'product' ? productId : undefined,
-        product_name: selectedCommentType === 'product' ? productName : undefined,
-        comment_text: newComment.trim(),
-      };
-      
-      console.log('📝 Створення коментаря - payload:', payload);
-      
-      await createOrderComment(payload, initData!);
-
-      await loadComments();
+  // Мутація створення коментаря
+  const createMutation = useMutation({
+    mutationFn: (payload: any) => createOrderComment(payload, getInitData()!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setNewComment('');
       toast.success('Коментар додано');
-      
-      // Повідомляємо про оновлення коментарів
       window.dispatchEvent(new Event('commentUpdated'));
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating comment:', error);
       toast.error('Помилка при додаванні коментаря');
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const payload = {
+      comment_type: selectedCommentType,
+      order_ref: orderRef,
+      product_id: selectedCommentType === 'product' ? productId : undefined,
+      product_name: selectedCommentType === 'product' ? productName : undefined,
+      comment_text: newComment.trim(),
+    };
+    
+    createMutation.mutate(payload);
   };
 
   const handleEdit = (comment: OrderComment) => {
@@ -115,24 +101,26 @@ export default function OrderCommentModal({
     setEditText(comment.comment_text);
   };
 
-  const handleSaveEdit = async (commentId: string) => {
-    if (!editText.trim()) return;
-
-    try {
-      const initData = getInitData();
-      await updateOrderComment(commentId, editText.trim(), initData!);
-      
-      await loadComments();
+  // Мутація оновлення коментаря
+  const updateMutation = useMutation({
+    mutationFn: ({ commentId, commentText }: { commentId: string; commentText: string }) => 
+      updateOrderComment(commentId, commentText, getInitData()!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setEditingId(null);
       setEditText('');
       toast.success('Коментар оновлено');
-      
-      // Повідомляємо про оновлення коментарів
       window.dispatchEvent(new Event('commentUpdated'));
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating comment:', error);
       toast.error('Помилка при оновленні коментаря');
-    }
+    },
+  });
+
+  const handleSaveEdit = (commentId: string) => {
+    if (!editText.trim()) return;
+    updateMutation.mutate({ commentId, commentText: editText.trim() });
   };
 
   const handleCancelEdit = () => {
@@ -140,20 +128,22 @@ export default function OrderCommentModal({
     setEditText('');
   };
 
-  const handleDelete = async (commentId: string) => {
-    try {
-      const initData = getInitData();
-      await deleteOrderComment(commentId, initData!);
-      
-      await loadComments();
+  // Мутація видалення коментаря
+  const deleteMutation = useMutation({
+    mutationFn: (commentId: string) => deleteOrderComment(commentId, getInitData()!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       toast.success('Коментар видалено');
-      
-      // Повідомляємо про оновлення коментарів
       window.dispatchEvent(new Event('commentUpdated'));
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error deleting comment:', error);
       toast.error('Помилка при видаленні коментаря');
-    }
+    },
+  });
+
+  const handleDelete = (commentId: string) => {
+    deleteMutation.mutate(commentId);
   };
 
   const formatDate = (dateString: string) => {
@@ -220,14 +210,14 @@ export default function OrderCommentModal({
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={3}
-                  disabled={isSubmitting}
+                  disabled={createMutation.isPending}
                 />
                 <button
                   type="submit"
                   className={styles.submitButton}
-                  disabled={!newComment.trim() || isSubmitting}
+                  disabled={!newComment.trim() || createMutation.isPending}
                 >
-                  {isSubmitting ? 'Додавання...' : 'Додати коментар'}
+                  {createMutation.isPending ? 'Додавання...' : 'Додати коментар'}
                 </button>
               </form>
             </>

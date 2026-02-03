@@ -44,7 +44,6 @@ export const getRemainsById = async ({
       "X-Telegram-Init-Data": initData,
     },
   });
-  console.log(data);
   return data;
 };
 
@@ -79,7 +78,6 @@ export const getGroupRemainsById = async ({
       },
     }
   );
-  console.log(data);
   return data;
 };
 export const getAvRemainsById = async ({
@@ -95,7 +93,6 @@ export const getAvRemainsById = async ({
       "X-Telegram-Init-Data": initData,
     },
   });
-  console.log(data);
   return data;
 };
 
@@ -137,7 +134,6 @@ export const getOrders = async ({
       client: client,
     },
   });
-  console.log(data);
   return data;
 };
 

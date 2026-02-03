@@ -168,7 +168,6 @@ export default function DetailsWidget({
       weight: weight,
     };
     
-    console.log('Final object sent to store:', deliveryItem);
     setDelivery(deliveryItem);
     setAddingToDeliveryId(null);
   };

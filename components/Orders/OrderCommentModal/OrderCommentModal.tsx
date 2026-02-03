@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Edit2, Trash2, Check } from 'lucide-react';
 import { getOrderComments, createOrderComment, updateOrderComment, deleteOrderComment } from '@/lib/api';
-import { OrderComment } from '@/types/types';
+import { OrderComment, CreateOrderCommentPayload } from '@/types/types';
 import { getInitData } from '@/lib/getInitData';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -68,7 +68,7 @@ export default function OrderCommentModal({
 
   // Мутація створення коментаря
   const createMutation = useMutation({
-    mutationFn: (payload: any) => createOrderComment(payload, getInitData()!),
+    mutationFn: (payload: CreateOrderCommentPayload) => createOrderComment(payload, getInitData()!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setNewComment('');

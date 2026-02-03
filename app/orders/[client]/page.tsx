@@ -9,7 +9,6 @@ import { getInitData } from "@/lib/getInitData";
 import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
-import { Contract } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
 
 type Props = {

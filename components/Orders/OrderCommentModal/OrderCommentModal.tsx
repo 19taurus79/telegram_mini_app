@@ -63,7 +63,7 @@ export default function OrderCommentModal({
 
   useEffect(() => {
     loadComments();
-  }, [orderRef, productId]);
+  }, [orderRef, productId, loadComments]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -235,7 +235,7 @@ export default function OrderCommentModal({
 
           {readOnly && (
             <div className={styles.readOnlyNotice}>
-              📖 Режим перегляду. Для редагування коментарів перейдіть в розділ "Заявки"
+              📖 Режим перегляду. Для редагування коментарів перейдіть в розділ &quot;Заявки&quot;
             </div>
           )}
 

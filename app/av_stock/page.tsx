@@ -8,10 +8,6 @@ import css from "./AvStock.module.css";
 import { getInitData } from "@/lib/getInitData";
 function AvStock() {
   const { selectedGroup, searchValue } = useFilter();
-  console.log("page group", selectedGroup);
-  console.log("page search", selectedGroup);
-  const fill = useFilter();
-  console.log(fill);
   const initData = getInitData();
   const { data } = useQuery({
     queryKey: ["products", selectedGroup, searchValue],

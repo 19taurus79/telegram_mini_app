@@ -10,6 +10,8 @@ import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
+import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
+import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -30,6 +32,11 @@ export default function DetailsWidget({
   }, [selectedContracts]);
 
   const [selectedProductForModal, setSelectedProductForModal] = useState<string | null>(null);
+  const [commentModalData, setCommentModalData] = useState<{
+    orderRef: string;
+    productId?: string;
+    productName?: string;
+  } | null>(null);
 
    const router = useRouter();
   const { setDelivery, hasItem } = useDelivery();
@@ -201,6 +208,7 @@ export default function DetailsWidget({
             <th className={styles.th}>Потреба по підрозділу</th>
             <th className={styles.th}>Готовність до відвантаження</th>
             <th className={styles.th} style={{ width: "40px", textAlign: "center" }}><Truck size={16} /></th>
+            <th className={styles.th} style={{ width: "40px", textAlign: "center" }}>Коментарі</th>
           </tr>
         </thead>
         <tbody>
@@ -302,9 +310,24 @@ export default function DetailsWidget({
                          strokeWidth={isSelected ? 0 : 2}
                        />
                    )}
-                </td>
+                 </td>
 
-              </tr>
+                 <td 
+                   className={styles.td}
+                   style={{ textAlign: "center" }}
+                 >
+                   <OrderCommentBadge
+                     orderRef={item.contract_supplement}
+                     productId={item.product}
+                     onClick={() => setCommentModalData({
+                       orderRef: item.contract_supplement,
+                       productId: item.product,
+                       productName: getProductName(item),
+                     })}
+                   />
+                 </td>
+
+               </tr>
             );
           })}
 
@@ -324,6 +347,16 @@ export default function DetailsWidget({
           <Modal onClose={closeModal}>
               <DetailsOrdersByProduct selectedProductId={selectedProductForModal} />
           </Modal>
+      )}
+
+      {commentModalData && (
+        <OrderCommentModal
+          orderRef={commentModalData.orderRef}
+          commentType="product"
+          productId={commentModalData.productId}
+          productName={commentModalData.productName}
+          onClose={() => setCommentModalData(null)}
+        />
       )}
     </div>
   );

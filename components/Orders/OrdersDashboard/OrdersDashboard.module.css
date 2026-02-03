@@ -172,6 +172,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .contractCard:hover {
@@ -185,9 +186,24 @@
 
 .contractHeader {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   font-size: 14px;
+  min-width: 0;
+}
+
+.contractHeader > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contractHeader > div,
+.contractHeader > span:not(:first-child) {
+  flex-shrink: 0;
 }
 
 .contractSub {

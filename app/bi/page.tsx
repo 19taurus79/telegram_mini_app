@@ -242,7 +242,10 @@ export default function BiPage() {
       );
 
       const ordersTableComponent = (
-        <OrdersTable orders={selectedProduct ? selectedProduct.orders : []} />
+        <OrdersTable 
+          orders={selectedProduct ? selectedProduct.orders : []} 
+          productName={selectedProduct?.product}
+        />
       );
 
       const recommendationsComponent = (
@@ -281,6 +284,7 @@ export default function BiPage() {
               >
                 <OrdersTable
                   orders={selectedProduct ? selectedProduct.orders : []}
+                  productName={selectedProduct?.product}
                 />
               </MobileDrawer>
             </>

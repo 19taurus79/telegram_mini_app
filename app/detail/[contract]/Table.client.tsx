@@ -7,12 +7,13 @@ import {
   getWeightForProduct,
 } from "@/lib/api";
 import { DeliveryRequest } from "@/types/types";
-import { Loader2 } from "lucide-react"; // Import Loader2
-
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
 import toast from "react-hot-toast";
+import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
+import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 
 type OrderDetailItem = {
   orders_q: number;
@@ -40,8 +41,13 @@ type Detail = {
 
 function TableOrderDetail({ details }: Detail) {
   const { delivery, setDelivery } = useDelivery();
-  const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null); // State for loading
+  const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null);
   const [allDeliveries, setAllDeliveries] = React.useState<DeliveryRequest[]>([]);
+  const [commentModalData, setCommentModalData] = React.useState<{
+    orderRef: string;
+    productId: string;
+    productName: string;
+  } | null>(null);
 
   React.useEffect(() => {
     const loadDeliveries = async () => {
@@ -159,6 +165,19 @@ function TableOrderDetail({ details }: Detail) {
             >
               {item.quantity}
             </div>
+            <div className={css.commentBadgeCell}>
+              <OrderCommentBadge
+                orderRef={item.order}
+                productId={item.product}
+                onClick={() =>
+                  setCommentModalData({
+                    orderRef: item.order,
+                    productId: item.product,
+                    productName: item.product,
+                  })
+                }
+              />
+            </div>
           </div>
 
           {/* Party Rows */}
@@ -191,6 +210,16 @@ function TableOrderDetail({ details }: Detail) {
             )}
         </div>
       ))}
+
+      {commentModalData && (
+        <OrderCommentModal
+          orderRef={commentModalData.orderRef}
+          commentType="product"
+          productId={commentModalData.productId}
+          productName={commentModalData.productName}
+          onClose={() => setCommentModalData(null)}
+        />
+      )}
     </div>
   );
 }

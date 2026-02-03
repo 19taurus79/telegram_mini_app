@@ -22,7 +22,9 @@ import {
   TaskGoogle,
   BiRemains,
   BiOrders,
-  FiltersState, MovedData, DeliveryRequest, ClientAddress
+  FiltersState, MovedData, DeliveryRequest, ClientAddress,
+  OrderComment,
+  CreateOrderCommentPayload
 } from "@/types/types";
 import axios from "axios";
 
@@ -852,6 +854,81 @@ export const sendTelegramMessage = async (
     }
   );
   return data;
+};
+
+// ============================================
+// Order Comments API
+// ============================================
+
+// Створення коментаря для заявки або товару
+export const createOrderComment = async (
+  payload: CreateOrderCommentPayload,
+  initData: string
+) => {
+  const { data } = await axios.post<OrderComment>(
+    '/orders/comments/create',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+// Отримання коментарів для заявки
+export const getOrderComments = async (
+  orderRef: string,
+  productId?: string,
+  initData?: string
+) => {
+  const { data } = await axios.get<OrderComment[]>(
+    '/orders/comments/list',
+    {
+      params: { order_ref: orderRef },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData || '',
+      },
+    }
+  );
+  return data;
+};
+
+// Оновлення коментаря
+export const updateOrderComment = async (
+  commentId: string,
+  commentText: string,
+  initData: string
+) => {
+  const { data } = await axios.put<OrderComment>(
+    `/orders/comments/${commentId}`,
+    { comment_text: commentText },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+// Видалення коментаря
+export const deleteOrderComment = async (
+  commentId: string,
+  initData: string
+) => {
+  await axios.delete(
+    `/orders/comments/${commentId}`,
+    {
+      headers: {
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
 };
 
 export default axios;

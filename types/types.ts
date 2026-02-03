@@ -454,3 +454,25 @@ export type WeightCalculationItem = {
     moved_q: number;
   }[];
 };
+
+// Коментар для заявки або товару
+export type OrderComment = {
+  id: string;
+  comment_type: 'order' | 'product'; // тип: для всієї заявки або для товару
+  order_ref: string; // посилання на contract_supplement
+  product_id?: string; // якщо коментар для товару
+  product_name?: string; // назва товару
+  comment_text: string; // текст коментаря
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+};
+
+// Payload для створення коментаря
+export type CreateOrderCommentPayload = {
+  comment_type: 'order' | 'product';
+  order_ref: string;
+  product_id?: string;
+  product_name?: string;
+  comment_text: string;
+};

@@ -13,6 +13,7 @@
   border-bottom: 1px solid var(--border-color);
   padding: 12px 15px;
   text-align: center;
+  overflow: hidden;
 }
 
 .item:last-child {
@@ -52,4 +53,25 @@
 .statusWaiting {
   color: #ffa500; /* Оранжевый цвет для статуса Waiting */
   font-weight: bold; /* Жирный шрифт для акцента */
+}
+
+.itemWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.itemWrapper .link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.commentBadgeWrapper {
+  flex-shrink: 0;
+  padding: 4px;
+  z-index: 10;
+  position: relative;
 }

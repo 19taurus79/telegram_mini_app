@@ -2,6 +2,9 @@
 
 import { Client, Contract } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
+import { useState } from "react";
+import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import clsx from "clsx";
 
 interface ContractsWidgetProps {
@@ -18,7 +21,9 @@ export default function ContractsWidget({
   selectedContracts,
   onSelectContract,
 }: ContractsWidgetProps) {
-
+  const [commentModalData, setCommentModalData] = useState<{
+    orderRef: string;
+  } | null>(null);
 
   // Якщо клієнт не обраний, показуємо підказку
   if (!selectedClient) {
@@ -28,8 +33,6 @@ export default function ContractsWidget({
       </div>
     );
   }
-
-
 
   return (
     <div className={styles.tableContainer}>
@@ -46,7 +49,19 @@ export default function ContractsWidget({
           >
             {/* Заголовок картки контракту зі статусом доставки */}
             <div className={styles.contractHeader}>
-              <span>{contract.contract_supplement}</span>
+              <span style={{ flex: 1 }}>
+                {contract.contract_supplement}
+              </span>
+              <div onClick={(e) => e.stopPropagation()}>
+                <OrderCommentBadge
+                  orderRef={contract.contract_supplement}
+                  onClick={() =>
+                    setCommentModalData({
+                      orderRef: contract.contract_supplement,
+                    })
+                  }
+                />
+              </div>
               <span
                 className={clsx(
                   styles.statusBadge,
@@ -82,6 +97,14 @@ export default function ContractsWidget({
           <p style={{ padding: "10px", opacity: 0.6 }}>Контрактів не знайдено</p>
         )}
       </div>
+
+      {commentModalData && (
+        <OrderCommentModal
+          orderRef={commentModalData.orderRef}
+          commentType="order"
+          onClose={() => setCommentModalData(null)}
+        />
+      )}
     </div>
   );
 }

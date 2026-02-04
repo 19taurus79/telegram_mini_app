@@ -318,11 +318,11 @@ export default function DetailsWidget({
                    <OrderCommentBadge
                      orderRef={item.contract_supplement}
                      productId={item.product}
-                     onClick={() => setCommentModalData({
-                       orderRef: item.contract_supplement,
-                       productId: item.product,
-                       productName: getProductName(item),
-                     })}
+                      onClick={() => setCommentModalData({
+                        orderRef: item.contract_supplement,
+                        productId: item.product,
+                        productName: getProductName(item),
+                      })}
                    />
                  </td>
 

@@ -8,6 +8,7 @@ import styles from './OrderCommentBadge.module.css';
 interface OrderCommentBadgeProps {
   orderRef: string;
   productId?: string;
+  productName?: string;
   onClick: () => void;
   onCommentCountChange?: (count: number) => void;
 }
@@ -15,6 +16,7 @@ interface OrderCommentBadgeProps {
 export default function OrderCommentBadge({
   orderRef,
   productId,
+  productName,
   onClick,
   onCommentCountChange,
 }: OrderCommentBadgeProps) {
@@ -32,10 +34,11 @@ export default function OrderCommentBadge({
           if (comment.comment_type === 'order') {
             return true;
           }
-          // Якщо є productId, показуємо тільки коментарі цього товару
-          if (productId && comment.comment_type === 'product') {
-            // Порівнюємо по product_name (назва товару) для сумісності з BI та дашбордом
-            return comment.product_name === productId || comment.product_id === productId;
+          // Якщо є фільтр по товару, показуємо тільки коментарі цього товару
+          if (comment.comment_type === 'product') {
+            const matchId = productId && (comment.product_id === productId || comment.product_name === productId);
+            const matchName = productName && (comment.product_name === productName || comment.product_id === productName);
+            return matchId || matchName;
           }
           return false;
         });

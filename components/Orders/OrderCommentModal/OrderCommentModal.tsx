@@ -67,15 +67,15 @@ export default function OrderCommentModal({
   }, [onClose]);
 
   // Мутація створення коментаря
-  const createMutation = useMutation({
-    mutationFn: (payload: CreateOrderCommentPayload) => createOrderComment(payload, getInitData()!),
+  const createMutation = useMutation<OrderComment, Error, CreateOrderCommentPayload>({
+    mutationFn: (payload) => createOrderComment(payload, getInitData()!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setNewComment('');
       toast.success('Коментар додано');
       window.dispatchEvent(new Event('commentUpdated'));
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error creating comment:', error);
       toast.error('Помилка при додаванні коментаря');
     },
@@ -102,8 +102,8 @@ export default function OrderCommentModal({
   };
 
   // Мутація оновлення коментаря
-  const updateMutation = useMutation({
-    mutationFn: ({ commentId, commentText }: { commentId: string; commentText: string }) => 
+  const updateMutation = useMutation<OrderComment, Error, { commentId: string; commentText: string }>({
+    mutationFn: ({ commentId, commentText }) => 
       updateOrderComment(commentId, commentText, getInitData()!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
@@ -112,7 +112,7 @@ export default function OrderCommentModal({
       toast.success('Коментар оновлено');
       window.dispatchEvent(new Event('commentUpdated'));
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error updating comment:', error);
       toast.error('Помилка при оновленні коментаря');
     },
@@ -129,14 +129,14 @@ export default function OrderCommentModal({
   };
 
   // Мутація видалення коментаря
-  const deleteMutation = useMutation({
-    mutationFn: (commentId: string) => deleteOrderComment(commentId, getInitData()!),
+  const deleteMutation = useMutation<void, Error, string>({
+    mutationFn: (commentId) => deleteOrderComment(commentId, getInitData()!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       toast.success('Коментар видалено');
       window.dispatchEvent(new Event('commentUpdated'));
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting comment:', error);
       toast.error('Помилка при видаленні коментаря');
     },

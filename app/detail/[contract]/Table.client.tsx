@@ -7,7 +7,7 @@ import {
   getWeightForProduct,
 } from "@/lib/api";
 import { DeliveryRequest } from "@/types/types";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";

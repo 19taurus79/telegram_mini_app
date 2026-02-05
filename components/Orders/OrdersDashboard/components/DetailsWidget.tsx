@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getChatMessages } from "@/lib/api";
+import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
@@ -8,7 +8,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
-import { Truck, Loader2, MessageSquare } from "lucide-react";
+import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";

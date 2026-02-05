@@ -7,13 +7,16 @@ import {
   getWeightForProduct,
 } from "@/lib/api";
 import { DeliveryRequest } from "@/types/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
 import toast from "react-hot-toast";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
+import Modal from "@/components/Modal/Modal";
+import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 
 type OrderDetailItem = {
   orders_q: number;
@@ -48,6 +51,8 @@ function TableOrderDetail({ details }: Detail) {
     productId: string;
     productName: string;
   } | null>(null);
+  const [chatOrderRef, setChatOrderRef] = React.useState<string | null>(null);
+  const initData = getInitData() || '';
 
   React.useEffect(() => {
     const loadDeliveries = async () => {
@@ -220,6 +225,21 @@ function TableOrderDetail({ details }: Detail) {
           productName={commentModalData.productName}
           onClose={() => setCommentModalData(null)}
         />
+      )}
+
+      {/* Плаваюча кнопка чату */}
+      {details.length > 0 && details[0]?.order && (
+        <ChatFABButton
+          orderRef={details[0].order}
+          onClick={() => setChatOrderRef(details[0].order)}
+          initData={initData}
+        />
+      )}
+
+      {chatOrderRef && (
+        <Modal onClose={() => setChatOrderRef(null)}>
+          <OrderChatPanel orderRef={chatOrderRef} />
+        </Modal>
       )}
     </div>
   );

@@ -476,3 +476,31 @@ export type CreateOrderCommentPayload = {
   product_name?: string;
   comment_text: string;
 };
+
+// ============= CHAT TYPES =============
+
+// Повідомлення чату
+export type ChatMessage = {
+  id: string;
+  order_ref: string;
+  user_id: number; // telegram_id
+  user_name: string; // full_name_for_orders
+  message_text: string;
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
+  reply_to_message_id?: string;
+};
+
+// Payload для створення повідомлення
+export type CreateChatMessagePayload = {
+  order_ref: string;
+  message_text: string;
+  reply_to_message_id?: string;
+};
+
+// Payload для оновлення повідомлення
+export type UpdateChatMessagePayload = {
+  message_text: string;
+};
+

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
+import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getChatMessages } from "@/lib/api";
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
@@ -8,10 +8,12 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
-import { Truck, Loader2 } from "lucide-react";
+import { Truck, Loader2, MessageSquare } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
+import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -37,6 +39,8 @@ export default function DetailsWidget({
     productId?: string;
     productName?: string;
   } | null>(null);
+  const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
+
 
    const router = useRouter();
   const { setDelivery, hasItem } = useDelivery();
@@ -324,9 +328,9 @@ export default function DetailsWidget({
                         productName: getProductName(item),
                       })}
                    />
-                 </td>
+                  </td>
 
-               </tr>
+                </tr>
             );
           })}
 
@@ -342,6 +346,15 @@ export default function DetailsWidget({
         </tbody>
       </table>
 
+      {/* Плаваюча кнопка чату */}
+      {selectedContracts.length > 0 && (
+        <ChatFABButton 
+          orderRef={selectedContracts[0].contract_supplement}
+          onClick={() => setChatOrderRef(selectedContracts[0].contract_supplement)}
+          initData={initData}
+        />
+      )}
+
       {selectedProductForModal && (
           <Modal onClose={closeModal}>
               <DetailsOrdersByProduct selectedProductId={selectedProductForModal} />
@@ -356,6 +369,12 @@ export default function DetailsWidget({
           productName={commentModalData.productName}
           onClose={() => setCommentModalData(null)}
         />
+      )}
+
+      {chatOrderRef && (
+        <Modal onClose={() => setChatOrderRef(null)}>
+          <OrderChatPanel orderRef={chatOrderRef} />
+        </Modal>
       )}
     </div>
   );

@@ -24,7 +24,10 @@ import {
   BiOrders,
   FiltersState, MovedData, DeliveryRequest, ClientAddress,
   OrderComment,
-  CreateOrderCommentPayload
+  CreateOrderCommentPayload,
+  ChatMessage,
+  CreateChatMessagePayload,
+  UpdateChatMessagePayload
 } from "@/types/types";
 import axios from "axios";
 
@@ -919,6 +922,79 @@ export const deleteOrderComment = async (
 ) => {
   await axios.delete(
     `/orders/comments/${commentId}`,
+    {
+      headers: {
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+};
+
+// ============= CHAT API =============
+
+// Отримання повідомлень чату для заявки
+export const getChatMessages = async (
+  orderRef: string,
+  initData: string
+): Promise<ChatMessage[]> => {
+  const { data } = await axios.get<ChatMessage[]>(
+    `/orders/${orderRef}/chat/messages`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+// Створення повідомлення в чаті
+export const createChatMessage = async (
+  payload: CreateChatMessagePayload,
+  initData: string
+): Promise<ChatMessage> => {
+  const { data } = await axios.post<ChatMessage>(
+    `/orders/${payload.order_ref}/chat/messages`,
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+// Редагування повідомлення
+export const updateChatMessage = async (
+  orderRef: string,
+  messageId: string,
+  payload: UpdateChatMessagePayload,
+  initData: string
+): Promise<ChatMessage> => {
+  const { data } = await axios.put<ChatMessage>(
+    `/orders/${orderRef}/chat/messages/${messageId}`,
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+// Видалення повідомлення
+export const deleteChatMessage = async (
+  orderRef: string,
+  messageId: string,
+  initData: string
+): Promise<void> => {
+  await axios.delete(
+    `/orders/${orderRef}/chat/messages/${messageId}`,
     {
       headers: {
         'X-Telegram-Init-Data': initData,

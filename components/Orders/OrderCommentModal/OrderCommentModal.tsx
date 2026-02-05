@@ -46,14 +46,15 @@ export default function OrderCommentModal({
       if (comment.comment_type === 'order') {
         return true;
       }
-      // Якщо є productId, показуємо тільки коментарі цього товару
-      if (productId && comment.comment_type === 'product') {
-        // Порівнюємо по product_name (назва товару) для сумісності з BI та дашбордом
-        return comment.product_name === productId || comment.product_id === productId;
+      // Якщо це коментар до товару
+      if (comment.comment_type === 'product') {
+        const matchId = productId && (comment.product_id === productId || comment.product_name === productId);
+        const matchName = productName && (comment.product_name === productName || comment.product_id === productName);
+        return matchId || matchName;
       }
       return false;
     });
-  }, [allComments, productId]);
+  }, [allComments, productId, productName]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

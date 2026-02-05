@@ -12,6 +12,8 @@ import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
+import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -37,6 +39,8 @@ export default function DetailsWidget({
     productId?: string;
     productName?: string;
   } | null>(null);
+  const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
+
 
    const router = useRouter();
   const { setDelivery, hasItem } = useDelivery();
@@ -318,15 +322,15 @@ export default function DetailsWidget({
                    <OrderCommentBadge
                      orderRef={item.contract_supplement}
                      productId={item.product}
-                     onClick={() => setCommentModalData({
-                       orderRef: item.contract_supplement,
-                       productId: item.product,
-                       productName: getProductName(item),
-                     })}
+                      onClick={() => setCommentModalData({
+                        orderRef: item.contract_supplement,
+                        productId: item.product,
+                        productName: getProductName(item),
+                      })}
                    />
-                 </td>
+                  </td>
 
-               </tr>
+                </tr>
             );
           })}
 
@@ -342,6 +346,15 @@ export default function DetailsWidget({
         </tbody>
       </table>
 
+      {/* Плаваюча кнопка чату */}
+      {selectedContracts.length > 0 && (
+        <ChatFABButton 
+          orderRef={selectedContracts[0].contract_supplement}
+          onClick={() => setChatOrderRef(selectedContracts[0].contract_supplement)}
+          initData={initData}
+        />
+      )}
+
       {selectedProductForModal && (
           <Modal onClose={closeModal}>
               <DetailsOrdersByProduct selectedProductId={selectedProductForModal} />
@@ -356,6 +369,12 @@ export default function DetailsWidget({
           productName={commentModalData.productName}
           onClose={() => setCommentModalData(null)}
         />
+      )}
+
+      {chatOrderRef && (
+        <Modal onClose={() => setChatOrderRef(null)}>
+          <OrderChatPanel orderRef={chatOrderRef} />
+        </Modal>
       )}
     </div>
   );

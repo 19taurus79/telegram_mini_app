@@ -1,24 +1,14 @@
 .chatContainer {
   display: flex;
   flex-direction: column;
-  height: 500px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--background);
+  height: 100%;
+  background: transparent;
   overflow: hidden;
 }
 
+/* Header is now in DraggableChatModal */
 .chatHeader {
-  padding: 12px 16px;
-  background: var(--header-bg-color);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.chatHeader h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--foreground);
+  display: none;
 }
 
 .messagesContainer {
@@ -28,6 +18,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--background);
 }
 
 .loading,
@@ -47,14 +38,17 @@
 
 .message {
   background: var(--row-even-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
   position: relative;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  color: var(--foreground);
 }
 
 .message:hover {
   background: var(--hover-bg-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .message:hover .messageActions {
@@ -70,44 +64,41 @@
 
 .userName {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--primary-color);
 }
 
 .messageTime {
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
-}
-
-.editedLabel {
-  font-style: italic;
-  color: #666;
 }
 
 .messageText {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--foreground);
   white-space: pre-wrap;
   word-wrap: break-word;
 }
 
 .messageActions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-top: 8px;
   opacity: 0;
   transition: opacity 0.2s;
+  justify-content: flex-end;
 }
 
 .actionButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #666;
+  color: #888;
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .actionButton:hover {
@@ -117,7 +108,7 @@
 
 .editContainer {
   background: var(--background);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--primary-color);
   border-radius: 8px;
   padding: 12px;
 }
@@ -147,7 +138,7 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   transition: all 0.2s;
 }
 
@@ -173,28 +164,32 @@
   justify-content: center;
 }
 
-.cancelButton:hover {
-  background: #da190b;
+.bottomSection {
+  border-top: 1px solid var(--border-color);
+  background: var(--header-bg-color);
+  display: flex;
+  flex-direction: column;
 }
 
 .inputContainer {
   display: flex;
   gap: 8px;
-  padding: 12px;
-  border-top: 1px solid var(--border-color);
-  background: var(--header-bg-color);
+  padding: 12px 16px;
+  background: transparent;
+  align-items: flex-end;
 }
 
 .messageInput {
   flex: 1;
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
   resize: none;
   background: var(--background);
   color: var(--foreground);
+  max-height: 120px;
 }
 
 .messageInput:focus {
@@ -203,16 +198,18 @@
 }
 
 .sendButton {
-  padding: 10px 16px;
+  width: 40px;
+  height: 40px;
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .sendButton:hover:not(:disabled) {
@@ -224,411 +221,137 @@
   cursor: not-allowed;
 }
 
-/* Модальне вікно підтвердження видалення */
+.replyPreview {
+  background: var(--hover-bg-color);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin: 12px 16px 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  max-height: 50px;
+  overflow: hidden;
+}
+
+.replyPreviewContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.replyPreviewAuthor {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--primary-color);
+  line-height: 1.2;
+}
+
+.replyPreviewText {
+  font-size: 12px;
+  color: var(--foreground);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replyPreviewClose {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.replyPreviewClose:hover {
+  color: var(--foreground);
+}
+
+@media (max-width: 767px) {
+  .replyPreview {
+    margin: 8px 12px 0 12px;
+    padding: 4px 10px;
+  }
+  
+  .inputContainer {
+    padding: 10px 12px;
+  }
+}
+
+.quotedMessage {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.quotedMessageAuthor {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.scrollToBottomButton {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
 .deleteModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  animation: fadeIn 0.2s;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  padding: 20px;
 }
 
 .deleteModalContent {
   background: var(--background);
   border-radius: 12px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: var(--modal-box-shadow);
-  animation: slideUp 0.3s;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.deleteModalContent h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--foreground);
-}
-
-.deleteModalContent p {
-  margin: 0 0 20px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.deleteModalActions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.deleteConfirmButton,
-.deleteCancelButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 20px;
+  width: 100%;
+  max-width: 300px;
 }
 
 .deleteConfirmButton {
   background: #f44336;
   color: white;
-}
-
-.deleteConfirmButton:hover:not(:disabled) {
-  background: #da190b;
-}
-
-.deleteConfirmButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .deleteCancelButton {
   background: var(--hover-bg-color);
   color: var(--foreground);
-}
-
-.deleteCancelButton:hover {
-  background: var(--border-color);
-}
-
-
-.chatHeader {
-  padding: 12px 16px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.chatHeader h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-}
-
-.messagesContainer {
   flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.loading,
-.emptyState {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #999;
-  font-size: 14px;
-}
-
-.messageWrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-.message {
-  background: #f9f9f9;
-  border-radius: 8px;
-  padding: 12px;
-  position: relative;
-  transition: background 0.2s;
-}
-
-.message:hover {
-  background: #f0f0f0;
-}
-
-.message:hover .messageActions {
-  opacity: 1;
-}
-
-.messageHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.userName {
-  font-weight: 600;
-  font-size: 14px;
-  color: #2c5282;
-}
-
-.messageTime {
-  font-size: 12px;
-  color: #999;
-}
-
-.editedLabel {
-  font-style: italic;
-  color: #666;
-}
-
-.messageText {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #333;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.messageActions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.actionButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.actionButton:hover {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.editContainer {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.editTextarea {
-  width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  margin-bottom: 8px;
-}
-
-.editActions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.saveButton,
-.cancelButton {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.saveButton {
-  background: #4caf50;
-  color: white;
-}
-
-.saveButton:hover {
-  background: #45a049;
-}
-
-.saveButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.cancelButton {
-  background: #f44336;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cancelButton:hover {
-  background: #da190b;
-}
-
-.inputContainer {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid #e0e0e0;
-  background: #fafafa;
-}
-
-.messageInput {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: none;
-}
-
-.messageInput:focus {
-  outline: none;
-  border-color: #2c5282;
-}
-
-.sendButton {
-  padding: 10px 16px;
-  background: #2c5282;
-  color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
 }
 
-.sendButton:hover:not(:disabled) {
-  background: #1e3a5f;
-}
 
-.sendButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-/* Модальне вікно підтвердження видалення */
-.deleteModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  animation: fadeIn 0.2s;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.deleteModalContent {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  animation: slideUp 0.3s;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.deleteModalContent h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.deleteModalContent p {
-  margin: 0 0 20px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.deleteModalActions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.deleteConfirmButton,
-.deleteCancelButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.deleteConfirmButton {
-  background: #f44336;
-  color: white;
-}
-
-.deleteConfirmButton:hover:not(:disabled) {
-  background: #da190b;
-}
-
-.deleteConfirmButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.deleteCancelButton {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.deleteCancelButton:hover {
-  background: #d0d0d0;
-}

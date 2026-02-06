@@ -17,7 +17,7 @@ export default function ChatFABButton({ orderRef, onClick, initData }: ChatFABBu
     queryFn: () => getChatMessages(orderRef, initData),
     enabled: !!initData && !!orderRef,
     staleTime: 30000,
-    refetchInterval: 60000, // Оновлювати кожну хвилину для бейджу
+    refetchInterval: 30000, // Оновлювати кожні 30 секунд для бейджу
   });
 
   const messageCount = messages.length;

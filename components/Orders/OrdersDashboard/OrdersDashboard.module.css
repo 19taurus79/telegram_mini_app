@@ -339,3 +339,53 @@
   display: inline-block;
   vertical-align: middle;
 }
+
+/* --- Embedded Chat Section --- */
+.embeddedChatSection {
+  margin-top: 24px;
+  background-color: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.embeddedChatHeader {
+  padding: 10px 16px;
+  background-color: var(--header-bg-color);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--foreground);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.embeddedChatHeader h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.closeEmbeddedBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--foreground);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.closeEmbeddedBtn:hover {
+  opacity: 1;
+}
+
+.embeddedChatContent {
+  flex: 1;
+  overflow: hidden;
+}

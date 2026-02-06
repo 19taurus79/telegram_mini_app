@@ -7,7 +7,6 @@ import { getChatMessages,  createChatMessage,
   deleteChatMessage,
   sendChatNotification,
 } from '@/lib/api';
-import { getInitData } from '@/lib/getInitData';
 import { useInitData } from '@/lib/useInitData';
 import { ChatMessage } from '@/types/types';
 import { Send, Edit2, Trash2, X, Reply, ArrowDown } from 'lucide-react';

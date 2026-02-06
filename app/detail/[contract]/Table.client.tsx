@@ -9,7 +9,6 @@ import {
 import { DeliveryRequest } from "@/types/types";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getInitData } from "@/lib/getInitData";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
 import toast from "react-hot-toast";
@@ -72,7 +71,6 @@ function TableOrderDetail({ details }: Detail) {
   React.useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initData = getInitData();
             const data = await getDeliveries(initData);
             if (data) setAllDeliveries(data);
         } catch (e) {
@@ -108,7 +106,6 @@ function TableOrderDetail({ details }: Detail) {
   const router = useRouter();
   const HandleClick = async ({ party }: { party: string }) => {
     try {
-      const initData = getInitData();
       const remainsId = await getIdRemainsByParty({ party, initData });
       
       if (remainsId && remainsId.length > 0 && remainsId[0]?.id) {
@@ -158,7 +155,6 @@ function TableOrderDetail({ details }: Detail) {
 
                       setAddingToDeliveryId(item.id);
                       try {
-                          const initData = getInitData();
                           const weight = await getWeightForProduct({ item, initData });
                           setDelivery({ ...item, weight });
                           toast.success(`Додано: ${item.product}`);

@@ -3,7 +3,6 @@ import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
-import { getInitData } from "@/lib/getInitData";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -81,8 +80,7 @@ export default function DetailsWidget({
   useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initDataVal = getInitData();
-            const data = await getDeliveries(initDataVal);
+            const data = await getDeliveries(effectiveInitData);
             if (data) setAllDeliveries(data);
         } catch (e) {
             console.error("Error loading deliveries", e);

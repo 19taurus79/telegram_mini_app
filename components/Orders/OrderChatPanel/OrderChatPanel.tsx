@@ -35,7 +35,7 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
   const { data: messages = [], isLoading, isError } = useQuery({
     queryKey: ['chatMessages', orderRef, initData],
     queryFn: () => getChatMessages(orderRef, initData),
-    enabled: !!orderRef,
+    enabled: !!initData && !!orderRef,
     staleTime: 30000, // Дані актуальні 30 секунд
     refetchInterval: 10000, // Оновлювати кожні 10 секунд
     retry: 1,
@@ -200,6 +200,10 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
 
   if (isLoading && !messages.length) {
     return <div className={css.loading}>Завантаження чату...</div>;
+  }
+
+  if (!initData && !isLoading) {
+    return <div className={css.loading}>Очікування авторизації Telegram...</div>;
   }
 
   if (isError && !messages.length) {

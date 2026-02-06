@@ -11,7 +11,7 @@ export async function getServerInitData(): Promise<string> {
   try {
     const cookieStore = await cookies();
     return cookieStore.get("tg_init_data")?.value || "";
-  } catch (e) {
+  } catch {
     return "";
   }
 }

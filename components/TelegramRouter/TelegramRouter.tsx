@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useInitData } from "@/lib/useInitData";
 
 export default function TelegramRouter() {
   const router = useRouter();

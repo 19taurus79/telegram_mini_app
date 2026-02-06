@@ -45,8 +45,8 @@ function saveInitDataToStorage(data: string) {
   try {
     localStorage.setItem("tg_init_data", data);
     localStorage.setItem("tg_init_data_expires", (Date.now() + 24 * 60 * 60 * 1000).toString());
-  } catch (e) {
-    console.error("Storage error", e);
+  } catch {
+    console.error("Storage error");
   }
 }
 
@@ -61,7 +61,7 @@ function getInitDataFromStorage(): string | null {
     if (data && expires && parseInt(expires) > Date.now()) {
       return data;
     }
-  } catch (e) {
+  } catch {
     // Ignore storage errors
   }
 

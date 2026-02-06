@@ -6,13 +6,18 @@ import { useInitData } from "@/lib/useInitData";
 
 export default function TelegramRouter() {
   const router = useRouter();
-  const initData = useInitData();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // Отримуємо Telegram SDK
-    const tg = (window as any).Telegram?.WebApp;
+    const tg = (window as unknown as { 
+      Telegram?: { 
+        WebApp: { 
+          initDataUnsafe: { start_param?: string } 
+        } 
+      } 
+    }).Telegram?.WebApp;
     if (!tg) return;
 
     // Deep Linking: Обробка параметра startapp

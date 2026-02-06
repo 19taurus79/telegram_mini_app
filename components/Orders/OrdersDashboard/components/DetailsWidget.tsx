@@ -3,7 +3,7 @@ import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/
 import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
-import { getInitData } from "@/lib/getInitData";
+import { useInitData } from "@/lib/useInitData";
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
@@ -44,10 +44,10 @@ export default function DetailsWidget({
   const [openedFromLink, setOpenedFromLink] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-
-   const router = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const effectiveInitData = useInitData();
   const { setDelivery, hasItem } = useDelivery();
 
   // Детекція мобільного пристрою
@@ -80,8 +80,7 @@ export default function DetailsWidget({
   useEffect(() => {
     const loadDeliveries = async () => {
         try {
-            const initDataVal = getInitData();
-            const data = await getDeliveries(initDataVal);
+            const data = await getDeliveries(effectiveInitData);
             if (data) setAllDeliveries(data);
         } catch (e) {
             console.error("Error loading deliveries", e);
@@ -382,7 +381,7 @@ export default function DetailsWidget({
               setIsChatOpen(true);
             }
           }}
-          initData={initData}
+          initData={effectiveInitData}
         />
       )}
 
@@ -433,6 +432,7 @@ export default function DetailsWidget({
             }
           }}
           openedFromLink={openedFromLink}
+          isMobileProp={isMobile}
         />
       )}
     </div>

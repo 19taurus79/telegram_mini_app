@@ -7,7 +7,7 @@ import { getChatMessages,  createChatMessage,
   deleteChatMessage,
   sendChatNotification,
 } from '@/lib/api';
-import { getInitData } from '@/lib/getInitData';
+import { useInitData } from '@/lib/useInitData';
 import { ChatMessage } from '@/types/types';
 import { Send, Edit2, Trash2, X, Reply, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -29,13 +29,13 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const initData = getInitData() || '';
+  const initData = useInitData();
 
   // Отримання повідомлень з реал-тайм оновленням
-  const { data: messages = [], isLoading } = useQuery({
-    queryKey: ['chatMessages', orderRef],
+  const { data: messages = [], isLoading, isError } = useQuery({
+    queryKey: ['chatMessages', orderRef, initData],
     queryFn: () => getChatMessages(orderRef, initData),
-    enabled: !!initData && !!orderRef,
+    enabled: !!orderRef,
     staleTime: 30000, // Дані актуальні 30 секунд
     refetchInterval: 10000, // Оновлювати кожні 10 секунд
     retry: 1,
@@ -198,8 +198,14 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !messages.length) {
     return <div className={css.loading}>Завантаження чату...</div>;
+  }
+
+  if (isError && !messages.length) {
+    return <div className={css.loading} style={{ color: 'var(--error-color, #f44336)' }}>
+      Помилка завантаження чату. Спробуйте оновити сторінку.
+    </div>;
   }
 
   return (

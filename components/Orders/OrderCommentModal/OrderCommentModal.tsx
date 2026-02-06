@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Edit2, Trash2, Check } from 'lucide-react';
 import { getOrderComments, createOrderComment, updateOrderComment, deleteOrderComment } from '@/lib/api';
 import { OrderComment, CreateOrderCommentPayload } from '@/types/types';
-import { getInitData } from '@/lib/getInitData';
+import { useInitData } from '@/lib/useInitData';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './OrderCommentModal.module.css';
@@ -31,6 +31,7 @@ export default function OrderCommentModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [selectedCommentType, setSelectedCommentType] = useState<'order' | 'product'>(commentType);
+  const initData = useInitData();
 
   // Завантаження коментарів через TanStack Query
   const { data: allComments = [], isLoading } = useQuery({
@@ -69,7 +70,7 @@ export default function OrderCommentModal({
 
   // Мутація створення коментаря
   const createMutation = useMutation<OrderComment, Error, CreateOrderCommentPayload>({
-    mutationFn: (payload) => createOrderComment(payload, getInitData()!),
+    mutationFn: (payload) => createOrderComment(payload, initData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setNewComment('');
@@ -105,7 +106,7 @@ export default function OrderCommentModal({
   // Мутація оновлення коментаря
   const updateMutation = useMutation<OrderComment, Error, { commentId: string; commentText: string }>({
     mutationFn: ({ commentId, commentText }) => 
-      updateOrderComment(commentId, commentText, getInitData()!),
+      updateOrderComment(commentId, commentText, initData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       setEditingId(null);
@@ -131,7 +132,7 @@ export default function OrderCommentModal({
 
   // Мутація видалення коментаря
   const deleteMutation = useMutation<void, Error, string>({
-    mutationFn: (commentId) => deleteOrderComment(commentId, getInitData()!),
+    mutationFn: (commentId) => deleteOrderComment(commentId, initData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderComments', orderRef] });
       toast.success('Коментар видалено');

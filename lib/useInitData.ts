@@ -14,6 +14,7 @@ export function useInitData() {
       const data = getInitData();
       if (data) {
         setInitData(data);
+        // Збереження в куки вже відбувається всередині getInitData()
         clearInterval(interval);
       }
     }, 100);

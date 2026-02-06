@@ -4,7 +4,7 @@ import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
-import { getInitData } from "@/lib/getInitData";
+import { getServerInitData } from "@/lib/getServerInitData";
 
 type Props = {
   params: Promise<{ contract: string }>;
@@ -14,7 +14,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
   const { contract } = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
   const originalList = await getOrdersDetailsById({
     orderId: contract,
-    initData: await getInitData(),
+    initData: await getServerInitData(),
   });
   console.log("contract details", originalList);
   // debugger;

@@ -5,13 +5,14 @@ import { getInitData } from "./getInitData";
  * Функція для Server Components
  * searchParams можна передати з page.tsx для підтримки першого входу за посиланням
  */
-export async function getServerInitData(searchParams?: any): Promise<string> {
+export async function getServerInitData(searchParams?: Record<string, string | string[] | undefined>): Promise<string> {
   const isDev = process.env.NEXT_PUBLIC_DEV === "true";
   if (isDev) return getInitData();
 
   // 1. Пріоритет - параметри URL (для першого входу)
   if (searchParams) {
-    const fromUrl = searchParams.initData || searchParams.tgWebAppInitData;
+    const rawFromUrl = searchParams.initData || searchParams.tgWebAppInitData;
+    const fromUrl = Array.isArray(rawFromUrl) ? rawFromUrl[0] : rawFromUrl;
     if (fromUrl) return fromUrl;
   }
 

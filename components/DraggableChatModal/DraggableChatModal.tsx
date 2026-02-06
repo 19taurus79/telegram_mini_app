@@ -9,12 +9,14 @@ interface DraggableChatModalProps {
   orderRef: string;
   onClose: () => void;
   openedFromLink?: boolean;
+  isMobileProp?: boolean;
 }
 
 export default function DraggableChatModal({
   orderRef,
   onClose,
-  openedFromLink = false
+  openedFromLink = false,
+  isMobileProp
 }: DraggableChatModalProps) {
   // Desktop dragging state
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -25,7 +27,7 @@ export default function DraggableChatModal({
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Responsive detection
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(isMobileProp !== undefined ? isMobileProp : false);
 
   // Touch handling
   const touchStartY = useRef(0);
@@ -33,6 +35,11 @@ export default function DraggableChatModal({
 
   // Detect mobile/desktop
   useEffect(() => {
+    if (isMobileProp !== undefined) {
+      setIsMobile(isMobileProp);
+      return;
+    }
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -41,7 +48,7 @@ export default function DraggableChatModal({
     window.addEventListener('resize', checkMobile);
 
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [isMobileProp]);
 
   // Desktop drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {

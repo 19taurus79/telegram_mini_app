@@ -12,7 +12,7 @@ export function getInitData(): string {
   // 1. Спроба отримати з Telegram SDK
   const sdkData = window.Telegram?.WebApp?.initData;
   if (sdkData) {
-    saveInitDataToCookie(sdkData);
+    saveInitDataToStorage(sdkData);
     return sdkData;
   }
 
@@ -20,35 +20,59 @@ export function getInitData(): string {
   const urlParams = new URLSearchParams(window.location.search);
   const fromUrl = urlParams.get("tgWebAppInitData") || urlParams.get("initData");
   if (fromUrl) {
-    saveInitDataToCookie(fromUrl);
+    saveInitDataToStorage(fromUrl);
     return fromUrl;
   }
 
-  // 3. Спроба отримати з Cookie (Session persistence)
-  const fromCookie = getCookie("tg_init_data");
-  if (fromCookie) {
-    return fromCookie;
+  // 3. Спроба отримати з Storage (Session persistence)
+  const fromStorage = getInitDataFromStorage();
+  if (fromStorage) {
+    return fromStorage;
   }
 
   return "";
 }
 
-
-// Helpers for client-side cookies
-function saveInitDataToCookie(data: string) {
-  if (typeof document === "undefined") return;
-  // Зберігаємо на 24 години (стандартний час життя initData)
+// Helpers for persistence
+function saveInitDataToStorage(data: string) {
+  if (typeof window === "undefined") return;
+  
+  // 1. Cookies
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
   document.cookie = `tg_init_data=${encodeURIComponent(data)}; path=/; expires=${expires}; SameSite=Lax`;
+  
+  // 2. LocalStorage (надійніше в деяких випадках)
+  try {
+    localStorage.setItem("tg_init_data", data);
+    localStorage.setItem("tg_init_data_expires", (Date.now() + 24 * 60 * 60 * 1000).toString());
+  } catch {
+    console.error("Storage error");
+  }
 }
 
-function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
+function getInitDataFromStorage(): string | null {
+  if (typeof window === "undefined") return null;
+
+  // 1. Спробуємо LocalStorage
+  try {
+    const data = localStorage.getItem("tg_init_data");
+    const expires = localStorage.getItem("tg_init_data_expires");
+    
+    if (data && expires && parseInt(expires) > Date.now()) {
+      return data;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+
+  // 2. Спробуємо Cookies
+  const name = "tg_init_data";
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) {
     const cookieValue = parts.pop()?.split(";").shift();
     return cookieValue ? decodeURIComponent(cookieValue) : null;
   }
+  
   return null;
 }

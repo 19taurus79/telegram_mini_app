@@ -203,7 +203,30 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
   }
 
   if (!initData && !isLoading) {
-    return <div className={css.loading}>Очікування авторизації Telegram...</div>;
+    return (
+      <div className={css.loading} style={{ padding: '20px', textAlign: 'center' }}>
+        <p>Очікування авторизації Telegram...</p>
+        <p style={{ fontSize: '12px', opacity: 0.7, marginTop: '8px' }}>
+          Якщо чат не завантажується, спробуйте відкрити додаток через меню бота 
+          або додайте дані авторизації в посилання.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{ 
+            marginTop: '12px', 
+            padding: '4px 12px', 
+            borderRadius: '4px', 
+            backgroundColor: '#3b82f6', 
+            color: 'white',
+            border: 'none',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          Оновити сторінку
+        </button>
+      </div>
+    );
   }
 
   if (isError && !messages.length) {

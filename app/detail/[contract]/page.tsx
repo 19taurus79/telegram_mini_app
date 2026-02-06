@@ -8,13 +8,16 @@ import { getServerInitData } from "@/lib/getServerInitData";
 
 type Props = {
   params: Promise<{ contract: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }; //Для получения деталей контракта
 
-export default async function filteredOrdersDetail({ params }: Props) {
+export default async function filteredOrdersDetail({ params, searchParams }: Props) {
   const { contract } = await params; // Получаем параметры из промиса, которые были переданы в URL, чтобы получить детали контракта
+  const sParams = await searchParams;
+  
   const originalList = await getOrdersDetailsById({
     orderId: contract,
-    initData: await getServerInitData(),
+    initData: await getServerInitData(sParams),
   });
   console.log("contract details", originalList);
   // debugger;

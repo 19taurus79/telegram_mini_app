@@ -1,0 +1,141 @@
+/* Desktop стилі */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  background: var(--modal-bg-color, white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--modal-box-shadow);
+  width: 400px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.modal.dragging {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+}
+
+.header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--header-bg-color);
+  color: var(--foreground);
+}
+
+.header:active {
+  cursor: grabbing;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.closeButton,
+.minimizeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+  opacity: 0.7;
+}
+
+.closeButton:hover,
+.minimizeButton:hover {
+  background: var(--hover-bg-color);
+  opacity: 1;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.backdrop {
+  display: none;
+}
+
+/* Mobile стилі */
+@media (max-width: 767px) {
+  .modal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    transition: transform 0.3s ease-out;
+  }
+
+  .modal.minimized {
+    transform: translateY(calc(100% - 60px));
+  }
+
+  .header {
+    cursor: default;
+    position: relative;
+    padding-top: 24px;
+  }
+
+  /* Drag handle indicator */
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    transition: opacity 0.3s;
+  }
+
+  .backdrop.minimized {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Desktop - приховати кнопку мінімізації */
+@media (min-width: 768px) {
+  .minimizeButton {
+    display: none;
+  }
+}

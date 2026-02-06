@@ -8,14 +8,14 @@ import {
 } from "@/lib/api";
 import { DeliveryRequest } from "@/types/types";
 import { Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
 import toast from "react-hot-toast";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
-import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
+import Modal from "@/components/Modal/Modal";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 
 type OrderDetailItem = {
@@ -52,21 +52,7 @@ function TableOrderDetail({ details }: Detail) {
     productName: string;
   } | null>(null);
   const [chatOrderRef, setChatOrderRef] = React.useState<string | null>(null);
-  const [openedFromLink, setOpenedFromLink] = React.useState(false);
-  const [isMobile, setIsMobile] = React.useState(false);
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
   const initData = getInitData() || '';
-  const searchParams = useSearchParams();
-
-  // Детекція мобільного пристрою
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   React.useEffect(() => {
     const loadDeliveries = async () => {
@@ -80,16 +66,6 @@ function TableOrderDetail({ details }: Detail) {
     };
     loadDeliveries();
   }, []);
-
-  // Автоматичне відкриття чату при наявності URL параметра
-  React.useEffect(() => {
-    const openChat = searchParams.get('openChat');
-    if (openChat === 'true' && details.length > 0) {
-      setChatOrderRef(details[0].order);
-      setIsChatOpen(true);
-      setOpenedFromLink(true);
-    }
-  }, [searchParams, details]);
 
    const getDeliveryForItem = (item: OrderDetailItem) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
@@ -252,52 +228,18 @@ function TableOrderDetail({ details }: Detail) {
       )}
 
       {/* Плаваюча кнопка чату */}
-      {details.length > 0 && details[0]?.order && (isMobile ? !chatOrderRef : !isChatOpen) && (
+      {details.length > 0 && details[0]?.order && (
         <ChatFABButton
           orderRef={details[0].order}
-          onClick={() => {
-            if (isMobile) {
-              setChatOrderRef(details[0].order);
-            } else {
-              setIsChatOpen(true);
-            }
-          }}
+          onClick={() => setChatOrderRef(details[0].order)}
           initData={initData}
         />
       )}
 
-      {/* Вбудований чат для десктопа */}
-      {!isMobile && isChatOpen && details.length > 0 && details[0]?.order && (
-        <div className={css.embeddedChatSection}>
-          <div className={css.embeddedChatHeader}>
-            <h3>Чат заявки {details[0].order}</h3>
-            <button 
-              className={css.closeEmbeddedBtn}
-              onClick={() => setIsChatOpen(false)}
-              title="Закрити чат"
-            >
-              ×
-            </button>
-          </div>
-          <div className={css.embeddedChatContent}>
-            <OrderChatPanel orderRef={details[0].order} />
-          </div>
-        </div>
-      )}
-
-      {/* Модальний чат для мобільних (Bottom Sheet) */}
-      {isMobile && chatOrderRef && (
-        <DraggableChatModal
-          orderRef={chatOrderRef}
-          onClose={() => {
-            setChatOrderRef(null);
-            setOpenedFromLink(false);
-            if (openedFromLink && typeof window !== 'undefined' && window.Telegram?.WebApp) {
-              window.Telegram.WebApp.close();
-            }
-          }}
-          openedFromLink={openedFromLink}
-        />
+      {chatOrderRef && (
+        <Modal onClose={() => setChatOrderRef(null)}>
+          <OrderChatPanel orderRef={chatOrderRef} />
+        </Modal>
       )}
     </div>
   );

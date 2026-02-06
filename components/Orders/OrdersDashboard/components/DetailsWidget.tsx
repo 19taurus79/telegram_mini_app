@@ -5,8 +5,9 @@ import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { getInitData } from "@/lib/getInitData";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
+import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
@@ -40,10 +41,24 @@ export default function DetailsWidget({
     productName?: string;
   } | null>(null);
   const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
+  const [openedFromLink, setOpenedFromLink] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
 
    const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isMobile, setIsMobile] = useState(false);
   const { setDelivery, hasItem } = useDelivery();
+
+  // Детекція мобільного пристрою
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [allDeliveries, setAllDeliveries] = useState<DeliveryRequest[]>([]);
 
   const getItemId = (item: OrdersDetails) => {
@@ -74,6 +89,16 @@ export default function DetailsWidget({
     };
     loadDeliveries();
   }, [initData]);
+
+  // Автоматичне відкриття чату при наявності URL параметра
+  useEffect(() => {
+    const openChat = searchParams.get('openChat');
+    if (openChat === 'true' && selectedContracts.length > 0) {
+      setChatOrderRef(selectedContracts[0].contract_supplement);
+      setIsChatOpen(true);
+      setOpenedFromLink(true);
+    }
+  }, [searchParams, selectedContracts]);
 
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
@@ -347,10 +372,16 @@ export default function DetailsWidget({
       </table>
 
       {/* Плаваюча кнопка чату */}
-      {selectedContracts.length > 0 && (
+      {selectedContracts.length > 0 && (isMobile ? !chatOrderRef : !isChatOpen) && (
         <ChatFABButton 
           orderRef={selectedContracts[0].contract_supplement}
-          onClick={() => setChatOrderRef(selectedContracts[0].contract_supplement)}
+          onClick={() => {
+            if (isMobile) {
+              setChatOrderRef(selectedContracts[0].contract_supplement);
+            } else {
+              setIsChatOpen(true);
+            }
+          }}
           initData={initData}
         />
       )}
@@ -371,10 +402,38 @@ export default function DetailsWidget({
         />
       )}
 
-      {chatOrderRef && (
-        <Modal onClose={() => setChatOrderRef(null)}>
-          <OrderChatPanel orderRef={chatOrderRef} />
-        </Modal>
+      {/* Вбудований чат для десктопа */}
+      {!isMobile && isChatOpen && selectedContracts.length > 0 && (
+        <div className={styles.embeddedChatSection}>
+          <div className={styles.embeddedChatHeader}>
+            <h3>Чат заявки {selectedContracts[0].contract_supplement}</h3>
+            <button 
+              className={styles.closeEmbeddedBtn}
+              onClick={() => setIsChatOpen(false)}
+              title="Закрити чат"
+            >
+              ×
+            </button>
+          </div>
+          <div className={styles.embeddedChatContent}>
+            <OrderChatPanel orderRef={selectedContracts[0].contract_supplement} />
+          </div>
+        </div>
+      )}
+
+      {/* Модальний чат для мобільних */}
+      {isMobile && chatOrderRef && (
+        <DraggableChatModal
+          orderRef={chatOrderRef}
+          onClose={() => {
+            setChatOrderRef(null);
+            setOpenedFromLink(false);
+            if (openedFromLink && typeof window !== 'undefined' && window.Telegram?.WebApp) {
+              window.Telegram.WebApp.close();
+            }
+          }}
+          openedFromLink={openedFromLink}
+        />
       )}
     </div>
   );

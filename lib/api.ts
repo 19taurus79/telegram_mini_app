@@ -1003,4 +1003,21 @@ export const deleteChatMessage = async (
   );
 };
 
+// Відправка Telegram сповіщення про нове повідомлення
+export const sendChatNotification = async (
+  orderRef: string,
+  messageId: string,
+  initData: string
+): Promise<void> => {
+  await axios.post(
+    `/orders/${orderRef}/chat/messages/${messageId}/notify`,
+    {},
+    {
+      headers: {
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+};
+
 export default axios;

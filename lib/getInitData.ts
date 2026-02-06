@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 
 export function getInitData(): string {
   const isDev = process.env.NEXT_PUBLIC_DEV === "true";
@@ -34,20 +33,6 @@ export function getInitData(): string {
   return "";
 }
 
-/**
- * Функція для Server Components
- */
-export async function getServerInitData(): Promise<string> {
-  const isDev = process.env.NEXT_PUBLIC_DEV === "true";
-  if (isDev) return getInitData();
-
-  try {
-    const cookieStore = await cookies();
-    return cookieStore.get("tg_init_data")?.value || "";
-  } catch (e) {
-    return "";
-  }
-}
 
 // Helpers for client-side cookies
 function saveInitDataToCookie(data: string) {

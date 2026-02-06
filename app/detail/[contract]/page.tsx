@@ -4,7 +4,8 @@ import TableOrderDetail from "./Table.client";
 import React from "react";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import css from "./Detail.module.css";
-import { getInitData, getServerInitData } from "@/lib/getInitData";
+import { getInitData } from "@/lib/getInitData";
+import { getServerInitData } from "@/lib/getServerInitData";
 
 type Props = {
   params: Promise<{ contract: string }>;

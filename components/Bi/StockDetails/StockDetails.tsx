@@ -2,7 +2,6 @@
 import css from "./StockDetails.module.css";
 import { BiOrdersItem, AvailableStock } from "@/types/types";
 import toast from "react-hot-toast";
-import { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,

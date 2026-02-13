@@ -22,14 +22,14 @@ export default function RemainsCard({ item }: { item: Remains }) {
           <div className={css.counts}>
             <div className={css.countItem}>
               <span className={css.label}>Бух</span>
-              <span className={css.value}>{item.buh}</span>
+              <span className={css.value}>{item.buh.toFixed(2)}</span>
             </div>
             <div className={css.countItem}>
                 <span className={css.label}>/</span>
             </div>
             <div className={css.countItem}>
               <span className={css.label}>Скл</span>
-              <span className={css.value}>{item.skl}</span>
+              <span className={css.value}>{item.skl.toFixed(2)}</span>
             </div>
              {item.storage > 0 && (
                 <>
@@ -38,7 +38,7 @@ export default function RemainsCard({ item }: { item: Remains }) {
                 </div>
                 <div className={css.countItem}>
                     <span className={css.label}>Збер</span>
-                    <span className={css.value}>{item.storage}</span>
+                    <span className={css.value}>{item.storage.toFixed(2)}</span>
                 </div>
                 </>
              )}

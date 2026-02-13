@@ -11,142 +11,365 @@ import RemainsCard from "@/components/Remains/RemainsCard";
 import Loader from "@/components/Loader/Loader";
 
 export default function DetailsRemains({
+
   selectedProductId,
+
 }: {
+
   selectedProductId: string | null;
+
 }) {
+
+  const formatNumber = (num: number) => {
+
+    const options = {
+
+      maximumFractionDigits: 2,
+
+      minimumFractionDigits: num % 1 === 0 ? 0 : 2,
+
+    };
+
+    return num.toLocaleString("ru-RU", options);
+
+  };
+
+
+
   const initData = useInitData((state) => state.initData);
+
   const setRemains = useDetailsDataStore((state) => state.setRemains);
 
-  const { data: remainsData, isError: isRemainsError, isFetching: isRemainsFetching } = useQuery({
+
+
+  const {
+
+    data: remainsData,
+
+    isError: isRemainsError,
+
+    isFetching: isRemainsFetching,
+
+  } = useQuery({
+
     queryKey: ["remainsById", selectedProductId, initData],
-    queryFn: () => getRemainsById({ productId: selectedProductId!, initData: initData! }),
+
+    queryFn: () =>
+
+      getRemainsById({ productId: selectedProductId!, initData: initData! }),
+
     enabled: !!selectedProductId && !!initData,
+
     placeholderData: keepPreviousData,
+
   });
+
+
 
   const { data: ordersSumData, isFetching: isOrdersSumFetching } = useQuery({
+
     queryKey: ["ordersSumByProduct", selectedProductId, initData],
-    queryFn: () => getTotalSumOrderByProduct({ product: selectedProductId!, initData: initData! }),
+
+    queryFn: () =>
+
+      getTotalSumOrderByProduct({
+
+        product: selectedProductId!,
+
+        initData: initData!,
+
+      }),
+
     enabled: !!selectedProductId && !!initData,
+
     placeholderData: keepPreviousData,
+
   });
 
-  const totalOrdered = useMemo(() => ordersSumData?.[0]?.total_orders || 0, [ordersSumData]);
+
+
+  const totalOrdered = useMemo(
+
+    () => ordersSumData?.[0]?.total_orders || 0,
+
+    [ordersSumData]
+
+  );
+
+
 
   const totalBuh = remainsData?.reduce((sum, item) => sum + item.buh, 0) || 0;
+
   const totalSkl = remainsData?.reduce((sum, item) => sum + item.skl, 0) || 0;
-  const totalStorage = remainsData?.reduce((sum, item) => sum + item.storage, 0) || 0;
+
+  const totalStorage =
+
+    remainsData?.reduce((sum, item) => sum + item.storage, 0) || 0;
+
   const availableStock = totalBuh - totalOrdered;
 
+
+
   // Групуємо залишки по складах
+
   const groupedRemains = useMemo(() => {
+
     if (!remainsData) return {};
+
     return remainsData.reduce((groups, item) => {
+
       const warehouse = item.warehouse || "Інше";
+
       if (!groups[warehouse]) {
+
         groups[warehouse] = [];
+
       }
+
       groups[warehouse].push(item);
+
       return groups;
+
     }, {} as Record<string, typeof remainsData>);
+
   }, [remainsData]);
 
+
+
   // Записуємо дані в стор при їх оновленні
+
   useEffect(() => {
+
     setRemains(remainsData ?? null);
+
   }, [remainsData, setRemains]);
 
+
+
   // УМОВНІ RETURN ПІСЛЯ ВСІХ ХУКІВ
+
   if (!selectedProductId) {
+
     return (
+
       <div className={css.container}>
+
         <p>Оберіть товар зі списку, щоб побачити деталі.</p>
+
       </div>
+
     );
+
   }
+
+
 
   if (isRemainsFetching || isOrdersSumFetching) {
+
     return <Loader />;
+
   }
+
+
 
   if (isRemainsError) {
-    return <div className={css.container}>Для вибраного товару не знайдено даних по залишках.</div>;
+
+    return (
+
+      <div className={css.container}>
+
+        Для вибраного товару не знайдено даних по залишках.
+
+      </div>
+
+    );
+
   }
 
+
+
   return (
+
     <div className={css.container}>
+
       <div className={css.header}>
-        <h3>Деталі по товару: {remainsData && remainsData.length>0 ? `${remainsData[0].nomenclature} ${remainsData[0].party_sign} ${remainsData[0].buying_season}`:` `}</h3>
-        <br/>
+
+        <h3>
+
+          Деталі по товару:{" "}
+
+          {remainsData && remainsData.length > 0
+
+            ? `${remainsData[0].nomenclature} ${remainsData[0].party_sign} ${remainsData[0].buying_season}`
+
+            : ` `}
+
+        </h3>
+
+        <br />
+
         <h4>
-          Всього по Бух: {totalBuh} | Складу: {totalSkl} | {totalStorage>0 && `На збереганні: ${totalStorage} |`} Під заявками: {totalOrdered} | Вільний залишок: {Math.max(0, availableStock)}
+
+          Всього по Бух: {formatNumber(totalBuh)} | Складу:{" "}
+
+          {formatNumber(totalSkl)} |{" "}
+
+          {totalStorage > 0 &&
+
+            `На збереганні: ${formatNumber(totalStorage)} |`}{" "}
+
+          Під заявками: {formatNumber(totalOrdered)} | Вільний залишок:{" "}
+
+          {formatNumber(Math.max(0, availableStock))}
+
           {availableStock < 0 && (
-            <span className={css.deficit}> | Потреба: {-availableStock}</span>
+
+            <span className={css.deficit}>
+
+              {" "}
+
+              | Потреба: {formatNumber(-availableStock)}
+
+            </span>
+
           )}
+
         </h4>
-        
+
+
+
         <div className={css.mobileOnly}>
+
           {/* Надписи-попередження */}
+
           {totalBuh > totalSkl ? (
+
             <p className={css.warning}>
-              ⚠️ Увага! Бух облік більший за складський облік! Схоже що {totalBuh - totalSkl} ще десь в дорозі!
+
+              ⚠️ Увага! Бух облік більший за складський облік! Схоже що{" "}
+
+              {formatNumber(totalBuh - totalSkl)} ще десь в дорозі!
+
             </p>
+
           ) : (
+
             <p className={css.success}>
+
               ✓ Все в порядку! Вся номенклатура на складі!
+
             </p>
+
           )}
+
+
 
           {totalOrdered === 0 ? (
+
             <p className={css.info}>
-              ℹ️ Немає жодної заявки на цю номенклатуру, тому весь залишок вільний
+
+              ℹ️ Немає жодної заявки на цю номенклатуру, тому весь залишок
+
+              вільний
+
             </p>
+
           ) : (
+
             <>
+
               {totalOrdered > totalBuh ? (
+
                 <p className={css.warning}>
-                  ⚠️ Увага! Для виконання всіх заявок не вистачає {totalOrdered - totalBuh}!
+
+                  ⚠️ Увага! Для виконання всіх заявок не вистачає{" "}
+
+                  {formatNumber(totalOrdered - totalBuh)}!
+
                 </p>
+
               ) : (
+
                 <p className={css.success}>
-                  ✓ Все в порядку! Замовленої кількості вистачає для виконання всіх заявок!
+
+                  ✓ Все в порядку! Замовленої кількості вистачає для виконання
+
+                  всіх заявок!
+
                 </p>
+
               )}
 
+
+
               {availableStock > 0 ? (
+
                 <p className={css.success}>
-                  ✓ Вільного залишку: {availableStock}
+
+                  ✓ Вільного залишку: {formatNumber(availableStock)}
+
                 </p>
+
               ) : (
+
                 <p className={css.warning}>
+
                   ⚠️ Вільного залишку немає, всі залишки під заявки!
+
                 </p>
+
               )}
+
             </>
+
           )}
+
         </div>
+
       </div>
-      
+
+
+
       {remainsData && remainsData.length > 0 ? (
+
         <>
+
           {/* Групування по складах */}
+
           <div className={css.warehouseGroups}>
+
             {Object.entries(groupedRemains).map(([warehouse, items]) => (
+
               <div key={warehouse} className={css.warehouseGroup}>
+
                 <h4 className={css.warehouseTitle}>{warehouse}</h4>
+
                 <div className={css.partiesContainer}>
-                  {items.map(item => (
+
+                  {items.map((item) => (
+
                     <RemainsCard key={item.id} item={item} />
+
                   ))}
+
                 </div>
+
               </div>
+
             ))}
+
           </div>
+
         </>
+
       ) : (
+
         <p>Немає даних по залишках.</p>
+
       )}
+
     </div>
+
   );
+
 }

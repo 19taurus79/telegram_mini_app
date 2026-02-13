@@ -15,8 +15,6 @@ interface StockDetailsProps {
 }
 
 const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
-  const [columnResizeMode, setColumnResizeMode] = useState<'onChange' | 'onEnd'>('onChange');
-  
   const columns: ColumnDef<AvailableStock>[] = [
     {
       accessorKey: 'division',
@@ -39,7 +37,6 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
   const table = useReactTable({
     data: selectedProduct?.available_stock || [],
     columns,
-    columnResizeMode,
     getCoreRowModel: getCoreRowModel(),
     defaultColumn: {
       minSize: 50,

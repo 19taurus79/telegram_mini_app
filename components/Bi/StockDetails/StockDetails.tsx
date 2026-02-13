@@ -1,22 +1,50 @@
 "use client";
 import css from "./StockDetails.module.css";
-import { BiOrdersItem } from "@/types/types";
+import { BiOrdersItem, AvailableStock } from "@/types/types";
 import toast from "react-hot-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+} from '@tanstack/react-table';
 
 interface StockDetailsProps {
   selectedProduct: BiOrdersItem | null;
 }
 
 const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [columnResizeMode, setColumnResizeMode] = useState<'onChange' | 'onEnd'>('onChange');
+  
+  const columns: ColumnDef<AvailableStock>[] = [
+    {
+      accessorKey: 'division',
+      header: 'Підрозділ',
+      size: 120, // smaller initial size
+    },
+    {
+      accessorKey: 'warehouse',
+      header: 'Склад',
+      size: 300, // larger initial size, will take up remaining space
+    },
+    {
+      accessorKey: 'available',
+      header: 'Доступно',
+      cell: info => Number(info.getValue()).toFixed(2),
+      size: 100, // smaller initial size
+    },
+  ];
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const table = useReactTable({
+    data: selectedProduct?.available_stock || [],
+    columns,
+    columnResizeMode,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 50,
+    }
+  });
 
   const handleCopy = (warehouse: string) => {
     navigator.clipboard.writeText(warehouse).then(
@@ -34,66 +62,60 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
     <div className={css.detailsContainer}>
       <h2 className={css.title}>Вільні залишки на складах</h2>
       {selectedProduct ? (
-        <>
-          {isMobile ? (
-            <div className={css.mobileList}>
-              {selectedProduct.available_stock.map((stock) => (
-                <div
-                  key={`${stock.division}-${stock.warehouse}`}
-                  onClick={() => handleCopy(stock.warehouse)}
-                  className={css.mobileCard}
-                >
-                  <div className={css.cardRow}>
-                    <span className={css.label}>Підрозділ:</span>
-                    <span className={css.value}>{stock.division}</span>
-                  </div>
-                  <div className={css.cardRow}>
-                    <span className={css.label}>Склад:</span>
-                    <span className={css.value}>{stock.warehouse}</span>
-                  </div>
-                  <div className={css.cardRow}>
-                    <span className={css.label}>Доступно:</span>
-                    <span className={`${css.value} ${css.availableValue}`}>
-                      {Number(stock.available).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className={css.copyHint}>Натисніть для копіювання</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <table className={css.table}>
+        <div className={css.tableContainer}>
+            <table 
+              className={css.table}
+              style={{ width: '100%' }}
+            >
               <thead>
-                <tr>
-                  <th className={`${css.th} ${css.divisionColumn}`}>Підрозділ</th>
-                  <th className={`${css.th} ${css.divisionColumn}`}>Склад</th>
-                  <th className={`${css.th} ${css.availableColumn}`}>
-                    Доступно
-                  </th>
-                </tr>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className={`${css.th}`}
+                        style={{ width: header.getSize() }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={`${css.resizer} ${
+                            header.column.getIsResizing() ? css.isResizing : ''
+                          }`}
+                        />
+                      </th>
+                    ))}
+                  </tr>
+                ))}
               </thead>
               <tbody>
-                {selectedProduct.available_stock.map((stock) => (
-                  <tr
-                    key={`${stock.division}-${stock.warehouse}`}
-                    onClick={() => handleCopy(stock.warehouse)}
+                {table.getRowModel().rows.map(row => (
+                  <tr 
+                    key={row.id}
+                    onClick={() => handleCopy(row.original.warehouse)}
                     className={css.copyableRow}
                   >
-                    <td className={`${css.td} ${css.divisionColumn}`} title={stock.division}>
-                      {stock.division}
-                    </td>
-                    <td className={`${css.td} ${css.divisionColumn}`} title={stock.warehouse}>
-                      {stock.warehouse}
-                    </td>
-                    <td className={`${css.td} ${css.availableColumn}`} title={stock.available.toString()}>
-                      {Number(stock.available).toFixed(2)}
-                    </td>
+                    {row.getVisibleCells().map(cell => (
+                      <td 
+                        key={cell.id}
+                        className={css.td}
+                        style={{ width: cell.column.getSize() }}
+                        title={String(cell.getValue())}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-        </>
+            </div>
       ) : (
         <div className={css.placeholder}>
           <p>Оберіть номенклатуру для відображення деталізації</p>

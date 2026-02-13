@@ -74,6 +74,13 @@ type AddressData = {
   lon:string,
 };
 
+const formatQuantity = (value: number): string => {
+  if (Number.isInteger(value)) {
+    return value.toString();
+  }
+  return value.toFixed(2);
+};
+
 /**
  * Компонент страницы "DeliveryData" для отображения и управления данными о доставке.
  * Позволяет просматривать сгруппированные по клиентам и заказам товары,
@@ -252,7 +259,7 @@ export default function DeliveryData() {
                                     color: "#888",
                                   }}
                                 >
-                                  ↳ {party.party}: {party.moved_q}
+                                  ↳ {party.party}: {formatQuantity(party.moved_q)}
                                 </div>
                               )
                           )}
@@ -269,7 +276,7 @@ export default function DeliveryData() {
                           })
                         }
                       >
-                        {item.quantity}
+                        {formatQuantity(item.quantity)}
                       </span>
                     </div>
                   </div>

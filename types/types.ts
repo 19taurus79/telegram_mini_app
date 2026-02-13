@@ -303,17 +303,19 @@ export type BiRemains = {
     },
   ];
 };
+export type AvailableStock = {
+  division: string;
+  warehouse: string;
+  available: number;
+};
+
 export type BiOrdersItem = {
   product: string;
   line_of_business: string;
   qty_needed: number;
   qty_remain: number;
   qty_missing: number;
-  available_stock: {
-    division: string;
-    warehouse: string;
-    available: number;
-  }[];
+  available_stock: AvailableStock[];
   orders: {
       moved_qty: string;
     manager: string;

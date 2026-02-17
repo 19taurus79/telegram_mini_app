@@ -191,11 +191,29 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('uk-UA', {
+    const messageDate = new Date(dateString);
+    const now = new Date();
+
+    const isSameDay =
+      messageDate.getDate() === now.getDate() &&
+      messageDate.getMonth() === now.getMonth() &&
+      messageDate.getFullYear() === now.getFullYear();
+
+    const timeOptions: Intl.DateTimeFormatOptions = {
       hour: '2-digit',
       minute: '2-digit',
-    });
+    };
+
+    if (isSameDay) {
+      return messageDate.toLocaleTimeString('uk-UA', timeOptions);
+    } else {
+      const dateOptions: Intl.DateTimeFormatOptions = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      };
+      return `${messageDate.toLocaleDateString('uk-UA', dateOptions)} ${messageDate.toLocaleTimeString('uk-UA', timeOptions)}`;
+    }
   };
 
   if (isLoading && !messages.length) {

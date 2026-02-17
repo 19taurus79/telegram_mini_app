@@ -1,26 +1,46 @@
 "use client";
 
-import { useState, useMemo} from "react";
+import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { getOrdersByProduct } from "@/lib/api";
+import { getMovedDataByProduct, getOrdersByProduct } from "@/lib/api";
 import css from "./DetailsOrdersByProduct.module.css";
-import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
 
 export default function DetailsOrdersByProduct({
-                                                 selectedProductId,
-                                               }: {
+  selectedProductId,
+}: {
   selectedProductId: string | null;
 }) {
   const initData = useInitData((state) => state.initData);
   const [sortDirection, setSortDirection] = useState<
-      "ascending" | "descending" | null
+    "ascending" | "descending" | null
   >(null);
-  const movedProducts = useDetailsDataStore((state) => state.movedProducts);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const {
+    data: data,
+    isLoading: isLoadingOrders,
+    isError: isErrorOrders,
+    error: errorOrders,
+  } = useQuery({
     queryKey: ["ordersByProduct", selectedProductId, initData],
-    queryFn: () => getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
+    queryFn: () =>
+      getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
+    enabled: !!selectedProductId && !!initData,
+    placeholderData: keepPreviousData,
+  });
+
+  const {
+    data: movedProducts,
+    isLoading: isLoadingMoved,
+    isError: isErrorMoved,
+    error: errorMoved,
+  } = useQuery({
+    queryKey: ["movedProductsByProduct", selectedProductId, initData],
+    queryFn: () =>
+      getMovedDataByProduct({
+        productId: selectedProductId!,
+        initData: initData!,
+      }),
     enabled: !!selectedProductId && !!initData,
     placeholderData: keepPreviousData,
   });
@@ -56,7 +76,7 @@ export default function DetailsOrdersByProduct({
     if (!movedProducts) return new Map<string, number>();
 
     const map = new Map<string, number>();
-    movedProducts.forEach(item => {
+    movedProducts.forEach((item) => {
       const currentQty = map.get(item.contract) || 0;
       map.set(item.contract, currentQty + parseFloat(item.qt_moved));
     });
@@ -65,18 +85,29 @@ export default function DetailsOrdersByProduct({
 
   if (!selectedProductId) {
     return (
-        <div className={css.container}>
-          {/* Пустий блок, коли товар не вибрано */}
-        </div>
+      <div className={css.container}>
+        {/* Пустий блок, коли товар не вибрано */}
+      </div>
     );
   }
 
-  if (isLoading) {
+  if (isLoadingOrders || isLoadingMoved) {
     return <div className={css.container}>Завантаження...</div>;
   }
 
-  if (isError) {
-    return <div className={css.container}>Помилка: {error.message}</div>;
+  if (isErrorOrders) {
+    return (
+      <div className={css.container}>
+        Помилка завантаження заявок: {errorOrders.message}
+      </div>
+    );
+  }
+  if (isErrorMoved) {
+    return (
+      <div className={css.container}>
+        Помилка завантаження переміщень: {errorMoved.message}
+      </div>
+    );
   }
 
   return (
@@ -115,7 +146,7 @@ export default function DetailsOrdersByProduct({
                       <td className={css.checkmarkCell}>
                         {(() => {
                           const movedQty =
-                              movedContractsMap.get(order.contract_supplement) || 0;
+                            movedContractsMap.get(order.contract_supplement) || 0;
                           if (movedQty === 0) return null;
 
                           if (movedQty >= order.different) {
@@ -141,9 +172,15 @@ export default function DetailsOrdersByProduct({
                         <div className={css.cardHeader}>
                           <span className={css.cardTitle}>{order.client}</span>
                           {movedQty > 0 && (
-                              <span className={movedQty >= order.different ? css.checkmarkGreen : css.checkmarkYellow}>
-                      ✓
-                    </span>
+                            <span
+                              className={
+                                movedQty >= order.different
+                                  ? css.checkmarkGreen
+                                  : css.checkmarkYellow
+                              }
+                            >
+                              ✓
+                            </span>
                           )}
                         </div>
                         <div className={css.cardRow}>

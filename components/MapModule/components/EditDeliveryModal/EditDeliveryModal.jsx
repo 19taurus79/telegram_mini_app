@@ -6,31 +6,46 @@ import { getInitData } from "@/lib/getInitData";
 import { getRemainsByProduct, updateDeliveryData } from "@/lib/api";
 import toast from "react-hot-toast";
 
+/**
+ * Модальное окно для редактирования состава одной или нескольких доставок.
+ * Позволяет изменять количество товаров, распределять их по партиям,
+ * просматривать остатки и сохранять изменения.
+ */
 export default function EditDeliveryModal() {
+  // --- STATE MANAGEMENT ---
+
+  // Глобальное состояние из Zustand
   const { 
-    isEditDeliveryModalOpen, 
-    setIsEditDeliveryModalOpen, 
-    selectedDeliveries,
-    updateDeliveries,
-    applications,
-    removeDelivery
+    isEditDeliveryModalOpen,    // Флаг, открыто ли модальное окно
+    setIsEditDeliveryModalOpen, // Функция для управления видимостью окна
+    selectedDeliveries,         // Массив выбранных на карте доставок для редактирования
+    updateDeliveries,           // Функция для обновления данных о доставках в глобальном сторе
+    applications,               // Список всех заявок (для поиска не добавленных товаров)
+    removeDelivery              // Функция для удаления доставки из стора
   } = useApplicationsStore();
 
-  const [deliveryItems, setDeliveryItems] = useState([]);
-  const [selectedProductId, setSelectedProductId] = useState(null);
-  const [activeItemIdx, setActiveItemIdx] = useState(null); 
-  const [stockRemains, setStockRemains] = useState([]);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoadingRemains, setIsLoadingRemains] = useState(false);
-  const [isPrintView, setIsPrintView] = useState(false);
-  const [printData, setPrintData] = useState(null);
-  const [isAskingDate, setIsAskingDate] = useState(false);
-  const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
+  // Локальное состояние компонента
+  const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок
+  const [selectedProductId, setSelectedProductId] = useState(null); // ID/название продукта, выбранного для просмотра остатков
+  const [activeItemIdx, setActiveItemIdx] = useState(null); // Индекс активной строки товара в левой таблице
+  const [stockRemains, setStockRemains] = useState([]); // Остатки по выбранному товару
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Флаг для модального окна подтверждения удаления
+  const [isLoadingRemains, setIsLoadingRemains] = useState(false); // Флаг загрузки остатков
   
-  const contentRef = useRef(null);
-  const reactToPrintFn = useReactToPrint({ contentRef });
+  // Состояние для управления процессом печати
+  const [isPrintView, setIsPrintView] = useState(false); // Флаг режима предпросмотра печати
+  const [printData, setPrintData] = useState(null); // Данные, подготовленные для печати
+  const [isAskingDate, setIsAskingDate] = useState(false); // Флаг для модалки запроса даты печати
+  const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split('T')[0]); // Дата для печатной формы
 
-  // Close on Escape
+  // --- REFS AND HOOKS ---
+
+  const contentRef = useRef(null); // Ref для области, которая будет отправлена на печать
+  const reactToPrintFn = useReactToPrint({ contentRef }); // Хук для печати содержимого `contentRef`
+
+  // --- `useEffect` HOOKS ---
+
+  // Закрытие модального окна по нажатию на 'Escape'
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -43,10 +58,15 @@ export default function EditDeliveryModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isEditDeliveryModalOpen, setIsEditDeliveryModalOpen]);
 
-  // Initialize delivery items from selectedDeliveries
+  /**
+   * Инициализация состояния `deliveryItems` при открытии модального окна.
+   * Собирает все товары из `selectedDeliveries`, а также ищет в `applications`
+   * товары, которые относятся к клиенту, но еще не были добавлены в доставку,
+   * и добавляет их с количеством 0.
+   */
   useEffect(() => {
     if (isEditDeliveryModalOpen && selectedDeliveries.length > 0) {
-      if (isPrintView) return;
+      if (isPrintView) return; // Не выполнять, если мы в режиме печати
 
       const allItems = [];
       const cleanStr = (n) => (n || "").toString().trim().toLowerCase();
@@ -55,7 +75,7 @@ export default function EditDeliveryModal() {
       selectedDeliveries.forEach(d => {
         const sClient = cleanStr(d.client);
         
-        // 1. Existing items in this delivery
+        // 1. Берем существующие товары из доставки
         const deliveryItemsList = (d.items || []).map(item => ({
           ...item,
           product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
@@ -65,8 +85,7 @@ export default function EditDeliveryModal() {
           parties: (item.parties || []).map(p => ({ ...p }))
         }));
 
-        // 2. Add missing products from the client's original orders (applications)
-        // Match client by trimmed/lowercased name
+        // 2. Ищем товары в заявках этого клиента, которые еще не в доставке
         const clientApp = applications.find(a => cleanStr(a.client) === sClient);
         
         if (clientApp && clientApp.orders) {
@@ -75,7 +94,7 @@ export default function EditDeliveryModal() {
             const orderId = (order.id || "").toString();
             const orderSuppl = (order.contract_supplement || "").toString();
 
-            // Match by order ID, supplement or product name
+            // Проверяем, есть ли уже такой товар в списке
             const isIncluded = deliveryItemsList.some(di => {
               const diRef = (di.orderRef || "").toString();
               return (orderId && diRef === orderId) || 
@@ -83,8 +102,8 @@ export default function EditDeliveryModal() {
                      cleanName(di.product) === cleanedOrderProd;
             });
 
+            // Если не включен, добавляем его с количеством 0
             if (!isIncluded) {
-              // Construct full product name: nomenclature + party_sign + buying_season
               const parts = [];
               if (order.nomenclature) parts.push(order.nomenclature);
               if (order.party_sign && order.party_sign.trim() !== "") parts.push(order.party_sign.trim());
@@ -100,7 +119,7 @@ export default function EditDeliveryModal() {
                 orderRef: order.contract_supplement || order.id || "",
                 manager: order.manager || "",
                 parties: [],
-                isNew: true 
+                isNew: true // Флаг, что это новый, не сохраненный товар
               });
             }
           });
@@ -108,6 +127,7 @@ export default function EditDeliveryModal() {
         allItems.push(...deliveryItemsList);
       });
 
+      // Инициализируем состояние
       setDeliveryItems(allItems);
       setSelectedProductId(null);
       setActiveItemIdx(null);
@@ -115,7 +135,7 @@ export default function EditDeliveryModal() {
     }
   }, [isEditDeliveryModalOpen, selectedDeliveries, applications, isPrintView]);
 
-  // Reset print view when modal is closed
+  // Сброс состояния печати при закрытии модального окна
   useEffect(() => {
     if (!isEditDeliveryModalOpen) {
       setIsPrintView(false);
@@ -124,17 +144,15 @@ export default function EditDeliveryModal() {
     }
   }, [isEditDeliveryModalOpen]);
 
-  // Load remains when product is selected
+  // Загрузка остатков по товару при выборе товара в левой таблице
   useEffect(() => {
     const fetchRemains = async () => {
       if (!selectedProductId) return;
       setIsLoadingRemains(true);
       try {
         const initData = getInitData();
-        // Use the new endpoint that takes the product identifier (name or ID)
         const data = await getRemainsByProduct({ product: selectedProductId, initData });
         setStockRemains(data || []);
-        console.log("Stock remains:", data);
       } catch (error) {
         console.error("Error fetching remains:", error);
         setStockRemains([]);
@@ -149,13 +167,21 @@ export default function EditDeliveryModal() {
     }
   }, [selectedProductId]);
 
+  // --- EVENT HANDLERS ---
+
+  /**
+   * Обработчик клика по строке товара в левой таблице.
+   * Устанавливает активный товар для загрузки остатков.
+   */
   const handleItemClick = (item, idx) => {
-    // If the item has a specific product_id, use it, otherwise use product name (fallback)
     const productId = item.product_id || item.product;
     setSelectedProductId(productId);
     setActiveItemIdx(idx);
   };
    
+  /**
+   * Добавляет партию из таблицы остатков (справа) к выбранному товару (слева).
+   */
   const handleAddPartyFromRemains = (remain) => {
     if (activeItemIdx === null) {
         toast.error("Спершу оберіть товар у лівій таблиці");
@@ -166,7 +192,7 @@ export default function EditDeliveryModal() {
     const item = { ...nextItems[activeItemIdx] };
     const parties = [...(item.parties || [])];
 
-    // Check if already exists (case insensitive)
+    // Проверка, что такая партия еще не добавлена
     const exists = parties.some(p => 
         (p.party || "").trim().toLowerCase() === (remain.nomenclature_series || "").trim().toLowerCase()
     );
@@ -177,7 +203,7 @@ export default function EditDeliveryModal() {
 
     parties.push({
       party: remain.nomenclature_series || "Без серії",
-      party_quantity: "" // Initialize empty for easier typing
+      party_quantity: "" // Инициализируем пустым значением для удобного ввода
     });
 
     item.parties = parties;
@@ -186,6 +212,9 @@ export default function EditDeliveryModal() {
     toast.success(`Партію ${remain.nomenclature_series || ""} додано`);
   };
 
+  /**
+   * Удаляет партию у товара.
+   */
   const handleDeleteParty = (itemIdx, partyIdx) => {
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[itemIdx] };
@@ -196,42 +225,56 @@ export default function EditDeliveryModal() {
     setDeliveryItems(nextItems);
   };
 
+  /**
+   * Удаляет товар из списка доставки.
+   */
   const handleDeleteItem = (itemIdx) => {
     const nextItems = [...deliveryItems];
     nextItems.splice(itemIdx, 1);
     setDeliveryItems(nextItems);
-    // Clear selection if deleted item was selected
+    // Сбрасываем выбор, если удалили активный товар
     if (activeItemIdx === itemIdx) {
       setActiveItemIdx(null);
       setSelectedProductId(null);
       setStockRemains([]);
     } else if (activeItemIdx > itemIdx) {
-      // Adjust active index if it was after the deleted item
       setActiveItemIdx(activeItemIdx - 1);
     }
     toast.success("Товар видалено з доставки");
   };
 
+  /**
+   * Обрабатывает изменение общего количества товара.
+   */
   const handleQuantityChange = (index, newValue) => {
     const nextItems = [...deliveryItems];
     nextItems[index].quantity = newValue === "" ? "" : (parseFloat(newValue) || 0);
     setDeliveryItems(nextItems);
   };
 
+  /**
+   * Обрабатывает изменение количества в конкретной партии.
+   */
   const handlePartyQuantityChange = (itemIdx, partyIdx, newValue) => {
     const nextItems = [...deliveryItems];
     nextItems[itemIdx].parties[partyIdx].party_quantity = newValue === "" ? "" : (parseFloat(newValue) || 0);
     setDeliveryItems(nextItems);
   };
 
-  // Helper to validate items and highlight mismatches
+  // --- VALIDATION LOGIC ---
+
+  /**
+   * Хелпер, который проходит по всем товарам и проверяет корректность данных:
+   * 1. `mismatch`: Общее количество не совпадает с суммой по партиям.
+   * 2. `no_parties`: У товара с количеством > 0 не указана ни одна партия.
+   * Возвращает новый массив с флагами ошибок для каждой строки.
+   */
   const getItemsWithErrors = () => {
     return deliveryItems.map(item => {
       const totalQty = parseFloat(item.quantity) || 0;
       const parties = item.parties || [];
       
       const partiesSum = parties.reduce((sum, p) => {
-        // Correct fallback: use party_quantity if it's not an empty string, otherwise use moved_q
         const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) 
           ? p.party_quantity 
           : (p.moved_q || 0);
@@ -239,14 +282,8 @@ export default function EditDeliveryModal() {
       }, 0);
       
       const hasMismatch = totalQty > 0 && Math.abs(totalQty - partiesSum) > 0.0001;
-      
-      // noParties logic: Must have at least one party and it must have a non-empty name
       const hasValidParties = parties.length > 0 && parties.some(p => p.party && p.party.trim() !== "");
       const noParties = totalQty > 0 && !hasValidParties;
-
-      if (totalQty > 0) {
-        console.log(`Validating [${item.product}]: totalQty=${totalQty}, partiesSum=${partiesSum}, length=${parties.length}, hasMismatch=${hasMismatch}, noParties=${noParties}`, parties);
-      }
 
       return {
         ...item,
@@ -256,28 +293,29 @@ export default function EditDeliveryModal() {
     });
   };
 
+  // Мемоизированный результат валидации, пересчитывается только при изменении `deliveryItems`
   const validatedItems = useMemo(() => getItemsWithErrors(), [deliveryItems]);
 
+  // --- MAIN ACTION HANDLERS ---
+
+  /**
+   * Кнопка "Готово". Финальная валидация и отправка данных на сервер.
+   */
   const handleReady = async () => {
-    console.log("handleReady clicked. current validatedItems:", validatedItems);
-    // Final validation
     const itemsWithErrors = validatedItems.filter(item => item.hasError);
-    console.log("itemsWithErrors count:", itemsWithErrors.length, itemsWithErrors);
 
     if (itemsWithErrors.length > 0) {
       const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
       if (mismatch) {
-        console.warn("Validation failed: mismatch", mismatch);
-        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}. Загальна кількість не збігається з сумою по партіях.`);
+        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}.`);
       } else {
         const noParties = itemsWithErrors.find(i => i.errorType === 'no_parties');
-        console.warn("Validation failed: no_parties", noParties);
         toast.error(`Оберіть хоча б одну партію для товару: ${noParties.product}`);
       }
       return;
     }
 
-    // Reconstruct deliveries with updated items and status
+    // Собираем обновленные данные по доставкам
     const updatedDeliveries = selectedDeliveries.map(delivery => {
       const deliveryUpdatedItems = validatedItems
         .filter(item => item.deliveryId === delivery.id)
@@ -288,29 +326,19 @@ export default function EditDeliveryModal() {
               const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
                 ? p.party_quantity
                 : (p.moved_q || 0);
-              return {
-                ...p,
-                moved_q: parseFloat(qStr) || 0
-              };
+              return { ...p, moved_q: parseFloat(qStr) || 0 };
             })
             .filter(p => p.moved_q > 0);
 
-          return {
-            ...item,
-            quantity: qty,
-            parties: parties
-          };
+          return { ...item, quantity: qty, parties: parties };
         });
       
-      return {
-        ...delivery,
-        status: 'В роботі',
-        items: deliveryUpdatedItems
-      };
+      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems };
     });
 
     try {
         const initData = getInitData();
+        // Отправляем данные по каждой доставке параллельно
         await Promise.all(updatedDeliveries.map(d => {
             const cleanItems = d.items.map(item => ({
                 product: String(item.product),
@@ -320,29 +348,22 @@ export default function EditDeliveryModal() {
                 client: String(item.client),
                 order_ref: String(item.orderRef || item.order || item.order_ref || ""), 
                 weight: parseFloat(item.weight) || 0,
-                parties: item.parties.map(p => ({
-                    party: String(p.party),
-                    moved_q: parseFloat(p.moved_q) || 0
-                }))
+                parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
-
             return updateDeliveryData(d.id, d.status, cleanItems, initData);
         }));
 
-        updateDeliveries(updatedDeliveries);
+        updateDeliveries(updatedDeliveries); // Обновляем глобальный стор
         toast.success("Доставки оновлено та переведено в роботу");
         
+        // Готовим данные для печати и переходим к выбору даты
         const validDeliveries = updatedDeliveries.filter(d => 
           d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
         ).map(d => ({
           ...d,
           items: d.items.filter(i => i.quantity > 0)
         }));
-
-        const sorted = [...validDeliveries].sort((a, b) => 
-          (a.manager || "").localeCompare(b.manager || "")
-        );
-
+        const sorted = [...validDeliveries].sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
         setPrintData(sorted);
         setIsAskingDate(true);
     } catch (error) {
@@ -351,15 +372,16 @@ export default function EditDeliveryModal() {
     }
   };
 
+  /**
+   * Кнопка "Друк". Готовит данные для печати и открывает окно выбора даты.
+   */
   const handlePrintPreview = () => {
-    // Basic validation: ensure at least some items have quantity > 0
     const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
     if (!hasItems) {
       toast.error("Немає товарів з кількістю більше 0 для друку");
       return;
     }
 
-    // Prepare data
     const validDeliveries = selectedDeliveries.map(delivery => {
       const items = deliveryItems
         .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
@@ -367,57 +389,52 @@ export default function EditDeliveryModal() {
           ...item,
           quantity: parseFloat(item.quantity) || 0,
           parties: (item.parties || []).map(p => {
-             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
-               ? p.party_quantity
-               : (p.moved_q || 0);
+             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
              return { ...p, moved_q: parseFloat(qStr) || 0 };
           }).filter(p => p.moved_q > 0)
         }));
-
       return { ...delivery, items };
     }).filter(d => d.items.length > 0);
 
-    const sorted = [...validDeliveries].sort((a, b) => 
-      (a.manager || "").localeCompare(b.manager || "")
-    );
-
+    const sorted = [...validDeliveries].sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
     setPrintData(sorted);
     setIsAskingDate(true);
   };
 
+  /**
+   * Подтверждает и выполняет удаление всех выбранных доставок.
+   */
   const confirmGlobalDelete = async () => {
     setShowDeleteConfirm(false);
     try {
       const initData = getInitData();
-      const results = await Promise.all(selectedDeliveries.map(d => 
+      await Promise.all(selectedDeliveries.map(d => 
         import("@/lib/api").then(m => m.deleteDeliveryData(String(d.id), initData))
       ));
       
-      // Check if any deletion failed. Since we expect null or status "ok"/"success"
-      const allOk = results.every(res => res === null || (res && (res.status === "success" || res.status === "ok")));
-
-      if (allOk) {
-        toast.success("Доставки видалено");
-        selectedDeliveries.forEach(d => removeDelivery(d.id));
-        setIsEditDeliveryModalOpen(false);
-      } else {
-        toast.error("Деякі доставки не вдалося видалити");
-      }
+      toast.success("Доставки видалено");
+      selectedDeliveries.forEach(d => removeDelivery(d.id));
+      setIsEditDeliveryModalOpen(false);
     } catch (e) {
       console.error("Error deleting deliveries:", e);
       toast.error("Помилка при видаленні");
     }
   };
 
+  /**
+   * Открывает окно подтверждения удаления.
+   */
   const handleGlobalDelete = async () => {
     if (selectedDeliveries.length === 0) return;
     setShowDeleteConfirm(true);
   };
 
+  // --- RENDER LOGIC ---
 
+  // Если модальное окно не должно быть открыто, ничего не рендерим
   if (!isEditDeliveryModalOpen) return null;
 
-  // 1. Date selection view
+  // Рендеринг модального окна для выбора даты печати
   if (isAskingDate) {
      return (
        <div className={css.overlay}>
@@ -452,6 +469,7 @@ export default function EditDeliveryModal() {
      );
   }
  
+  // Рендеринг вида для предпросмотра печати
   if (isPrintView && printData) {
     return (
       <div className={css.overlay}>
@@ -525,6 +543,7 @@ export default function EditDeliveryModal() {
     );
   }
 
+  // Рендеринг основного вида редактирования
   return (
     <div className={css.overlay}>
       <div className={css.modal}>
@@ -536,6 +555,7 @@ export default function EditDeliveryModal() {
         </div>
 
         <div className={css.content}>
+          {/* Левая панель: Товары в доставке */}
           <div className={css.leftPanel}>
             <h3 className={css.panelTitle}>📦 Товари у доставці</h3>
             <div className={css.tableContainer}>
@@ -583,7 +603,7 @@ export default function EditDeliveryModal() {
                           </button>
                         </td>
                       </tr>
-                      {/* Nested parties row */}
+                      {/* Вложенная таблица для партий */}
                       {item.parties && item.parties.length > 0 && (
                         <tr>
                           <td colSpan="5" style={{ padding: '0 10px 10px 40px' }}>
@@ -631,7 +651,7 @@ export default function EditDeliveryModal() {
             </div>
           </div>
 
-          {/* Правая таблица: Остатки */}
+          {/* Правая панель: Остатки на складе */}
           <div className={css.rightPanel}>
             <h3 className={css.panelTitle}>⚖️ Залишки на складі</h3>
             <div className={css.tableContainer}>
@@ -677,6 +697,7 @@ export default function EditDeliveryModal() {
           </div>
         </div>
 
+        {/* Футер с кнопками действий */}
         <div className={css.footer}>
           <button 
             className={`${css.button} ${css.cancelButton}`}
@@ -706,13 +727,7 @@ export default function EditDeliveryModal() {
           </button>
         </div>
  
-        {/* Printable Area handled via CSS media print */}
-        <div className={css.noPrint} style={{ display: 'none' }}>
-          <div id="printable-delivery-area">
-            {/* Component content to be printed */}
-          </div>
-        </div>
- 
+        {/* Скрытое окно подтверждения удаления */}
         {showDeleteConfirm && (
           <div className={css.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
             <div className={css.confirmModal} onClick={e => e.stopPropagation()}>

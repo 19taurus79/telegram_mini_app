@@ -14,6 +14,7 @@ import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import { getDeliveries } from "../../lib/api";
 import Header from "./components/Header/Header";
+import { useQuery } from "@tanstack/react-query";
 import { getInitData } from "@/lib/getInitData";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { customIcon, clientIcon, warehouseIcon, deliveryIcon } from "./leaflet-icon"; // Кастомные иконки для маркеров
@@ -431,70 +432,85 @@ export default function MapFeature({ onAddressSelect }) {
     setIsMounted(true);
   }, []);
 
-  // Загрузка заявок при включении их видимости
-  useEffect(() => {
-    const getApplications = async () => {
-      if (areApplicationsVisible && applications.length === 0) {
-        const initData = getInitData();
-        const { mergedData, unmappedData } = await fetchOrdersHeatmapData(initData);
-        setApplications(mergedData);
-        setUnmappedApplications(unmappedData);
-      }
-    };
-    getApplications();
-  }, [areApplicationsVisible, applications.length, setApplications, setUnmappedApplications]);
+  // Загрузка заявок с помощью React Query
+  const { data: applicationsData } = useQuery({
+    queryKey: ['applications'],
+    queryFn: async () => {
+      const initData = getInitData();
+      return await fetchOrdersHeatmapData(initData);
+    },
+    enabled: areApplicationsVisible,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-  // Загрузка клиентов при включении их видимости
+  // Эффект для обновления состояния заявок
   useEffect(() => {
-    const getClients = async () => {
-      if (areClientsVisible && clients.length === 0) {
-        const { addresses } = await import("./fetchOrdersWithAddresses").then(mod => mod.fetchOrdersAndAddresses());
-        const validClients = addresses.filter(addr => addr.latitude && addr.longitude);
-        setClients(validClients);
-      }
-    };
-    getClients();
-  }, [areClientsVisible, clients.length]);
+    if (applicationsData) {
+      setApplications(applicationsData.mergedData);
+      setUnmappedApplications(applicationsData.unmappedData);
+    }
+  }, [applicationsData, setApplications, setUnmappedApplications]);
 
-  // Загрузка и обработка доставок при включении их видимости
+  // Загрузка клиентов с помощью React Query
+  const { data: clientsData } = useQuery({
+    queryKey: ['clients'],
+    queryFn: async () => {
+      // Динамический импорт, так как функция может быть не нужна сразу
+      const { fetchOrdersAndAddresses } = await import("./fetchOrdersWithAddresses");
+      const { addresses } = await fetchOrdersAndAddresses();
+      return addresses.filter(addr => addr.latitude && addr.longitude);
+    },
+    enabled: areClientsVisible,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Эффект для обновления состояния клиентов
   useEffect(() => {
-    const processDeliveries = async () => {
-      // Загрузка, если данные еще не загружены
-      if (areDeliveriesVisible && deliveries.length === 0) {
-        try {
-          const initData = getInitData();
-          const data = await getDeliveries(initData);
-          if (data && Array.isArray(data)) {
-            setDeliveries(data);
+    if (clientsData) {
+      setClients(clientsData);
+    }
+  }, [clientsData, setClients]);
+
+  // Загрузка и обработка доставок с помощью React Query
+  const { data: fetchedDeliveries } = useQuery({
+    queryKey: ['deliveries'],
+    queryFn: async () => {
+      const initData = getInitData();
+      const data = await getDeliveries(initData);
+      if (!data || !Array.isArray(data)) {
+        throw new Error("Invalid data format for deliveries");
+      }
+      return data;
+    },
+    enabled: areDeliveriesVisible, // Запрос выполняется только когда слой видим
+    staleTime: 5 * 60 * 1000, // Данные считаются свежими в течение 5 минут
+    refetchOnWindowFocus: false,
+  });
+
+  // Эффект для обновления глобального состояния (Zustand) после успешной загрузки доставок
+  useEffect(() => {
+    if (fetchedDeliveries) {
+      setDeliveries(fetchedDeliveries);
+      
+      const statuses = [...new Set(fetchedDeliveries.map(d => d.status))];
+      setAvailableStatuses(statuses);
+      
+      setSelectedStatuses(prev => {
+        if (!Array.isArray(prev)) return statuses;
+        const currentStatuses = new Set(prev);
+        let changed = false;
+        statuses.forEach(s => {
+          if (!currentStatuses.has(s)) {
+            currentStatuses.add(s);
+            changed = true;
           }
-        } catch (e) {
-          console.error("❌ [MapFeature] Error fetching deliveries:", e);
-        }
-        return;
-      }
-
-      // Если доставки загружены, извлекаем из них доступные статусы для фильтра
-      if (deliveries.length > 0) {
-        const statuses = [...new Set(deliveries.map(d => d.status))];
-        setAvailableStatuses(statuses);
-        
-        // Добавляем новые статусы в фильтр, не удаляя старые
-        setSelectedStatuses(prev => {
-          if (!Array.isArray(prev)) return statuses;
-          const currentStatuses = new Set(prev);
-          let changed = false;
-          statuses.forEach(s => {
-            if (!currentStatuses.has(s)) {
-              currentStatuses.add(s);
-              changed = true;
-            }
-          });
-          return changed ? Array.from(currentStatuses) : prev;
         });
-      }
-    };
-    processDeliveries();
-  }, [areDeliveriesVisible, deliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses]);
+        return changed ? Array.from(currentStatuses) : prev;
+      });
+    }
+  }, [fetchedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses]);
 
   // Пересчет размера карты при изменении макета (чтобы избежать "серых плиток")
   useEffect(() => {

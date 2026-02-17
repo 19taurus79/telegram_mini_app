@@ -3,13 +3,14 @@
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import { GeocodedAddress } from '@/types/types';
+import Loader from '@/components/Loader/Loader';
 
 // Динамический импорт компонента карты
 const MapFeature = dynamic(
     () => import('@/components/MapModule/MapFeature'),
     {
         ssr: false,
-        loading: () => <p>Загрузка карты...</p>
+        loading: () => <Loader />
     }
 );
 

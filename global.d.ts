@@ -1,6 +1,14 @@
+interface TelegramWebAppBackButton {
+  isVisible: boolean;
+  show(): void;
+  hide(): void;
+  onClick(callback: () => void): void;
+}
+
 interface TelegramWebApp {
   initData?: string;
   close: () => void;
+  BackButton: TelegramWebAppBackButton;
   // Добавьте другие свойства, если нужно
 }
 

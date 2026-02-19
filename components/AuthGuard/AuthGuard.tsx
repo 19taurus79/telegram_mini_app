@@ -22,12 +22,20 @@ export default function AuthGuard() {
     const isMiniApp = Boolean(
       typeof window !== "undefined" && window.Telegram?.WebApp?.initData
     );
-    if (isMiniApp) return;
+    if (isMiniApp) {
+      console.log("[AuthGuard] MiniApp detected, skip");
+      return;
+    }
 
     // Перевіряємо наявність initData (localStorage / cookie)
     const initData = getInitData();
+    console.log("[AuthGuard] pathname:", pathname, "| initData length:", initData?.length ?? 0);
+
     if (!initData) {
+      console.log("[AuthGuard] No initData → redirect to /login");
       router.replace("/login");
+    } else {
+      console.log("[AuthGuard] initData OK, first 80 chars:", initData.slice(0, 80));
     }
   }, [pathname, router]);
 

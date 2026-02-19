@@ -11,6 +11,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast"; // Import Toaster
 import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
 import TelegramNavigation from "../components/TelegramNavigation";
+import AuthGuard from "@/components/AuthGuard/AuthGuard";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -45,6 +47,7 @@ export default function RootLayout({
         <TanStackProvider>
           <FilterProvider>
             <DeliveryProvider>
+              <AuthGuard />
               <Header />
               <TelegramRouter />
               <TelegramNavigation />

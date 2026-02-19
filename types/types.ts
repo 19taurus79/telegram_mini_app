@@ -506,3 +506,14 @@ export type UpdateChatMessagePayload = {
   message_text: string;
 };
 
+// Дані від Telegram Login Widget (onTelegramAuth callback)
+export type TelegramWidgetUser = {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+};
+

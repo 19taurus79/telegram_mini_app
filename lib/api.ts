@@ -628,6 +628,16 @@ export const getUserByinitData = async (initData: string) => {
   return data;
 };
 
+export const loginWithTelegramWidget = async (
+  user: import("@/types/types").TelegramWidgetUser
+): Promise<{ init_data: string }> => {
+  const { data } = await axios.post<{ init_data: string }>(
+    "/auth/login-widget",
+    user
+  );
+  return data;
+};
+
 export const createTask = async (
   initData: string,
   title: string,

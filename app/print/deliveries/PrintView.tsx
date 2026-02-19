@@ -138,7 +138,7 @@ export default function PrintView() {
             </tbody>
             <tfoot>
                 <tr>
-                <td colSpan="2" style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>Всього по менеджеру:</td>
+                <td colSpan={2} style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>Всього по менеджеру:</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold' }}>
                     <div>{managerData.totalCount} шт</div>
                     <div>{managerData.totalWeight.toFixed(2)} кг</div>

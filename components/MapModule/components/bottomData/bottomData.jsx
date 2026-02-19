@@ -230,16 +230,13 @@ export default function BottomData({ onEditClient }) {
   };
 
   const handlePrint = () => {
-    const printContent = document.getElementById('print-only-section');
-    if (printContent) {
-      const newWindow = window.open('', '', 'height=800,width=1000');
-      newWindow.document.write('<html><head><title>Друк виділення</title>');
-      newWindow.document.write('<style>body{font-family:sans-serif;padding:20px} table{width:100%;border-collapse:collapse;margin-bottom:20px} th,td{border:1px solid #ddd;padding:8px;text-align:left} .nested-table{margin-top:5px;border:none;width:100%} .nested-table th, .nested-table td {border: 1px solid #eee; font-size: 0.9em;} h3 {margin-top: 20px; margin-bottom: 10px; background: #f5f5f5; padding: 5px;}</style>');
-      newWindow.document.write('</head><body>');
-      newWindow.document.write(printContent.innerHTML);
-      newWindow.document.write('</body></html>');
-      newWindow.document.close();
-      newWindow.print();
+    if (!selectionSummary) return;
+    try {
+        sessionStorage.setItem('printData', JSON.stringify(selectionSummary));
+        window.open('/print/deliveries', '_blank');
+    } catch (e) {
+        console.error("Failed to save print data to session storage:", e);
+        toast.error("Не вдалося підготувати дані для друку. Можливо, даних занадто багато.");
     }
   };
 
@@ -347,72 +344,6 @@ export default function BottomData({ onEditClient }) {
                     <td colSpan="2"><strong>Всього по менеджеру:</strong></td>
                     <td><strong>{managerData.totalCount}</strong></td>
                     <td><strong>{managerData.totalWeight.toFixed(2)}</strong></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          ))}
-        </div>
-
-        {/* Скрытая часть для печати (все раскрыто) */}
-        <div id="print-only-section" style={{ display: 'none' }}>
-          <h2>Зведення по виділенню</h2>
-          <div style={{ marginBottom: '20px', borderBottom: '1px solid #ccc', paddingBottom: '10px' }}>
-             Всього клієнтів: <strong>{selectionSummary.totalClients}</strong> | 
-             Всього заявок: <strong>{selectionSummary.totalCount}</strong> | 
-             Загальна вага: <strong>{selectionSummary.totalWeight.toFixed(2)} кг</strong>
-          </div>
-          {selectionSummary.groupedData.map(managerData => (
-            <div key={managerData.manager}>
-              <h3>{managerData.manager}</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
-                <thead>
-                  <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Клієнт</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Деталі замовлення</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Всього</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {managerData.clients.map(client => (
-                    <tr key={client.client}>
-                      <td style={{ border: '1px solid #ddd', padding: '8px', verticalAlign: 'top' }}>
-                        <strong>{client.client}</strong>
-                      </td>
-                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr>
-                              <th style={{ borderBottom: '1px solid #eee', textAlign: 'left', fontSize: '0.9em' }}>Доповнення</th>
-                              <th style={{ borderBottom: '1px solid #eee', textAlign: 'left', fontSize: '0.9em' }}>Товар</th>
-                              <th style={{ borderBottom: '1px solid #eee', textAlign: 'left', fontSize: '0.9em' }}>К-ть</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {client.orders.map(order => (
-                              <tr key={order.id}>
-                                <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.contract_supplement}</td>
-                                <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.nomenclature}</td>
-                                <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.different}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </td>
-                      <td style={{ border: '1px solid #ddd', padding: '8px', verticalAlign: 'top' }}>
-                        <div>К-ть: {client.count}</div>
-                        <div>Вага: {client.totalWeight.toFixed(2)}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan="2" style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>Всього по менеджеру:</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold' }}>
-                      <div>{managerData.totalCount} шт</div>
-                      <div>{managerData.totalWeight.toFixed(2)} кг</div>
-                    </td>
                   </tr>
                 </tfoot>
               </table>

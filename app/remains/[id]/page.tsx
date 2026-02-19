@@ -105,7 +105,7 @@ export default async function filteredRemains({ params }: Props) {
         </div>
 
       </ul>
-      <BackBtn />
+      {/* <BackBtn /> */}
       {sumOrder[0].total_orders !== 0 && <OrdersByProduct product={id.id} />}
     </>
   );

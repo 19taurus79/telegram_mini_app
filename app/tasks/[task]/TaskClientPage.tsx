@@ -26,7 +26,7 @@ export default function TaskClientPage({ task, taskStatus, fromLink }: Props) {
       {userData?.is_admin && (
         <TasksBtn taskId={task.id} taskStatus={taskStatus} />
       )}
-      <BackBtn isClose={fromLink} />
+      {/* <BackBtn isClose={fromLink} /> */}
     </>
   );
 }

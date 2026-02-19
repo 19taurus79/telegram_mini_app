@@ -337,7 +337,7 @@ export default function DeliveryData() {
           </div>
         </div>
       ))}
-      <BackBtn />
+      {/* <BackBtn /> */}
 
       {/* Модальное окно для изменения количества */}
       {selectedItem && (

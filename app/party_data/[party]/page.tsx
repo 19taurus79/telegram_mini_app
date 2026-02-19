@@ -28,7 +28,7 @@ export default async function PartyData({ params }: Props) {
           <li className={css.listItem}>Вага одиниці: {item.weight}</li>
         </ul>
       ))}
-      <BackBtn />
+      {/* <BackBtn /> */}
     </>
   );
 }

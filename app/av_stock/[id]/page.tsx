@@ -23,7 +23,7 @@ export default async function AvStockPage({ params }: Props) {
           ))}
         </ul>
       </div>
-      <BackBtn />
+      {/* <BackBtn /> */}
     </>
   );
 }

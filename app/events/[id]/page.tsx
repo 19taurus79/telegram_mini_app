@@ -11,7 +11,7 @@ export default async function DetailEventData({
   return (
     <>
       <DetailEvent id={id} />
-      <BackBtn />
+      {/* <BackBtn /> */}
     </>
   );
 }

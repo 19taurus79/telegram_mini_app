@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
@@ -10,6 +11,7 @@ import { Download, Printer, ChevronDown, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function BottomData({ onEditClient }) {
+  const router = useRouter(); // Initialize router
   const { 
     selectedClient, 
     selectedDelivery, 
@@ -233,7 +235,7 @@ export default function BottomData({ onEditClient }) {
     if (!selectionSummary) return;
     try {
         sessionStorage.setItem('printData', JSON.stringify(selectionSummary));
-        window.open('/print/deliveries', '_blank');
+        router.push('/print/deliveries');
     } catch (e) {
         console.error("Failed to save print data to session storage:", e);
         toast.error("Не вдалося підготувати дані для друку. Можливо, даних занадто багато.");

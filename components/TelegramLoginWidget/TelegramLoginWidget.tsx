@@ -33,6 +33,8 @@ export default function TelegramLoginWidget() {
         document.cookie = `tg_init_data=${encodeURIComponent(init_data)}; path=/; expires=${expiresDate}; SameSite=Lax`;
 
         toast.success("Вхід виконано!", { id: toastId });
+        console.log("[Widget] init_data saved, length:", init_data?.length, "| first 80:", init_data?.slice(0, 80));
+        console.log("[Widget] localStorage check:", localStorage.getItem("tg_init_data")?.slice(0, 40));
         router.replace("/");
       } catch (err) {
         console.error("Widget auth error:", err);

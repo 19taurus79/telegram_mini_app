@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";
 import OrdersByProduct from "@/components/OrdersByProduct/OrderByProduct";
@@ -105,7 +104,7 @@ export default async function filteredRemains({ params }: Props) {
         </div>
 
       </ul>
-      <BackBtn />
+      {/* <BackBtn /> */}
       {sumOrder[0].total_orders !== 0 && <OrdersByProduct product={id.id} />}
     </>
   );

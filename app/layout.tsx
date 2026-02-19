@@ -10,6 +10,7 @@ import Script from "next/script";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast"; // Import Toaster
 import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
+import TelegramNavigation from "../components/TelegramNavigation";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({
             <DeliveryProvider>
               <Header />
               <TelegramRouter />
+              <TelegramNavigation />
               {children}
               {/* {modal} */}
               <ScrollToTopButton />

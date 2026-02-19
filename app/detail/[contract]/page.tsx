@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getOrdersDetailsById } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
@@ -61,7 +60,7 @@ export default async function filteredOrdersDetail({ params }: Props) {
     <>
       <TableOrderDetail details={details} />
       <div className={css.btnWrapper}>
-        <BackBtn />
+        {/* <BackBtn /> */}
         <DeliveryBtn />
       </div>
     </>

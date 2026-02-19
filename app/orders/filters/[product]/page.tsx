@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getOrdersByProduct, getProductDetailsById } from "@/lib/api";
 import css from "./OrdersByProduct.module.css";
 import React from "react";
@@ -56,7 +55,7 @@ export default async function OrdersByProduct({ params }: Props) {
           </div>
         </div>
       ))}
-      <BackBtn />
+      {/* <BackBtn /> */}
     </div>
   );
 }

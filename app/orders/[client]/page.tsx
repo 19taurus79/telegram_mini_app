@@ -1,6 +1,5 @@
 "use client";
 
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getContracts } from "@/lib/api";
 import Link from "next/link";
 import css from "./OrdersList.module.css";
@@ -87,7 +86,7 @@ export default function FilteredOrders({ params }: Props) {
           </li>
         ))}
       </ul>
-      <BackBtn />
+      {/* <BackBtn /> */}
 
       {commentModalData && (
         <OrderCommentModal

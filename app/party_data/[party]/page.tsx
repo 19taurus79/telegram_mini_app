@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getPartyData } from "@/lib/api";
 import css from "./DataList.module.css";
 import { getInitData } from "@/lib/getInitData";
@@ -28,7 +27,7 @@ export default async function PartyData({ params }: Props) {
           <li className={css.listItem}>Вага одиниці: {item.weight}</li>
         </ul>
       ))}
-      <BackBtn />
+      {/* <BackBtn /> */}
     </>
   );
 }

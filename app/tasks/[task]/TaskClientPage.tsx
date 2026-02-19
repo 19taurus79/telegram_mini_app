@@ -9,10 +9,9 @@ import { TaskGoogle, TaskStatus } from "@/types/types";
 type Props = {
   task: TaskGoogle;
   taskStatus: TaskStatus;
-  fromLink: boolean;
 };
 
-export default function TaskClientPage({ task, taskStatus, fromLink }: Props) {
+export default function TaskClientPage({ task, taskStatus }: Props) {
   const userData = useUser((state) => state.userData);
   const initData = useInitData((state) => state.initData);
 

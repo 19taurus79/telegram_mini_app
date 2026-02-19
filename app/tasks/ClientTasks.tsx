@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import React, { useState, useEffect, CSSProperties } from "react";
 import { getAllTasks } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 import { useQuery } from "@tanstack/react-query";
 import { FadeLoader } from "react-spinners";
 const override: CSSProperties = {
@@ -30,7 +31,8 @@ export default function ClientTasks() {
     ) {
       setInitData(window.Telegram.WebApp.initData);
     } else {
-      setInitData("");
+      // Браузер (не Mini App) — читаємо з localStorage / cookie
+      setInitData(getInitData());
     }
   }, []);
 

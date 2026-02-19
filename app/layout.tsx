@@ -10,7 +10,7 @@ import Script from "next/script";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast"; // Import Toaster
 import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
-import TelegramNavigation from "@/components/TelegramNavigation";
+import TelegramNavigation from "@/components/TelegramNavigation/TelegramNavigation";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

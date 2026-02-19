@@ -1,6 +1,5 @@
 "use client";
 
-import BackBtn from "@/components/BackBtn/BackBtn";
 import TaskCart from "@/components/TaskCart/TaskCart";
 import TasksBtn from "@/components/TasksBtn/TasksBtn";
 import { useInitData } from "@/store/InitData";

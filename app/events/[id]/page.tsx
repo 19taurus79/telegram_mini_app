@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import DetailEvent from "./detailEvent";
 
 export default async function DetailEventData({

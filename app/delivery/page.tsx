@@ -3,9 +3,6 @@
 import React, { useState, CSSProperties } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
-import {getAddressByClient, sendDeliveryData} from "@/lib/api";
-import { DeliveryPayload } from "@/types/types";
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getInitData } from "@/lib/getInitData";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";

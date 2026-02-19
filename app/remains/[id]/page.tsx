@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
 import css from "./RemainsList.module.css";
 import OrdersByProduct from "@/components/OrdersByProduct/OrderByProduct";

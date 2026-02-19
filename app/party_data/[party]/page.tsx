@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import { getPartyData } from "@/lib/api";
 import css from "./DataList.module.css";
 import { getInitData } from "@/lib/getInitData";

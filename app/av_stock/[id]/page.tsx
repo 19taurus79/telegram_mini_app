@@ -1,4 +1,3 @@
-import BackBtn from "@/components/BackBtn/BackBtn";
 import css from "./AvRemainsList.module.css";
 import { getAvRemainsById } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";

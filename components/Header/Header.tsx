@@ -5,6 +5,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useFilter } from '@/context/FilterContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getUserByinitData } from "@/lib/api";
+import { getInitData } from "@/lib/getInitData";
 import css from "./Header.module.css";
 import Link from "next/link";
 import { useInitData } from "@/store/InitData";
@@ -70,7 +71,8 @@ function Header() {
     ) {
       setInitData(window.Telegram.WebApp.initData);
     } else {
-      setInitData("");
+      // Браузер (не Mini App) — читаємо з localStorage / cookie (після Widget-авторизації)
+      setInitData(getInitData());
     }
   }, [setInitData]);
 

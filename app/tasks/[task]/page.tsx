@@ -13,13 +13,10 @@ export default async function DetailTaskPage({ params, searchParams }: Props) {
   const task = await getTaskById(taskId);
   const taskStatus = await getTaskStatus(task.id);
 
-  const fromLink = resolvedSearchParams.from_link === "1";
-
   return (
     <TaskClientPage
       task={task}
       taskStatus={taskStatus}
-      fromLink={fromLink}
     />
   );
 }

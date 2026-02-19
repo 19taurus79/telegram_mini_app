@@ -14,8 +14,30 @@ h3 { margin-top: 20px; margin-bottom: 10px; background: #f5f5f5; padding: 5px; f
 }
 `;
 
+interface OrderItem {
+  id: string; // Assuming id is used for key
+  contract_supplement: string;
+  nomenclature: string;
+  different: number;
+}
+
+interface ClientData {
+  client: string;
+  manager: string;
+  totalWeight: number;
+  count: number;
+  orders: OrderItem[];
+}
+
+interface ManagerGroupedData {
+  manager: string;
+  clients: ClientData[];
+  totalWeight: number;
+  totalCount: number;
+}
+
 interface SelectionSummary {
-  groupedData: any[];
+  groupedData: ManagerGroupedData[];
   totalWeight: number;
   totalCount: number;
   totalClients: number;

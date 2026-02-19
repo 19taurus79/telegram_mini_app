@@ -56,18 +56,17 @@
 }
 
 .managerSection {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .managerHeader {
-  background-color: rgba(var(--primary-color-rgb, 0, 122, 255), 0.05);
-  padding: 6px 12px;
+  background-color: rgba(var(--primary-color-rgb, 0, 122, 255), 0.03);
+  padding: 6px 12px 6px 36px; /* Increased indent */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9em;
+  font-size: 0.85em;
   font-weight: 600;
-  border-left: 4px solid var(--primary-color);
 }
 
 .managerAggregates {
@@ -78,7 +77,7 @@
 }
 
 .item {
-  padding: 10px 12px 10px 24px;
+  padding: 10px 12px 10px 48px; /* Increased indent */
   border-bottom: 1px solid rgba(0,0,0,0.05);
   cursor: pointer;
   transition: background 0.2s;
@@ -122,4 +121,52 @@
   text-align: center;
   opacity: 0.5;
   font-style: italic;
+}
+
+/* New/Modified styles for Date Grouping */
+.dateSection {
+  /* Container for a date group */
+}
+
+.dateHeader {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--foreground);
+  padding: 6px 12px 6px 24px; /* Indent more than status */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9em;
+  font-weight: bold;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.dateAggregates {
+  display: flex;
+  gap: 10px;
+  font-size: 0.8em;
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+.accordionToggle {
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.2s;
+}
+
+.collapsibleHeader {
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.02);
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.rotated {
+  transform: rotate(180deg);
 }

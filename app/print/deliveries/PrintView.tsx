@@ -14,8 +14,15 @@ h3 { margin-top: 20px; margin-bottom: 10px; background: #f5f5f5; padding: 5px; f
 }
 `;
 
+interface SelectionSummary {
+  groupedData: any[];
+  totalWeight: number;
+  totalCount: number;
+  totalClients: number;
+}
+
 export default function PrintView() {
-  const [summary, setSummary] = useState(null);
+  const [summary, setSummary] = useState<SelectionSummary | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {

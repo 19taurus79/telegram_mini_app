@@ -9,7 +9,6 @@ export default function TelegramDeepLinkLogin() {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "waiting" | "loading">("idle");
   const [deepLink, setDeepLink] = useState<string>("");
-  const [token, setToken] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(300);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -29,7 +28,6 @@ export default function TelegramDeepLinkLogin() {
     setState("loading");
     try {
       const { token: t, deep_link, expires_in } = await generateLoginToken();
-      setToken(t);
       setDeepLink(deep_link);
       setTimeLeft(expires_in);
       setState("waiting");

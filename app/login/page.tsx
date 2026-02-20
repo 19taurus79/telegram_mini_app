@@ -1,4 +1,3 @@
-import TelegramLoginWidget from "@/components/TelegramLoginWidget/TelegramLoginWidget";
 import TelegramDeepLinkLogin from "@/components/TelegramDeepLinkLogin/TelegramDeepLinkLogin";
 import styles from "./login.module.css";
 
@@ -11,9 +10,6 @@ export default function LoginPage() {
         <p className={styles.subtitle}>
           Увійдіть через Telegram для доступу до додатку
         </p>
-        <div className={styles.widgetWrapper}>
-          <TelegramLoginWidget />
-        </div>
         <div className={styles.widgetWrapper}>
           <TelegramDeepLinkLogin />
         </div>

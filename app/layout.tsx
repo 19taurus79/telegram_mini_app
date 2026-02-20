@@ -56,7 +56,7 @@ export default function RootLayout({
               <ScrollToTopButton />
             </DeliveryProvider>
           </FilterProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {/* <ReactQueryDevtools initialIsOpen={false} /> */}
           <Toaster 
             containerStyle={{
               zIndex: 10001,

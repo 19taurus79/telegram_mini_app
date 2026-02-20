@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+
 import toast from "react-hot-toast";
 import { generateLoginToken, checkLoginToken } from "@/lib/api";
 
 export default function TelegramDeepLinkLogin() {
-  const router = useRouter();
   const [state, setState] = useState<"idle" | "waiting" | "loading">("idle");
   const [deepLink, setDeepLink] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(300);
@@ -61,7 +60,7 @@ export default function TelegramDeepLinkLogin() {
             document.cookie = `tg_init_data=${encodeURIComponent(result.init_data)}; path=/; expires=${expiresDate}; SameSite=Lax`;
 
             toast.success("Вхід виконано!");
-            router.replace("/");
+            window.location.replace("/");
           } else if (
             result.status === "expired" ||
             result.status === "not_found"

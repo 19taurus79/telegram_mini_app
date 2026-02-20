@@ -1,4 +1,5 @@
 import TelegramLoginWidget from "@/components/TelegramLoginWidget/TelegramLoginWidget";
+import TelegramDeepLinkLogin from "@/components/TelegramDeepLinkLogin/TelegramDeepLinkLogin";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -12,6 +13,9 @@ export default function LoginPage() {
         </p>
         <div className={styles.widgetWrapper}>
           <TelegramLoginWidget />
+        </div>
+        <div className={styles.widgetWrapper}>
+          <TelegramDeepLinkLogin />
         </div>
         <p className={styles.hint}>
           Доступ надається лише авторизованим користувачам

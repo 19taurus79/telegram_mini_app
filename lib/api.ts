@@ -638,6 +638,25 @@ export const loginWithTelegramWidget = async (
   return data;
 };
 
+export const generateLoginToken = async (): Promise<{
+  token: string;
+  deep_link: string;
+  expires_in: number;
+}> => {
+  const { data } = await axios.post("/auth/generate-login-token");
+  return data;
+};
+
+export const checkLoginToken = async (
+  token: string
+): Promise<{
+  status: "pending" | "confirmed" | "expired" | "not_found" | "forbidden";
+  init_data?: string;
+}> => {
+  const { data } = await axios.get(`/auth/check-login-token/${token}`);
+  return data;
+};
+
 export const createTask = async (
   initData: string,
   title: string,

@@ -641,6 +641,7 @@ export const loginWithTelegramWidget = async (
 export const generateLoginToken = async (): Promise<{
   token: string;
   deep_link: string;
+  web_link: string;
   expires_in: number;
 }> => {
   const { data } = await axios.post("/auth/generate-login-token");

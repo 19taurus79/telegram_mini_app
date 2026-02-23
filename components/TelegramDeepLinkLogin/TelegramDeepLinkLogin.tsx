@@ -14,6 +14,7 @@ const TelegramIcon = () => (
 export default function TelegramDeepLinkLogin() {
   const [state, setState] = useState<"idle" | "waiting" | "loading">("idle");
   const [deepLink, setDeepLink] = useState<string>("");
+  const [webLink, setWebLink] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(300);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -32,8 +33,9 @@ export default function TelegramDeepLinkLogin() {
   const handleLogin = async () => {
     setState("loading");
     try {
-      const { token: t, deep_link, expires_in } = await generateLoginToken();
+      const { token: t, deep_link, web_link, expires_in } = await generateLoginToken();
       setDeepLink(deep_link);
+      setWebLink(web_link);
       setTimeLeft(expires_in);
       setState("waiting");
 
@@ -117,15 +119,20 @@ if (state === "idle") {
   return (
     <div style={styles.waiting}>
       <p style={styles.instruction}>
-        Відкрийте Telegram і натисніть <b>Start</b> у боті:
+        Відкрийте Telegram на <b>телефоні</b> та натисніть <b>Start</b> у боті:
       </p>
-      <a href={deepLink} target="_blank" rel="noopener noreferrer" style={styles.tgButton}>
+      {/* Основна кнопка — відкриває додаток Telegram напряму */}
+      <a href={deepLink} style={styles.tgButton}>
         <TelegramIcon />
-        Відкрити Telegram
+        Відкрити в додатку
+      </a>
+      {/* Запасний варіант — Telegram Web */}
+      <a href={webLink} target="_blank" rel="noopener noreferrer" style={styles.tgButtonSecondary}>
+        Відкрити Telegram Web
       </a>
       <details style={styles.details}>
         <summary style={styles.summary}>Посилання для копіювання</summary>
-        <code style={styles.link}>{deepLink}</code>
+        <code style={styles.link}>{webLink}</code>
       </details>
       <p style={styles.timer}>⏳ {formatTime(timeLeft)}</p>
       <button onClick={handleCancel} style={styles.cancel}>
@@ -179,7 +186,22 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     fontWeight: 500,
     fontSize: "15px",
+    marginBottom: "8px",
+  },
+  tgButtonSecondary: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    padding: "8px 16px",
+    background: "transparent",
+    color: "#54a9eb",
+    textDecoration: "none",
+    borderRadius: "4px",
+    fontWeight: 400,
+    fontSize: "13px",
     marginBottom: "12px",
+    border: "1px solid rgba(84,169,235,0.4)",
   },
   details: {
     textAlign: "left" as const,

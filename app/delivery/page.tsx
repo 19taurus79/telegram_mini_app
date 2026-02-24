@@ -187,12 +187,10 @@ export default function DeliveryData() {
   }
 
 
-  const addressChange = ()=>{
-    console.log('change');
+  const addressChange = () => {
     setIsAddressChange(!isAddressChange);
     setIsGeocoding(false);
-
-
+    setCustomAddressData(null);
   };
 
   const handleAddressData = (data: AddressData | null)=>{
@@ -384,7 +382,7 @@ export default function DeliveryData() {
                 className={styles.modalInput}
                 value={formData.address}
                 onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
+                  setFormData({ ...formData, address: e.target.value, latitude: undefined, longitude: undefined })
                 }
                   readOnly={isAddressChange}
               />

@@ -239,6 +239,7 @@ export default function MapFeature({ onAddressSelect }) {
     setDeliveries,
     updateDeliveries,
     removeDelivery,
+    selectedLoB,
   } = useApplicationsStore();
 
 
@@ -279,10 +280,12 @@ export default function MapFeature({ onAddressSelect }) {
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
 
-  // Фильтрация заявок по выбранному менеджеру
-  const filteredApplications = selectedManager
-    ? applications.filter(app => app.address?.manager === selectedManager)
-    : applications;
+  // Фильтрация заявок по выбранному менеджеру и направлению бизнеса
+  const filteredApplications = applications.filter(app => {
+    const managerMatch = !selectedManager || app.address?.manager === selectedManager;
+    const lobMatch = !selectedLoB || app.orders?.some(order => order.line_of_business === selectedLoB);
+    return managerMatch && lobMatch;
+  });
 
   // Фильтрация клиентов по выбранному менеджеру
   const filteredClients = selectedManager

@@ -71,6 +71,9 @@ export const useApplicationsStore = create((set) => ({
   clearSelectedDeliveries: () => set({ selectedDeliveries: [], selectedDelivery: null }),
   selectedManager: null,
   setSelectedManager: (manager) => set({ selectedManager: manager }),
+  
+  selectedLoB: null,
+  setSelectedLoB: (lob) => set({ selectedLoB: lob }),
   isEditDeliveryModalOpen: false,
   setIsEditDeliveryModalOpen: (isOpen) => set({ isEditDeliveryModalOpen: isOpen }),
   isPrintRequested: false,

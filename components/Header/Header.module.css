@@ -20,31 +20,6 @@
   color: var(--foreground);
 }
 
-.searchWrapper {
-  position: relative;
-  flex: 1 1 auto;
-  max-width: 400px;
-  margin: 0 1rem;
-}
-
-.searchInput {
-  width: 100%;
-  padding: 0.5rem 2.5rem 0.5rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.clearBtn {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
 
 .navToggle {
   display: none;
@@ -104,15 +79,8 @@
   }
 }
 
-
 /* --- Responsive --- */
 @media (max-width: 768px) {
-  .searchWrapper {
-    flex: 1 1 100%;
-    margin: 1rem 0;
-    max-width: 100%;
-  }
-
   .nav {
     width: 100%;
     flex-direction: column;

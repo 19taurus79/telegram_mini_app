@@ -1,8 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useDebouncedCallback } from 'use-debounce';
-import { useFilter } from '@/context/FilterContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getUserByinitData } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
@@ -13,8 +11,6 @@ import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
 
 function Header() {
-  const { searchValue, setSearchValue } = useFilter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
@@ -86,19 +82,6 @@ function Header() {
     fetchUser();
   }, [initData, setUserData]);
 
-  const handleInputChange = useDebouncedCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchValue(e.target.value);
-    },
-    300
-  );
-
-  const handleClear = () => {
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
-    setSearchValue("");
-  };
 
   const handleNavClick = () => {
     setMenuOpen(false);
@@ -123,28 +106,6 @@ function Header() {
         ☰
       </button>
 
-      {["/remains", "/orders", "/av_stock"].some((path) =>
-        pathname.startsWith(path)
-      ) && (
-        <div className={css.searchWrapper}>
-          <input
-            ref={inputRef}
-            type="text"
-            className={css.searchInput}
-            placeholder="Пошук..."
-            onChange={handleInputChange}
-          />
-          {searchValue && (
-            <button
-              className={css.clearBtn}
-              onClick={handleClear}
-              aria-label="Clear search"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      )}
 
       <nav className={`${css.nav} ${menuOpen ? css.navOpen : ""}`}>
         <ul className={css.navList}>

@@ -52,8 +52,7 @@ export default function ClientsWidget({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ position: "relative" }}>
-        {/* Поле пошуку клієнтів */}
+      <div className={styles.searchWrapper}>
         <input
           type="text"
           placeholder="Пошук клієнта..."
@@ -61,15 +60,20 @@ export default function ClientsWidget({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
         />
-        <Search
-          size={16}
-          style={{
-            position: "absolute",
-            right: "12px",
-            top: "10px",
-            opacity: 0.5,
-          }}
-        />
+        {searchValue ? (
+          <button
+            onClick={() => setSearchValue("")}
+            className={styles.clearBtn}
+            aria-label="Очистити пошук"
+          >
+            ×
+          </button>
+        ) : (
+          <Search
+            size={16}
+            className={styles.searchIcon}
+          />
+        )}
       </div>
 
       <div 

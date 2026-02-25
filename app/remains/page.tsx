@@ -6,7 +6,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -137,58 +137,78 @@ function RemainsContent() {
   };
 
   const renderProductList = () => {
-    if (isLoading) {
-      return <p>Завантаження продуктів...</p>;
-    }
-
-    if (isError) {
-      return <p>Помилка завантаження: {error.message}</p>;
-    }
-
-    if (!data || data.length === 0) {
-      return <p>Продуктів не знайдено.</p>;
-    }
-
     // Фільтрація списку на мобілці
-    const filteredData = selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT
-      ? data.filter(item => item.id === selectedProductId)
-      : data;
+    const filteredData = selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT
+      ? (data || []).filter(item => item.id === selectedProductId)
+      : (data || []);
 
-    // Повертаємо повну структуру з класами, як було раніше
     return (
-      <div className={css.listContainerUl}>
-        {/* Кнопка скидання фільтра на мобілці */}
-        {selectedProductId && window.innerWidth < DESKTOP_BREAKPOINT && (
-          <button 
-            className={css.clearFilterButton}
-            onClick={handleClearFilter}
-          >
-            ← Показати всі товари
-          </button>
+      <div>
+        {/* Вбудований пошук — завжди відображається */}
+        <div className={css.searchWrapper}>
+          <input
+            type="text"
+            placeholder="Пошук товару..."
+            className={css.searchInput}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+          {searchValue ? (
+            <button
+              className={css.clearSearchBtn}
+              onClick={() => setSearchValue("")}
+              aria-label="Очистити пошук"
+            >
+              <X size={16} />
+            </button>
+          ) : (
+            <Search size={16} className={css.searchIcon} />
+          )}
+        </div>
+
+        {/* Стан завантаження / помилки / пустого списку */}
+        {isLoading && <p style={{ padding: "10px" }}>Завантаження продуктів...</p>}
+        {isError && <p style={{ padding: "10px" }}>Помилка завантаження: {error.message}</p>}
+        {!isLoading && !isError && filteredData.length === 0 && (
+          <p style={{ padding: "10px", opacity: 0.6 }}>Продуктів не знайдено.</p>
         )}
-        
-        {searchParams.get('search') && (
-            <button 
+
+        {!isLoading && !isError && filteredData.length > 0 && (
+          <div className={css.listContainerUl}>
+            {/* Кнопка скидання фільтра на мобілці */}
+            {selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT && (
+              <button
+                className={css.clearFilterButton}
+                onClick={handleClearFilter}
+              >
+                ← Показати всі товари
+              </button>
+            )}
+
+            {searchParams.get('search') && (
+              <button
                 className={css.backButton}
                 onClick={handleBackToOrders}
-            >
+              >
                 <ArrowLeft size={16} />
                 Назад до заявок
-            </button>
+              </button>
+            )}
+            <ul className={css.listContainerUl} style={{ padding: 0 }}>
+              {filteredData.map((item) => (
+                <li className={css.listItemButton} key={item.id}>
+                  <Link
+                    href={`/remains/${item.id}`}
+                    className={css.link}
+                    onClick={(e) => handleProductClick(e, item.id)}
+                  >
+                    {item.product}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-        <ul className={css.listContainerUl} style={{ padding: 0 }}>
-        {filteredData.map((item) => (
-          <li className={css.listItemButton} key={item.id}>
-            <Link
-              href={`/remains/${item.id}`}
-              className={css.link}
-              onClick={(e) => handleProductClick(e, item.id)}
-            >
-              {item.product}
-            </Link>
-          </li>
-        ))}
-      </ul>
       </div>
     );
   };

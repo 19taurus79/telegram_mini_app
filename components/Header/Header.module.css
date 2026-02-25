@@ -89,8 +89,21 @@
 }
 
 .navList li a:hover {
-  color: #0070f3;
+  color: var(--primary-color, #0070f3);
 }
+
+.activeLink {
+  color: var(--primary-color, #0070f3) !important;
+  font-weight: 600 !important;
+}
+
+@media (min-width: 769px) {
+  .activeLink {
+    border-bottom: 2px solid var(--primary-color, #0070f3);
+    padding-bottom: 2px;
+  }
+}
+
 
 /* --- Responsive --- */
 @media (max-width: 768px) {

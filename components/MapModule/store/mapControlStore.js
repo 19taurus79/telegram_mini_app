@@ -7,6 +7,14 @@ export const useMapControlStore = create((set) => ({
   selectedStatuses: [],
   
   availableStatuses: [],
+
+  // Координати для програмного переміщення карти
+  flyToCoords: null,
+  setFlyToCoords: (coords) => set({ flyToCoords: coords }),
+
+  // Запит на відкриття EditClientModal (дані клієнта або null для нового)
+  editClientRequest: null,
+  setEditClientRequest: (data) => set({ editClientRequest: data }),
   
   setApplicationsVisible: (visible) => set((state) => ({ 
     areApplicationsVisible: typeof visible === 'function' ? visible(state.areApplicationsVisible) : visible 
@@ -33,3 +41,4 @@ export const useMapControlStore = create((set) => ({
       : [...state.selectedStatuses, status]
   })),
 }));
+

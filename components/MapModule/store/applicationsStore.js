@@ -3,6 +3,12 @@ import { create } from 'zustand';
 export const useApplicationsStore = create((set) => ({
   applications: [],
   unmappedApplications: [],
+  clients: [],
+  setClients: (clients) => set((state) => ({ 
+    clients: typeof clients === 'function' 
+      ? clients(state.clients) 
+      : (Array.isArray(clients) ? clients : []) 
+  })),
   selectedClient: null,
   selectedDelivery: null,
   selectedDeliveries: [],

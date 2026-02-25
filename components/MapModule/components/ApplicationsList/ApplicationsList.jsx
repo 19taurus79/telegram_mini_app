@@ -6,7 +6,7 @@ import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { ChevronDown } from "lucide-react";
 
 export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
-  const { applications, unmappedApplications, setSelectedClient, selectedManager, selectedLoB, deliveries } = useApplicationsStore();
+  const { applications, unmappedApplications, setSelectedClient, selectedManagers, selectedLoBs, deliveries } = useApplicationsStore();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const letterRefs = useRef({});
 
@@ -56,8 +56,13 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
   };
 
   const filterItem = (item) => {
-    const matchesManager = !selectedManager || (item.address?.manager === selectedManager || item.orders?.[0]?.manager === selectedManager);
-    const matchesLoB = !selectedLoB || item.orders?.some(order => order.line_of_business === selectedLoB);
+    const matchesManager = selectedManagers.length === 0 || 
+      selectedManagers.includes(item.address?.manager) || 
+      selectedManagers.includes(item.orders?.[0]?.manager);
+    
+    const matchesLoB = selectedLoBs.length === 0 || 
+      item.orders?.some(order => selectedLoBs.includes(order.line_of_business));
+    
     return matchesManager && matchesLoB;
   };
 

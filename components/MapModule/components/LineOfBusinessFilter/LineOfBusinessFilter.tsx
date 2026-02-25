@@ -3,19 +3,15 @@
 import { useMemo } from "react"
 import css from "./LineOfBusinessFilter.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
-
-interface Order {
-    line_of_business?: string;
-    [key: string]: any;
-}
+import { Order } from "../../../../types/types";
 
 interface Application {
     orders?: Order[];
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export default function LineOfBusinessFilter() {
-    const { applications, unmappedApplications, selectedLoB, setSelectedLoB } = useApplicationsStore();
+    const { applications, unmappedApplications, selectedLoBs, toggleLoB } = useApplicationsStore();
 
     const uniqueLoBs = useMemo(() => {
         const lobs = new Set<string>();
@@ -36,11 +32,7 @@ export default function LineOfBusinessFilter() {
     }, [applications, unmappedApplications]);
 
     const handleButtonClick = (lob: string) => {
-        if (selectedLoB === lob) {
-            setSelectedLoB(null);
-        } else {
-            setSelectedLoB(lob);
-        }
+        toggleLoB(lob);
     };
 
     if (uniqueLoBs.length === 0) return null;
@@ -49,11 +41,11 @@ export default function LineOfBusinessFilter() {
         <div className={css.container}>
             {uniqueLoBs.map((lob, index) => (
                 <button 
-                    className={selectedLoB === lob ? css.buttonActive : css.button} 
+                    className={selectedLoBs.includes(lob) ? css.buttonActive : css.button} 
                     key={`${lob}-${index}`} 
                     onClick={() => handleButtonClick(lob)}
                 >
-                    {lob as string}
+                    {lob}
                 </button>
             ))}
         </div>

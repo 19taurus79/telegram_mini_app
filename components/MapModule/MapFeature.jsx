@@ -221,25 +221,12 @@ export default function MapFeature({ onAddressSelect }) {
   
   // Глобальное состояние для заявок, клиентов, доставок и их выбора
   const {
-    applications,
-    setApplications,
-    unmappedApplications,
-    setUnmappedApplications,
-    clients,
-    setClients,
-    selectedClient,
-    setSelectedClient,
-    selectedDeliveries,
-    setSelectedDeliveries,
-    setSelectedDelivery,
-    selectedManager,
-    multiSelectedItems,
-    setMultiSelectedItems,
     deliveries,
     setDeliveries,
     updateDeliveries,
     removeDelivery,
-    selectedLoB,
+    selectedLoBs,
+    selectedManagers,
   } = useApplicationsStore();
 
 
@@ -280,22 +267,22 @@ export default function MapFeature({ onAddressSelect }) {
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
 
-  // Фильтрация заявок по выбранному менеджеру и направлению бизнеса
+  // Фильтрация заявок по выбранным менеджерам и направлениям бизнеса
   const filteredApplications = applications.filter(app => {
-    const managerMatch = !selectedManager || app.address?.manager === selectedManager;
-    const lobMatch = !selectedLoB || app.orders?.some(order => order.line_of_business === selectedLoB);
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(app.address?.manager);
+    const lobMatch = selectedLoBs.length === 0 || app.orders?.some(order => selectedLoBs.includes(order.line_of_business));
     return managerMatch && lobMatch;
   });
 
-  // Фильтрация клиентов по выбранному менеджеру
-  const filteredClients = selectedManager
-    ? clients.filter(client => client.manager === selectedManager)
+  // Фильтрация клиентов по выбранным менеджерам
+  const filteredClients = selectedManagers.length > 0
+    ? clients.filter(client => selectedManagers.includes(client.manager))
     : clients;
 
   // Фильтрация доставок по статусу и менеджеру
   const filteredDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = !selectedManager || d.manager === selectedManager;
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
     return statusMatch && managerMatch;
   });
 

@@ -1,17 +1,8 @@
 .container {
-  display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) minmax(
-      200px,
-      1fr
-    ); /* минимальная ширина 200px, максимум — растягивается */
-  grid-template-rows: auto 1fr 1fr; /* header, and two rows of equal height */
-  grid-template-areas:
-    "header header header"
-    "map dataTop input"
-    "map dataTop dataBottom";
-  gap: 10px;
-  height: calc(100vh - var(--header-height, 60px)); /* можно задавать высоту контейнера */
-  overflow: auto; /* разрешаем прокрутку при переполнении контейнера */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .header {
@@ -19,9 +10,9 @@
 }
 
 .map {
-  grid-area: map;
-  height: 100%;
-  position: relative; /* Ensure absolute children are positioned relative to map area */
+  flex: 1;
+  min-height: 0;
+  position: relative;
 }
 
 .leafletMap {

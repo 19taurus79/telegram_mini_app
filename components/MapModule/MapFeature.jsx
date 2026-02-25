@@ -220,42 +220,41 @@ export default function MapFeature({ onAddressSelect }) {
   const { addressData, setAddressData } = useDisplayAddressStore();
   
   // Глобальное состояние для заявок, клиентов, доставок и их выбора
-  const { 
-    applications, 
-    setApplications, 
-    selectedClient, 
-    setSelectedClient, 
-    setUnmappedApplications, 
-    selectedManager,
-    selectedDelivery,
-    setSelectedDelivery,
+  const {
+    applications,
+    setApplications,
+    unmappedApplications,
+    setUnmappedApplications,
+    clients,
+    setClients,
+    selectedClient,
+    setSelectedClient,
     selectedDeliveries,
     setSelectedDeliveries,
-    toggleSelectedDelivery,
+    setSelectedDelivery,
+    selectedManager,
+    multiSelectedItems,
+    setMultiSelectedItems,
     deliveries,
     setDeliveries,
-    setMultiSelectedItems
+    updateDeliveries,
+    removeDelivery,
   } = useApplicationsStore();
+
+
   
   // Локальное состояние для управления видимостью UI элементов
-  const [isDataTopVisible, setDataTopVisible] = useState(false);
-  const [isAddressSearchVisible, setAddressSearchVisible] = useState(true);
-  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false); // Состояние боковой панели поиска/списков
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // Состояние нижней выдвижной панели (bottom sheet)
-  const [flyToCoords, setFlyToCoords] = useState(null); // Координаты для принудительного перемещения карты
-  const [currentZoom, setCurrentZoom] = useState(13); // Текущий уровень зума
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Модальное окно редактирования клиента
-  const [editingClient, setEditingClient] = useState(null); // Данные клиента для редактирования
+  const [currentZoom, setCurrentZoom] = useState(13);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
 
-  // Локальное состояние для режима построения маршрутов
   const [isRoutingMode, setIsRoutingMode] = useState(false);
-  const [routeWaypoints, setRouteWaypoints] = useState([]); // Точки маршрута
-  const [routeInfo, setRouteInfo] = useState(null); // Информация о построенном маршруте
+  const [routeWaypoints, setRouteWaypoints] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
 
-  // Состояние для данных, загружаемых с сервера
-  const [clients, setClients] = useState([]);
+
+
   
-  // Состояние для управления видимостью слоев (из хранилища)
   const { 
     areApplicationsVisible, 
     toggleApplications,
@@ -266,7 +265,11 @@ export default function MapFeature({ onAddressSelect }) {
     selectedStatuses,
     setSelectedStatuses,
     availableStatuses,
-    setAvailableStatuses
+    setAvailableStatuses,
+    flyToCoords,
+    setFlyToCoords,
+    editClientRequest,
+    setEditClientRequest,
   } = useMapControlStore();
   
   // Ссылка на экземпляр карты
@@ -427,10 +430,18 @@ export default function MapFeature({ onAddressSelect }) {
 
   // --- `useEffect` ХУКИ ---
 
-  // Устанавливаем флаг, что компонент смонтирован, чтобы избежать рендеринга на сервере
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Обробляємо запит на відкриття EditClientModal (від MapSidePanel через Zustand)
+  useEffect(() => {
+    if (editClientRequest !== null) {
+      setEditingClient(editClientRequest?.id === undefined ? null : editClientRequest);
+      setIsEditModalOpen(true);
+      setEditClientRequest(null); // скидаємо запит
+    }
+  }, [editClientRequest, setEditClientRequest]);
 
   // Загрузка заявок с помощью React Query
   const { data: applicationsData } = useQuery({
@@ -518,14 +529,14 @@ export default function MapFeature({ onAddressSelect }) {
     }
   }, [fetchedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses]);
 
-  // Пересчет размера карты при изменении макета (чтобы избежать "серых плиток")
+  // Перерахунок розміру карти при зміні flyToCoords (щоб уникнути «сірих плиток»)
   useEffect(() => {
     if (mapRef.current) {
       setTimeout(() => {
         mapRef.current.invalidateSize();
-      }, 400); // Задержка для завершения CSS-анимаций
+      }, 300);
     }
-  }, [isDataTopVisible, isAddressSearchVisible]);
+  }, [flyToCoords]);
 
 
   // --- ЛОГИКА РЕНДЕРИНГА ---
@@ -549,68 +560,7 @@ export default function MapFeature({ onAddressSelect }) {
   }
 
   return (
-    <div
-      className={`${css.container} ${
-        !isDataTopVisible ? css.dataLoadedLayout : ""
-      } ${
-        !isAddressSearchVisible ? css.addressSearchHidden : ""
-      }`}
-    >
-      {/* Пустой div для хедера, если он будет нужен */}
-      <div className={css.header}></div>
-      
-      {/* Кнопка-иконка для открытия панели поиска */}
-      <div className={css.searchToggle} onClick={() => setIsSearchPanelOpen(!isSearchPanelOpen)}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </div>
-
-      {/* Боковая панель (поиск или списки) */}
-      <div className={`${css.input} ${css.searchPanel} ${isSearchPanelOpen ? css.searchOpen : css.searchClosed}`}>
-        {/* В зависимости от активного слоя, показываем разный контент */}
-        {areDeliveriesVisible ? (
-          <DeliveriesList 
-            deliveries={deliveries}
-            onClose={() => setIsSearchPanelOpen(false)}
-            onFlyTo={(lat, lon) => setFlyToCoords([lat, lon])}
-            onSelectDelivery={(delivery) => {
-              setSelectedDelivery(delivery);
-              setIsSheetOpen(true);
-            }}
-            selectedStatuses={selectedStatuses}
-          />
-        ) : areApplicationsVisible ? (
-          <ApplicationsList 
-            onClose={() => setIsSearchPanelOpen(false)} 
-            onFlyTo={(lat, lon) => setFlyToCoords([lat, lon])}
-            onAddClient={handleAddClient}
-          />
-        ) : areClientsVisible ? (
-          <ClientsList 
-            clients={clients}
-            onClose={() => setIsSearchPanelOpen(false)}
-            onFlyTo={(lat, lon) => setFlyToCoords([lat, lon])}
-            onClientSelect={(client) => setSelectedClient(client)}
-            onAddClient={handleAddClient}
-          />
-        ) : (
-          // По умолчанию - поиск адреса
-          <InputAddress onAddressSelect={(data) => {
-              if (isRoutingMode && data.lat && data.lon) {
-                // В режиме маршрутизации добавляем найденный адрес как точку
-                handleMarkerClickForRouting(data.lat, data.lon, data.display_name || 'Адреса з пошуку', 'Пошук');
-              } else {
-                onAddressSelect(data);
-              }
-              setIsSearchPanelOpen(false);
-          }} />
-        )}
-        <div className={css.searchCloseBtn} onClick={() => setIsSearchPanelOpen(false)}>
-          ✕
-        </div>
-      </div>
+    <div className={css.container} style={{ height: '100%', overflow: 'hidden' }}>
 
       {/* Основной контейнер карты */}
       <div className={css.map}>
@@ -876,21 +826,8 @@ export default function MapFeature({ onAddressSelect }) {
         />
       </div>
 
-      {/* Нижняя выдвижная панель (Bottom Sheet) */}
-      <div className={`${css.bottomSheet} ${isSheetOpen ? css.sheetOpen : css.sheetClosed}`}>
-        <div className={css.sheetHeader} onClick={() => setIsSheetOpen(!isSheetOpen)}>
-           <div className={css.sheetHandle}></div>
-        </div>
-        <div className={css.sheetContent}>
-            {/* Разделение панели на две части - верхнюю и нижнюю, логика отображения внутри */}
-            <div className={css.dataTop}>
-                <TopData />
-            </div>
-            <div className={css.dataBottom}>
-                <BottomData onEditClient={handleEditClient} />
-            </div>
-        </div>
-      </div>
+
+
 
       {/* Модальные окна, которые отображаются поверх всего */}
       <EditClientModal 

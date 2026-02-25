@@ -2,38 +2,28 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
-import { GeocodedAddress } from '@/types/types';
 import Loader from '@/components/Loader/Loader';
 
-// Динамический импорт компонента карты
-const MapFeature = dynamic(
-    () => import('@/components/MapModule/MapFeature'),
+// Динамический импорт MapDashboard (ssr: false — требуется для Leaflet)
+const MapDashboard = dynamic(
+    () => import('@/components/MapModule/MapDashboard/MapDashboard'),
     {
         ssr: false,
-        loading: () => <Loader />
+        loading: () => <Loader />,
     }
 );
 
 export default function Page() {
     useEffect(() => {
-        // Remove body padding for map page
         document.body.style.paddingTop = '0';
-        
         return () => {
-            // Restore padding when leaving page
             document.body.style.paddingTop = '';
         };
     }, []);
 
-    const handleAddressSelect = (addressData: GeocodedAddress) => {
-        console.log("Выбранный адрес:", addressData);
-    };
-
     return (
-        <main style={{ paddingTop: 'calc(var(--header-height, 60px) + 10px)', minHeight: '100vh' }}>
-            <div style={{ height: 'calc(100vh - var(--header-height, 60px) - 10px)', width: '100%', position: 'relative' }}>
-                <MapFeature onAddressSelect={handleAddressSelect} />
-            </div>
+        <main style={{ paddingTop: 'var(--header-height, 60px)', minHeight: '100vh', overflow: 'hidden' }}>
+            <MapDashboard />
         </main>
     );
 }

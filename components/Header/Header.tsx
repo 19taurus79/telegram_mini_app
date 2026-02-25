@@ -104,6 +104,11 @@ function Header() {
     setMenuOpen(false);
   };
 
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
+
   return (
     <header className={css.header} ref={headerRef}>
       <h2 className={css.logo}>Ерідон Харків</h2>
@@ -144,22 +149,22 @@ function Header() {
       <nav className={`${css.nav} ${menuOpen ? css.navOpen : ""}`}>
         <ul className={css.navList}>
           <li>
-            <Link href="/" onClick={handleNavClick}>
+            <Link href="/" onClick={handleNavClick} className={isActive('/') ? css.activeLink : ''}>
               Головна
             </Link>
           </li>
           <li>
-            <Link href="/remains" onClick={handleNavClick}>
+            <Link href="/remains" onClick={handleNavClick} className={isActive('/remains') ? css.activeLink : ''}>
               Залишки на нашому складі
             </Link>
           </li>
           <li>
-            <Link href="/av_stock" onClick={handleNavClick}>
+            <Link href="/av_stock" onClick={handleNavClick} className={isActive('/av_stock') ? css.activeLink : ''}>
               Залишки на інших складах
             </Link>
           </li>
           <li>
-            <Link href="/orders" onClick={handleNavClick}>
+            <Link href="/orders" onClick={handleNavClick} className={isActive('/orders') ? css.activeLink : ''}>
               Заявки
             </Link>
           </li>
@@ -167,7 +172,7 @@ function Header() {
             <Link 
               href="/delivery" 
               onClick={handleNavClick}
-              className={`${deliveryCount > 0 ? css.vibrate : ""} ${css.deliveryLinkWrapper}`}
+              className={`${deliveryCount > 0 ? css.vibrate : ''} ${css.deliveryLinkWrapper} ${isActive('/delivery') ? css.activeLink : ''}`}
             >
               Доставка
               {deliveryCount > 0 && (
@@ -176,29 +181,29 @@ function Header() {
             </Link>
           </li>
           <li>
-            <Link href="/events" onClick={handleNavClick}>
+            <Link href="/events" onClick={handleNavClick} className={isActive('/events') ? css.activeLink : ''}>
               Події
             </Link>
           </li>
           <li>
-            <Link href="/tasks" onClick={handleNavClick}>
+            <Link href="/tasks" onClick={handleNavClick} className={isActive('/tasks') ? css.activeLink : ''}>
               Задачи
             </Link>
           </li>
           {userData?.is_admin && (
             <>
               <li>
-                <Link href="/bi" onClick={handleNavClick}>
+                <Link href="/bi" onClick={handleNavClick} className={isActive('/bi') ? css.activeLink : ''}>
                   Замовити товар
                 </Link>
               </li>
               <li>
-                <Link href="/admin/upload" onClick={handleNavClick}>
+                <Link href="/admin/upload" onClick={handleNavClick} className={isActive('/admin/upload') ? css.activeLink : ''}>
                   Завантажити дані
                 </Link>
               </li>
               <li>
-                <Link href="/map" onClick={handleNavClick}>
+                <Link href="/map" onClick={handleNavClick} className={isActive('/map') ? css.activeLink : ''}>
                   Мапа
                 </Link>
               </li>

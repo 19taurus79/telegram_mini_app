@@ -274,6 +274,7 @@ export default function MapFeature({ onAddressSelect }) {
   
   // Ссылка на экземпляр карты
   const mapRef = useRef(null);
+  const containerRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
@@ -538,6 +539,26 @@ export default function MapFeature({ onAddressSelect }) {
     }
   }, [flyToCoords]);
 
+  // Автоматичний перерахунок розміру при зміні розмірів контейнера (для react-grid-layout)
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapRef.current) {
+        // Додаємо невелику затримку, щоб react-grid-layout встиг завершити анімацію
+        setTimeout(() => {
+          if (mapRef.current) mapRef.current.invalidateSize();
+        }, 100);
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isMounted]);
+
 
   // --- ЛОГИКА РЕНДЕРИНГА ---
 
@@ -563,7 +584,7 @@ export default function MapFeature({ onAddressSelect }) {
     <div className={css.container} style={{ height: '100%', overflow: 'hidden' }}>
 
       {/* Основной контейнер карты */}
-      <div className={css.map}>
+      <div className={css.map} ref={containerRef}>
         <MapContainer
           className={css.leafletMap}
           ref={mapRef}

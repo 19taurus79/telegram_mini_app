@@ -63,10 +63,7 @@ export default function MapDashboard() {
     []
   );
 
-  const handleResetLayout = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
-  };
+
 
   if (!isClient) return null;
 
@@ -106,7 +103,7 @@ export default function MapDashboard() {
               <h3 className={styles.gridItemTitle}>Карта</h3>
             </div>
             <div className={styles.mapContent}>
-              <MapFeature onAddressSelect={(_data: unknown) => {}} />
+              <MapFeature onAddressSelect={() => {}} />
 
             </div>
           </div>

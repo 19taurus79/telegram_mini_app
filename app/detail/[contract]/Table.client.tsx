@@ -181,13 +181,25 @@ function TableOrderDetail({ details }: Detail) {
             </div>
             <div
               className={`${css.cardCellQuantity} ${css.centr}`}
-              style={
-                item.qok === "2"
-                  ? { color: "green" }
-                  : item.qok === "1"
-                  ? { color: "orange" }
-                  : { color: "red" }
-              }
+              style={{
+                color: (() => {
+                  const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
+                  const ordersQ = Number(item.orders_q) || 0;
+                  const buhQ = Number(item.buh) || 0;
+                  const sklQ = Number(item.skl) || 0;
+                  const diffQ = Number(item.quantity) || 0; // В mobile версии different замаплено как quantity
+
+                  if (sumMovedQ === 0 && ordersQ > buhQ) {
+                    return "red";
+                  }
+
+                  if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+                    return "green";
+                  } else {
+                    return "orange";
+                  }
+                })()
+              }}
             >
               {item.quantity}
             </div>

@@ -54,9 +54,9 @@ export default function DetailEvent({ id }: { id: string }) {
           ))}
         </div>
       </div>
-      {data?.user?.is_admin && (
-        <AdminBtnInEvent id={id} date={data.start} status={data.colorId} telegramId={data.telegram_id} text={data.description}/>
-      )}
+      {/*{data?.user?.is_admin && (*/}
+      {/*  <AdminBtnInEvent id={id} date={data.start} status={data.colorId} telegramId={data.telegram_id} text={data.description}/>*/}
+      {/*)}*/}
     </>
   );
 }

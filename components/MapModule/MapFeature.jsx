@@ -227,9 +227,21 @@ export default function MapFeature({ onAddressSelect }) {
     removeDelivery,
     selectedLoBs,
     selectedManagers,
+    applications,
+    setApplications,
+    setUnmappedApplications,
+    clients,
+    setClients,
+    selectedClient,
+    setSelectedClient,
+    selectedDeliveries,
+    setSelectedDeliveries,
+    toggleSelectedDelivery,
+    setSelectedDelivery,
+    setMultiSelectedItems,
   } = useApplicationsStore();
 
-
+  const setIsSheetOpen = () => {}; // Dummy function (or remove later if not needed)
   
   // Локальное состояние для управления видимостью UI элементов
   const [currentZoom, setCurrentZoom] = useState(13);

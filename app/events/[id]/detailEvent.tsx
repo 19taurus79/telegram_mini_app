@@ -4,7 +4,7 @@ import css from "./detail.module.css";
 import { getInitData } from "@/lib/getInitData";
 import {getEventById, getTelegramIdByEventId, getUserByinitData} from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import AdminBtnInEvent from "@/components/AdminsBtnInEvent/AdminBtnInEvent";
+// import AdminBtnInEvent from "@/components/AdminsBtnInEvent/AdminBtnInEvent";
 import { CSSProperties } from "react";
 import { FadeLoader } from "react-spinners";
 const override: CSSProperties = {
@@ -54,9 +54,9 @@ export default function DetailEvent({ id }: { id: string }) {
           ))}
         </div>
       </div>
-      {data?.user?.is_admin && (
-        <AdminBtnInEvent id={id} date={data.start} status={data.colorId} telegramId={data.telegram_id} text={data.description}/>
-      )}
+      {/*{data?.user?.is_admin && (*/}
+      {/*  <AdminBtnInEvent id={id} date={data.start} status={data.colorId} telegramId={data.telegram_id} text={data.description}/>*/}
+      {/*)}*/}
     </>
   );
 }

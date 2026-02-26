@@ -3,7 +3,7 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
 import { getInitData } from "@/lib/getInitData";
-import { updateDeliveryData } from "@/lib/api";
+import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
 import { Download, Printer, ChevronDown, ChevronRight } from 'lucide-react';
@@ -102,7 +102,32 @@ export default function BottomData({ onEditClient }) {
   const { areApplicationsVisible, areClientsVisible, areDeliveriesVisible } = useMapControlStore();
   const { addressData } = useDisplayAddressStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
-  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); // Added this line
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); 
+  const [changeDateTarget, setChangeDateTarget] = useState(null);
+  const [newDate, setNewDate] = useState("");
+
+  const handleChangeDeliveryDate = async (d, newDateStr) => {
+    if (!newDateStr) {
+      toast.error("Введіть нову дату");
+      return;
+    }
+    setChangeDateTarget(null);
+    const loadingToast = toast.loading("Зміна дати...");
+    try {
+      const initData = getInitData();
+      const res = await changeDeliveryDate(String(d.id), newDateStr, initData);
+
+      if (res && res.status === "ok") {
+        toast.success("Дату успішно змінено", { id: loadingToast });
+        updateDeliveries([{ ...d, delivery_date: newDateStr }]);
+      } else {
+        toast.error("Не вдалося змінити дату", { id: loadingToast });
+      }
+    } catch (e) {
+      console.error("Error changing delivery date:", e);
+      toast.error("Помилка при зміні дати", { id: loadingToast });
+    }
+  };
 
   const toggleExpansion = (id) => { // Renamed from toggleExpand
     setExpandedIds(prev => {
@@ -482,6 +507,7 @@ export default function BottomData({ onEditClient }) {
                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                               {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
                               <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: d.status === "Виконано" ? '#ff9800' : '#4caf50' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
+                              {d.status !== "Виконано" && <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: '#2196F3' }}>Змінити дату</button>}
                               {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
                            </div>
                            {renderItems(d.items)}
@@ -505,6 +531,24 @@ export default function BottomData({ onEditClient }) {
               </div>
             </div>
           )}
+          {changeDateTarget && (
+            <div className={css.confirmOverlay} onClick={() => setChangeDateTarget(null)}>
+              <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+                <h4>Зміна дати доставки №{changeDateTarget.id}</h4>
+                <p style={{ marginBottom: '10px' }}>Виберіть нову дату для доставки:</p>
+                <input 
+                  type="date" 
+                  value={newDate} 
+                  onChange={(e) => setNewDate(e.target.value)} 
+                  style={{ padding: '8px', marginBottom: '15px', width: '100%', border: '1px solid #ccc', borderRadius: '4px' }}
+                />
+                <div className={css.confirmActions}>
+                  <button className={css.confirmCancel} onClick={() => setChangeDateTarget(null)}>Скасувати</button>
+                  <button className={css.deliveryEditBtn} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)} style={{ backgroundColor: '#2196F3' }}>Зберегти</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -522,6 +566,7 @@ export default function BottomData({ onEditClient }) {
                <Printer size={14} /> Друк
              </button>
              {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+             {!isCompleted && <button className={css.deliveryEditBtn} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }} style={{ backgroundColor: '#2196F3' }}>Змінити дату</button>}
              {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
              {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
           </div>
@@ -548,6 +593,24 @@ export default function BottomData({ onEditClient }) {
               <div className={css.confirmActions}>
                 <button className={css.confirmCancel} onClick={() => setDeleteConfirmTarget(null)}>Скасувати</button>
                 <button className={css.deleteBtn} onClick={() => handleDeleteDelivery(deleteConfirmTarget)}>Видалити</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {changeDateTarget && (
+          <div className={css.confirmOverlay} onClick={() => setChangeDateTarget(null)}>
+            <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+              <h4>Зміна дати доставки №{changeDateTarget.id}</h4>
+              <p style={{ marginBottom: '10px' }}>Виберіть нову дату для доставки:</p>
+              <input 
+                type="date" 
+                value={newDate} 
+                onChange={(e) => setNewDate(e.target.value)} 
+                style={{ padding: '8px', marginBottom: '15px', width: '100%', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <div className={css.confirmActions}>
+                <button className={css.confirmCancel} onClick={() => setChangeDateTarget(null)}>Скасувати</button>
+                <button className={css.deliveryEditBtn} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)} style={{ backgroundColor: '#2196F3' }}>Зберегти</button>
               </div>
             </div>
           </div>

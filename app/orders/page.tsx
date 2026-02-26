@@ -11,7 +11,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 // Old mobile version component
 function OrdersMobile({ initData }: { initData: string }) {
-  const { searchValue } = useFilter();
+  const { searchValue, setSearchValue } = useFilter();
   
   const { data: clients } = useQuery({
     queryKey: ["clients", initData, searchValue],
@@ -22,6 +22,45 @@ function OrdersMobile({ initData }: { initData: string }) {
 
   return (
     <div className={css.listContainer}>
+      <div style={{ padding: '10px 16px', position: 'relative' }}>
+        <input 
+          type="text" 
+          placeholder="Пошук клієнта..." 
+          value={searchValue} 
+          onChange={(e) => setSearchValue(e.target.value)}
+          className={css.mobileSearchInput}
+          style={{
+            width: '100%',
+            padding: '10px 36px 10px 10px',
+            borderRadius: '8px',
+            border: '1px solid #ddd',
+            outline: 'none',
+            fontSize: '16px'
+          }}
+        />
+        {searchValue && (
+          <button 
+            onClick={() => setSearchValue('')}
+            style={{
+              position: 'absolute',
+              right: '24px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              fontSize: '18px',
+              color: '#888',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
       {clients?.map((client) => (
         <Link key={client.id} href={`/orders/${client.id}`} className={css.ref}>
           <div className={css.listItemButton}>

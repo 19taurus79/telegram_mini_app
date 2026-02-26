@@ -7,7 +7,7 @@ import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import { getStatusColor } from "../../statusUtils";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery }) {
-  const { selectedManager } = useApplicationsStore();
+  const { selectedManagers } = useApplicationsStore();
   const { selectedStatuses } = useMapControlStore();
   const [expandedDates, setExpandedDates] = useState(new Set());
 
@@ -26,7 +26,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   // 1. Фильтрация
   const filteredDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = !selectedManager || d.manager === selectedManager;
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
     return statusMatch && managerMatch;
   });
 

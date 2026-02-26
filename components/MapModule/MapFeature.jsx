@@ -221,9 +221,14 @@ export default function MapFeature({ onAddressSelect }) {
   
   // Глобальное состояние для заявок, клиентов, доставок и их выбора
   const {
+    deliveries,
+    setDeliveries,
+    updateDeliveries,
+    removeDelivery,
+    selectedLoBs,
+    selectedManagers,
     applications,
     setApplications,
-    unmappedApplications,
     setUnmappedApplications,
     clients,
     setClients,
@@ -231,17 +236,12 @@ export default function MapFeature({ onAddressSelect }) {
     setSelectedClient,
     selectedDeliveries,
     setSelectedDeliveries,
+    toggleSelectedDelivery,
     setSelectedDelivery,
-    selectedManager,
-    multiSelectedItems,
     setMultiSelectedItems,
-    deliveries,
-    setDeliveries,
-    updateDeliveries,
-    removeDelivery,
   } = useApplicationsStore();
 
-
+  const setIsSheetOpen = () => {}; // Dummy function (or remove later if not needed)
   
   // Локальное состояние для управления видимостью UI элементов
   const [currentZoom, setCurrentZoom] = useState(13);
@@ -279,20 +279,22 @@ export default function MapFeature({ onAddressSelect }) {
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
 
-  // Фильтрация заявок по выбранному менеджеру
-  const filteredApplications = selectedManager
-    ? applications.filter(app => app.address?.manager === selectedManager)
-    : applications;
+  // Фильтрация заявок по выбранным менеджерам и направлениям бизнеса
+  const filteredApplications = applications.filter(app => {
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(app.address?.manager);
+    const lobMatch = selectedLoBs.length === 0 || app.orders?.some(order => selectedLoBs.includes(order.line_of_business));
+    return managerMatch && lobMatch;
+  });
 
-  // Фильтрация клиентов по выбранному менеджеру
-  const filteredClients = selectedManager
-    ? clients.filter(client => client.manager === selectedManager)
+  // Фильтрация клиентов по выбранным менеджерам
+  const filteredClients = selectedManagers.length > 0
+    ? clients.filter(client => selectedManagers.includes(client.manager))
     : clients;
 
   // Фильтрация доставок по статусу и менеджеру
   const filteredDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = !selectedManager || d.manager === selectedManager;
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
     return statusMatch && managerMatch;
   });
 

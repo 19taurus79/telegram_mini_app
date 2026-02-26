@@ -1,10 +1,13 @@
 import css from "./ApplicationsList.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
+import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
+import { ChevronDown } from "lucide-react";
 
 export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
-  const { applications, unmappedApplications, setSelectedClient, selectedManager, deliveries } = useApplicationsStore();
+  const { applications, unmappedApplications, setSelectedClient, selectedManagers, selectedLoBs, deliveries } = useApplicationsStore();
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const letterRefs = useRef({});
 
   const cleanClient = (c) => (c || "").trim().toLowerCase();
@@ -52,13 +55,19 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
     );
   };
 
-  const filteredApplications = selectedManager 
-    ? applications.filter(item => item.address?.manager === selectedManager)
-    : applications;
+  const filterItem = (item) => {
+    const matchesManager = selectedManagers.length === 0 || 
+      selectedManagers.includes(item.address?.manager) || 
+      selectedManagers.includes(item.orders?.[0]?.manager);
+    
+    const matchesLoB = selectedLoBs.length === 0 || 
+      item.orders?.some(order => selectedLoBs.includes(order.line_of_business));
+    
+    return matchesManager && matchesLoB;
+  };
 
-  const filteredUnmappedApplications = (selectedManager
-    ? unmappedApplications.filter(item => item.orders?.[0]?.manager === selectedManager)
-    : unmappedApplications).sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  const filteredApplications = applications.filter(filterItem);
+  const filteredUnmappedApplications = unmappedApplications.filter(filterItem).sort((a, b) => a.client.localeCompare(b.client, 'uk'));
 
   // Украинский алфавит
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');
@@ -103,7 +112,21 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
 
   return (
     <div className={css.container}>
-      <ManagerFilter/>
+      <div className={css.accordionContainer}>
+        <div 
+          className={css.accordionHeader} 
+          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+        >
+          <span>Фільтри</span>
+          <ChevronDown className={`${css.accordionIcon} ${isFiltersOpen ? css.open : ''}`} size={18} />
+        </div>
+        <div className={`${css.accordionContent} ${isFiltersOpen ? css.open : ''}`}>
+          <div className={css.filterLabel}>Менеджер</div>
+          <ManagerFilter />
+          <div className={css.filterLabel}>Вид діяльності</div>
+          <LineOfBusinessFilter />
+        </div>
+      </div>
       <div className={css.header}>
         <h3>Список заявок ({filteredApplications.length}) | Без адреси: {filteredUnmappedApplications.length}</h3>
       </div>

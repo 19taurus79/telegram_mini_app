@@ -12,7 +12,7 @@ interface Manager {
 
 export default function ManagerFilter() {
     const [managers, setManagers] = useState<Manager[]>([]);
-    const { selectedManager, setSelectedManager } = useApplicationsStore();
+    const { selectedManagers, toggleManager } = useApplicationsStore();
 
     useEffect(()=>{
         const getManagers = async () => {
@@ -25,18 +25,14 @@ export default function ManagerFilter() {
     },[])
 
     const handleButtonClick = (manager: string) => {
-        if (selectedManager === manager) {
-            setSelectedManager(null);
-        } else {
-            setSelectedManager(manager);
-        }
+        toggleManager(manager);
     };
 
     return (
         <div className={css.container}>
             {managers.map((manager: Manager, index: number) => (
                 <button 
-                    className={selectedManager === manager.manager ? css.buttonActive : css.button} 
+                    className={selectedManagers.includes(manager.manager) ? css.buttonActive : css.button} 
                     key={`${manager.id}-${index}`} 
                     onClick={() => handleButtonClick(manager.manager)}
                 >

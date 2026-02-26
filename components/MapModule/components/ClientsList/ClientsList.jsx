@@ -5,11 +5,11 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 
 export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect, onAddClient }) {
   const letterRefs = useRef({});
-  const { selectedManager, deliveries } = useApplicationsStore();
+  const { selectedManagers, deliveries } = useApplicationsStore();
 
-  // Filter clients based on selected manager
-  const filteredClients = selectedManager
-    ? clients.filter(client => client.manager === selectedManager)
+  // Filter clients based on selected managers
+  const filteredClients = selectedManagers.length > 0
+    ? clients.filter(client => selectedManagers.includes(client.manager))
     : clients;
 
   // Украинский алфавит

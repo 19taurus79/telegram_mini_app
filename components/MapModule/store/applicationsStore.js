@@ -69,8 +69,27 @@ export const useApplicationsStore = create((set) => ({
     };
   }),
   clearSelectedDeliveries: () => set({ selectedDeliveries: [], selectedDelivery: null }),
-  selectedManager: null,
-  setSelectedManager: (manager) => set({ selectedManager: manager }),
+  selectedManagers: [],
+  setSelectedManagers: (managers) => set({ selectedManagers: Array.isArray(managers) ? managers : [] }),
+  toggleManager: (manager) => set((state) => {
+    const isSelected = state.selectedManagers.includes(manager);
+    return {
+      selectedManagers: isSelected 
+        ? state.selectedManagers.filter(m => m !== manager)
+        : [...state.selectedManagers, manager]
+    };
+  }),
+  
+  selectedLoBs: [],
+  setSelectedLoBs: (lobs) => set({ selectedLoBs: Array.isArray(lobs) ? lobs : [] }),
+  toggleLoB: (lob) => set((state) => {
+    const isSelected = state.selectedLoBs.includes(lob);
+    return {
+      selectedLoBs: isSelected
+        ? state.selectedLoBs.filter(l => l !== lob)
+        : [...state.selectedLoBs, lob]
+    };
+  }),
   isEditDeliveryModalOpen: false,
   setIsEditDeliveryModalOpen: (isOpen) => set({ isEditDeliveryModalOpen: isOpen }),
   isPrintRequested: false,

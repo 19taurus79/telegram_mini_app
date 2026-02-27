@@ -7,7 +7,11 @@ import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import { getStatusColor } from "../../statusUtils";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery }) {
-  const { selectedManagers } = useApplicationsStore();
+  const { 
+    selectedManagers,
+    selectedDeliveries,
+    toggleSelectedDelivery
+  } = useApplicationsStore();
   const { selectedStatuses } = useMapControlStore();
   const [expandedDates, setExpandedDates] = useState(new Set());
 
@@ -70,10 +74,19 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     return { status, dates: sortedDates, totalWeight: statusWeight, uniqueClientsCount: statusClients.size };
   });
 
-  const handleItemClick = (item) => {
-    if (onSelectDelivery) onSelectDelivery(item);
-    if (onFlyTo) onFlyTo(item.latitude, item.longitude);
-    if (onClose) onClose();
+  const handleItemClick = (item, e) => {
+    const isMultiClick = e && (e.ctrlKey || e.metaKey);
+    if (isMultiClick) {
+      toggleSelectedDelivery(item);
+    } else {
+      if (onSelectDelivery) onSelectDelivery(item);
+      if (onFlyTo) onFlyTo(item.latitude, item.longitude);
+      if (onClose) onClose();
+    }
+  };
+
+  const isMultiSelected = (item) => {
+    return selectedDeliveries.some(i => i.id === item.id);
   };
 
   const [areFiltersVisible, setAreFiltersVisible] = useState(true);
@@ -135,8 +148,8 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                         {items.map((item, idx) => (
                           <div 
                             key={`${item.id}-${idx}`} 
-                            className={css.item}
-                            onClick={() => handleItemClick(item)}
+                            className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
+                            onClick={(e) => handleItemClick(item, e)}
                           >
                             <div className={css.clientName}>
                               {item.client}

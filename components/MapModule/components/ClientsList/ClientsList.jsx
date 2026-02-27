@@ -5,7 +5,13 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 
 export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect, onAddClient }) {
   const letterRefs = useRef({});
-  const { selectedManagers, deliveries } = useApplicationsStore();
+  const { 
+    selectedManagers, 
+    deliveries,
+    multiSelectedItems,
+    selectionType,
+    toggleMultiSelectedItem
+  } = useApplicationsStore();
 
   // Filter clients based on selected managers
   const filteredClients = selectedManagers.length > 0
@@ -53,13 +59,22 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect,
     }
   };
 
-  const handleItemClick = (item) => {
-    console.log('Client clicked:', item.latitude, item.longitude);
-    if (onFlyTo) {
-      onFlyTo(item.latitude, item.longitude);
+  const handleItemClick = (item, e) => {
+    const isMultiClick = e && (e.ctrlKey || e.metaKey);
+    if (isMultiClick) {
+      toggleMultiSelectedItem(item, 'clients');
+    } else {
+      console.log('Client clicked:', item.latitude, item.longitude);
+      if (onFlyTo) {
+        onFlyTo(item.latitude, item.longitude);
+      }
+      if (onClose) onClose();
+      if (onClientSelect) onClientSelect(item);
     }
-    if (onClose) onClose();
-    if (onClientSelect) onClientSelect(item);
+  };
+
+  const isMultiSelected = (item) => {
+    return selectionType === 'clients' && multiSelectedItems.some(i => i.client === item.client);
   };
 
   return (
@@ -101,8 +116,8 @@ export default function ClientsList({ clients, onClose, onFlyTo, onClientSelect,
             {items.map((item, index) => (
           <div 
             key={`${item.client}-${index}`} 
-            className={css.item}
-            onClick={() => handleItemClick(item)}
+            className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
+            onClick={(e) => handleItemClick(item, e)}
           >
             <div className={css.clientName}>
               {item.client}

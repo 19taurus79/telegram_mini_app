@@ -166,17 +166,23 @@ export default function BottomData({ onEditClient }) {
 
       const clientData = clientsMap[clientName];
       
-      // Добавляем вес и количество из самого элемента (если это агрегированный элемент)
-      clientData.totalWeight += item.totalWeight || 0;
-      clientData.count += item.count || 0;
-
-      // Добавляем заказы
+      // Добавляем заказы из агрегированных элементов (с карты)
       if (item.orders && Array.isArray(item.orders)) {
+        clientData.totalWeight += item.totalWeight || 0;
+        clientData.count += item.count || 0;
         item.orders.forEach(order => {
-          // Проверяем, нет ли уже такого заказа (по ID или другим признакам), если нужно
-          // В данном случае просто добавляем
           clientData.orders.push(order);
         });
+      } else if (selectionType === 'applications') {
+        // RAW элемент списка (заявка)
+        clientData.totalWeight += Number(item.total_weight) || item.weight || 0;
+        clientData.count += 1;
+        clientData.orders.push(item);
+      } else if (selectionType === 'clients') {
+        // RAW элемент списка/карты (клиент)
+        // Чтобы клиент не отфильтровался ниже, даем ему "условный" вес или просто записываем его 
+        // как 1 сущность
+        clientData.count += 1;
       }
     });
 
@@ -186,10 +192,10 @@ export default function BottomData({ onEditClient }) {
     let totalCount = 0;
 
     Object.values(clientsMap).forEach(clientData => {
-      // Фильтрация: пропускаем клиентов без заказов/количества
-      if (clientData.count === 0 && clientData.orders.length === 0) return;
+      // Фильтрация: пропускаем, если нет ни заказов, ни признака выбранного клиента
+      if (selectionType !== 'clients' && clientData.count === 0 && clientData.orders.length === 0) return;
 
-      const manager = clientData.manager;
+      const manager = clientData.manager || 'Невідомий менеджер';
 
       if (!groupedByManager[manager]) {
         groupedByManager[manager] = {

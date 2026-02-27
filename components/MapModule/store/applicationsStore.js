@@ -22,6 +22,46 @@ export const useApplicationsStore = create((set) => ({
     selectedClient: null, // Сбрасываем одиночное выделение
     selectedDeliveries: [] 
   }),
+  toggleMultiSelectedItem: (item, type) => set((state) => {
+    // If we're clicking a different type of item, replace the selection entirely
+    if (state.selectionType !== type) {
+        return {
+            multiSelectedItems: [item],
+            selectionType: type,
+            selectedClient: null,
+            selectedDeliveries: []
+        };
+    }
+
+    // Determine uniqueness constraint depending on the type
+    let isSelected = false;
+    if (type === 'applications' || type === 'clients') {
+      isSelected = state.multiSelectedItems.some(i => i.client === item.client);
+    } else if (type === 'deliveries') {
+      isSelected = state.multiSelectedItems.some(i => i.id === item.id);
+    } else {
+      // Default fallback
+      isSelected = state.multiSelectedItems.includes(item);
+    }
+
+    let newSelection = [];
+    if (isSelected) {
+        if (type === 'applications' || type === 'clients') {
+            newSelection = state.multiSelectedItems.filter(i => i.client !== item.client);
+        } else if (type === 'deliveries') {
+            newSelection = state.multiSelectedItems.filter(i => i.id !== item.id);
+        } else {
+            newSelection = state.multiSelectedItems.filter(i => i !== item);
+        }
+    } else {
+        newSelection = [...state.multiSelectedItems, item];
+    }
+    
+    return {
+        multiSelectedItems: newSelection,
+        selectionType: newSelection.length > 0 ? type : null
+    };
+  }),
   clearMultiSelectedItems: () => set({ multiSelectedItems: [], selectionType: null }),
   // --- КОНЕЦ НОВЫХ ПОЛЕЙ ---
 

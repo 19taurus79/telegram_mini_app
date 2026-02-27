@@ -145,6 +145,11 @@
   color: white;
 }
 
+.itemSelected {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
 .clientName {
   font-weight: bold;
   margin-bottom: 4px;

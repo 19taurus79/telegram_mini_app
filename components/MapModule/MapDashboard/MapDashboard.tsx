@@ -9,6 +9,11 @@ import dynamic from "next/dynamic";
 import MapSidePanel from "../components/MapSidePanel/MapSidePanel";
 import BottomData from "../components/bottomData/bottomData";
 import Loader from "@/components/Loader/Loader";
+import EditClientModal from "../components/EditClientModal/EditClientModal";
+import EditDeliveryModal from "../components/EditDeliveryModal/EditDeliveryModal";
+import { useMapControlStore } from "../store/mapControlStore";
+import { useApplicationsStore } from "../store/applicationsStore";
+import { useDisplayAddressStore } from "../store/displayAddress";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -41,6 +46,44 @@ const MapFeature = dynamic(() => import("../MapFeature"), {
 export default function MapDashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);
+
+  // Глобальное состояние для управления модальным окном клиента
+  const setClients = useApplicationsStore(state => state.setClients);
+  const selectedClient = useApplicationsStore(state => state.selectedClient);
+  const setSelectedClient = useApplicationsStore(state => state.setSelectedClient);
+  const setAddressData = useDisplayAddressStore(state => state.setAddressData);
+  const editClientRequest = useMapControlStore(state => state.editClientRequest);
+  const setEditClientRequest = useMapControlStore(state => state.setEditClientRequest);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
+
+  // Обробляємо запит на відкриття EditClientModal (від MapSidePanel через Zustand)
+  useEffect(() => {
+    if (editClientRequest !== null) {
+      setEditingClient(editClientRequest?.id === undefined ? null : editClientRequest);
+      setIsEditModalOpen(true);
+      setEditClientRequest(null); // скидаємо запит
+    }
+  }, [editClientRequest, setEditClientRequest]);
+
+  /**
+   * Сохраняет данные клиента (нового или отредактированного).
+   */
+  const handleSaveClient = (clientData: any) => {
+    if (editingClient) {
+        // Обновление существующего клиента
+        const updatedClient = { ...editingClient, ...clientData };
+        setClients((prev: any[]) => prev.map(c => c.client === editingClient.client ? updatedClient : c));
+        if (selectedClient?.client === editingClient.client) {
+          setSelectedClient(updatedClient);
+        }
+    } else {
+        // Добавление нового клиента
+        setClients((prev: any[]) => [...prev, clientData]);
+    }
+    setAddressData({}); // Сброс адреса из поиска
+  };
 
   // Загружаем layout из localStorage после монтирования
   useEffect(() => {
@@ -122,6 +165,15 @@ export default function MapDashboard() {
           </div>
         </div>
       </ResponsiveGridLayout>
+
+      {/* Модальные окна, которые отображаются поверх всего */}
+      <EditClientModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onSave={handleSaveClient} 
+        client={editingClient} 
+      />
+      <EditDeliveryModal />
     </div>
   );
 }

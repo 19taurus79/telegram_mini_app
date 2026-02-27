@@ -14,6 +14,7 @@ import EditDeliveryModal from "../components/EditDeliveryModal/EditDeliveryModal
 import { useMapControlStore } from "../store/mapControlStore";
 import { useApplicationsStore } from "../store/applicationsStore";
 import { useDisplayAddressStore } from "../store/displayAddress";
+import { ClientAddress, GeocodedAddress } from "@/types/types";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -56,7 +57,7 @@ export default function MapDashboard() {
   const setEditClientRequest = useMapControlStore(state => state.setEditClientRequest);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<any>(null);
+  const [editingClient, setEditingClient] = useState<ClientAddress | null>(null);
 
   // Обробляємо запит на відкриття EditClientModal (від MapSidePanel через Zustand)
   useEffect(() => {
@@ -70,19 +71,19 @@ export default function MapDashboard() {
   /**
    * Сохраняет данные клиента (нового или отредактированного).
    */
-  const handleSaveClient = (clientData: any) => {
+  const handleSaveClient = (clientData: ClientAddress) => {
     if (editingClient) {
         // Обновление существующего клиента
         const updatedClient = { ...editingClient, ...clientData };
-        setClients((prev: any[]) => prev.map(c => c.client === editingClient.client ? updatedClient : c));
+        setClients((prev: ClientAddress[]) => prev.map(c => c.client === editingClient.client ? updatedClient : c));
         if (selectedClient?.client === editingClient.client) {
           setSelectedClient(updatedClient);
         }
     } else {
         // Добавление нового клиента
-        setClients((prev: any[]) => [...prev, clientData]);
+        setClients((prev: ClientAddress[]) => [...prev, clientData]);
     }
-    setAddressData({}); // Сброс адреса из поиска
+    setAddressData({} as GeocodedAddress); // Сброс адреса из поиска
   };
 
   // Загружаем layout из localStorage после монтирования

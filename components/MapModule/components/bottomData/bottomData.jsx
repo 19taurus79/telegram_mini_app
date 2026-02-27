@@ -99,7 +99,7 @@ export default function BottomData({ onEditClient }) {
     }
   };
 
-  const { areApplicationsVisible, areClientsVisible, areDeliveriesVisible } = useMapControlStore();
+  const { areApplicationsVisible, areClientsVisible, areDeliveriesVisible, setEditClientRequest } = useMapControlStore();
   const { addressData } = useDisplayAddressStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); 
@@ -703,7 +703,7 @@ export default function BottomData({ onEditClient }) {
             {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone2}</a></p>}
             {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
         </div>
-        {onEditClient && (<button className={css.editButton} onClick={() => onEditClient(selectedClient)}>Редагувати</button>)}
+        <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>
       </div>
     );
   }

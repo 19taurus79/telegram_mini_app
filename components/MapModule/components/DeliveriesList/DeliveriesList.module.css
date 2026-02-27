@@ -87,6 +87,11 @@
   background-color: rgba(0, 122, 255, 0.05);
 }
 
+.itemSelected {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
 .clientName {
   font-weight: 600;
   font-size: 0.95em;

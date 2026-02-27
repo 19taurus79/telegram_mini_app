@@ -6,7 +6,17 @@ import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { ChevronDown } from "lucide-react";
 
 export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
-  const { applications, unmappedApplications, setSelectedClient, selectedManagers, selectedLoBs, deliveries } = useApplicationsStore();
+  const { 
+    applications, 
+    unmappedApplications, 
+    setSelectedClient, 
+    selectedManagers, 
+    selectedLoBs, 
+    deliveries,
+    multiSelectedItems,
+    selectionType,
+    toggleMultiSelectedItem
+  } = useApplicationsStore();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const letterRefs = useRef({});
 
@@ -102,12 +112,21 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
     }
   };
 
-  const handleItemClick = (item) => {
-    setSelectedClient(item);
-    if (onFlyTo) {
-      onFlyTo(item.address.latitude, item.address.longitude);
+  const handleItemClick = (item, e) => {
+    const isMultiClick = e && (e.ctrlKey || e.metaKey);
+    if (isMultiClick) {
+      toggleMultiSelectedItem(item, 'applications');
+    } else {
+      setSelectedClient(item);
+      if (onFlyTo) {
+        onFlyTo(item.address.latitude, item.address.longitude);
+      }
+      if (onClose) onClose();
     }
-    if (onClose) onClose();
+  };
+
+  const isMultiSelected = (item) => {
+    return selectionType === 'applications' && multiSelectedItems.some(i => i.client === item.client);
   };
 
   return (
@@ -158,8 +177,8 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
             {items.map((item) => (
               <div 
                 key={item.client} 
-                className={css.item}
-                onClick={() => handleItemClick(item)}
+                className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
+                onClick={(e) => handleItemClick(item, e)}
               >
                 {renderClientName(item)}
                 <div className={css.address}>
@@ -182,9 +201,14 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
             {filteredUnmappedApplications.map((item) => (
               <div 
                 key={item.client} 
-                className={css.item}
+                className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
                 style={{ borderLeft: '4px solid #f44336', cursor: 'pointer' }}
-                onClick={() => {
+                onClick={(e) => {
+                  const isMultiClick = e && (e.ctrlKey || e.metaKey);
+                  if (isMultiClick) {
+                    toggleMultiSelectedItem(item, 'applications');
+                    return;
+                  }
                   if (onAddClient) {
                     onAddClient({
                       client: item.client,

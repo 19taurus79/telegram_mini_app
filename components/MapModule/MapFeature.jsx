@@ -237,6 +237,9 @@ export default function MapFeature({ onAddressSelect }) {
     toggleSelectedDelivery,
     setSelectedDelivery,
     setMultiSelectedItems,
+    multiSelectedItems,
+    selectionType,
+    toggleMultiSelectedItem
   } = useApplicationsStore();
 
   const setIsSheetOpen = () => {}; // Dummy function (or remove later if not needed)
@@ -673,11 +676,21 @@ export default function MapFeature({ onAddressSelect }) {
                     key={`app-${item.id || `${gIndex}-${iIndex}`}`}
                     position={position}
                     zIndexOffset={iIndex === group.length - 1 ? 1000 : 0}
-                    icon={getDynamicGroupedIcon("/images/order.png", iIndex === group.length - 1 ? group.length : 1, item.totalWeight || 0)}
+                    icon={getDynamicGroupedIcon(
+                      selectionType === 'applications' && multiSelectedItems.some(i => i.client === item.client)
+                        ? "/images/order_selected.png" // Вы можете заменить или стилизовать, пока оставим так
+                        : "/images/order.png", 
+                      iIndex === group.length - 1 ? group.length : 1, 
+                      item.totalWeight || 0
+                    )}
                     eventHandlers={{
-                      click: () => {
+                      click: (e) => {
+                        const isMulti = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
                         if (isRoutingMode) {
                           handleMarkerClickForRouting(item.address.latitude, item.address.longitude, item.client, 'Заявка');
+                        } else if (isMulti) {
+                          toggleMultiSelectedItem(item, 'applications');
+                          setIsSheetOpen(true);
                         } else {
                           setSelectedClient(item);
                           setIsSheetOpen(true);
@@ -725,11 +738,20 @@ export default function MapFeature({ onAddressSelect }) {
                     key={`client-${client.id || `${gIndex}-${iIndex}`}`}
                     position={position}
                     zIndexOffset={iIndex === group.length - 1 ? 1000 : 0}
-                    icon={getGroupedIcon("/images/client.png", iIndex === group.length - 1 ? group.length : 1)}
+                    icon={getGroupedIcon(
+                      selectionType === 'clients' && multiSelectedItems.some(i => i.client === client.client)
+                        ? "/images/client_selected.png" 
+                        : "/images/client.png", 
+                      iIndex === group.length - 1 ? group.length : 1
+                    )}
                     eventHandlers={{
-                      click: () => {
+                      click: (e) => {
+                        const isMulti = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
                         if (isRoutingMode) {
                           handleMarkerClickForRouting(client.latitude, client.longitude, client.client, 'Клієнт');
+                        } else if (isMulti) {
+                          toggleMultiSelectedItem(client, 'clients');
+                          setIsSheetOpen(true);
                         } else {
                           setSelectedClient(client);
                           setIsSheetOpen(true);

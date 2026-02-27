@@ -88,6 +88,11 @@
   background-color: var(--hover-background);
 }
 
+.itemSelected {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
 .clientName {
   font-weight: 600;
   margin-bottom: 4px;

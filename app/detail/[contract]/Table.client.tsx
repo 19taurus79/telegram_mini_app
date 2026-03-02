@@ -102,11 +102,13 @@ function TableOrderDetail({ details }: Detail) {
         if (!statusMatch) return false;
         
         return d.items?.some(di => {
-             const diRefMatch = di.order_ref?.trim() === item.order.trim();
+             // Если order_ref стал null (например, при переходе статуса), проверяем только по имени товара
+             const isRefNull = !di.order_ref;
+             const diRefMatch = isRefNull ? true : (di.order_ref || "").trim() === item.order.trim();
              const diProductMatch = di.product?.trim() === item.product.trim();
              
              if (diRefMatch) {
-               console.log(`[TableClient] Found matching REF in delivery #${d.id} for product [${di.product}]. Target Product: [${item.product}]. Match: ${diProductMatch}`);
+               console.log(`[TableClient] Found matching REF (or null) in delivery #${d.id} for product [${di.product}]. Target Product: [${item.product}]. Match: ${diProductMatch}`);
              }
              return diRefMatch && diProductMatch;
         });

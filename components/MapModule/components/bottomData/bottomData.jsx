@@ -53,7 +53,7 @@ export default function BottomData({ onEditClient }) {
             quantity: Number(item.quantity) || 0,
             manager: String(item.manager || d.manager || ""),
             client: String(item.client || d.client || ""),
-            order_ref: String(item.order_ref || item.order || ""),
+            orderRef: String(item.order_ref || item.order || item.orderRef || ""),
             weight: Number(item.weight) || 0,
             parties: Array.isArray(item.parties) 
                 ? item.parties.map(p => ({

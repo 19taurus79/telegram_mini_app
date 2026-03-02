@@ -346,7 +346,7 @@ export default function EditDeliveryModal() {
                 quantity: parseFloat(item.quantity) || 0,
                 manager: String(item.manager || ""),
                 client: String(item.client),
-                order_ref: String(item.orderRef || item.order || item.order_ref || ""), 
+                orderRef: String(item.orderRef || item.order || item.order_ref || ""), 
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));

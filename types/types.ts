@@ -441,7 +441,7 @@ export type DeliveryRequest = {
 export type DeliveryUpdateItem = {
   product: string;
   quantity: number;
-  order_ref: string;
+  orderRef: string;
   parties: {
     party: string;
     moved_q: number;

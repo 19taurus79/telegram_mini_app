@@ -112,11 +112,13 @@ export default function DetailsWidget({
         if (!statusMatch) return false;
         
         return d.items?.some(di => {
-            const diRefMatch = di.order_ref?.trim() === item.contract_supplement.trim();
+            // Если order_ref стал null (например, при переходе статуса), проверяем только по имени товара
+            const isRefNull = !di.order_ref;
+            const diRefMatch = isRefNull ? true : (di.order_ref as string).trim() === item.contract_supplement.trim();
             const diProductMatch = di.product?.trim() === currentName;
             
             if (diRefMatch) {
-               console.log(`[DetailsWidget] Found matching REF in delivery #${d.id} for product [${di.product}]. Target Product: [${currentName}]. Match: ${diProductMatch}`);
+               console.log(`[DetailsWidget] Found matching REF (or null) in delivery #${d.id} for product [${di.product}]. Target Product: [${currentName}]. Match: ${diProductMatch}`);
             }
             return diRefMatch && diProductMatch;
         });

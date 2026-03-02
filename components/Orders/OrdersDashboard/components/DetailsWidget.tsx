@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
-import { Client, Contract, DeliveryRequest, OrdersDetails } from "@/types/types";
+import { Client, Contract, OrdersDetails } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { useInitData } from "@/lib/useInitData";
@@ -59,7 +59,6 @@ export default function DetailsWidget({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  const [allDeliveries, setAllDeliveries] = useState<DeliveryRequest[]>([]);
 
   const getItemId = (item: OrdersDetails) => {
     return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
@@ -77,17 +76,19 @@ export default function DetailsWidget({
     return parts.join(" ").trim();
   };
 
-  useEffect(() => {
-    const loadDeliveries = async () => {
+  const { data: allDeliveries } = useQuery({
+    queryKey: ["deliveries"],
+    queryFn: async () => {
         try {
             const data = await getDeliveries(effectiveInitData);
-            if (data) setAllDeliveries(data);
+            return data || [];
         } catch (e) {
             console.error("Error loading deliveries", e);
+            return [];
         }
-    };
-    loadDeliveries();
-  }, [initData]);
+    },
+    enabled: !!effectiveInitData
+  });
 
   // Автоматичне відкриття чату при наявності URL параметра
   useEffect(() => {

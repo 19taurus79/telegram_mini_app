@@ -1,4 +1,5 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
 import { useDelivery } from "@/store/Delivery";
 import css from "./Detail.module.css";
 import {
@@ -45,7 +46,6 @@ type Detail = {
 function TableOrderDetail({ details }: Detail) {
   const { delivery, setDelivery } = useDelivery();
   const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null);
-  const [allDeliveries, setAllDeliveries] = React.useState<DeliveryRequest[]>([]);
   const [commentModalData, setCommentModalData] = React.useState<{
     orderRef: string;
     productId: string;
@@ -68,17 +68,19 @@ function TableOrderDetail({ details }: Detail) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  React.useEffect(() => {
-    const loadDeliveries = async () => {
+  const { data: allDeliveries } = useQuery({
+    queryKey: ["deliveries"],
+    queryFn: async () => {
         try {
             const data = await getDeliveries(initData);
-            if (data) setAllDeliveries(data);
+            return data || [];
         } catch (e) {
             console.error("Error loading deliveries", e);
+            return [];
         }
-    };
-    loadDeliveries();
-  }, []);
+    },
+    enabled: !!initData
+  });
 
   // Автоматичне відкриття чату при наявності URL параметра
   React.useEffect(() => {

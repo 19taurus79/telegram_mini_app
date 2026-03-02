@@ -93,13 +93,30 @@ function TableOrderDetail({ details }: Detail) {
 
    const getDeliveryForItem = (item: OrderDetailItem) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
-    return allDeliveries.find(d => 
-        (d.status === "Створено" || d.status === "В роботі" || d.status === "created") &&
-        d.items?.some(di => 
-            di.order_ref?.trim() === item.order.trim() && 
-            di.product?.trim() === item.product.trim()
-        )
-    );
+    
+    // ДОБАВЛЕНО ДЛЯ ДЕБАГА
+    console.log(`[TableClient] Checking item: ${item.product}, REF: ${item.order}`);
+
+    const delivery = allDeliveries.find(d => {
+        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created");
+        if (!statusMatch) return false;
+        
+        return d.items?.some(di => {
+             const diRefMatch = di.order_ref?.trim() === item.order.trim();
+             const diProductMatch = di.product?.trim() === item.product.trim();
+             
+             if (diRefMatch) {
+               console.log(`[TableClient] Found matching REF in delivery #${d.id} for product [${di.product}]. Target Product: [${item.product}]. Match: ${diProductMatch}`);
+             }
+             return diRefMatch && diProductMatch;
+        });
+    });
+
+    if (delivery) {
+       console.log(`[TableClient] FOUND Delivery #${delivery.id} for item ${item.product}`);
+    }
+    
+    return delivery;
   };
 
   const isSelected = (id: string) => delivery.some((el) => el.id === id);

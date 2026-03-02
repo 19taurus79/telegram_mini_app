@@ -103,13 +103,30 @@ export default function DetailsWidget({
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     const currentName = getProductName(item);
-    return allDeliveries.find(d => 
-        (d.status === "Створено" || d.status === "В роботі" || d.status === "created") &&
-        d.items?.some(di => 
-            di.order_ref?.trim() === item.contract_supplement.trim() && 
-            di.product?.trim() === currentName
-        )
-    );
+    
+    // ДОБАВЛЕНО ДЛЯ ДЕБАГА
+    console.log(`[DetailsWidget] Checking item: ${currentName}, REF: ${item.contract_supplement}`);
+    
+    const delivery = allDeliveries.find(d => {
+        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created");
+        if (!statusMatch) return false;
+        
+        return d.items?.some(di => {
+            const diRefMatch = di.order_ref?.trim() === item.contract_supplement.trim();
+            const diProductMatch = di.product?.trim() === currentName;
+            
+            if (diRefMatch) {
+               console.log(`[DetailsWidget] Found matching REF in delivery #${d.id} for product [${di.product}]. Target Product: [${currentName}]. Match: ${diProductMatch}`);
+            }
+            return diRefMatch && diProductMatch;
+        });
+    });
+
+    if (delivery) {
+       console.log(`[DetailsWidget] FOUND Delivery #${delivery.id} for item ${currentName}`);
+    }
+    
+    return delivery;
   };
 
   const handleRemainsClick = (item: OrdersDetails) => {

@@ -108,7 +108,7 @@ export default function DetailsWidget({
     console.log(`[DetailsWidget] Checking item: ${currentName}, REF: ${item.contract_supplement}`);
     
     const delivery = allDeliveries.find(d => {
-        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created");
+        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created" || d.status === "inprogress");
         if (!statusMatch) return false;
         
         return d.items?.some(di => {

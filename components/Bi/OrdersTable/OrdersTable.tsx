@@ -70,6 +70,7 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
                       <OrderCommentBadge
                         orderRef={order.contract_supplement}
                         productId={productName}  // В BI використовуємо назву як ID
+                        productName={productName}
                         onClick={() => {}}
                         onCommentCountChange={(count) => {
                           setCommentCounts(prev => ({
@@ -156,6 +157,7 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
                       <OrderCommentBadge
                         orderRef={order.contract_supplement}
                         productId={productName}  // В BI використовуємо назву як ID
+                        productName={productName}
                         onClick={() => {}}
                         onCommentCountChange={(count) => {
                           setCommentCounts(prev => ({

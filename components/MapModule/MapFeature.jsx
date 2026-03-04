@@ -453,8 +453,8 @@ export default function MapFeature({ onAddressSelect }) {
       return data;
     },
     enabled: areDeliveriesVisible, // Запрос выполняется только когда слой видим
-    staleTime: 5 * 60 * 1000, // Данные считаются свежими в течение 5 минут
-    refetchOnWindowFocus: false,
+    staleTime: 1 * 60 * 1000, // Данные считаются свежими в течение 1 минуты
+    refetchOnWindowFocus: true, // обновляем данные по фокусу
   });
 
   // Эффект для обновления глобального состояния (Zustand) после успешной загрузки доставок

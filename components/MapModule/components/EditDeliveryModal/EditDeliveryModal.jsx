@@ -3,8 +3,9 @@ import { useReactToPrint } from "react-to-print";
 import css from "./EditDeliveryModal.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { getInitData } from "@/lib/getInitData";
-import { getRemainsByProduct, updateDeliveryData } from "@/lib/api";
+import { getRemainsByProduct, updateDeliveryData, sendDeliveryData } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Модальное окно для редактирования состава одной или нескольких доставок.
@@ -23,6 +24,8 @@ export default function EditDeliveryModal() {
     applications,               // Список всех заявок (для поиска не добавленных товаров)
     removeDelivery              // Функция для удаления доставки из стора
   } = useApplicationsStore();
+  
+  const queryClient = useQueryClient();
 
   // Локальное состояние компонента
   const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок
@@ -37,6 +40,12 @@ export default function EditDeliveryModal() {
   const [printData, setPrintData] = useState(null); // Данные, подготовленные для печати
   const [isAskingDate, setIsAskingDate] = useState(false); // Флаг для модалки запроса даты печати
   const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split('T')[0]); // Дата для печатной формы
+  
+  // Состояния для новых фич: удаление с предупреждением и разделение
+  const [itemToDelete, setItemToDelete] = useState(null); // Индекс удаляемого товара для модалки подтверждения
+  const [selectedItemsToSplit, setSelectedItemsToSplit] = useState({}); // Хранение выбранных чекбоксов { [idx]: boolean }
+  const [isSplitting, setIsSplitting] = useState(false); // Флаг загрузки при разделении доставки
+
 
   // --- REFS AND HOOKS ---
 
@@ -75,18 +84,50 @@ export default function EditDeliveryModal() {
       selectedDeliveries.forEach(d => {
         const sClient = cleanStr(d.client);
         
-        // 1. Берем существующие товары из доставки
-        const deliveryItemsList = (d.items || []).map(item => ({
-          ...item,
-          product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
-          client: d.client,
-          deliveryId: d.id,
-          orderRef: item.order_ref || "",
-          parties: (item.parties || []).map(p => ({ ...p }))
-        }));
-
-        // 2. Ищем товары в заявках этого клиента, которые еще не в доставке
+        // 2. Ищем товары в заявках этого клиента, которые еще не в доставке (и базу для веса существующих товаров)
         const clientApp = applications.find(a => cleanStr(a.client) === sClient);
+        
+        // 1. Берем существующие товары из доставки
+        const totalDeliveryQuantity = (d.items || []).reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0);
+        const fallbackUnitWeight = totalDeliveryQuantity > 0 ? (parseFloat(d.total_weight) || 0) / totalDeliveryQuantity : 0;
+
+        const deliveryItemsList = (d.items || []).map(item => {
+          let unitWeight = fallbackUnitWeight;
+          let ordersQ = 0;
+          const cleanedItemProduct = cleanName(item.product);
+          
+          if (clientApp && clientApp.orders) {
+             const matchedOrder = clientApp.orders.find(o => {
+                const oRef = (o.contract_supplement || o.id || "").toString();
+                const iRef = (item.order_ref || "").toString();
+                const oName = cleanName(o.nomenclature);
+                return (oRef && iRef && oRef === iRef) || (oName === cleanedItemProduct);
+             });
+             
+             if (matchedOrder) {
+                // The backend returns 'total_weight' and 'different' (quantity), but not a singular 'weight' field.
+                const totalW = parseFloat(matchedOrder.total_weight) || 0;
+                const diffQ = parseFloat(matchedOrder.different) || 0;
+                unitWeight = parseFloat(matchedOrder.weight) || (diffQ > 0 ? totalW / diffQ : 0);
+                
+                ordersQ = parseFloat(matchedOrder.orders_q) || diffQ;
+             }
+          }
+
+          const qty = parseFloat(item.quantity) || 0;
+
+          return {
+            ...item,
+            product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
+            client: d.client,
+            deliveryId: d.id,
+            orderRef: item.order_ref || "",
+            unit_weight: unitWeight,
+            weight: unitWeight * qty,
+            orders_q: ordersQ,
+            parties: (item.parties || []).map(p => ({ ...p }))
+          };
+        });
         
         if (clientApp && clientApp.orders) {
           clientApp.orders.forEach(order => {
@@ -110,6 +151,11 @@ export default function EditDeliveryModal() {
               if (order.buying_season && order.buying_season.trim() !== "") parts.push(order.buying_season.trim());
               const fullProductName = parts.join(" ").replace(/\s*рік\s*$/i, "").trim();
 
+              const totalW = parseFloat(order.total_weight) || 0;
+              const diffQ = parseFloat(order.different) || 0;
+              const unitWeight = parseFloat(order.weight) || (diffQ > 0 ? totalW / diffQ : 0);
+              const ordersQ = parseFloat(order.orders_q) || diffQ;
+
               deliveryItemsList.push({
                 product: fullProductName,
                 nomenclature: order.nomenclature || "",
@@ -118,6 +164,9 @@ export default function EditDeliveryModal() {
                 deliveryId: d.id,
                 orderRef: order.contract_supplement || order.id || "",
                 manager: order.manager || "",
+                unit_weight: unitWeight,
+                weight: 0,
+                orders_q: ordersQ,
                 parties: [],
                 isNew: true // Флаг, что это новый, не сохраненный товар
               });
@@ -132,6 +181,7 @@ export default function EditDeliveryModal() {
       setSelectedProductId(null);
       setActiveItemIdx(null);
       setStockRemains([]);
+      setSelectedItemsToSplit({});
     }
   }, [isEditDeliveryModalOpen, selectedDeliveries, applications, isPrintView]);
 
@@ -226,21 +276,34 @@ export default function EditDeliveryModal() {
   };
 
   /**
-   * Удаляет товар из списка доставки.
+   * Открывает диалог удаления товара.
    */
-  const handleDeleteItem = (itemIdx) => {
+  const handleDeleteItemClick = (itemIdx) => {
+    setItemToDelete(itemIdx);
+  };
+
+  /**
+   * Подтверждает удаление товара из списка доставки.
+   */
+  const confirmDeleteItem = () => {
+    if (itemToDelete === null) return;
     const nextItems = [...deliveryItems];
-    nextItems.splice(itemIdx, 1);
+    nextItems.splice(itemToDelete, 1);
     setDeliveryItems(nextItems);
+    
     // Сбрасываем выбор, если удалили активный товар
-    if (activeItemIdx === itemIdx) {
+    if (activeItemIdx === itemToDelete) {
       setActiveItemIdx(null);
       setSelectedProductId(null);
       setStockRemains([]);
-    } else if (activeItemIdx > itemIdx) {
+    } else if (activeItemIdx > itemToDelete) {
       setActiveItemIdx(activeItemIdx - 1);
     }
-    toast.success("Товар видалено з доставки");
+    
+    // Сбрасываем чекбоксы разделения так как индексы сместились
+    setSelectedItemsToSplit({});
+    setItemToDelete(null);
+    toast.success("Товар видалено з форми");
   };
 
   /**
@@ -248,8 +311,22 @@ export default function EditDeliveryModal() {
    */
   const handleQuantityChange = (index, newValue) => {
     const nextItems = [...deliveryItems];
-    nextItems[index].quantity = newValue === "" ? "" : (parseFloat(newValue) || 0);
+    const newQty = newValue === "" ? "" : (parseFloat(newValue) || 0);
+    nextItems[index].quantity = newQty;
+    if (nextItems[index].unit_weight !== undefined) {
+      nextItems[index].weight = (parseFloat(newQty) || 0) * nextItems[index].unit_weight;
+    }
     setDeliveryItems(nextItems);
+  };
+
+  /**
+   * Обрабатывает переключение чекбокса разделения товара.
+   */
+  const toggleItemSplitSelection = (idx) => {
+    setSelectedItemsToSplit(prev => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
   };
 
   /**
@@ -330,10 +407,17 @@ export default function EditDeliveryModal() {
             })
             .filter(p => p.moved_q > 0);
 
-          return { ...item, quantity: qty, parties: parties };
+          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
       
-      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems };
+      // Считаем новый общий вес для этой обновленной доставки
+      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => {
+        console.log(`[Ready] Delivery ${delivery.id} | Item: ${item.product} | Qty: ${item.quantity} | UnitWeight: ${item.unit_weight} | Weight: ${item.weight}`);
+        return sum + (item.weight || 0);
+      }, 0);
+      console.log(`[Ready] Delivery ${delivery.id} | newTotalWeight: ${newTotalWeight}`);
+
+      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems, total_weight: newTotalWeight };
     });
 
     try {
@@ -350,10 +434,15 @@ export default function EditDeliveryModal() {
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
-            return updateDeliveryData(d.id, d.status, cleanItems, initData);
+            // Передаем d.total_weight как 4-й аргумент
+            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData);
         }));
 
         updateDeliveries(updatedDeliveries); // Обновляем глобальный стор
+        
+        // Инвалидируем кэш, чтобы подтянуть свежие данные с бэкенда (особенно если изменился общий вес)
+        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+
         toast.success("Доставки оновлено та переведено в роботу");
         
         // Готовим данные для печати и переходим к выбору даты
@@ -402,6 +491,118 @@ export default function EditDeliveryModal() {
   };
 
   /**
+   * Разделяет выбранные чекбоксом товары в новую доставку.
+   */
+  const handleSplitDelivery = async () => {
+    const selectedIndices = Object.keys(selectedItemsToSplit).filter(k => selectedItemsToSplit[k]).map(Number);
+    if (selectedIndices.length === 0) return;
+
+    // Группируем выбранные элементы по исходным доставкам
+    // (Поскольку в EditDeliveryModal могут редактироваться несколько доставок сразу, мы разделяем каждую отдельно)
+    const itemsToSplitByDeliveryId = {};
+    selectedIndices.forEach(idx => {
+      const item = deliveryItems[idx];
+      if (!itemsToSplitByDeliveryId[item.deliveryId]) {
+         itemsToSplitByDeliveryId[item.deliveryId] = [];
+      }
+      itemsToSplitByDeliveryId[item.deliveryId].push({ item, originalIdx: idx });
+    });
+
+    setIsSplitting(true);
+    let successCount = 0;
+
+    try {
+      const initData = getInitData();
+
+      // Проходим по каждой затронутой доставке
+      for (const [delivId, splitGroup] of Object.entries(itemsToSplitByDeliveryId)) {
+         const originalDelivery = selectedDeliveries.find(d => String(d.id) === String(delivId));
+         if (!originalDelivery) continue;
+
+         // Подготовка Payload для клонированной доставки 
+         // Используем данные из originalDelivery, но берем только выделенные товары
+         const ordersMap = {};
+         
+         splitGroup.forEach(({ item }) => {
+            const orderRefName = item.orderRef || item.order || "Без заявки";
+            if (!ordersMap[orderRefName]) {
+               ordersMap[orderRefName] = { order: orderRefName, items: [] };
+            }
+
+            const cleanParties = (item.parties || []).map(p => ({
+               party: String(p.party),
+               moved_q: parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0
+            })).filter(p => p.moved_q > 0);
+
+            const itemWeight = parseFloat(item.weight) || 0;
+            const itemQuantity = parseFloat(item.quantity) || 0;
+            console.log(`[Split] Item: ${item.product} | Qty: ${itemQuantity} | UnitWt: ${item.unit_weight} | Weight: ${itemWeight}`);
+            
+            // Рассчитываем суммарный вес. Согласно логике приложения, weight уже является 
+            // общим весом для данной строки товара (без перемножения)
+            
+            ordersMap[orderRefName].items.push({
+               product: String(item.product),
+               nomenclature: String(item.nomenclature || item.product),
+               quantity: itemQuantity,
+               weight: itemWeight,
+               parties: cleanParties
+            });
+         });
+
+         // Считаем общий вес для новой доставки
+         let sumWeight = 0;
+         Object.values(ordersMap).forEach(order => {
+            order.items.forEach(i => {
+               sumWeight += i.weight; // Суммируем готовый вес всех товаров напрямую
+            });
+         });
+
+         const clonePayload = {
+            manager: String(originalDelivery.manager || ""),
+            client: String(originalDelivery.client || ""),
+            address: String(originalDelivery.address || ""),
+            contact: String(originalDelivery.contact || ""),
+            phone: String(originalDelivery.phone || ""),
+            date: String(originalDelivery.date || originalDelivery.delivery_date || new Date().toISOString().split('T')[0]),
+            comment: String(originalDelivery.comment || "") + " (Розділено)",
+            is_custom_address: !!originalDelivery.is_custom_address,
+            latitude: parseFloat(originalDelivery.latitude) || 0,
+            longitude: parseFloat(originalDelivery.longitude) || 0,
+            total_weight: sumWeight,
+            orders: Object.values(ordersMap)
+         };
+         console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
+
+         // Отправляем клон в базу через sendDeliveryData API
+         await sendDeliveryData(clonePayload, initData);
+         successCount++;
+      }
+
+      // После успешного создания клонов в БД, удаляем товары из локального состояния (формы)
+      // Разделение завершено, при нажатии "Сберечь" оригинальная доставка сохранится уже без них
+      const indicesToRemove = new Set(selectedIndices);
+      const nextItems = deliveryItems.filter((_, idx) => !indicesToRemove.has(idx));
+      
+      setDeliveryItems(nextItems);
+      setSelectedItemsToSplit({});
+      setActiveItemIdx(null);
+      setSelectedProductId(null);
+      setStockRemains([]);
+
+      // Обязательно сбрасываем кэш, чтобы новая клонированная доставка появилась на карте
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+
+      toast.success(`Розділено товарів у ${successCount} доставках! Не забудьте зберегти форму.`);
+    } catch (e) {
+      console.error("Помилка під час розділення доставки", e);
+      toast.error("Не вдалося розділити доставку. Перевірте підключення.");
+    } finally {
+      setIsSplitting(false);
+    }
+  };
+
+  /**
    * Подтверждает и выполняет удаление всех выбранных доставок.
    */
   const confirmGlobalDelete = async () => {
@@ -433,6 +634,42 @@ export default function EditDeliveryModal() {
 
   // Если модальное окно не должно быть открыто, ничего не рендерим
   if (!isEditDeliveryModalOpen) return null;
+
+  // Модальное окно подтверждения удаления товара
+  if (itemToDelete !== null) {
+      const item = deliveryItems[itemToDelete];
+      return (
+        <div className={css.overlay} style={{ zIndex: 1100 }}>
+          <div className={css.modal} style={{ height: 'auto', maxWidth: '400px', backgroundColor: '#2f3136' }}>
+             <div className={css.header} style={{ backgroundColor: '#202225', borderBottom: '1px solid #4f545c' }}>
+               <h2 style={{ color: '#dcddde' }}>⚠️ Підтвердження видалення</h2>
+             </div>
+             <div className={css.content} style={{ display: 'block', padding: '30px', textAlign: 'center', color: '#dcddde' }}>
+                <p>Ви впевнені, що хочете видалити товар <strong>{item?.product}</strong> з цієї форми доставки?</p>
+                <p style={{ fontSize: '0.85rem', color: '#b9bbbe', marginTop: '10px' }}>
+                  Товар не буде переведено "в роботу", але заявка залишиться нерозподіленою.
+                </p>
+             </div>
+             <div className={css.footer} style={{ backgroundColor: '#202225', borderTop: '1px solid #4f545c', padding: '15px' }}>
+                <button 
+                  className={`${css.button} ${css.cancelButton}`}
+                  onClick={() => setItemToDelete(null)}
+                  style={{ backgroundColor: '#4f545c', color: 'white' }}
+                >
+                  Ні, скасувати
+                </button>
+                <button 
+                  className={css.button}
+                  style={{ backgroundColor: '#ed4245', color: 'white', border: 'none' }}
+                  onClick={confirmDeleteItem}
+                >
+                  Так, видалити
+                </button>
+             </div>
+          </div>
+        </div>
+      );
+  }
 
   // Рендеринг модального окна для выбора даты печати
   if (isAskingDate) {
@@ -557,11 +794,36 @@ export default function EditDeliveryModal() {
         <div className={css.content}>
           {/* Левая панель: Товары в доставке */}
           <div className={css.leftPanel}>
-            <h3 className={css.panelTitle}>📦 Товари у доставці</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+               <h3 className={css.panelTitle} style={{ marginBottom: 0 }}>📦 Товари у доставці</h3>
+               <button 
+                  className={css.splitButton}
+                  onClick={handleSplitDelivery}
+                  disabled={isSplitting || Object.values(selectedItemsToSplit).filter(Boolean).length === 0}
+                  style={{
+                    backgroundColor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? '#5865f2' : '#4f545c',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    cursor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.9rem',
+                    transition: 'opacity 0.2s',
+                    opacity: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 1 : 0.6
+                  }}
+                  title="Обрані товари будуть видалені з цієї форми та перенесені у нову ідентичну доставку"
+               >
+                  {isSplitting ? "⏳ Обробка..." : "✂️ Розділити обрані"}
+               </button>
+            </div>
             <div className={css.tableContainer}>
               <table>
                 <thead>
                   <tr>
+                    <th style={{ width: '40px' }} title="Вибрати для розділення">✂️</th>
                     <th>№ Заявки</th>
                     <th>Клієнт</th>
                     <th>Товар</th>
@@ -577,6 +839,14 @@ export default function EditDeliveryModal() {
                         onClick={() => handleItemClick(item, idx)}
                         style={{ cursor: 'pointer' }}
                       >
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                          <input 
+                            type="checkbox" 
+                            checked={!!selectedItemsToSplit[idx]}
+                            onChange={() => toggleItemSplitSelection(idx)}
+                            disabled={isSplitting}
+                          />
+                        </td>
                         <td>{item.orderRef}</td>
                         <td>{item.client}</td>
                         <td style={{ fontWeight: 600 }}>{item.product}</td>
@@ -595,9 +865,9 @@ export default function EditDeliveryModal() {
                             className={css.deleteButton}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteItem(idx);
+                              handleDeleteItemClick(idx);
                             }}
-                            title="Видалити товар"
+                            title="Видалити товар з форми"
                           >
                             🗑️
                           </button>
@@ -610,6 +880,7 @@ export default function EditDeliveryModal() {
                             <table className={css.nestedTable}>
                               <thead>
                                 <tr>
+                                  <th style={{ width: '40px' }}></th>
                                   <th style={{ fontSize: '0.8rem' }}>Партія</th>
                                   <th style={{ fontSize: '0.8rem' }}>Кількість</th>
                                   <th style={{ width: '30px' }}></th>
@@ -618,6 +889,7 @@ export default function EditDeliveryModal() {
                               <tbody>
                                 {item.parties.map((p, pIdx) => (
                                   <tr key={pIdx}>
+                                    <td></td>
                                     <td style={{ fontSize: '0.8rem' }}>{p.party}</td>
                                     <td>
                                       <input 

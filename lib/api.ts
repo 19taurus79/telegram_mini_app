@@ -222,6 +222,7 @@ export const updateDeliveryData = async (
   deliveryId: string,
   status: string,
   items: DeliveryUpdateItem[],
+  totalWeight: number,
   initData: string
 ) => {
   const { data } = await axios.post<{ status: string }>(
@@ -229,6 +230,7 @@ export const updateDeliveryData = async (
     {
        delivery_id: deliveryId,
        status: status,
+       total_weight: totalWeight, // <-- Передаем новый вес
        items: items
     },
     {

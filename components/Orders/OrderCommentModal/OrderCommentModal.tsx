@@ -49,9 +49,7 @@ export default function OrderCommentModal({
       }
       // Якщо це коментар до товару
       if (comment.comment_type === 'product') {
-        const matchId = productId && (comment.product_id === productId || comment.product_name === productId);
-        const matchName = productName && (comment.product_name === productName || comment.product_id === productName);
-        return matchId || matchName;
+        return productName && comment.product_name === productName;
       }
       return false;
     });

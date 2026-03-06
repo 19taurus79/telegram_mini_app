@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getUserByinitData } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
@@ -13,6 +13,7 @@ import { useDelivery } from "@/store/Delivery";
 function Header() {
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const initData = useInitData((state) => state.initData);
@@ -74,13 +75,27 @@ function Header() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (initData) {
-        const user = await getUserByinitData(initData);
-        setUserData(user);
+      try {
+        if (initData) {
+          const user = await getUserByinitData(initData);
+          setUserData(user);
+        }
+      } catch (error: any) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          console.error("Auth error:", error.response?.status, error.response?.data);
+          setInitData("");
+          // Якщо ми не в Mini App, чистимо localStorage, бо initData може бути невалідним
+          if (typeof window !== "undefined" && !window.Telegram?.WebApp?.initData) {
+            localStorage.removeItem("telegram_init_data");
+          }
+          if (pathname !== "/login") {
+            router.replace("/login");
+          }
+        }
       }
     };
     fetchUser();
-  }, [initData, setUserData]);
+  }, [initData, setUserData, pathname, router, setInitData]);
 
 
   const handleNavClick = () => {
@@ -91,6 +106,10 @@ function Header() {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
+
+  if (pathname === '/login') {
+    return null;
+  }
 
   return (
     <header className={css.header} ref={headerRef}>

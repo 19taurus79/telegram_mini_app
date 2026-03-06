@@ -11,6 +11,7 @@ import { useInitData } from '@/lib/useInitData';
 import { ChatMessage } from '@/types/types';
 import { Send, Edit2, Trash2, X, Reply, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useUser } from '@/store/User';
 import css from './OrderChatPanel.module.css';
 
 interface OrderChatPanelProps {
@@ -30,6 +31,8 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const initData = useInitData();
+  const userData = useUser((state) => state.userData);
+  const isGuest = userData?.is_guest;
 
   // Отримання повідомлень з реал-тайм оновленням
   const { data: messages = [], isLoading, isError } = useQuery({
@@ -326,29 +329,31 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
                     <div className={css.messageText} id={`message-${message.id}`}>
                       {message.message_text}
                     </div>
-                    <div className={css.messageActions}>
-                      <button
-                        onClick={() => handleReply(message)}
-                        className={css.actionButton}
-                        title="Відповісти"
-                      >
-                        <Reply size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(message)}
-                        className={css.actionButton}
-                        title="Редагувати"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(message.id)}
-                        className={css.actionButton}
-                        title="Видалити"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    {!isGuest && (
+                      <div className={css.messageActions}>
+                        <button
+                          onClick={() => handleReply(message)}
+                          className={css.actionButton}
+                          title="Відповісти"
+                        >
+                          <Reply size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(message)}
+                          className={css.actionButton}
+                          title="Редагувати"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(message.id)}
+                          className={css.actionButton}
+                          title="Видалити"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -375,8 +380,14 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
       )}
 
       <div className={css.bottomSection}>
-        {/* Reply Preview */}
-        {replyToMessage && (
+        {isGuest ? (
+          <div style={{ padding: '16px', textAlign: 'center', background: '#f5f5f5', color: '#666', borderTop: '1px solid #eee' }}>
+            📖 Режим &quot;Тільки читання&quot;. Ваші права доступу не дозволяють відправляти повідомлення в цей чат.
+          </div>
+        ) : (
+          <>
+            {/* Reply Preview */}
+            {replyToMessage && (
           <div className={css.replyPreview}>
             <div className={css.replyPreviewContent}>
               <div className={css.replyPreviewAuthor}>
@@ -419,6 +430,8 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
             <Send size={20} />
           </button>
         </form>
+          </>
+        )}
       </div>
 
       {/* Модальне вікно підтвердження видалення */}

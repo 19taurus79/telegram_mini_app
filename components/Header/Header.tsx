@@ -94,7 +94,10 @@ function Header() {
 
   return (
     <header className={css.header} ref={headerRef}>
-      <h2 className={css.logo}>Ерідон Харків</h2>
+      <h2 className={css.logo}>
+        Ерідон Харків
+        {userData?.is_guest && <span className={css.guestBadge}>Лише читання</span>}
+      </h2>
 
       <button
         className={css.navToggle}
@@ -153,16 +156,20 @@ function Header() {
           </li>
           {userData?.is_admin && (
             <>
-              <li>
-                <Link href="/bi" onClick={handleNavClick} className={isActive('/bi') ? css.activeLink : ''}>
-                  Замовити товар
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/upload" onClick={handleNavClick} className={isActive('/admin/upload') ? css.activeLink : ''}>
-                  Завантажити дані
-                </Link>
-              </li>
+              {!userData?.is_guest && (
+                <>
+                  <li>
+                    <Link href="/bi" onClick={handleNavClick} className={isActive('/bi') ? css.activeLink : ''}>
+                      Замовити товар
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/admin/upload" onClick={handleNavClick} className={isActive('/admin/upload') ? css.activeLink : ''}>
+                      Завантажити дані
+                    </Link>
+                  </li>
+                </>
+              )}
               <li>
                 <Link href="/map" onClick={handleNavClick} className={isActive('/map') ? css.activeLink : ''}>
                   Мапа

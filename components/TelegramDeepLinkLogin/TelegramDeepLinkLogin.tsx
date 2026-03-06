@@ -34,8 +34,9 @@ export default function TelegramDeepLinkLogin() {
     setState("loading");
     try {
       const { token: t, deep_link, web_link, expires_in } = await generateLoginToken();
-      setDeepLink(deep_link);
-      setWebLink(web_link);
+      // Use token string as code, bot link as web link
+      setDeepLink(t); 
+      setWebLink(deep_link); // Redirects right to bot
       setTimeLeft(expires_in);
       setState("waiting");
 
@@ -119,21 +120,23 @@ if (state === "idle") {
   return (
     <div style={styles.waiting}>
       <p style={styles.instruction}>
-        Відкрийте Telegram на <b>телефоні</b> та натисніть <b>Start</b> у боті:
+        Відкрийте Telegram на <b>телефоні</b> та відправте боту цей код:
       </p>
-      {/* Основна кнопка — відкриває додаток Telegram напряму */}
-      <a href={deepLink} style={styles.tgButton}>
-        <TelegramIcon />
-        Відкрити в додатку
-      </a>
-      {/* Запасний варіант — Telegram Web */}
-      <a href={webLink} target="_blank" rel="noopener noreferrer" style={styles.tgButtonSecondary}>
-        Відкрити Telegram Web
-      </a>
-      <details style={styles.details}>
-        <summary style={styles.summary}>Посилання для копіювання</summary>
-        <code style={styles.link}>{webLink}</code>
-      </details>
+      
+      <div style={styles.codeContainer}>
+        {deepLink.split('').map((char, index) => (
+          <span key={index} style={styles.codeDigit}>{char}</span>
+        ))}
+      </div>
+
+      <div style={styles.buttonGroup}>
+        {/* Основна кнопка — відкриває додаток Telegram напряму */}
+        <a href={webLink} style={styles.tgButton}>
+          <TelegramIcon />
+          Відкрити бота
+        </a>
+      </div>
+      
       <p style={styles.timer}>⏳ {formatTime(timeLeft)}</p>
       <button onClick={handleCancel} style={styles.cancel}>
         Скасувати
@@ -162,77 +165,71 @@ const styles: Record<string, React.CSSProperties> = {
   },
   waiting: {
     marginTop: "4px",
-    padding: "16px",
+    padding: "20px 16px",
     background: "rgba(84,169,235,0.08)",
     border: "1px solid rgba(84,169,235,0.25)",
-    borderRadius: "6px",
+    borderRadius: "8px",
     textAlign: "center" as const,
     fontSize: "14px",
     color: "#ccc",
   },
   instruction: {
-    marginBottom: "12px",
-    color: "#ddd",
+    marginBottom: "16px",
+    color: "#e2e8f0",
     lineHeight: 1.5,
+    fontSize: "15px",
+  },
+  codeContainer: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "8px",
+    margin: "20px 0",
+  },
+  codeDigit: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "48px",
+    height: "56px",
+    background: "rgba(84,169,235,0.15)",
+    border: "2px solid rgba(84,169,235,0.4)",
+    borderRadius: "8px",
+    fontSize: "28px",
+    fontWeight: "bold",
+    color: "#54a9eb",
+  },
+  buttonGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginBottom: "16px",
   },
   tgButton: {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: "8px",
-    padding: "10px 20px",
+    padding: "12px 20px",
     background: "#54a9eb",
     color: "#fff",
     textDecoration: "none",
-    borderRadius: "4px",
+    borderRadius: "6px",
     fontWeight: 500,
     fontSize: "15px",
-    marginBottom: "8px",
-  },
-  tgButtonSecondary: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    padding: "8px 16px",
-    background: "transparent",
-    color: "#54a9eb",
-    textDecoration: "none",
-    borderRadius: "4px",
-    fontWeight: 400,
-    fontSize: "13px",
-    marginBottom: "12px",
-    border: "1px solid rgba(84,169,235,0.4)",
-  },
-  details: {
-    textAlign: "left" as const,
-    marginTop: "8px",
-  },
-  summary: {
-    fontSize: "12px",
-    color: "#888",
-    cursor: "pointer",
-    marginBottom: "4px",
-  },
-  link: {
-    display: "block",
-    fontSize: "11px",
-    color: "#888",
-    wordBreak: "break-all" as const,
-    padding: "6px",
-    background: "rgba(255,255,255,0.05)",
-    borderRadius: "4px",
+    width: "100%",
   },
   timer: {
-    fontSize: "13px",
+    fontSize: "14px",
     color: "#aaa",
-    margin: "10px 0 4px",
+    margin: "12px 0",
   },
   cancel: {
     background: "transparent",
     border: "none",
     color: "#888",
-    fontSize: "12px",
+    fontSize: "13px",
     cursor: "pointer",
     textDecoration: "underline",
+    padding: "8px",
   },
 };

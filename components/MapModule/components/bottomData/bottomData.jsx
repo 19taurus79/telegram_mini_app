@@ -4,6 +4,7 @@ import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
 import { getInitData } from "@/lib/getInitData";
 import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
+import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
 import { Download, Printer, ChevronDown, ChevronRight } from 'lucide-react';
@@ -23,6 +24,9 @@ export default function BottomData({ onEditClient }) {
     removeDelivery,
     setIsPrintRequested
   } = useApplicationsStore();
+
+  const userData = useUser(state => state.userData);
+  const isGuest = userData?.is_guest;
 
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
@@ -486,7 +490,9 @@ export default function BottomData({ onEditClient }) {
               <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
                 <Printer size={14} /> Друк
               </button>
-              <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
+              {!isGuest && (
+                <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
+              )}
             </div>
           </div>
           <div className={css.ordersContainer}>
@@ -511,10 +517,14 @@ export default function BottomData({ onEditClient }) {
                       {expandedIds.has(d.id) && (
                         <div className={css.accordionContent}>
                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                              {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
-                              <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: d.status === "Виконано" ? '#ff9800' : '#4caf50' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
-                              {d.status !== "Виконано" && <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: '#2196F3' }}>Змінити дату</button>}
-                              {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
+                              {!isGuest && (
+                                <>
+                                  {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
+                                  <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: d.status === "Виконано" ? '#ff9800' : '#4caf50' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
+                                  {d.status !== "Виконано" && <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: '#2196F3' }}>Змінити дату</button>}
+                                  {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
+                                </>
+                              )}
                            </div>
                            {renderItems(d.items)}
                         </div>
@@ -571,10 +581,14 @@ export default function BottomData({ onEditClient }) {
              <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
                <Printer size={14} /> Друк
              </button>
-             {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
-             {!isCompleted && <button className={css.deliveryEditBtn} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }} style={{ backgroundColor: '#2196F3' }}>Змінити дату</button>}
-             {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
-             {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
+             {!isGuest && (
+               <>
+                 {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+                 {!isCompleted && <button className={css.deliveryEditBtn} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }} style={{ backgroundColor: '#2196F3' }}>Змінити дату</button>}
+                 {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
+                 {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
+               </>
+             )}
           </div>
         </div>
         <div className={css.addressInfo}>
@@ -709,7 +723,9 @@ export default function BottomData({ onEditClient }) {
             {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone2}</a></p>}
             {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
         </div>
-        <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>
+        {!isGuest && (
+          <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>
+        )}
       </div>
     );
   }

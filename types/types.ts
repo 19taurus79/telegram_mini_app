@@ -264,6 +264,7 @@ export type User = {
   first_name: string;
   last_name: string;
   is_allowed: boolean;
+  is_guest?: boolean;
   registration_date: string;
   last_activity_date: string;
   is_admin: boolean;

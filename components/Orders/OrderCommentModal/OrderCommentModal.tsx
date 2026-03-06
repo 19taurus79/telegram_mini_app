@@ -7,6 +7,7 @@ import { OrderComment, CreateOrderCommentPayload } from '@/types/types';
 import { useInitData } from '@/lib/useInitData';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@/store/User';
 import styles from './OrderCommentModal.module.css';
 
 interface OrderCommentModalProps {
@@ -32,6 +33,9 @@ export default function OrderCommentModal({
   const [editText, setEditText] = useState('');
   const [selectedCommentType, setSelectedCommentType] = useState<'order' | 'product'>(commentType);
   const initData = useInitData();
+  const userData = useUser((state) => state.userData);
+  const isGuest = userData?.is_guest;
+  const effectiveReadOnly = readOnly || isGuest;
 
   // Завантаження коментарів через TanStack Query
   const { data: allComments = [], isLoading } = useQuery({
@@ -178,7 +182,7 @@ export default function OrderCommentModal({
         </div>
 
         <div className={styles.content}>
-          {!readOnly && (
+          {!effectiveReadOnly && (
             <>
               {/* Форма додавання коментаря */}
               <form onSubmit={handleSubmit} className={styles.form}>
@@ -223,9 +227,9 @@ export default function OrderCommentModal({
             </>
           )}
 
-          {readOnly && (
+          {effectiveReadOnly && (
             <div className={styles.readOnlyNotice}>
-              📖 Режим перегляду. Для редагування коментарів перейдіть в розділ &quot;Заявки&quot;
+              {isGuest ? '📖 Режим "Тільки читання". Ваші права доступу не дозволяють залишати коментарі.' : '📖 Режим перегляду. Для редагування коментарів перейдіть в розділ "Заявки"'}
             </div>
           )}
 
@@ -272,7 +276,7 @@ export default function OrderCommentModal({
                       <span className={styles.commentDate}>
                         {formatDate(comment.created_at)}
                       </span>
-                      {!readOnly && editingId !== comment.id && (
+                      {!effectiveReadOnly && editingId !== comment.id && (
                         <>
                           <button
                             className={styles.iconButton}

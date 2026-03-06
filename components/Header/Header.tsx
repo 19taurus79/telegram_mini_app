@@ -80,9 +80,10 @@ function Header() {
           const user = await getUserByinitData(initData);
           setUserData(user);
         }
-      } catch (error: any) {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          console.error("Auth error:", error.response?.status, error.response?.data);
+      } catch (error: unknown) {
+        const status = (error as { response?: { status?: number; data?: unknown } }).response?.status;
+        if (status === 401 || status === 403) {
+          console.error("Auth error:", status);
           setInitData("");
           // Якщо ми не в Mini App, чистимо localStorage, бо initData може бути невалідним
           if (typeof window !== "undefined" && !window.Telegram?.WebApp?.initData) {

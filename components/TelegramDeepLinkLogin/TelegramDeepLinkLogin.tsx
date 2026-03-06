@@ -33,7 +33,7 @@ export default function TelegramDeepLinkLogin() {
   const handleLogin = async () => {
     setState("loading");
     try {
-      const { token: t, deep_link, web_link, expires_in } = await generateLoginToken();
+      const { token: t, deep_link, expires_in } = await generateLoginToken();
       // Use token string as code, bot link as web link
       setDeepLink(t); 
       setWebLink(deep_link); // Redirects right to bot

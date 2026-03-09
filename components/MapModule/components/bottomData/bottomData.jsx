@@ -58,7 +58,7 @@ export default function BottomData({ onEditClient }) {
             manager: String(item.manager || d.manager || ""),
             client: String(item.client || d.client || ""),
             orderRef: String(item.order_ref || item.order || item.orderRef || ""),
-            weight: Number(item.weight) || 0,
+            weight: Number(item.total_weight) || Number(item.weight) || 0, // <-- Виправлено: пріоритет total_weight, потім weight
             parties: Array.isArray(item.parties) 
                 ? item.parties.map(p => ({
                     party: String(p.party),
@@ -67,7 +67,8 @@ export default function BottomData({ onEditClient }) {
                 : []
         }));
 
-        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, initData);
+        const totalWeight = sanitizedItems.reduce((sum, item) => sum + item.weight, 0);
+        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData);
         
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         

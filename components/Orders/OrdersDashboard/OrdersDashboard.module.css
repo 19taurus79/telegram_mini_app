@@ -435,3 +435,17 @@
   flex: 1;
   overflow: hidden;
 }
+
+/* Client group header for multi-select */
+.clientGroupHeader {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 12px !important;
+  border: none !important;
+  letter-spacing: 0.3px;
+  position: sticky;
+  top: 32px;
+  z-index: 5;
+}

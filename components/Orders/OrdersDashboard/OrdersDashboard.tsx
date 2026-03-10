@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Responsive, WidthProvider, Layout, Layouts } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -42,19 +42,25 @@ interface OrdersDashboardProps {
 
 export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClients, setSelectedClients] = useState<Client[]>([]);
   const [selectedContracts, setSelectedContracts] = useState<Contract[]>([]);
   const [showAllContracts, setShowAllContracts] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Запит на отримання контрактів обраного клієнта (підняли стан сюди)
+  // Запит на отримання контрактів обраних клієнтів
+  const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
   const { data: contracts } = useQuery({
-    queryKey: ["contracts", selectedClient?.id],
-    queryFn: () =>
-      selectedClient
-        ? getContracts({ client: selectedClient.id, initData })
-        : Promise.resolve([]),
-    enabled: !!selectedClient && !!initData,
+    queryKey: ["contracts", clientIds],
+    queryFn: async () => {
+      if (selectedClients.length === 0) return [];
+      const results = await Promise.all(
+        selectedClients.map(client =>
+          getContracts({ client: client.id, initData })
+        )
+      );
+      return results.flat();
+    },
+    enabled: selectedClients.length > 0 && !!initData,
   });
 
   // Завантаження збереженого макету та стану з localStorage
@@ -74,7 +80,9 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
     if (savedState) {
         try {
             const parsedState = JSON.parse(savedState);
-            if (parsedState.selectedClient) setSelectedClient(parsedState.selectedClient);
+            if (parsedState.selectedClients) setSelectedClients(parsedState.selectedClients);
+            // Backward compat: migrate old single-client format
+            else if (parsedState.selectedClient) setSelectedClients([parsedState.selectedClient]);
             if (parsedState.selectedContracts) setSelectedContracts(parsedState.selectedContracts);
             if (parsedState.showAllContracts) setShowAllContracts(parsedState.showAllContracts);
         } catch (e) {
@@ -87,13 +95,13 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   useEffect(() => {
     if (isClient) { // Зберігаємо тільки якщо ми вже на клієнті (після гідратації)
         const stateToSave = {
-            selectedClient,
+            selectedClients,
             selectedContracts,
             showAllContracts
         };
         localStorage.setItem(STORAGE_STATE_KEY, JSON.stringify(stateToSave));
     }
-  }, [selectedClient, selectedContracts, showAllContracts, isClient]);
+  }, [selectedClients, selectedContracts, showAllContracts, isClient]);
 
   // Збереження макету при його зміні
   const handleLayoutChange = useCallback(
@@ -109,9 +117,22 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
     window.location.reload();
   };
 
-  const handleSelectClient = (client: Client) => {
-    setSelectedClient(client);
-    setSelectedContracts([]); // Скидаємо обрані контракти при зміні клієнта
+  const handleSelectClient = (client: Client, isMulti: boolean) => {
+    if (isMulti) {
+      // Ctrl+click: toggle client in selection
+      setSelectedClients(prev => {
+        const exists = prev.some(c => c.id === client.id);
+        if (exists) {
+          return prev.filter(c => c.id !== client.id);
+        } else {
+          return [...prev, client];
+        }
+      });
+    } else {
+      // Normal click: select only this client
+      setSelectedClients([client]);
+    }
+    setSelectedContracts([]);
     setShowAllContracts(false);
   };
 
@@ -182,7 +203,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             <div className={styles.gridItemContent}>
               <ClientsWidget
                 initData={initData}
-                selectedClient={selectedClient}
+                selectedClients={selectedClients}
                 onSelectClient={handleSelectClient}
               />
             </div>
@@ -211,7 +232,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             <div className={styles.gridItemContent}>
               <ContractsWidget
                 initData={initData}
-                selectedClient={selectedClient}
+                selectedClients={selectedClients}
                 contracts={contracts || []}
                 selectedContracts={selectedContracts}
                 onSelectContract={handleSelectContract}
@@ -229,13 +250,14 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                   Деталі замовлення 
                   {selectedContracts.length > 0 && !showAllContracts ? ` (${selectedContracts.length})` : ""}
                   {showAllContracts ? " (Всі контракти)" : ""}
+                  {selectedClients.length > 1 ? ` — ${selectedClients.length} клієнтів` : ""}
                 </span>
               </div>
             </div>
             <div className={styles.gridItemContent}>
               <DetailsWidget
                 initData={initData}
-                selectedClient={selectedClient}
+                selectedClients={selectedClients}
                 selectedContracts={selectedContracts}
                 showAllContracts={showAllContracts}
               />

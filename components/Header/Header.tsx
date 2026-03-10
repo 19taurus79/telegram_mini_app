@@ -75,6 +75,7 @@ function Header() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const isDev = process.env.NEXT_PUBLIC_DEV === "true";
       try {
         if (initData) {
           const user = await getUserByinitData(initData);
@@ -84,6 +85,11 @@ function Header() {
         const status = (error as { response?: { status?: number; data?: unknown } }).response?.status;
         if (status === 401 || status === 403) {
           console.error("Auth error:", status);
+          // В dev-режимі не перенаправляємо на логін
+          if (isDev) {
+            console.warn("[Header] Dev mode: ignoring auth error, staying on page");
+            return;
+          }
           setInitData("");
           // Якщо ми не в Mini App, чистимо localStorage, бо initData може бути невалідним
           if (typeof window !== "undefined" && !window.Telegram?.WebApp?.initData) {

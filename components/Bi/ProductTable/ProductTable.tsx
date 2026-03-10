@@ -1,7 +1,13 @@
 import css from "./ProductTable.module.css";
 import { BiOrdersItem } from "@/types/types";
 import useSwipe from "@/hooks/useSwipe";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+} from '@tanstack/react-table';
 
 // --- КОМПОНЕНТ ТАБЛИЦІ (REUSABLE) ---
 interface ProductTableProps {
@@ -50,6 +56,113 @@ const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected
         )}
       </div>
     </div>
+  );
+};
+
+// --- КОМПОНЕНТ ДЛЯ ДЕСКТОПНОЇ ТАБЛИЦІ З РЕСАЙЗОМ ---
+interface ProductDesktopTableGroupProps {
+  orders: BiOrdersItem[];
+  onRowClick?: (product: BiOrdersItem) => void;
+  selectedProduct?: BiOrdersItem | null;
+}
+
+const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct }: ProductDesktopTableGroupProps) => {
+  const columns = useMemo<ColumnDef<BiOrdersItem>[]>(
+    () => [
+      {
+        accessorKey: 'product',
+        header: 'Номенклатура',
+        size: 300,
+        minSize: 150,
+      },
+      {
+        accessorKey: 'qty_remain',
+        header: 'Залишки',
+        size: 100,
+        minSize: 60,
+        cell: info => Number(info.getValue()).toFixed(2),
+      },
+      {
+        accessorKey: 'qty_needed',
+        header: 'Потрібно',
+        size: 100,
+        minSize: 60,
+        cell: info => Number(info.getValue()).toFixed(2),
+      },
+      {
+        accessorKey: 'qty_missing',
+        header: 'Не вистачає',
+        size: 100,
+        minSize: 60,
+        cell: info => Number(info.getValue()).toFixed(2),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: orders,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 50,
+    },
+  });
+
+  return (
+    <table className={css.table}>
+      <thead>
+        {table.getHeaderGroups().map(headerGroup => (
+          <tr key={headerGroup.id}>
+            {headerGroup.headers.map(header => (
+              <th
+                key={header.id}
+                className={css.th}
+                style={{ width: header.getSize() }}
+              >
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                <div
+                  onMouseDown={header.getResizeHandler()}
+                  onTouchStart={header.getResizeHandler()}
+                  className={`${css.resizer} ${
+                    header.column.getIsResizing() ? css.isResizing : ''
+                  }`}
+                />
+              </th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      <tbody>
+        {table.getRowModel().rows.map(row => {
+          const order = row.original;
+          const isSelected = onRowClick ? selectedProduct?.product === order.product : false;
+          return (
+            <tr
+              key={row.id}
+              onClick={() => onRowClick?.(order)}
+              className={onRowClick ? (isSelected ? css.selectedRow : css.row) : ""}
+            >
+              {row.getVisibleCells().map(cell => (
+                <td
+                  key={cell.id}
+                  className={css.td}
+                  style={{ width: cell.column.getSize() }}
+                  title={String(cell.getValue())}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 };
 
@@ -158,44 +271,11 @@ const ProductTable = ({
                       ))}
                     </div>
                   ) : (
-                    <table className={css.table}>
-                      <thead>
-                        <tr>
-                          <th className={`${css.th} ${css.productColumn}`}>Номенклатура</th>
-                          <th className={`${css.th} ${css.qtyColumn}`}>Залишки</th>
-                          <th className={`${css.th} ${css.qtyColumn}`}>Потрібно</th>
-                          <th className={`${css.th} ${css.qtyColumn}`}>Не вистачає</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders.map((order) => (
-                          <tr
-                            key={order.product}
-                            onClick={() => onRowClick?.(order)}
-                            className={
-                              onRowClick
-                                ? selectedProduct?.product === order.product
-                                  ? css.selectedRow
-                                  : css.row
-                                : ""
-                            }
-                          >
-                            <td className={`${css.td} ${css.productColumn}`} title={order.product}>
-                              {order.product}
-                            </td>
-                            <td className={`${css.td} ${css.qtyColumn}`} title={order.qty_remain.toString()}>
-                              {order.qty_remain.toFixed(2)}
-                            </td>
-                            <td className={`${css.td} ${css.qtyColumn}`} title={order.qty_needed.toString()}>
-                              {order.qty_needed.toFixed(2)}
-                            </td>
-                            <td className={`${css.td} ${css.qtyColumn}`} title={order.qty_missing.toString()}>
-                              {order.qty_missing.toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <ProductDesktopTableGroup 
+                      orders={orders} 
+                      onRowClick={onRowClick} 
+                      selectedProduct={selectedProduct} 
+                    />
                   )}
                 </>
               )}

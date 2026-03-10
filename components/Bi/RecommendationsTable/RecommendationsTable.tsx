@@ -1,4 +1,11 @@
+"use client";
 import styles from "./RecommendationsTable.module.css";
+import {
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+} from '@tanstack/react-table';
 
 // Інтерфейс для об'єкта рекомендації
 interface Recommendation {
@@ -16,36 +23,97 @@ interface RecommendationsTableProps {
 const RecommendationsTable = ({
   recommendations,
   hideTitle = false,
-}: RecommendationsTableProps) => (
-  <div className={styles.tableWrapper}>
-    {!hideTitle && <h2 className={styles.title}>Рекомендації</h2>}
-    {recommendations.length > 0 ? (
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th className={styles.th}>Номенклатура</th>
-            <th className={styles.th}>Підрозділ</th>
-            <th className={styles.th}>Склад</th>
-            <th className={styles.th}>Кількість</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recommendations.map((rec, index) => (
-            <tr
-              key={`${rec.product}-${rec.take_from_division}-${rec.take_from_warehouse}-${index}`}
-            >
-              <td className={styles.td} title={rec.product}>{rec.product}</td>
-              <td className={styles.td} title={rec.take_from_division}>{rec.take_from_division}</td>
-              <td className={styles.td} title={rec.take_from_warehouse}>{rec.take_from_warehouse}</td>
-              <td className={styles.td} title={rec.qty_to_take.toString()}>{rec.qty_to_take}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    ) : (
-      <p>Немає рекомендацій</p>
-    )}
-  </div>
-);
+}: RecommendationsTableProps) => {
+  const columns: ColumnDef<Recommendation>[] = [
+    {
+      accessorKey: 'product',
+      header: 'Номенклатура',
+      minSize: 150,
+      size: 300,
+    },
+    {
+      accessorKey: 'take_from_division',
+      header: 'Підрозділ',
+      minSize: 100,
+      size: 150,
+    },
+    {
+      accessorKey: 'take_from_warehouse',
+      header: 'Склад',
+      minSize: 100,
+      size: 250,
+    },
+    {
+      accessorKey: 'qty_to_take',
+      header: 'Кількість',
+      minSize: 80,
+      size: 100,
+    },
+  ];
+
+  const table = useReactTable({
+    data: recommendations,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 50,
+    },
+  });
+
+  return (
+    <div className={styles.tableWrapper}>
+      {!hideTitle && <h2 className={styles.title}>Рекомендації</h2>}
+      {recommendations.length > 0 ? (
+        <table className={styles.table}>
+          <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th
+                    key={header.id}
+                    className={styles.th}
+                    style={{ width: header.getSize() }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={`${styles.resizer} ${
+                        header.column.getIsResizing() ? styles.isResizing : ''
+                      }`}
+                    />
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <td
+                    key={cell.id}
+                    className={styles.td}
+                    style={{ width: cell.column.getSize() }}
+                    title={String(cell.getValue())}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>Немає рекомендацій</p>
+      )}
+    </div>
+  );
+};
 
 export default RecommendationsTable;

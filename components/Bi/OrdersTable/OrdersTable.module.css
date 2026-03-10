@@ -15,6 +15,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   min-width: 600px;
 }
 
@@ -31,13 +32,31 @@
 
 .th {
   background-color: var(--header-bg-color);
-  position: sticky;
+  position: relative;
+  font-weight: 600;
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
   top: 0;
-  z-index: 1;
-  resize: horizontal;
-  overflow: auto;
-  min-width: 60px;
+  height: 100%;
+  width: 5px;
+  background: rgba(0, 0, 0, 0.5);
   cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.th:hover .resizer {
+  opacity: 1;
+}
+
+.isResizing {
+  background: blue;
+  opacity: 1;
 }
 
 .row:hover {

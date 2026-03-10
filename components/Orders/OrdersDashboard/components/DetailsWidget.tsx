@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
 import { Client, Contract, OrdersDetails } from "@/types/types";
@@ -9,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
+import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import { Truck, Loader2 } from "lucide-react";
 import { useDelivery } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
@@ -18,14 +21,14 @@ import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 
 interface DetailsWidgetProps {
   initData: string;
-  selectedClient: Client | null;
+  selectedClients: Client[];
   selectedContracts: Contract[];
   showAllContracts: boolean;
 }
 
 export default function DetailsWidget({
   initData,
-  selectedClient,
+  selectedClients,
   selectedContracts,
   showAllContracts,
 }: DetailsWidgetProps) {
@@ -43,6 +46,10 @@ export default function DetailsWidget({
   const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
   const [openedFromLink, setOpenedFromLink] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedProductForRemainsModal, setSelectedProductForRemainsModal] = useState<{
+    productId: string;
+    partyNames: string[];
+  } | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,14 +139,19 @@ export default function DetailsWidget({
   };
 
   const handleRemainsClick = (item: OrdersDetails) => {
-      if (item.buh > 0) {
-          const searchParts = [item.nomenclature, item.party_sign, item.buying_season]
-            .filter(part => part && part.trim() !== '')
-            .join(' ');
-            
-          const searchQuery = encodeURIComponent(searchParts);
-          router.push(`/remains?search=${searchQuery}`);
-      }
+    if (item.buh > 0) {
+      const searchParam = encodeURIComponent(item.nomenclature);
+      window.open(`/remains?search=${searchParam}`, "_blank");
+    }
+  };
+
+  const handlePartyClick = (item: OrdersDetails) => {
+    if (item.parties && item.parties.length > 0) {
+      setSelectedProductForRemainsModal({
+        productId: item.product,
+        partyNames: item.parties.map(p => p.party).filter(Boolean)
+      });
+    }
   };
 
   const handleDemandClick = (item: OrdersDetails) => {
@@ -220,10 +232,12 @@ export default function DetailsWidget({
     setAddingToDeliveryId(null);
   };
 
+  const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
+
   const { data: detailsList, isLoading } = useQuery({
-    queryKey: ["ordersDetailsFull", selectedClient?.id, contractsIds],
+    queryKey: ["ordersDetailsFull", clientIds, contractsIds],
     queryFn: async () => {
-        if (!selectedClient) return [];
+        if (selectedClients.length === 0) return [];
         
         if (selectedContracts.length > 0) {
             const promises = selectedContracts.map(contract => 
@@ -235,7 +249,7 @@ export default function DetailsWidget({
         
          return [];
     },
-    enabled: !!selectedClient && !!initData && (selectedContracts.length > 0 || showAllContracts)
+    enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
   });
 
   const calculateTotalPartiesMoved = (parties: { moved_q: number }[] | undefined) => {
@@ -261,133 +275,171 @@ export default function DetailsWidget({
         <tbody>
             {isLoading && (
                 <tr>
-                    <td colSpan={6} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
+                    <td colSpan={9} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
                 </tr>
             )}
             
-          {detailsList?.map((item: OrdersDetails) => {
-             const itemId = getItemId(item);
-            const isSelected = hasItem(itemId);
-            const inDelivery = getDeliveryForItem(item);
-
-            return (
-              <tr 
-                key={item.id} 
-                className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""}`}
-              >
-                <td className={styles.td}>{item.contract_supplement}</td>
-                 <td className={styles.td} title={item.nomenclature}>
-                  {getProductName(item)}
-                  {inDelivery && (
-                    <span className={styles.deliveryBadge}>В доставці</span>
-                  )}
-                </td>
-                <td className={styles.td}>{item.different}</td>
-                <td className={styles.td}>
-                  {item.parties?.length > 0 ? (
-                    <div style={{ fontSize: "11px" }}>
-                      {item.parties.map((p, i) => (
-                        <div key={i}>
-                          {p.moved_q} {p.party ? `(${p.party})` : ''}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span style={{ opacity: 0.5 }}>-</span>
-                  )}
-                </td>
-                <td 
-                  className={styles.td} 
-                  onClick={() => handleRemainsClick(item)}
-                  style={{ 
-                      cursor: item.buh > 0 ? "pointer" : "default",
-                      backgroundColor: item.buh > 0 ? "var(--hover-bg, rgba(0,0,0,0.02))" : "inherit"
-                  }}
-                  title={item.buh > 0 ? "Перейти до залишків" : ""}
-                >
-                  <div style={{ fontSize: "11px" }}>
-                    <div>Бух: {item.buh}</div>
-                    <div>Скл: {item.skl}</div>
-                  </div>
-                </td>
-                <td 
-                  className={styles.td}
-                  onClick={() => handleDemandClick(item)}
-                  style={{ cursor: "pointer" }}
-                  title="Переглянути деталі заявок"
-                >
-                    {item.orders_q}
-                </td> 
-                  <td className={styles.td}>
-                    {(() => {
-                      const sumMovedQ = calculateTotalPartiesMoved(item.parties);
-                      const ordersQ = Number(item.orders_q) || 0;
-                      const buhQ = Number(item.buh) || 0;
-                      const sklQ = Number(item.skl) || 0;
-                      const diffQ = Number(item.different) || 0;
-
-                      if (sumMovedQ === 0 && ordersQ > buhQ) {
-                        return <span className={styles.checkmarkRed}>✓</span>;
-                      }
-
-                      if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ>=sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
-                        return <span className={styles.checkmarkGreen}>✓</span>;
-                      } else {
-                        return <span className={styles.checkmarkYellow}>✓</span>;
-                      }
-                    })()}
-                </td>
-                
-                <td 
-                   className={styles.td}
-                   style={{ 
-                     textAlign: "center", 
-                     cursor: "pointer",
-                     color: isSelected ? "var(--primary-color, #2563eb)" : "inherit" 
-                   }}
-                   onClick={() => handleDeliveryClick(item)}
-                   title={isSelected ? "Видалити з доставки" : "Додати до доставки"}
-                >
-                   {addingToDeliveryId === itemId ? (
-                       <Loader2 size={18} className="animate-spin" />
-                   ) : (
-                       <Truck 
-                         size={18} 
-                         fill={isSelected ? "currentColor" : "none"}
-                         strokeWidth={isSelected ? 0 : 2}
-                       />
-                   )}
-                 </td>
-
-                 <td 
-                   className={styles.td}
-                   style={{ textAlign: "center" }}
-                 >
-                   <OrderCommentBadge
-                     orderRef={item.contract_supplement}
-                     productId={item.product}
-                     productName={getProductName(item)}
-                      onClick={() => setCommentModalData({
-                        orderRef: item.contract_supplement,
-                        productId: item.product,
-                        productName: getProductName(item),
-                      })}
-                   />
+          {(() => {
+            if (!detailsList || detailsList.length === 0) {
+              return !isLoading ? (
+                <tr>
+                  <td colSpan={9} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
+                    {selectedContracts.length > 0
+                      ? "Даних не знайдено"
+                      : "Оберіть доповнення"}
                   </td>
-
                 </tr>
-            );
-          })}
+              ) : null;
+            }
 
-          {!isLoading && (!detailsList || detailsList.length === 0) && (
-            <tr>
-              <td colSpan={6} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
-                {selectedContracts.length > 0
-                  ? "Даних не знайдено"
-                  : "Оберіть доповнення"}
-              </td>
-            </tr>
-          )}
+            const isMultiClient = selectedClients.length > 1;
+
+            // Группируем по клиенту (сохраняем порядок)
+            const grouped: { client: string; items: OrdersDetails[] }[] = [];
+            const clientMap = new Map<string, OrdersDetails[]>();
+            detailsList.forEach((item: OrdersDetails) => {
+              const key = item.client || "—";
+              if (!clientMap.has(key)) {
+                clientMap.set(key, []);
+                grouped.push({ client: key, items: clientMap.get(key)! });
+              }
+              clientMap.get(key)!.push(item);
+            });
+
+            return grouped.map((group) => (
+              <React.Fragment key={group.client}>
+                {isMultiClient && (
+                  <tr>
+                    <td 
+                      colSpan={9} 
+                      className={styles.clientGroupHeader}
+                    >
+                      👤 {group.client}
+                    </td>
+                  </tr>
+                )}
+                {group.items.map((item: OrdersDetails) => {
+                  const itemId = getItemId(item);
+                  const isSelected = hasItem(itemId);
+                  const inDelivery = getDeliveryForItem(item);
+
+                  return (
+                    <tr 
+                      key={item.id} 
+                      className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""}`}
+                    >
+                      <td className={styles.td}>{item.contract_supplement}</td>
+                       <td className={styles.td} title={item.nomenclature}>
+                        {getProductName(item)}
+                        {inDelivery && (
+                          <span className={styles.deliveryBadge}>В доставці</span>
+                        )}
+                      </td>
+                      <td className={styles.td}>{item.different}</td>
+                      <td 
+                        className={styles.td}
+                        onClick={() => handlePartyClick(item)}
+                        style={{ 
+                          cursor: item.parties?.length > 0 ? "pointer" : "default",
+                        }}
+                      >
+                        {item.parties?.length > 0 ? (
+                          <div style={{ fontSize: "11px" }}>
+                            {item.parties.map((p, i) => (
+                              <div key={i}>
+                                {p.moved_q} {p.party ? `(${p.party})` : ''}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ opacity: 0.5 }}>-</span>
+                        )}
+                      </td>
+                      <td 
+                        className={styles.td} 
+                        onClick={() => handleRemainsClick(item)}
+                        style={{ 
+                            cursor: item.buh > 0 ? "pointer" : "default",
+                            backgroundColor: item.buh > 0 ? "var(--hover-bg, rgba(0,0,0,0.02))" : "inherit"
+                        }}
+                        title={item.buh > 0 ? "Перейти до залишків" : ""}
+                      >
+                        <div style={{ fontSize: "11px" }}>
+                          <div>Бух: {item.buh}</div>
+                          <div>Скл: {item.skl}</div>
+                        </div>
+                      </td>
+                      <td 
+                        className={styles.td}
+                        onClick={() => handleDemandClick(item)}
+                        style={{ cursor: "pointer" }}
+                        title="Переглянути деталі заявок"
+                      >
+                          {item.orders_q}
+                      </td> 
+                        <td className={styles.td}>
+                          {(() => {
+                            const sumMovedQ = calculateTotalPartiesMoved(item.parties);
+                            const ordersQ = Number(item.orders_q) || 0;
+                            const buhQ = Number(item.buh) || 0;
+                            const sklQ = Number(item.skl) || 0;
+                            const diffQ = Number(item.different) || 0;
+
+                            if (sumMovedQ === 0 && ordersQ > buhQ) {
+                              return <span className={styles.checkmarkRed}>✓</span>;
+                            }
+
+                            if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ>=sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+                              return <span className={styles.checkmarkYellow}>✓</span>;
+                            } else {
+                              return <span className={styles.checkmarkYellow}>✓</span>;
+                            }
+                          })()}
+                      </td>
+                      
+                      <td 
+                         className={styles.td}
+                         style={{ 
+                           textAlign: "center", 
+                           cursor: "pointer",
+                           color: isSelected ? "var(--primary-color, #2563eb)" : "inherit" 
+                         }}
+                         onClick={() => handleDeliveryClick(item)}
+                         title={isSelected ? "Видалити з доставки" : "Додати до доставки"}
+                      >
+                         {addingToDeliveryId === itemId ? (
+                             <Loader2 size={18} className="animate-spin" />
+                         ) : (
+                             <Truck 
+                                size={18} 
+                                fill={isSelected ? "currentColor" : "none"}
+                                strokeWidth={isSelected ? 0 : 2}
+                             />
+                         )}
+                       </td>
+
+                       <td 
+                         className={styles.td}
+                         style={{ textAlign: "center" }}
+                       >
+                         <OrderCommentBadge
+                           orderRef={item.contract_supplement}
+                           productId={item.product}
+                           productName={getProductName(item)}
+                            onClick={() => setCommentModalData({
+                              orderRef: item.contract_supplement,
+                              productId: item.product,
+                              productName: getProductName(item),
+                            })}
+                         />
+                        </td>
+
+                      </tr>
+                  );
+                })}
+              </React.Fragment>
+            ));
+          })()}
         </tbody>
       </table>
 
@@ -455,6 +507,15 @@ export default function DetailsWidget({
           openedFromLink={openedFromLink}
           isMobileProp={isMobile}
         />
+      )}
+
+      {selectedProductForRemainsModal && (
+        <Modal onClose={() => setSelectedProductForRemainsModal(null)}>
+          <DetailsRemains 
+            selectedProductId={selectedProductForRemainsModal.productId} 
+            filterParties={selectedProductForRemainsModal.partyNames}
+          />
+        </Modal>
       )}
     </div>
   );

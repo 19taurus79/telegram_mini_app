@@ -14,9 +14,13 @@ export default function DetailsRemains({
 
   selectedProductId,
 
+  filterParties,
+
 }: {
 
   selectedProductId: string | null;
+
+  filterParties?: string[];
 
 }) {
 
@@ -44,7 +48,7 @@ export default function DetailsRemains({
 
   const {
 
-    data: remainsData,
+    data: rawRemainsData,
 
     isError: isRemainsError,
 
@@ -64,7 +68,14 @@ export default function DetailsRemains({
 
   });
 
-
+  const remainsData = useMemo(() => {
+    if (!rawRemainsData) return null;
+    if (!filterParties || filterParties.length === 0) return rawRemainsData;
+    
+    return rawRemainsData.filter(item => 
+      filterParties.includes(item.nomenclature_series)
+    );
+  }, [rawRemainsData, filterParties]);
 
   const { data: ordersSumData, isFetching: isOrdersSumFetching } = useQuery({
 

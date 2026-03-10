@@ -9,14 +9,14 @@ import clsx from "clsx";
 
 interface ContractsWidgetProps {
   initData: string;
-  selectedClient: Client | null;
+  selectedClients: Client[];
   contracts: Contract[];
   selectedContracts: Contract[];
   onSelectContract: (contract: Contract) => void;
 }
 
 export default function ContractsWidget({
-  selectedClient,
+  selectedClients,
   contracts,
   selectedContracts,
   onSelectContract,
@@ -26,7 +26,7 @@ export default function ContractsWidget({
   } | null>(null);
 
   // Якщо клієнт не обраний, показуємо підказку
-  if (!selectedClient) {
+  if (selectedClients.length === 0) {
     return (
       <div style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
         Оберіть клієнта зі списку

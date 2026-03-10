@@ -9,13 +9,13 @@ import { Search } from "lucide-react";
 
 interface ClientsWidgetProps {
   initData: string;
-  selectedClient: Client | null;
-  onSelectClient: (client: Client) => void;
+  selectedClients: Client[];
+  onSelectClient: (client: Client, isMulti: boolean) => void;
 }
 
 export default function ClientsWidget({
   initData,
-  selectedClient,
+  selectedClients,
   onSelectClient,
 }: ClientsWidgetProps) {
   const [searchValue, setSearchValue] = useState("");
@@ -92,9 +92,9 @@ export default function ClientsWidget({
               <div
                 key={client.id}
                 className={`${styles.listItem} ${
-                  selectedClient?.id === client.id ? styles.listItemSelected : ""
+                  selectedClients.some(c => c.id === client.id) ? styles.listItemSelected : ""
                 }`}
-                onClick={() => onSelectClient(client)}
+                onClick={(e) => onSelectClient(client, e.ctrlKey || e.metaKey)}
               >
                 <span>{client.client}</span>
               </div>

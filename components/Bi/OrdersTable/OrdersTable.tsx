@@ -5,6 +5,12 @@ import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import {
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+} from '@tanstack/react-table';
 
 interface OrdersTableProps {
   orders: BiOrdersItem["orders"];
@@ -26,6 +32,101 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const columns: ColumnDef<BiOrdersItem["orders"][0]>[] = [
+    {
+      accessorKey: 'manager',
+      header: 'Менеджер',
+      size: 150,
+      minSize: 80,
+    },
+    {
+      accessorKey: 'client',
+      header: 'Контрагент',
+      size: 200,
+      minSize: 100,
+    },
+    {
+      accessorKey: 'contract_supplement',
+      header: 'Доповнення',
+      size: 150,
+      minSize: 100,
+    },
+    {
+      accessorKey: 'period',
+      header: 'Період',
+      size: 100,
+      minSize: 80,
+    },
+    {
+      accessorKey: 'document_status',
+      header: 'Статус',
+      size: 120,
+      minSize: 80,
+    },
+    {
+      accessorKey: 'delivery_status',
+      header: 'До постачання',
+      size: 140,
+      minSize: 100,
+    },
+    {
+      accessorKey: 'qty',
+      header: 'Кількість',
+      size: 100,
+      minSize: 60,
+    },
+    {
+      accessorKey: 'moved_qty',
+      header: 'Переміщено',
+      size: 100,
+      minSize: 60,
+    },
+    {
+      id: 'actions',
+      header: '💬',
+      size: 60,
+      minSize: 60,
+      cell: ({ row }) => {
+        const order = row.original;
+        return (
+          <div 
+            className={css.commentCell}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCommentModalData({ 
+                orderRef: order.contract_supplement,
+                productId: productName,
+                productName: productName
+              });
+            }}
+          >
+            <OrderCommentBadge
+              orderRef={order.contract_supplement}
+              productId={productName}
+              productName={productName}
+              onClick={() => {}}
+              onCommentCountChange={(count) => {
+                setCommentCounts(prev => ({
+                  ...prev,
+                  [order.contract_supplement]: count
+                }));
+              }}
+            />
+          </div>
+        );
+      }
+    }
+  ];
+
+  const table = useReactTable({
+    data: orders || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 50,
+    },
+  });
 
   const handleCopy = (contract: string, qty: number) => {
     const textToCopy = `${contract}-${qty}`;
@@ -116,59 +217,57 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
           ) : (
             <table className={css.table}>
               <thead>
-                <tr>
-                  <th className={css.th}>Менеджер</th>
-                  <th className={css.th}>Контрагент</th>
-                  <th className={css.th}>Доповнення</th>
-                  <th className={css.th}>Період</th>
-                  <th className={css.th}>Статус</th>
-                  <th className={css.th}>До постачання</th>
-                  <th className={css.th}>Кількість</th>
-                  <th className={css.th}>Переміщено</th>
-                  <th className={css.th} style={{ width: '60px', textAlign: 'center' }}>💬</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order, index) => (
-                  <tr
-                    key={index}
-                    className={`${css.row} ${css.copyableRow} ${commentCounts[order.contract_supplement] > 0 ? css.hasComments : ''}`}
-                    onClick={() => handleCopy(order.contract_supplement, order.qty)}
-                  >
-                    <td className={css.td} title={order.manager}>{order.manager}</td>
-                    <td className={css.td} title={order.client}>{order.client}</td>
-                    <td className={css.td} title={order.contract_supplement}>{order.contract_supplement}</td>
-                    <td className={css.td} title={order.period}>{order.period}</td>
-                    <td className={css.td} title={order.document_status}>{order.document_status}</td>
-                    <td className={css.td} title={order.delivery_status}>{order.delivery_status}</td>
-                    <td className={css.td} title={order.qty.toString()}>{order.qty}</td>
-                    <td className={css.td} title={order.moved_qty.toString()}>{order.moved_qty}</td>
-                    <td 
-                      className={css.commentCell}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCommentModalData({ 
-                          orderRef: order.contract_supplement,
-                          productId: productName,  // В BI використовуємо назву як ID
-                          productName: productName
-                        });
-                      }}
-                    >
-                      <OrderCommentBadge
-                        orderRef={order.contract_supplement}
-                        productId={productName}  // В BI використовуємо назву як ID
-                        productName={productName}
-                        onClick={() => {}}
-                        onCommentCountChange={(count) => {
-                          setCommentCounts(prev => ({
-                            ...prev,
-                            [order.contract_supplement]: count
-                          }));
-                        }}
-                      />
-                    </td>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className={css.th}
+                        style={{ width: header.getSize() }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={`${css.resizer} ${
+                            header.column.getIsResizing() ? css.isResizing : ''
+                          }`}
+                        />
+                      </th>
+                    ))}
                   </tr>
                 ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map(row => {
+                  const order = row.original;
+                  return (
+                    <tr
+                      key={row.id}
+                      className={`${css.row} ${css.copyableRow} ${commentCounts[order.contract_supplement] > 0 ? css.hasComments : ''}`}
+                      onClick={() => handleCopy(order.contract_supplement, order.qty)}
+                    >
+                      {row.getVisibleCells().map(cell => (
+                        <td
+                          key={cell.id}
+                          className={css.td}
+                          style={{ 
+                            width: cell.column.getSize(),
+                            textAlign: cell.column.id === 'actions' ? 'center' : 'left' 
+                          }}
+                          title={cell.column.id !== 'actions' ? String(cell.getValue()) : ''}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

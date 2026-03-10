@@ -291,8 +291,6 @@ export default function DetailsWidget({
               ) : null;
             }
 
-            const isMultiClient = selectedClients.length > 1;
-
             // Группируем по клиенту (сохраняем порядок)
             const grouped: { client: string; items: OrdersDetails[] }[] = [];
             const clientMap = new Map<string, OrdersDetails[]>();
@@ -307,16 +305,14 @@ export default function DetailsWidget({
 
             return grouped.map((group) => (
               <React.Fragment key={group.client}>
-                {isMultiClient && (
-                  <tr>
-                    <td 
-                      colSpan={9} 
-                      className={styles.clientGroupHeader}
-                    >
-                      👤 {group.client}
-                    </td>
-                  </tr>
-                )}
+                <tr>
+                  <td 
+                    colSpan={9} 
+                    className={styles.clientGroupHeader}
+                  >
+                    👤 {group.client}
+                  </td>
+                </tr>
                 {group.items.map((item: OrdersDetails) => {
                   const itemId = getItemId(item);
                   const isSelected = hasItem(itemId);

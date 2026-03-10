@@ -7,7 +7,7 @@ import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -51,7 +51,6 @@ export default function DetailsWidget({
     partyNames: string[];
   } | null>(null);
 
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const effectiveInitData = useInitData();

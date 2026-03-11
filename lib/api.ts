@@ -931,13 +931,22 @@ export const createOrderComment = async (
   return data;
 };
 
+// Кеш для дедуплікації одночасних запитів
+const commentsPromiseCache = new Map<string, Promise<OrderComment[]>>();
+
 // Отримання коментарів для заявки
 export const getOrderComments = async (
   orderRef: string,
   productId?: string,
   initData?: string
 ) => {
-  const { data } = await axios.get<OrderComment[]>(
+  const cacheKey = `${orderRef}_${initData || ''}`;
+  
+  if (commentsPromiseCache.has(cacheKey)) {
+    return commentsPromiseCache.get(cacheKey)!;
+  }
+
+  const promise = axios.get<OrderComment[]>(
     '/orders/comments/list',
     {
       params: { order_ref: orderRef },
@@ -946,8 +955,15 @@ export const getOrderComments = async (
         'X-Telegram-Init-Data': initData || '',
       },
     }
-  );
-  return data;
+  ).then(res => res.data)
+   .finally(() => {
+     // Видаляємо проміс після завершення (успішного або з помилкою), 
+     // щоб наступні запити могли завантажити свіжі дані, якщо потрібно
+     setTimeout(() => commentsPromiseCache.delete(cacheKey), 2000); 
+   });
+
+  commentsPromiseCache.set(cacheKey, promise);
+  return promise;
 };
 
 // Оновлення коментаря

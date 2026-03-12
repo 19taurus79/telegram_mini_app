@@ -200,26 +200,23 @@ function TableOrderDetail({ details }: Detail) {
               )}
             </div>
             <div
-              className={`${css.cardCellQuantity} ${css.centr}`}
-              style={{
-                color: (() => {
-                  const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
-                  const ordersQ = Number(item.orders_q) || 0;
-                  const buhQ = Number(item.buh) || 0;
-                  const sklQ = Number(item.skl) || 0;
-                  const diffQ = Number(item.quantity) || 0; // В mobile версии different замаплено как quantity
+              className={`${css.cardCellQuantity} ${css.centr} ${(() => {
+                const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
+                const ordersQ = Number(item.orders_q) || 0;
+                const buhQ = Number(item.buh) || 0;
+                const sklQ = Number(item.skl) || 0;
+                const diffQ = Number(item.quantity) || 0;
 
-                  if (sumMovedQ === 0 && ordersQ > buhQ) {
-                    return "red";
-                  }
+                if (sumMovedQ === 0 && ordersQ > buhQ) {
+                  return css.checkmarkRed;
+                }
 
-                  if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
-                    return "green";
-                  } else {
-                    return "orange";
-                  }
-                })()
-              }}
+                if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+                  return css.checkmarkGreen;
+                } else {
+                  return css.checkmarkYellow;
+                }
+              })()}`}
             >
               {item.quantity}
             </div>

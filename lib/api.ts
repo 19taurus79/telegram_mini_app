@@ -432,18 +432,16 @@ export const getOrdersDetailsById = async ({
   orderId,
   initData,
 }: {
-  orderId: string;
+  orderId: string | string[];
   initData: string;
 }) => {
+  const ids = Array.isArray(orderId) ? orderId.join(",") : orderId;
   const { data } = await axios.get<OrdersDetails[]>(
-    `/data/details_for_orders/${orderId}`,
+    `/data/details_for_orders/${ids}`,
     {
       headers: {
         "Content-Type": "application/json",
         "X-Telegram-Init-Data": initData,
-      },
-      params: {
-        orderId: orderId,
       },
     }
   );
@@ -936,20 +934,27 @@ const commentsPromiseCache = new Map<string, Promise<OrderComment[]>>();
 
 // Отримання коментарів для заявки
 export const getOrderComments = async (
-  orderRef: string,
+  orderRef: string | string[],
   productId?: string,
   initData?: string
 ) => {
-  const cacheKey = `${orderRef}_${initData || ''}`;
+  const cacheKey = `${Array.isArray(orderRef) ? orderRef.join(",") : orderRef}_${initData || ''}`;
   
   if (commentsPromiseCache.has(cacheKey)) {
     return commentsPromiseCache.get(cacheKey)!;
   }
 
+  const params = new URLSearchParams();
+  if (Array.isArray(orderRef)) {
+    orderRef.forEach(ref => params.append('order_ref', ref));
+  } else {
+    params.append('order_ref', orderRef);
+  }
+
   const promise = axios.get<OrderComment[]>(
     '/orders/comments/list',
     {
-      params: { order_ref: orderRef },
+      params,
       headers: {
         'Content-Type': 'application/json',
         'X-Telegram-Init-Data': initData || '',
@@ -957,8 +962,6 @@ export const getOrderComments = async (
     }
   ).then(res => res.data)
    .finally(() => {
-     // Видаляємо проміс після завершення (успішного або з помилкою), 
-     // щоб наступні запити могли завантажити свіжі дані, якщо потрібно
      setTimeout(() => commentsPromiseCache.delete(cacheKey), 2000); 
    });
 

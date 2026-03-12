@@ -373,6 +373,15 @@
   outline-offset: -2px;
 }
 
+.draftRow {
+  background-color: rgba(234, 179, 8, 0.08); /* Дуже світлий жовтий */
+  border-left: 4px solid #eab308; /* Акцентна смуга зліва */
+}
+
+.draftRow:hover {
+  background-color: rgba(234, 179, 8, 0.15);
+}
+
 .deliveryBadge {
   background-color: #00c4cc;
   color: white;

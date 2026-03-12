@@ -1,66 +1,91 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { getOrderComments } from '@/lib/api';
 import styles from './OrderCommentBadge.module.css';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCommentsContext } from '../CommentsContext';
+import { OrderComment } from '@/types/types';
 
 interface OrderCommentBadgeProps {
   orderRef: string;
-  productId?: string;
   productName?: string;
   onClick: () => void;
   onCommentCountChange?: (count: number) => void;
+  initData?: string;
+  preloadedComments?: OrderComment[]; // Коментарі, передані ззовні (напр. з батч-запиту)
+  isBatchLoading?: boolean;   // Прапорець, що триває завантаження батчу
 }
 
 export default function OrderCommentBadge({
   orderRef,
-  productId,
   productName,
   onClick,
   onCommentCountChange,
+  initData,
+  preloadedComments: propsComments,
+  isBatchLoading: propsBatchLoading,
 }: OrderCommentBadgeProps) {
-  const [commentCount, setCommentCount] = useState<number>(0);
+  const queryClient = useQueryClient();
+  const { commentsMap, isLoading: contextBatchLoading, isFetched: contextBatchFetched } = useCommentsContext();
 
-  useEffect(() => {
-    const loadComments = async () => {
-      try {
-        // Завантажуємо всі коментарі для заявки
-        const allComments = await getOrderComments(orderRef);
-        
-        // Фільтруємо: показуємо коментарі заявки + коментарі конкретного товару (якщо productId вказаний)
-        const filteredComments = allComments.filter(comment => {
-          // Завжди показуємо коментарі рівня заявки
-          if (comment.comment_type === 'order') {
-            return true;
-          }
-          // Если есть фильтр по товару, показываем комментарии только по ИМЕНИ товара (т.к. ID пересоздается)
-          if (comment.comment_type === 'product') {
-            return productName && comment.product_name === productName;
-          }
-          return false;
-        });
-        
-        setCommentCount(filteredComments.length);
-        onCommentCountChange?.(filteredComments.length);
-      } catch (error) {
-        console.error('Error loading comments:', error);
+  const preloadedComments = propsComments || (commentsMap && commentsMap[orderRef]);
+  const isBatchLoading = propsBatchLoading || contextBatchLoading;
+  const isBatchFetched = contextBatchFetched; // Ми знаємо, що батч-запит взагалі відбувся (успішно чи ні)
+
+  // Використовуємо React Query для отримання коментарів
+  const { data: fetchComments } = useQuery({
+    queryKey: ["comments", orderRef],
+    queryFn: () => getOrderComments(orderRef, productName, initData),
+    staleTime: 60000, 
+    // Запит вмикається ТІЛЬКИ якщо:
+    // 1. Є orderRef
+    // 2. Немає переданих коментарів
+    // 3. Батч-запит НЕ триває ЗАРАЗ
+    // 4. БАТЧ-ЗАПИТ ЩЕ НЕ ВІДБУВСЯ (якщо відбувся і нема даних - значить коментів нема)
+    enabled: !!orderRef && !preloadedComments && !isBatchLoading && !isBatchFetched,
+  });
+
+  const allComments = preloadedComments || fetchComments;
+
+  // Фільтруємо коментарі локально
+  const filteredComments = useMemo(() => {
+    if (!allComments) return [];
+    
+    return allComments.filter(comment => {
+      // Завжди показуємо коментарі рівня заявки
+      if (comment.comment_type === 'order') {
+        return true;
       }
-    };
+      // Якщо є фільтр по товару, показуємо коментарі тільки по ІМЕНІ товару
+      if (comment.comment_type === 'product') {
+        return productName && comment.product_name === productName;
+      }
+      return false;
+    });
+  }, [allComments, productName]);
 
-    loadComments();
+  const commentCount = filteredComments.length;
 
-    // Слухаємо подію оновлення коментарів
+  // Повідомляємо про зміну кількості коментарів
+  useEffect(() => {
+    onCommentCountChange?.(commentCount);
+  }, [commentCount, onCommentCountChange]);
+
+  // Слухаємо подію оновлення коментарів для інвалідації кешу
+  useEffect(() => {
     const handleCommentUpdate = () => {
-      loadComments();
+      queryClient.invalidateQueries({ queryKey: ["comments", orderRef] });
+      // Також інвалідуємо батч-запит, якщо він є
+      queryClient.invalidateQueries({ queryKey: ["batchComments"] });
     };
 
     window.addEventListener('commentUpdated', handleCommentUpdate);
-
     return () => {
       window.removeEventListener('commentUpdated', handleCommentUpdate);
     };
-  }, [orderRef, productId]);
+  }, [queryClient, orderRef]);
 
   return (
     <div className={styles.badge} onClick={onClick} title="Коментарі">

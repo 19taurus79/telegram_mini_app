@@ -57,7 +57,7 @@ export default function OrderCommentModal({
       }
       return false;
     });
-  }, [allComments, productId, productName]);
+  }, [allComments, productName]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

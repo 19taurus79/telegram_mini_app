@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getOrdersDetailsById, getDeliveries, getWeightForProduct } from "@/lib/api";
-import { Client, Contract, OrdersDetails } from "@/types/types";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getOrderComments } from "@/lib/api";
+import { Client, Contract, OrdersDetails, OrderComment } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { useInitData } from "@/lib/useInitData";
@@ -18,6 +18,7 @@ import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommen
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
+import { CommentsProvider } from "@/components/Orders/CommentsContext";
 
 interface DetailsWidgetProps {
   initData: string;
@@ -239,11 +240,8 @@ export default function DetailsWidget({
         if (selectedClients.length === 0) return [];
         
         if (selectedContracts.length > 0) {
-            const promises = selectedContracts.map(contract => 
-                getOrdersDetailsById({ orderId: contract.contract_supplement, initData })
-            );
-            const results = await Promise.all(promises);
-            return results.flat();
+            const contractIdsList = selectedContracts.map(c => c.contract_supplement);
+            return getOrdersDetailsById({ orderId: contractIdsList, initData });
         }
         
          return [];
@@ -251,12 +249,45 @@ export default function DetailsWidget({
     enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
   });
 
+  const queryClient = useQueryClient();
+
+  // Пре-фетч коментарів для всіх заявок одним запитом та наповнення індивідуальних кешів
+  const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
+    queryKey: ["batchComments", contractsIds],
+    queryFn: async () => {
+        const refs = selectedContracts.map(c => c.contract_supplement);
+        const allComments = await getOrderComments(refs, undefined, initData);
+        
+        // Розкладаємо коментарі по індивідуальних кешах для OrderCommentBadge
+        refs.forEach(ref => {
+            const contractComments = allComments.filter(c => c.order_ref === ref);
+            queryClient.setQueryData(["comments", ref], contractComments);
+        });
+        
+        return allComments;
+    },
+    enabled: selectedContracts.length > 0 && !!initData
+  });
+
+  // Групуємо коментарі для швидкого пошуку в таблиці
+  const commentsMap = useMemo(() => {
+    const map: Record<string, OrderComment[]> = {};
+    if (batchCommentsData) {
+      batchCommentsData.forEach(c => {
+        if (!map[c.order_ref]) map[c.order_ref] = [];
+        map[c.order_ref].push(c);
+      });
+    }
+    return map;
+  }, [batchCommentsData]);
+
   const calculateTotalPartiesMoved = (parties: { moved_q: number }[] | undefined) => {
     return parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
   };
 
   return (
-    <div className={styles.tableContainer}>
+    <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
+      <div className={styles.tableContainer}>
       <table className={styles.table}>
         <thead>
           <tr>
@@ -321,10 +352,12 @@ export default function DetailsWidget({
                   return (
                     <tr 
                       key={item.id} 
-                      className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""}`}
+                      className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
+                      title={item.has_draft ? "Є заявки зі статусом 'створено менеджером'" : ""}
                     >
                       <td className={styles.td}>{item.contract_supplement}</td>
-                       <td className={styles.td} title={item.nomenclature}>
+                       <td className={styles.td} title={item.has_draft ? `[Чернетка] ${item.nomenclature}` : item.nomenclature}>
+                        {item.has_draft && <span style={{ marginRight: '5px' }}>⚠️</span>}
                         {getProductName(item)}
                         {inDelivery && (
                           <span className={styles.deliveryBadge}>В доставці</span>
@@ -385,7 +418,7 @@ export default function DetailsWidget({
                             }
 
                             if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ>=sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
-                              return <span className={styles.checkmarkYellow}>✓</span>;
+                              return <span className={styles.checkmarkGreen}>✓</span>;
                             } else {
                               return <span className={styles.checkmarkYellow}>✓</span>;
                             }
@@ -419,8 +452,8 @@ export default function DetailsWidget({
                        >
                          <OrderCommentBadge
                            orderRef={item.contract_supplement}
-                           productId={item.product}
                            productName={getProductName(item)}
+                           initData={effectiveInitData}
                             onClick={() => setCommentModalData({
                               orderRef: item.contract_supplement,
                               productId: item.product,
@@ -512,6 +545,7 @@ export default function DetailsWidget({
           />
         </Modal>
       )}
-    </div>
+      </div>
+    </CommentsProvider>
   );
 }

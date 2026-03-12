@@ -175,3 +175,21 @@
   flex: 1;
   overflow: hidden;
 }
+
+.checkmarkGreen {
+  color: #28a745; /* Яскравий зелений */
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.checkmarkYellow {
+  color: #ffc107; /* Яскравий жовтий/бурштиновий */
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.checkmarkRed {
+  color: #ef4444; /* Яскравий червоний */
+  font-size: 1.2rem;
+  font-weight: bold;
+}

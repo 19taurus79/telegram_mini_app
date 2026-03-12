@@ -187,8 +187,7 @@ export type OrdersDetails = {
     party: string;
     moved_q: number;
   }[];
-  // party: string;
-  // moved_q: number;
+  has_draft?: boolean;
 };
 export type TaskGoogle = {
   kind: string;

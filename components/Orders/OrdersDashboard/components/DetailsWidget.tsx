@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getOrderComments } from "@/lib/api";
-import { Client, Contract, OrdersDetails } from "@/types/types";
+import { Client, Contract, OrdersDetails, OrderComment } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { useInitData } from "@/lib/useInitData";
@@ -271,7 +271,7 @@ export default function DetailsWidget({
 
   // Групуємо коментарі для швидкого пошуку в таблиці
   const commentsMap = useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, OrderComment[]> = {};
     if (batchCommentsData) {
       batchCommentsData.forEach(c => {
         if (!map[c.order_ref]) map[c.order_ref] = [];

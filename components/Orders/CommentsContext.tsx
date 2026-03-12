@@ -1,9 +1,10 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
+import { OrderComment } from "@/types/types";
 
 interface CommentsContextType {
-  commentsMap: Record<string, any[]>;
+  commentsMap: Record<string, OrderComment[]>;
   isLoading: boolean;
   isFetched: boolean;
 }

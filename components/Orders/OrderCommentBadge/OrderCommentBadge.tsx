@@ -6,21 +6,20 @@ import { getOrderComments } from '@/lib/api';
 import styles from './OrderCommentBadge.module.css';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCommentsContext } from '../CommentsContext';
+import { OrderComment } from '@/types/types';
 
 interface OrderCommentBadgeProps {
   orderRef: string;
-  productId?: string;
   productName?: string;
   onClick: () => void;
   onCommentCountChange?: (count: number) => void;
   initData?: string;
-  preloadedComments?: any[]; // Коментарі, передані ззовні (напр. з батч-запиту)
+  preloadedComments?: OrderComment[]; // Коментарі, передані ззовні (напр. з батч-запиту)
   isBatchLoading?: boolean;   // Прапорець, що триває завантаження батчу
 }
 
 export default function OrderCommentBadge({
   orderRef,
-  productId,
   productName,
   onClick,
   onCommentCountChange,

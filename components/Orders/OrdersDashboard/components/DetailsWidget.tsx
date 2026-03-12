@@ -452,7 +452,6 @@ export default function DetailsWidget({
                        >
                          <OrderCommentBadge
                            orderRef={item.contract_supplement}
-                           productId={item.product}
                            productName={getProductName(item)}
                            initData={effectiveInitData}
                             onClick={() => setCommentModalData({

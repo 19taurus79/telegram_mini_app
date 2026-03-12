@@ -223,7 +223,6 @@ function TableOrderDetail({ details }: Detail) {
             <div className={css.commentBadgeCell}>
               <OrderCommentBadge
                 orderRef={item.order}
-                productId={item.product_id}
                 productName={item.product}
                 onClick={() =>
                   setCommentModalData({

@@ -195,7 +195,7 @@ export default function BiPage() {
   const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
     queryKey: ["batchComments", contractsIds],
     queryFn: async () => {
-      const allComments = await getOrderComments(contractsIds, undefined, initData);
+      const allComments = await getOrderComments(contractsIds, undefined, initData ?? undefined);
       
       // Наповнюємо індивідуальні кеші для OrderCommentBadge (щоб вони не робили запити самі)
       contractsIds.forEach(id => {

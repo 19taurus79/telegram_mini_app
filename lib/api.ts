@@ -435,17 +435,28 @@ export const getOrdersDetailsById = async ({
   orderId: string | string[];
   initData: string;
 }) => {
-  const ids = Array.isArray(orderId) ? orderId.join(",") : orderId;
-  const { data } = await axios.get<OrdersDetails[]>(
-    `/data/details_for_orders/${ids}`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "X-Telegram-Init-Data": initData,
-      },
-    }
-  );
-  return data;
+  const isBatch = Array.isArray(orderId);
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  };
+
+  if (isBatch) {
+    const { data } = await axios.post<OrdersDetails[]>(
+      "/data/details_for_orders/batch",
+      orderId,
+      config
+    );
+    return data;
+  } else {
+    const { data } = await axios.get<OrdersDetails[]>(
+      `/data/details_for_orders/${orderId}`,
+      config
+    );
+    return data;
+  }
 };
 
 export const getMovedDataByProduct = async ({
@@ -938,32 +949,28 @@ export const getOrderComments = async (
   productId?: string,
   initData?: string
 ) => {
-  const cacheKey = `${Array.isArray(orderRef) ? orderRef.join(",") : orderRef}_${initData || ''}`;
+  const isBatch = Array.isArray(orderRef);
+  const cacheKey = `${isBatch ? orderRef.join(",") : orderRef}_${initData || ''}`;
   
   if (commentsPromiseCache.has(cacheKey)) {
     return commentsPromiseCache.get(cacheKey)!;
   }
 
-  const params = new URLSearchParams();
-  if (Array.isArray(orderRef)) {
-    orderRef.forEach(ref => params.append('order_ref', ref));
-  } else {
-    params.append('order_ref', orderRef);
-  }
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Telegram-Init-Data': initData || '',
+    },
+  };
 
-  const promise = axios.get<OrderComment[]>(
-    '/orders/comments/list',
-    {
-      params,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Telegram-Init-Data': initData || '',
-      },
-    }
-  ).then(res => res.data)
-   .finally(() => {
-     setTimeout(() => commentsPromiseCache.delete(cacheKey), 2000); 
-   });
+  // Використовуємо POST для масивів (батчинг), щоб уникнути лімітів довжини URL
+  const promise = isBatch 
+    ? axios.post<OrderComment[]>('/orders/comments/list', orderRef, config).then(res => res.data)
+    : axios.get<OrderComment[]>('/orders/comments/list', { ...config, params: { order_ref: orderRef } }).then(res => res.data);
+
+  promise.finally(() => {
+    setTimeout(() => commentsPromiseCache.delete(cacheKey), 2000); 
+  });
 
   commentsPromiseCache.set(cacheKey, promise);
   return promise;

@@ -6,7 +6,7 @@ import { dataForOrderByProduct } from "@/lib/api";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import styles from "./BiPage.module.css";
-import { BiOrders, BiOrdersItem, FiltersState } from "@/types/types";
+import { BiOrders, BiOrdersItem, FiltersState, OrderComment } from "@/types/types";
 import ProductTable from "@/components/Bi/ProductTable/ProductTable";
 import StockDetails from "@/components/Bi/StockDetails/StockDetails";
 import RecommendationsTable from "@/components/Bi/RecommendationsTable/RecommendationsTable";

@@ -15,6 +15,10 @@ import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
 import Loader from "@/components/Loader/Loader";
 import MobileDrawer from "@/components/Bi/MobileDrawer/MobileDrawer";
 import BiDashboard from "@/components/Bi/BiDashboard/BiDashboard";
+import { CommentsProvider } from "@/components/Orders/CommentsContext";
+import { getOrderComments } from "@/lib/api";
+import { useInitData } from "@/store/InitData";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Recommendation {
   product: string;
@@ -36,6 +40,9 @@ export default function BiPage() {
   const [selectedProduct, setSelectedProduct] = useState<BiOrdersItem | null>(
     null
   );
+
+  const queryClient = useQueryClient();
+  const initData = useInitData((state) => state.initData);
 
   const [filters, setFilters] = useState<FiltersState>({
     document_status: [],
@@ -172,6 +179,47 @@ export default function BiPage() {
     return newRecommendations;
   }, [data]);
 
+  // Збираємо всі ID доповнень (контрактів) для батч-запиту коментарів
+  const contractsIds = useMemo(() => {
+    if (!data) return [];
+    const all = [
+      ...(data.missing_but_available || []),
+      ...(data.missing_and_unavailable || []),
+    ];
+    const ids = new Set<string>();
+    all.forEach(p => p.orders.forEach(o => ids.add(o.contract_supplement)));
+    return Array.from(ids);
+  }, [data]);
+
+  // Батч-запит на коментарі для всіх доповнень
+  const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
+    queryKey: ["batchComments", contractsIds],
+    queryFn: async () => {
+      const allComments = await getOrderComments(contractsIds, undefined, initData);
+      
+      // Наповнюємо індивідуальні кеші для OrderCommentBadge (щоб вони не робили запити самі)
+      contractsIds.forEach(id => {
+        const itemComments = allComments.filter(c => c.order_ref === id);
+        queryClient.setQueryData(["comments", id], itemComments);
+      });
+      
+      return allComments;
+    },
+    enabled: contractsIds.length > 0 && !!initData,
+    staleTime: 60000,
+  });
+
+  const commentsMap = useMemo(() => {
+    const map: Record<string, OrderComment[]> = {};
+    if (batchCommentsData) {
+      batchCommentsData.forEach(c => {
+        if (!map[c.order_ref]) map[c.order_ref] = [];
+        map[c.order_ref].push(c);
+      });
+    }
+    return map;
+  }, [batchCommentsData]);
+
   const handleApplyFilters = (newFilters: FiltersState) => {
     setSelectedProduct(null);
     setFilters(newFilters);
@@ -253,7 +301,7 @@ export default function BiPage() {
       );
 
       return (
-        <>
+        <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
           <BiDashboard
             productsAvailable={productsAvailableComponent}
             productsUnavailable={productsUnavailableComponent}
@@ -289,7 +337,7 @@ export default function BiPage() {
               </MobileDrawer>
             </>
           )}
-        </>
+        </CommentsProvider>
       );
     }
 

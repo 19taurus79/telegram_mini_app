@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import { useCommentsContext } from "@/components/Orders/CommentsContext";
 import {
   useReactTable,
   getCoreRowModel,
@@ -24,7 +25,21 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
     productId?: string;
     productName?: string;
   } | null>(null);
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+
+  const { commentsMap } = useCommentsContext();
+
+  const getCommentCount = (orderRef: string, productName?: string) => {
+    const comments = commentsMap[orderRef];
+    if (!comments) return 0;
+    
+    return comments.filter(c => {
+        if (c.comment_type === 'order') return true;
+        if (c.comment_type === 'product') {
+            return productName && c.product_name === productName;
+        }
+        return false;
+    }).length;
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -105,12 +120,6 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
               orderRef={order.contract_supplement}
               productName={productName}
               onClick={() => {}}
-              onCommentCountChange={(count) => {
-                setCommentCounts(prev => ({
-                  ...prev,
-                  [order.contract_supplement]: count
-                }));
-              }}
             />
           </div>
         );
@@ -150,7 +159,7 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
               {orders.map((order, index) => (
                 <div
                   key={index}
-                  className={`${css.mobileCard} ${commentCounts[order.contract_supplement] > 0 ? css.hasComments : ''}`}
+                  className={`${css.mobileCard} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''}`}
                   onClick={() => handleCopy(order.contract_supplement, order.qty)}
                 >
                   <div className={css.cardHeader}>
@@ -171,12 +180,6 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
                         orderRef={order.contract_supplement}
                         productName={productName}
                         onClick={() => {}}
-                        onCommentCountChange={(count) => {
-                          setCommentCounts(prev => ({
-                            ...prev,
-                            [order.contract_supplement]: count
-                          }));
-                        }}
                       />
                     </div>
                   </div>
@@ -247,7 +250,7 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
                   return (
                     <tr
                       key={row.id}
-                      className={`${css.row} ${css.copyableRow} ${commentCounts[order.contract_supplement] > 0 ? css.hasComments : ''}`}
+                      className={`${css.row} ${css.copyableRow} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''}`}
                       onClick={() => handleCopy(order.contract_supplement, order.qty)}
                     >
                       {row.getVisibleCells().map(cell => (

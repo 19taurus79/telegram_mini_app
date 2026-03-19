@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, CSSProperties } from "react";
+import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { getAddressByClient, sendDeliveryData } from "@/lib/api";
@@ -86,7 +86,7 @@ const formatQuantity = (value: number): string => {
  * Позволяет просматривать сгруппированные по клиентам и заказам товары,
  * изменять их количество, а также отправлять данные для оформления доставки.
  */
-export default function DeliveryData() {
+function DeliveryDataContent() {
   // Получение состояния и действий из хранилища Zustand.
   const { delivery, updateQuantity, removeClientDelivery } = useDelivery();
 
@@ -645,5 +645,13 @@ export default function DeliveryData() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DeliveryData() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>Завантаження...</div>}>
+      <DeliveryDataContent />
+    </Suspense>
   );
 }

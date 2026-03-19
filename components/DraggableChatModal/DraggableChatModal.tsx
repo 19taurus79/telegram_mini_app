@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import OrderChatPanel from '@/components/Orders/OrderChatPanel/OrderChatPanel';
 import css from './DraggableChatModal.module.css';
@@ -117,6 +117,15 @@ export default function DraggableChatModal({
     }
   };
 
+  const handleClose = useCallback(() => {
+    onClose();
+
+    // Закрити Mini App якщо відкрито через посилання
+    if (openedFromLink && typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      window.Telegram.WebApp.close();
+    }
+  }, [onClose, openedFromLink]);
+
   // ESC для закриття
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -127,16 +136,7 @@ export default function DraggableChatModal({
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [openedFromLink]);
-
-  const handleClose = () => {
-    onClose();
-
-    // Закрити Mini App якщо відкрито через посилання
-    if (openedFromLink && typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      window.Telegram.WebApp.close();
-    }
-  };
+  }, [handleClose]);
 
   return (
     <>

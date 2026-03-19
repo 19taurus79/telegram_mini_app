@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, CSSProperties } from "react";
+import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { getAddressByClient, sendDeliveryData } from "@/lib/api";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
+import { useSearchParams, useRouter } from "next/navigation";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
 // import {display, width} from "@mui/system";
@@ -85,7 +86,7 @@ const formatQuantity = (value: number): string => {
  * Позволяет просматривать сгруппированные по клиентам и заказам товары,
  * изменять их количество, а также отправлять данные для оформления доставки.
  */
-export default function DeliveryData() {
+function DeliveryDataContent() {
   // Получение состояния и действий из хранилища Zustand.
   const { delivery, updateQuantity, removeClientDelivery } = useDelivery();
 
@@ -112,6 +113,28 @@ export default function DeliveryData() {
   const [isAddressChange, setIsAddressChange] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Автоматичне відкриття модалки зміну кількості за параметром editId
+  React.useEffect(() => {
+    const editId = searchParams.get("editId");
+    if (editId && delivery.length > 0) {
+      const itemToEdit = delivery.find((d) => d.id === editId);
+      if (itemToEdit) {
+        openModal({
+          id: itemToEdit.id,
+          quantity: itemToEdit.quantity,
+          max: itemToEdit.orders_q || itemToEdit.quantity || 999999,
+        });
+
+        // Очищення параметра editId з URL після відкриття модалки
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete("editId");
+        router.replace(`/delivery?${newParams.toString()}`);
+      }
+    }
+  }, [searchParams, delivery]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   /**
@@ -622,5 +645,13 @@ export default function DeliveryData() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DeliveryData() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>Завантаження...</div>}>
+      <DeliveryDataContent />
+    </Suspense>
   );
 }

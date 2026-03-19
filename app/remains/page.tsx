@@ -56,7 +56,7 @@ function RemainsContent() {
       if (searchParam && searchParam !== searchValue) {
           setSearchValue(searchParam);
       }
-  }, [searchParams, setSearchValue]);
+  }, [searchParams, setSearchValue, searchValue]);
 
   // Автовибір елемента, який відповідає пошуку
   useEffect(() => {

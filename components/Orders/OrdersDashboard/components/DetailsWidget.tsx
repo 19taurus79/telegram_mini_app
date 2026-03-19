@@ -4,21 +4,57 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getOrderComments } from "@/lib/api";
 import { Client, Contract, OrdersDetails, OrderComment } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
-import { useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
-import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import { Truck, Loader2 } from "lucide-react";
-import { useDelivery } from "@/store/Delivery";
+import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
-import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
-import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import { CommentsProvider } from "@/components/Orders/CommentsContext";
+import toast from "react-hot-toast";
+
+type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "none";
+
+interface ValidationModalState {
+  isOpen: boolean;
+  item: OrdersDetails | null;
+  type: ValidationType;
+}
+
+const getItemStatus = (item: OrdersDetails) => {
+  const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
+  const ordersQ = Number(item.orders_q) || 0;
+  const buhQ = Number(item.buh) || 0;
+  const sklQ = Number(item.skl) || 0;
+  const diffQ = Number(item.different) || 0;
+
+  let color: "red" | "green" | "yellow" = "yellow";
+  let validationType: ValidationType = "none";
+
+  if (sumMovedQ === 0 && ordersQ > buhQ) {
+    color = "red";
+    validationType = "outOfStock";
+  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+    color = "green";
+    validationType = "none";
+  } else {
+    color = "yellow";
+    validationType = "maybeInTransit";
+  }
+
+  // Дополнительная проверка на количество перемещенного товара
+  if (validationType === "none" || validationType === "maybeInTransit") {
+    if (sumMovedQ > 0 && sumMovedQ < diffQ) {
+      validationType = "insufficientMove";
+    }
+  }
+
+  return { color, validationType, sumMovedQ, diffQ };
+};
 
 interface DetailsWidgetProps {
   initData: string;
@@ -44,28 +80,22 @@ export default function DetailsWidget({
     productId?: string;
     productName?: string;
   } | null>(null);
-  const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
-  const [openedFromLink, setOpenedFromLink] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedProductForRemainsModal, setSelectedProductForRemainsModal] = useState<{
     productId: string;
     partyNames: string[];
   } | null>(null);
+  const [validationModal, setValidationModal] = useState<ValidationModalState>({
+    isOpen: false,
+    item: null,
+    type: "none",
+  });
+  const [editQuantityValue, setEditQuantityValue] = useState<string>("");
 
-  const searchParams = useSearchParams();
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const effectiveInitData = useInitData();
-  const { setDelivery, hasItem } = useDelivery();
+  const { setDelivery, hasItem, updateQuantity } = useDelivery();
 
-  // Детекція мобільного пристрою
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Детекція мобільного пристрою - не потрібна для віджета десктопа, але якщо ми хочемо лишити адаптивність...
+  // Проте в даному файлі вона не використовується далі.
 
   const getItemId = (item: OrdersDetails) => {
     return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
@@ -97,44 +127,24 @@ export default function DetailsWidget({
     enabled: !!effectiveInitData
   });
 
-  // Автоматичне відкриття чату при наявності URL параметра
-  useEffect(() => {
-    const openChat = searchParams.get('openChat');
-    if (openChat === 'true' && selectedContracts.length > 0) {
-      setChatOrderRef(selectedContracts[0].contract_supplement);
-      setIsChatOpen(true);
-      setOpenedFromLink(true);
-    }
-  }, [searchParams, selectedContracts]);
+  // Автоматичне відкриття чату - видалено для десктоп віджета
 
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     const currentName = getProductName(item);
-    
-    // ДОБАВЛЕНО ДЛЯ ДЕБАГА
-    console.log(`[DetailsWidget] Checking item: ${currentName}, REF: ${item.contract_supplement}`);
     
     const delivery = allDeliveries.find(d => {
         const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created" || d.status === "inprogress");
         if (!statusMatch) return false;
         
         return d.items?.some(di => {
-            // Если order_ref стал null (например, при переходе статуса), проверяем только по имени товара
             const isRefNull = !di.order_ref;
             const diRefMatch = isRefNull ? true : (di.order_ref as string).trim() === item.contract_supplement.trim();
             const diProductMatch = di.product?.trim() === currentName;
-            
-            if (diRefMatch) {
-               console.log(`[DetailsWidget] Found matching REF (or null) in delivery #${d.id} for product [${di.product}]. Target Product: [${currentName}]. Match: ${diProductMatch}`);
-            }
             return diRefMatch && diProductMatch;
         });
     });
 
-    if (delivery) {
-       console.log(`[DetailsWidget] FOUND Delivery #${delivery.id} for item ${currentName}`);
-    }
-    
     return delivery;
   };
 
@@ -166,26 +176,66 @@ export default function DetailsWidget({
 
   const [addingToDeliveryId, setAddingToDeliveryId] = useState<string | null>(null);
 
-   const handleDeliveryClick = async (item: OrdersDetails) => {
-
+  const handleAddToDelivery = async (item: OrdersDetails, customQty?: number) => {
+    const itemId = getItemId(item);
     const combinedName = getProductName(item);
+    const isAlreadyIn = hasItem(itemId);
+
+    setAddingToDeliveryId(itemId);
+    try {
+        const weight = await getWeightForProduct({ 
+          item: {
+            product_id: item.product,
+            parties: item.parties
+          }, 
+          initData 
+        });
+
+        const initialQty = customQty !== undefined ? customQty : (item.different > 0 ? item.different : item.orders_q);
+
+        if (isAlreadyIn) {
+            updateQuantity(itemId, initialQty);
+        } else {
+            const deliveryItem = {
+              product: combinedName,
+              nomenclature: item.nomenclature,
+              quantity: initialQty,
+              manager: item.manager,
+              order: item.contract_supplement,
+              client: item.client,
+              id: itemId, 
+              orders_q: item.orders_q,
+              parties: item.parties,
+              buh: item.buh,
+              skl: item.skl,
+              qok: item.qok,
+              weight: weight,
+            };
+            setDelivery(deliveryItem);
+        }
+        toast.success(`Оновлено: ${combinedName} (${initialQty})`);
+    } catch (e) {
+        console.error("Error adding to delivery", e);
+    } finally {
+        setAddingToDeliveryId(null);
+    }
+  };
+
+   const handleDeliveryClick = async (item: OrdersDetails) => {
     const itemId = getItemId(item);
     
     if (hasItem(itemId)) {
-        setDelivery({
-            product: combinedName,
-            nomenclature: item.nomenclature,
-            quantity: item.different,
-            manager: item.manager,
-            order: item.contract_supplement,
-            client: item.client,
-            id: itemId,
-            orders_q: item.orders_q,
-            parties: item.parties,
-            buh: item.buh,
-            skl: item.skl,
-            qok: item.qok,
-            weight: 0
+        // Для видалення достатньо об'єкта з правильним ID за поточною логікою стору
+        setDelivery({ id: itemId } as DeliveryItem); 
+        return;
+    }
+
+    const { validationType } = getItemStatus(item);
+    if (validationType !== "none") {
+        setValidationModal({
+            isOpen: true,
+            item,
+            type: validationType
         });
         return;
     }
@@ -198,38 +248,7 @@ export default function DetailsWidget({
         if (!confirmAdd) return;
     }
 
-    setAddingToDeliveryId(itemId);
-    
-
-    const weight = await getWeightForProduct({ 
-      item: {
-        product_id: item.product,
-        parties: item.parties
-      }, 
-      initData 
-    });
-
-
-    const initialQty = item.different > 0 ? item.different : item.orders_q;
-
-    const deliveryItem = {
-      product: combinedName,
-      nomenclature: item.nomenclature,
-      quantity: initialQty,
-      manager: item.manager,
-      order: item.contract_supplement,
-      client: item.client,
-      id: itemId, 
-      orders_q: item.orders_q,
-      parties: item.parties,
-      buh: item.buh,
-      skl: item.skl,
-      qok: item.qok,
-      weight: weight,
-    };
-    
-    setDelivery(deliveryItem);
-    setAddingToDeliveryId(null);
+    await handleAddToDelivery(item);
   };
 
   const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
@@ -238,12 +257,10 @@ export default function DetailsWidget({
     queryKey: ["ordersDetailsFull", clientIds, contractsIds],
     queryFn: async () => {
         if (selectedClients.length === 0) return [];
-        
         if (selectedContracts.length > 0) {
             const contractIdsList = selectedContracts.map(c => c.contract_supplement);
             return getOrdersDetailsById({ orderId: contractIdsList, initData });
         }
-        
          return [];
     },
     enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
@@ -251,25 +268,20 @@ export default function DetailsWidget({
 
   const queryClient = useQueryClient();
 
-  // Пре-фетч коментарів для всіх заявок одним запитом та наповнення індивідуальних кешів
   const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
     queryKey: ["batchComments", contractsIds],
     queryFn: async () => {
         const refs = selectedContracts.map(c => c.contract_supplement);
         const allComments = await getOrderComments(refs, undefined, initData);
-        
-        // Розкладаємо коментарі по індивідуальних кешах для OrderCommentBadge
         refs.forEach(ref => {
             const contractComments = allComments.filter(c => c.order_ref === ref);
             queryClient.setQueryData(["comments", ref], contractComments);
         });
-        
         return allComments;
     },
     enabled: selectedContracts.length > 0 && !!initData
   });
 
-  // Групуємо коментарі для швидкого пошуку в таблиці
   const commentsMap = useMemo(() => {
     const map: Record<string, OrderComment[]> = {};
     if (batchCommentsData) {
@@ -280,10 +292,6 @@ export default function DetailsWidget({
     }
     return map;
   }, [batchCommentsData]);
-
-  const calculateTotalPartiesMoved = (parties: { moved_q: number }[] | undefined) => {
-    return parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
-  };
 
   return (
     <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
@@ -314,15 +322,12 @@ export default function DetailsWidget({
               return !isLoading ? (
                 <tr>
                   <td colSpan={9} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
-                    {selectedContracts.length > 0
-                      ? "Даних не знайдено"
-                      : "Оберіть доповнення"}
+                    {selectedContracts.length > 0 ? "Даних не знайдено" : "Оберіть доповнення"}
                   </td>
                 </tr>
               ) : null;
             }
 
-            // Группируем по клиенту (сохраняем порядок)
             const grouped: { client: string; items: OrdersDetails[] }[] = [];
             const clientMap = new Map<string, OrdersDetails[]>();
             detailsList.forEach((item: OrdersDetails) => {
@@ -337,12 +342,7 @@ export default function DetailsWidget({
             return grouped.map((group) => (
               <React.Fragment key={group.client}>
                 <tr>
-                  <td 
-                    colSpan={9} 
-                    className={styles.clientGroupHeader}
-                  >
-                    👤 {group.client}
-                  </td>
+                  <td colSpan={9} className={styles.clientGroupHeader}>👤 {group.client}</td>
                 </tr>
                 {group.items.map((item: OrdersDetails) => {
                   const itemId = getItemId(item);
@@ -353,115 +353,43 @@ export default function DetailsWidget({
                     <tr 
                       key={item.id} 
                       className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
-                      title={item.has_draft ? "Є заявки зі статусом 'створено менеджером'" : ""}
                     >
                       <td className={styles.td}>{item.contract_supplement}</td>
-                       <td className={styles.td} title={item.has_draft ? `[Чернетка] ${item.nomenclature}` : item.nomenclature}>
-                        {item.has_draft && <span style={{ marginRight: '5px' }}>⚠️</span>}
+                       <td className={styles.td}>
                         {getProductName(item)}
-                        {inDelivery && (
-                          <span className={styles.deliveryBadge}>В доставці</span>
-                        )}
+                        {inDelivery && <span className={styles.deliveryBadge}>В доставці</span>}
                       </td>
                       <td className={styles.td}>{item.different}</td>
-                      <td 
-                        className={styles.td}
-                        onClick={() => handlePartyClick(item)}
-                        style={{ 
-                          cursor: item.parties?.length > 0 ? "pointer" : "default",
-                        }}
-                      >
+                      <td className={styles.td} onClick={() => handlePartyClick(item)} style={{ cursor: item.parties?.length > 0 ? "pointer" : "default" }}>
                         {item.parties?.length > 0 ? (
                           <div style={{ fontSize: "11px" }}>
                             {item.parties.map((p, i) => (
-                              <div key={i}>
-                                {p.moved_q} {p.party ? `(${p.party})` : ''}
-                              </div>
+                              <div key={i}>{p.moved_q} {p.party ? `(${p.party})` : ''}</div>
                             ))}
                           </div>
-                        ) : (
-                          <span style={{ opacity: 0.5 }}>-</span>
-                        )}
+                        ) : "-"}
                       </td>
-                      <td 
-                        className={styles.td} 
-                        onClick={() => handleRemainsClick(item)}
-                        style={{ 
-                            cursor: item.buh > 0 ? "pointer" : "default",
-                            backgroundColor: item.buh > 0 ? "var(--hover-bg, rgba(0,0,0,0.02))" : "inherit"
-                        }}
-                        title={item.buh > 0 ? "Перейти до залишків" : ""}
-                      >
+                      <td className={styles.td} onClick={() => handleRemainsClick(item)} style={{ cursor: item.buh > 0 ? "pointer" : "default" }}>
                         <div style={{ fontSize: "11px" }}>
                           <div>Бух: {item.buh}</div>
                           <div>Скл: {item.skl}</div>
                         </div>
                       </td>
-                      <td 
-                        className={styles.td}
-                        onClick={() => handleDemandClick(item)}
-                        style={{ cursor: "pointer" }}
-                        title="Переглянути деталі заявок"
-                      >
-                          {item.orders_q}
-                      </td> 
-                        <td className={styles.td}>
+                      <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer" }}>{item.orders_q}</td> 
+                      <td className={styles.td}>
                           {(() => {
-                            const sumMovedQ = calculateTotalPartiesMoved(item.parties);
-                            const ordersQ = Number(item.orders_q) || 0;
-                            const buhQ = Number(item.buh) || 0;
-                            const sklQ = Number(item.skl) || 0;
-                            const diffQ = Number(item.different) || 0;
-
-                            if (sumMovedQ === 0 && ordersQ > buhQ) {
-                              return <span className={styles.checkmarkRed}>✓</span>;
-                            }
-
-                            if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ>=sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
-                              return <span className={styles.checkmarkGreen}>✓</span>;
-                            } else {
-                              return <span className={styles.checkmarkYellow}>✓</span>;
-                            }
+                            const { color } = getItemStatus(item);
+                            if (color === "red") return <span className={styles.checkmarkRed}>✓</span>;
+                            if (color === "green") return <span className={styles.checkmarkGreen}>✓</span>;
+                            return <span className={styles.checkmarkYellow}>✓</span>;
                           })()}
                       </td>
-                      
-                      <td 
-                         className={styles.td}
-                         style={{ 
-                           textAlign: "center", 
-                           cursor: "pointer",
-                           color: isSelected ? "var(--primary-color, #2563eb)" : "inherit" 
-                         }}
-                         onClick={() => handleDeliveryClick(item)}
-                         title={isSelected ? "Видалити з доставки" : "Додати до доставки"}
-                      >
-                         {addingToDeliveryId === itemId ? (
-                             <Loader2 size={18} className="animate-spin" />
-                         ) : (
-                             <Truck 
-                                size={18} 
-                                fill={isSelected ? "currentColor" : "none"}
-                                strokeWidth={isSelected ? 0 : 2}
-                             />
-                         )}
+                      <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>
+                         {addingToDeliveryId === itemId ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 0 : 2} />}
                        </td>
-
-                       <td 
-                         className={styles.td}
-                         style={{ textAlign: "center" }}
-                       >
-                         <OrderCommentBadge
-                           orderRef={item.contract_supplement}
-                           productName={getProductName(item)}
-                           initData={effectiveInitData}
-                            onClick={() => setCommentModalData({
-                              orderRef: item.contract_supplement,
-                              productId: item.product,
-                              productName: getProductName(item),
-                            })}
-                         />
+                       <td className={styles.td} style={{ textAlign: "center" }}>
+                         <OrderCommentBadge orderRef={item.contract_supplement} productName={getProductName(item)} initData={effectiveInitData} onClick={() => setCommentModalData({ orderRef: item.contract_supplement, productId: item.product, productName: getProductName(item) })} />
                         </td>
-
                       </tr>
                   );
                 })}
@@ -471,78 +399,83 @@ export default function DetailsWidget({
         </tbody>
       </table>
 
-      {/* Плаваюча кнопка чату */}
-      {selectedContracts.length > 0 && (isMobile ? !chatOrderRef : !isChatOpen) && (
-        <ChatFABButton 
-          orderRef={selectedContracts[0].contract_supplement}
-          onClick={() => {
-            if (isMobile) {
-              setChatOrderRef(selectedContracts[0].contract_supplement);
-            } else {
-              setIsChatOpen(true);
-            }
-          }}
-          initData={effectiveInitData}
-        />
-      )}
-
       {selectedProductForModal && (
-          <Modal onClose={closeModal}>
-              <DetailsOrdersByProduct selectedProductId={selectedProductForModal} />
-          </Modal>
+          <Modal onClose={closeModal}><DetailsOrdersByProduct selectedProductId={selectedProductForModal} /></Modal>
       )}
 
       {commentModalData && (
-        <OrderCommentModal
-          orderRef={commentModalData.orderRef}
-          commentType="product"
-          productId={commentModalData.productId}
-          productName={commentModalData.productName}
-          onClose={() => setCommentModalData(null)}
-        />
-      )}
-
-      {/* Вбудований чат для десктопа */}
-      {!isMobile && isChatOpen && selectedContracts.length > 0 && (
-        <div className={styles.embeddedChatSection}>
-          <div className={styles.embeddedChatHeader}>
-            <h3>Чат заявки {selectedContracts[0].contract_supplement}</h3>
-            <button 
-              className={styles.closeEmbeddedBtn}
-              onClick={() => setIsChatOpen(false)}
-              title="Закрити чат"
-            >
-              ×
-            </button>
-          </div>
-          <div className={styles.embeddedChatContent}>
-            <OrderChatPanel orderRef={selectedContracts[0].contract_supplement} />
-          </div>
-        </div>
-      )}
-
-      {/* Модальний чат для мобільних */}
-      {isMobile && chatOrderRef && (
-        <DraggableChatModal
-          orderRef={chatOrderRef}
-          onClose={() => {
-            setChatOrderRef(null);
-            setOpenedFromLink(false);
-            if (openedFromLink && typeof window !== 'undefined' && window.Telegram?.WebApp) {
-              window.Telegram.WebApp.close();
-            }
-          }}
-          openedFromLink={openedFromLink}
-          isMobileProp={isMobile}
-        />
+        <OrderCommentModal orderRef={commentModalData.orderRef} commentType="product" productId={commentModalData.productId} productName={commentModalData.productName} onClose={() => setCommentModalData(null)} />
       )}
 
       {selectedProductForRemainsModal && (
-        <Modal onClose={() => setSelectedProductForRemainsModal(null)}>
-          <DetailsRemains 
-            selectedProductId={selectedProductForRemainsModal.productId} 
-            filterParties={selectedProductForRemainsModal.partyNames}
-          />
+        <Modal onClose={() => setSelectedProductForRemainsModal(null)}><DetailsRemains selectedProductId={selectedProductForRemainsModal.productId} filterParties={selectedProductForRemainsModal.partyNames} /></Modal>
+      )}
+
+      {/* Валідаційна модалка */}
+      {validationModal.isOpen && validationModal.item && (
+        <Modal onClose={() => setValidationModal({ isOpen: false, item: null, type: "none" })}>
+          <div className={styles.validationModalContent}>
+            <h4 className={styles.modalTitle}>
+              {validationModal.type === "editingQuantity" ? "Зміна кількості" : "Увага!"}
+            </h4>
+            <div className={styles.modalBody}>
+              {validationModal.type === "outOfStock" && <p>Даного товару немає в наявності</p>}
+              {validationModal.type === "maybeInTransit" && <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>}
+              {validationModal.type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
+              
+              {validationModal.type === "editingQuantity" && (
+                <div className={styles.editQtyContainer}>
+                   <label htmlFor="deskQtyInput" className={styles.inputLabel}>Введіть кількість:</label>
+                   <input id="deskQtyInput" type="number" className={styles.modalInput} value={editQuantityValue} onChange={(e) => setEditQuantityValue(e.target.value)} autoFocus />
+                </div>
+              )}
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setValidationModal({ isOpen: false, item: null, type: "none" })}>Скасувати</button>
+              
+              {validationModal.type === "insufficientMove" && (
+                <button 
+                  className={styles.changeQtyBtn} 
+                  onClick={() => {
+                    const { sumMovedQ } = getItemStatus(validationModal.item!);
+                    setEditQuantityValue(String(sumMovedQ));
+                    setValidationModal(prev => ({ ...prev, type: "editingQuantity" }));
+                  }}
+                >
+                  Змінити кількість
+                </button>
+              )}
+              
+              {validationModal.type === "editingQuantity" ? (
+                <button 
+                  className={styles.confirmBtn} 
+                  onClick={async () => {
+                    const item = validationModal.item!;
+                    const qty = Number(editQuantityValue);
+                    if (isNaN(qty) || qty < 0) {
+                        toast.error("Введіть коректну кількість");
+                        return;
+                    }
+                    setValidationModal({ isOpen: false, item: null, type: "none" });
+                    await handleAddToDelivery(item, qty);
+                  }}
+                >
+                  Зберегти
+                </button>
+              ) : (
+                <button 
+                  className={styles.confirmBtn} 
+                  onClick={async () => {
+                    const item = validationModal.item!;
+                    setValidationModal({ isOpen: false, item: null, type: "none" });
+                    await handleAddToDelivery(item);
+                  }}
+                >
+                  {validationModal.type === "insufficientMove" ? "Продовжити все одно" : "Додати все одно"}
+                </button>
+              )}
+            </div>
+          </div>
         </Modal>
       )}
       </div>

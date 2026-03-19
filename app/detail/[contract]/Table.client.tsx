@@ -17,6 +17,7 @@ import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommen
 import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
+import Modal from "@/components/Modal/Modal";
 
 type OrderDetailItem = {
   orders_q: number;
@@ -31,7 +32,7 @@ type OrderDetailItem = {
   id: string;
   product_id: string;
   nomenclature: string;
-  total_weight?: number; // Предполагаем, что это поле будет приходить от бэкенда
+  total_weight?: number; 
   parties: {
     party: string;
     moved_q: number;
@@ -42,8 +43,47 @@ type Detail = {
   details: OrderDetailItem[];
 };
 
+type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "none";
+
+interface ValidationModalState {
+  isOpen: boolean;
+  item: OrderDetailItem | null;
+  type: ValidationType;
+}
+
+const getItemStatus = (item: OrderDetailItem) => {
+  const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
+  const ordersQ = Number(item.orders_q) || 0;
+  const buhQ = Number(item.buh) || 0;
+  const sklQ = Number(item.skl) || 0;
+  const diffQ = Number(item.quantity) || 0;
+
+  let color: "red" | "green" | "yellow" = "yellow";
+  let validationType: ValidationType = "none";
+
+  if (sumMovedQ === 0 && ordersQ > buhQ) {
+    color = "red";
+    validationType = "outOfStock";
+  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+    color = "green";
+    validationType = "none";
+  } else {
+    color = "yellow";
+    validationType = "maybeInTransit";
+  }
+
+  // Дополнительная проверка на количество перемещенного товара
+  if (validationType === "none" || validationType === "maybeInTransit") {
+    if (sumMovedQ > 0 && sumMovedQ < diffQ) {
+      validationType = "insufficientMove";
+    }
+  }
+
+  return { color, validationType, sumMovedQ, diffQ };
+};
+
 function TableOrderDetail({ details }: Detail) {
-  const { delivery, setDelivery } = useDelivery();
+  const { delivery, setDelivery, updateQuantity, hasItem } = useDelivery();
   const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null);
   const [commentModalData, setCommentModalData] = React.useState<{
     orderRef: string;
@@ -54,6 +94,13 @@ function TableOrderDetail({ details }: Detail) {
   const [openedFromLink, setOpenedFromLink] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const [validationModal, setValidationModal] = React.useState<ValidationModalState>({
+    isOpen: false,
+    item: null,
+    type: "none",
+  });
+  const [editQuantityValue, setEditQuantityValue] = React.useState<string>("");
+  
   const initData = useInitData();
   const searchParams = useSearchParams();
 
@@ -91,34 +138,62 @@ function TableOrderDetail({ details }: Detail) {
     }
   }, [searchParams, details]);
 
-   const getDeliveryForItem = (item: OrderDetailItem) => {
+  const getDeliveryForItem = (item: OrderDetailItem) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     
-    // ДОБАВЛЕНО ДЛЯ ДЕБАГА
-    console.log(`[TableClient] Checking item: ${item.product}, REF: ${item.order}`);
-
     const delivery = allDeliveries.find(d => {
         const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created" || d.status === "inprogress");
         if (!statusMatch) return false;
         
         return d.items?.some(di => {
-             // Если order_ref стал null (например, при переходе статуса), проверяем только по имени товара
              const isRefNull = !di.order_ref;
              const diRefMatch = isRefNull ? true : (di.order_ref || "").trim() === item.order.trim();
              const diProductMatch = di.product?.trim() === item.product.trim();
-             
-             if (diRefMatch) {
-               console.log(`[TableClient] Found matching REF (or null) in delivery #${d.id} for product [${di.product}]. Target Product: [${item.product}]. Match: ${diProductMatch}`);
-             }
              return diRefMatch && diProductMatch;
         });
     });
-
-    if (delivery) {
-       console.log(`[TableClient] FOUND Delivery #${delivery.id} for item ${item.product}`);
-    }
     
     return delivery;
+  };
+
+  const handleAddToDelivery = async (item: OrderDetailItem, customQty?: number) => {
+    const itemId = item.id;
+    const isAlreadyIn = hasItem(itemId);
+
+    if (!isAlreadyIn) {
+        const existingDelivery = getDeliveryForItem(item);
+        if (existingDelivery) {
+            const confirmAdd = window.confirm(
+                `Цей товар уже у доставці №${existingDelivery.id} (статус: ${existingDelivery.status}).\nВи впевнені, що хочете додати його ще раз?`
+            );
+            if (!confirmAdd) return;
+        }
+    }
+
+    setAddingToDeliveryId(itemId);
+    try {
+        const weight = await getWeightForProduct({ item, initData });
+        const finalQty = customQty !== undefined ? customQty : item.quantity;
+        
+        if (isAlreadyIn) {
+            updateQuantity(itemId, finalQty);
+        } else {
+            setDelivery({ ...item, quantity: finalQty, weight });
+        }
+        
+        toast.success(`Оновлено: ${item.product} (Кількість: ${finalQty})`);
+    } catch (e) {
+        console.error("Error adding to delivery", e);
+        const finalQty = customQty !== undefined ? customQty : item.quantity;
+        if (isAlreadyIn) {
+             updateQuantity(itemId, finalQty);
+        } else {
+             setDelivery({ ...item, quantity: finalQty, weight: 0 });
+        }
+        toast.error("Додано без ваги (помилка розрахунку)");
+    } finally {
+        setAddingToDeliveryId(null);
+    }
   };
 
   const isSelected = (id: string) => delivery.some((el) => el.id === id);
@@ -127,7 +202,6 @@ function TableOrderDetail({ details }: Detail) {
   const HandleClick = async ({ party }: { party: string }) => {
     try {
       const remainsId = await getIdRemainsByParty({ party, initData });
-      
       if (remainsId && remainsId.length > 0 && remainsId[0]?.id) {
           router.push(`/party_data/${remainsId[0].id}`);
       } else {
@@ -162,29 +236,18 @@ function TableOrderDetail({ details }: Detail) {
               onClick={async () => {
                  if (addingToDeliveryId === item.id) return;
                  
-                 const isItemInDelivery = delivery.some((el) => el.id === item.id);
-                 
+                 const isItemInDelivery = isSelected(item.id);
                  if (!isItemInDelivery) {
-                     const existingDelivery = getDeliveryForItem(item);
-                     if (existingDelivery) {
-                         const confirmAdd = window.confirm(
-                             `Цей товар уже у доставці №${existingDelivery.id} (статус: ${existingDelivery.status}).\nВи впевнені, що хочете додати його ще раз?`
-                         );
-                         if (!confirmAdd) return;
-                     }
-
-                      setAddingToDeliveryId(item.id);
-                      try {
-                          const weight = await getWeightForProduct({ item, initData });
-                          setDelivery({ ...item, weight });
-                          toast.success(`Додано: ${item.product}`);
-                      } catch (e) {
-                          console.error("Error adding to delivery", e);
-                          setDelivery({ ...item, weight: 0 });
-                          toast.error("Додано без ваги (помилка розрахунку)");
-                      } finally {
-                          setAddingToDeliveryId(null);
+                      const { validationType } = getItemStatus(item);
+                      if (validationType !== "none") {
+                          setValidationModal({
+                              isOpen: true,
+                              item,
+                              type: validationType
+                          });
+                          return;
                       }
+                      await handleAddToDelivery(item);
                  } else {
                      setDelivery(item);
                      toast.success(`Вилучено: ${item.product}`);
@@ -201,21 +264,10 @@ function TableOrderDetail({ details }: Detail) {
             </div>
             <div
               className={`${css.cardCellQuantity} ${css.centr} ${(() => {
-                const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
-                const ordersQ = Number(item.orders_q) || 0;
-                const buhQ = Number(item.buh) || 0;
-                const sklQ = Number(item.skl) || 0;
-                const diffQ = Number(item.quantity) || 0;
-
-                if (sumMovedQ === 0 && ordersQ > buhQ) {
-                  return css.checkmarkRed;
-                }
-
-                if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
-                  return css.checkmarkGreen;
-                } else {
-                  return css.checkmarkYellow;
-                }
+                const { color } = getItemStatus(item);
+                if (color === "red") return css.checkmarkRed;
+                if (color === "green") return css.checkmarkGreen;
+                return css.checkmarkYellow;
               })()}`}
             >
               {item.quantity}
@@ -276,7 +328,6 @@ function TableOrderDetail({ details }: Detail) {
         />
       )}
 
-      {/* Плаваюча кнопка чату */}
       {details.length > 0 && details[0]?.order && (isMobile ? !chatOrderRef : !isChatOpen) && (
         <ChatFABButton
           orderRef={details[0].order}
@@ -291,26 +342,92 @@ function TableOrderDetail({ details }: Detail) {
         />
       )}
 
-      {/* Вбудований чат для десктопа */}
-      {!isMobile && isChatOpen && details.length > 0 && details[0]?.order && (
-        <div className={css.embeddedChatSection}>
-          <div className={css.embeddedChatHeader}>
-            <h3>Чат заявки {details[0].order}</h3>
-            <button 
-              className={css.closeEmbeddedBtn}
-              onClick={() => setIsChatOpen(false)}
-              title="Закрити чат"
-            >
-              ×
-            </button>
+      {/* Валідаційна модалка */}
+      {validationModal.isOpen && validationModal.item && (
+        <Modal onClose={() => setValidationModal({ isOpen: false, item: null, type: "none" })}>
+          <div className={css.validationModalContent}>
+            <h4 className={css.modalTitle}>
+              {validationModal.type === "editingQuantity" ? "Зміна кількості" : "Увага!"}
+            </h4>
+            <div className={css.modalBody}>
+              {validationModal.type === "outOfStock" && (
+                <p>Даного товару немає в наявності</p>
+              )}
+              {validationModal.type === "maybeInTransit" && (
+                <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>
+              )}
+              {validationModal.type === "insufficientMove" && (
+                <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>
+              )}
+              
+              {validationModal.type === "editingQuantity" && (
+                <div className={css.editQtyContainer}>
+                   <label htmlFor="qtyInput" className={css.inputLabel}>Введіть кількість:</label>
+                   <input 
+                      id="qtyInput"
+                      type="number" 
+                      className={css.modalInput}
+                      value={editQuantityValue}
+                      onChange={(e) => setEditQuantityValue(e.target.value)}
+                      autoFocus
+                   />
+                </div>
+              )}
+            </div>
+            <div className={css.modalActions}>
+              <button 
+                className={css.cancelBtn} 
+                onClick={() => setValidationModal({ isOpen: false, item: null, type: "none" })}
+              >
+                Скасувати
+              </button>
+              
+              {validationModal.type === "insufficientMove" && (
+                <button 
+                  className={css.changeQtyBtn} 
+                  onClick={() => {
+                    const { sumMovedQ } = getItemStatus(validationModal.item!);
+                    setEditQuantityValue(String(sumMovedQ));
+                    setValidationModal(prev => ({ ...prev, type: "editingQuantity" }));
+                  }}
+                >
+                  Змінити кількість
+                </button>
+              )}
+              
+              {validationModal.type === "editingQuantity" ? (
+                <button 
+                  className={css.confirmBtn} 
+                  onClick={async () => {
+                    const item = validationModal.item!;
+                    const qty = Number(editQuantityValue);
+                    if (isNaN(qty) || qty < 0) {
+                        toast.error("Введіть коректну кількість");
+                        return;
+                    }
+                    setValidationModal({ isOpen: false, item: null, type: "none" });
+                    await handleAddToDelivery(item, qty);
+                  }}
+                >
+                  Зберегти
+                </button>
+              ) : (
+                <button 
+                  className={css.confirmBtn} 
+                  onClick={async () => {
+                    const item = validationModal.item!;
+                    setValidationModal({ isOpen: false, item: null, type: "none" });
+                    await handleAddToDelivery(item);
+                  }}
+                >
+                  {validationModal.type === "insufficientMove" ? "Продовжити все одно" : "Додати все одно"}
+                </button>
+              )}
+            </div>
           </div>
-          <div className={css.embeddedChatContent}>
-            <OrderChatPanel orderRef={details[0].order} />
-          </div>
-        </div>
+        </Modal>
       )}
 
-      {/* Модальний чат для мобільних (Bottom Sheet) */}
       {isMobile && chatOrderRef && (
         <DraggableChatModal
           orderRef={chatOrderRef}

@@ -69,7 +69,6 @@
 }
 
 /* React Grid Layout Overrides */
-/* Override react-grid-layout styles */
 .gridLayout :global(.react-grid-item) {
   transition: all 200ms ease;
   transition-property: left, top;
@@ -117,8 +116,6 @@
 }
 
 /* Specific Widget Styles */
-
-/* Search */
 .searchWrapper {
   position: relative;
   padding: 8px;
@@ -299,7 +296,7 @@
   border-color: var(--primary-color);
 }
 
-/* Table Styles (similar to others) */
+/* Table Styles */
 .tableContainer {
     flex: 1;
     overflow: auto;
@@ -333,31 +330,23 @@
   text-overflow: ellipsis;
 }
 
-/* Mobile Layout */
-.mobileLayout {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
 .checkmarkGreen {
-  color: #28a745; /* Яскравий зелений */
+  color: #28a745; 
   font-size: 22px;
   font-weight: 900;
 }
 
 .checkmarkYellow {
-  color: #ffc107; /* Яскравий жовтий/бурштиновий */
+  color: #ffc107; 
   font-size: 22px;
   font-weight: 900;
 }
 
 .checkmarkRed {
-  color: #ef4444; /* Яскравий червоний */
+  color: #ef4444; 
   font-size: 22px;
   font-weight: 900;
 }
-
 
 .selectedRow {
   background-color: #406939;
@@ -374,8 +363,8 @@
 }
 
 .draftRow {
-  background-color: rgba(234, 179, 8, 0.08); /* Дуже світлий жовтий */
-  border-left: 4px solid #eab308; /* Акцентна смуга зліва */
+  background-color: rgba(234, 179, 8, 0.08); 
+  border-left: 4px solid #eab308; 
 }
 
 .draftRow:hover {
@@ -445,7 +434,6 @@
   overflow: hidden;
 }
 
-/* Client group header for multi-select */
 .clientGroupHeader {
   background-color: #2d3748;
   color: #e2e8f0;
@@ -457,4 +445,106 @@
   position: sticky;
   top: 32px;
   z-index: 5;
+}
+
+/* --- Validation Modal Content --- */
+.validationModalContent {
+  width: 100%;
+  max-width: 400px;
+}
+
+.modalTitle {
+  margin: -20px -20px 0 -20px; 
+  padding: 15px 20px;
+  background-color: var(--header-bg-color, #f8f9fa);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.modalBody {
+  padding: 20px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.modalActions {
+  margin: 0 -20px -20px -20px; 
+  padding: 15px 20px;
+  background-color: var(--header-bg-color, #f8f9fa);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.confirmBtn, .cancelBtn, .changeQtyBtn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.confirmBtn {
+  background-color: var(--primary-color, #0070f3);
+  color: white;
+}
+
+.confirmBtn:hover {
+  opacity: 0.9;
+}
+
+.cancelBtn {
+  background-color: var(--secondary-bg-color, #e2e8f0);
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+.cancelBtn:hover {
+  opacity: 1;
+}
+
+.changeQtyBtn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* --- Inline Edit Quantity --- */
+.editQtyContainer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modalInput:focus {
+  border-color: var(--primary-color);
 }

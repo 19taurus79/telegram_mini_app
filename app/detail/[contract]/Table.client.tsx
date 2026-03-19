@@ -14,7 +14,6 @@ import React from "react";
 import toast from "react-hot-toast";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
-import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import Modal from "@/components/Modal/Modal";

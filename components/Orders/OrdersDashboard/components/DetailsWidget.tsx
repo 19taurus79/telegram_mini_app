@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrdersDetailsById, getDeliveries, getWeightForProduct, getOrderComments } from "@/lib/api";
 import { Client, Contract, OrdersDetails, OrderComment } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
 import { useSearchParams } from "next/navigation";
@@ -92,7 +92,6 @@ export default function DetailsWidget({
   });
   const [editQuantityValue, setEditQuantityValue] = useState<string>("");
 
-  const searchParams = useSearchParams();
   const effectiveInitData = useInitData();
   const { setDelivery, hasItem, updateQuantity } = useDelivery();
 

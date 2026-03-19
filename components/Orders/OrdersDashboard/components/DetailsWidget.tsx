@@ -7,17 +7,14 @@ import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState, useEffect } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
-import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import { Truck, Loader2 } from "lucide-react";
-import { useDelivery } from "@/store/Delivery";
+import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
-import OrderChatPanel from "@/components/Orders/OrderChatPanel/OrderChatPanel";
-import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import { CommentsProvider } from "@/components/Orders/CommentsContext";
 import toast from "react-hot-toast";
 
@@ -84,9 +81,6 @@ export default function DetailsWidget({
     productId?: string;
     productName?: string;
   } | null>(null);
-  const [chatOrderRef, setChatOrderRef] = useState<string | null>(null);
-  const [openedFromLink, setOpenedFromLink] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedProductForRemainsModal, setSelectedProductForRemainsModal] = useState<{
     productId: string;
     partyNames: string[];
@@ -99,20 +93,11 @@ export default function DetailsWidget({
   const [editQuantityValue, setEditQuantityValue] = useState<string>("");
 
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const effectiveInitData = useInitData();
   const { setDelivery, hasItem, updateQuantity } = useDelivery();
 
-  // Детекція мобільного пристрою
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Детекція мобільного пристрою - не потрібна для віджета десктопа, але якщо ми хочемо лишити адаптивність...
+  // Проте в даному файлі вона не використовується далі.
 
   const getItemId = (item: OrdersDetails) => {
     return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
@@ -144,15 +129,7 @@ export default function DetailsWidget({
     enabled: !!effectiveInitData
   });
 
-  // Автоматичне відкриття чату при наявності URL параметра
-  useEffect(() => {
-    const openChat = searchParams.get('openChat');
-    if (openChat === 'true' && selectedContracts.length > 0) {
-      setChatOrderRef(selectedContracts[0].contract_supplement);
-      setIsChatOpen(true);
-      setOpenedFromLink(true);
-    }
-  }, [searchParams, selectedContracts]);
+  // Автоматичне відкриття чату - видалено для десктоп віджета
 
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
@@ -250,7 +227,8 @@ export default function DetailsWidget({
     const itemId = getItemId(item);
     
     if (hasItem(itemId)) {
-        setDelivery({} as any); // toggle
+        // Для видалення достатньо об'єкта з правильним ID за поточною логікою стору
+        setDelivery({ id: itemId } as DeliveryItem); 
         return;
     }
 

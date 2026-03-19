@@ -7,7 +7,6 @@ import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
-import { useSearchParams } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";

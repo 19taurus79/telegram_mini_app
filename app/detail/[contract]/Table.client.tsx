@@ -441,6 +441,14 @@ function TableOrderDetail({ details }: Detail) {
           isMobileProp={isMobile}
         />
       )}
+
+      {!isMobile && isChatOpen && details.length > 0 && (
+        <DraggableChatModal
+          orderRef={details[0].order}
+          onClose={() => setIsChatOpen(false)}
+          isMobileProp={isMobile}
+        />
+      )}
     </div>
   );
 }

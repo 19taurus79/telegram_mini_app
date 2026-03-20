@@ -12,6 +12,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getContracts } from "@/lib/api";
 import { Client, Contract } from "@/types/types";
 import { Layers, RotateCcw } from "lucide-react";
+import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
+import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
+import { useInitData } from "@/lib/useInitData";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -27,7 +30,7 @@ const defaultLayouts: Layouts = {
   md: [
     { i: "clients", x: 0, y: 0, w: 3, h: 12, minW: 2, minH: 6 },
     { i: "contracts", x: 3, y: 0, w: 3, h: 12, minW: 2, minH: 6 },
-    { i: "details", x: 6, y: 0, w: 4, h: 12, minW: 4, minH: 6 },
+    { i: "details", x: 6, y: 4, w: 4, h: 12, minW: 4, minH: 6 },
   ],
   sm: [
     { i: "clients", x: 0, y: 0, w: 6, h: 6, minW: 6, minH: 4 },
@@ -46,6 +49,13 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   const [selectedContracts, setSelectedContracts] = useState<Contract[]>([]);
   const [showAllContracts, setShowAllContracts] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  const effectiveInitData = useInitData() || initData;
+
+  const chatOrderRef = useMemo(() => {
+    return selectedContracts.length > 0 ? selectedContracts[0].contract_supplement : null;
+  }, [selectedContracts]);
 
   // Запит на отримання контрактів обраних клієнтів
   const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
@@ -265,6 +275,21 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
           </div>
         </div>
       </ResponsiveGridLayout>
+
+      {chatOrderRef && !isChatOpen && (
+        <ChatFABButton
+          orderRef={chatOrderRef}
+          onClick={() => setIsChatOpen(true)}
+          initData={effectiveInitData}
+        />
+      )}
+
+      {chatOrderRef && isChatOpen && (
+        <DraggableChatModal
+          orderRef={chatOrderRef}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 }

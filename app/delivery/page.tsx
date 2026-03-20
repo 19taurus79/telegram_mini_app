@@ -257,7 +257,7 @@ function DeliveryDataContent() {
                   } else {
                     setFormData({ ...formData, address: "", contact: "", phone: "", date: "", comment: "" });
                   }
-                } catch (_e) {
+                } catch {
                   setFormData({ ...formData, address: "", contact: "", phone: "", date: "", comment: "" });
                 } finally {
                   setIsLoading(false);
@@ -447,7 +447,7 @@ function DeliveryDataContent() {
                         setIsLoading(false);
                         return;
                       }
-                    } catch (_e) {
+                    } catch {
                       setFormError("Помилка з'єднання");
                       setIsLoading(false);
                       return;
@@ -503,7 +503,7 @@ function DeliveryDataContent() {
                     } else {
                       setFormError("Помилка сервера");
                     }
-                  } catch (_error) {
+                  } catch {
                     setFormError("Помилка мережі");
                   } finally {
                     setIsLoading(false);

@@ -36,7 +36,7 @@ export default function ClientTasks() {
     }
   }, []);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<Task[]>({
     queryKey: ["tasks", initData],
     queryFn: () => getAllTasks(initData!),
     enabled: !!initData,

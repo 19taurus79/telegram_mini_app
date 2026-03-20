@@ -1,30 +1,41 @@
 .listContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  list-style: none;
+  gap: 12px;
+  padding: 1.5rem;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .listItemButton {
-  background-color: var(--background);
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  padding: 16px 20px;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .listItemButton:hover {
-  background-color: #333333; /* или var(--hover-bg), если используешь переменные */
-  color: #ffffff;
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
+  transform: translateX(6px);
 }
+
+.listItemButton:active {
+  transform: translateX(4px) scale(0.98);
+}
+
 .ref {
   display: block;
   width: 100%;
+  text-decoration: none;
 }
 
 .desktopOnly {
@@ -45,4 +56,27 @@
   .mobileOnly {
     display: block;
   }
+  
+  .listContainer {
+    padding: 1rem;
+  }
+}
+
+.mobileSearchInput {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.mobileSearchInput:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px var(--accent-green-hover);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-color-scheme: light) {
+  .listItemButton { background: rgba(255, 255, 255, 0.8); }
+  .mobileSearchInput { background: rgba(255, 255, 255, 0.6); color: #000; }
 }

@@ -4,9 +4,6 @@
     flex-direction: row;
     justify-content: flex-start;
     gap: 8px;
-    /*overflow-x: auto;*/
-    /*scrollbar-width: none;*/
-    /*-ms-overflow-style: none;*/
 
     /* На мобілці - скрол */
     overflow-x: auto;
@@ -20,10 +17,6 @@
     }
 }
 
-/*.container::-webkit-scrollbar {*/
-/*    display: none;*/
-/*}*/
-
 .button {
     padding: 6px 12px;
     border: 1px solid var(--border-color);
@@ -34,6 +27,20 @@
     color: var(--secondary-text-color);
     font-size: 0.85em;
     white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.button::after {
+    content: attr(data-text);
+    height: 0;
+    visibility: hidden;
+    overflow: hidden;
+    user-select: none;
+    pointer-events: none;
+    font-weight: 800;
 }
 
 .button:hover {
@@ -41,15 +48,8 @@
 }
 
 .buttonActive {
-    padding: 6px 12px;
-    border: 1px solid var(--primary-color);
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.85em;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border-color: var(--accent-green) !important;
+    background: rgba(14, 241, 142, 0.1) !important;
+    color: var(--accent-green) !important;
+    font-weight: 800;
 }

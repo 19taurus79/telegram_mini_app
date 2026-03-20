@@ -1,79 +1,61 @@
 .pageContainer {
-  padding: 20px;
-}
-
-.topContainer {
-  display: grid;
-  gap: 10px;
-  height: 80vh;
-  overflow: auto;
-  grid-template-rows: 60% 40%;
-  grid-template-columns: 60% 40%;
-  grid-template-areas:
-    "topLeft topRight"
-    "bottom bottom";
-}
-
-.mainTableContainer {
-  grid-area: topLeft;
-  height: 100%;
-  overflow: auto;
-}
-
-.bottomContainer {
-  margin-top: 40px;
-}
-
-.stockDetailsContainer {
-  grid-area: topRight;
-  height: 100%;
-  overflow: auto;
-}
-
-.ordersContainer {
-  grid-area: bottom;
+  padding: 24px;
+  min-height: calc(100vh - var(--header-height));
+  animation: fadeIn 0.4s ease-out;
 }
 
 .toggleFilterButton {
-    display: block;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    margin-top: 15px;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 24px;
+  width: fit-content;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .toggleFilterButton:hover {
-    background-color: var(--primary-hover-color);
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-.headerContainer{
-    display: flex;
+.headerContainer {
+  display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 768px) {
-  .topContainer {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
+  .pageContainer {
+    padding: 16px;
   }
-
-  .mainTableContainer,
-  .stockDetailsContainer,
-  .ordersContainer {
-    max-height: 400px;
+  
+  .toggleFilterButton {
     width: 100%;
-    margin-bottom: 20px;
+    max-width: none;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .toggleFilterButton {
+    color: var(--foreground);
+    background: rgba(255, 255, 255, 0.7);
+  }
+  .toggleFilterButton:hover {
+    color: #000;
   }
 }

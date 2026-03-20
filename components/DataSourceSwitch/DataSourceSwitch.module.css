@@ -1,33 +1,42 @@
 .switchContainer {
-    display: flex;
-    background-color: var(--row-even-bg, #f0f0f0);
-    border-radius: 6px;
-    padding: 3px;
-    border: 1px solid var(--border-color);
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  width: fit-content;
 }
 
 .switchButton {
-    padding: 6px 12px;
-    border: none;
-    background-color: transparent;
-    color: var(--foreground);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 4px;
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-    white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.switchButton:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .switchButton.active {
-    background-color: var(--background);
-    color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--accent-green) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 12px rgba(14, 241, 142, 0.3);
 }
 
 /* Hide on mobile */
 @media (max-width: 768px) {
-    .switchContainer {
-        display: none;
-    }
+  .switchContainer {
+    display: none;
+  }
 }

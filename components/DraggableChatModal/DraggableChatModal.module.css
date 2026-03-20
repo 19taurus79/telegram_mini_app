@@ -1,19 +1,24 @@
-/* Desktop стилі */
 .modal {
   position: fixed;
   z-index: 1000;
-  background: var(--modal-bg-color, white);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--modal-box-shadow);
-  width: 400px;
-  max-height: 600px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  width: 420px;
+  max-height: 650px;
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
   overflow: hidden;
+  animation: modalEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal.dragging {
@@ -22,15 +27,15 @@
 }
 
 .header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--glass-border);
   cursor: grab;
   user-select: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--header-bg-color);
-  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
 
 .header:active {
@@ -38,10 +43,11 @@
 }
 
 .title {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
   margin: 0;
-  color: var(--foreground);
+  color: var(--accent-green);
+  text-shadow: 0 0 10px rgba(14, 241, 142, 0.3);
 }
 
 .actions {

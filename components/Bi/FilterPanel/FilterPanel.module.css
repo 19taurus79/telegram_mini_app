@@ -1,43 +1,67 @@
 .filterPanel {
-  padding: 15px;
-  background-color: var(--header-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 24px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .title {
-  margin-bottom: 15px;
-  color: var(--foreground);
+  margin-bottom: 20px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .wrapper {
   display: flex;
-  gap: 20px;
+  gap: 32px;
   align-items: flex-start;
 }
 
 .filterGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .filterGroup h4 {
-  margin-bottom: 5px;
-  color: var(--foreground);
-  font-weight: bold;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  color: var(--foreground);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.checkboxLabel:hover {
+  color: var(--accent-green);
 }
 
 .checkboxLabel input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-green);
   cursor: pointer;
 }
 
@@ -45,79 +69,79 @@
 .buttonGroup {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-left: auto; /* Притискає кнопки до правого краю */
-  align-self: flex-end; /* Вирівнює кнопки по нижньому краю */
+  gap: 12px;
+  margin-left: auto;
+  align-self: flex-end;
 }
 
 .applyButton,
-.clearButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
+.clearButton,
+.resetLayoutButton {
+  padding: 12px 24px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .applyButton {
-  background-color: var(--primary-color);
-  color: white;
+  background: var(--accent-green);
+  color: #000;
+  border: none;
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.3);
 }
 
 .applyButton:hover {
-  background-color: var(--primary-hover-color);
+  background: #0bd37a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 241, 142, 0.4);
 }
 
-.clearButton {
-  background-color: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-}
-
-.clearButton:hover {
-  background-color: var(--hover-bg-color);
-}
-
+.clearButton,
 .resetLayoutButton {
-  padding: 10px 20px;
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  background-color: var(--secondary-bg-color);
-  color: var(--foreground);
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.clearButton:hover,
 .resetLayoutButton:hover {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 768px) {
   .wrapper {
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
   }
 
   .buttonGroup {
     margin-left: 0;
+    width: 100%;
     align-self: stretch;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    flex-direction: column;
   }
 
   .applyButton,
-  .clearButton {
-    flex: 1;
-  }
-
+  .clearButton,
   .resetLayoutButton {
     width: 100%;
-    margin-top: 10px;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .title { color: var(--foreground); }
+  .filterGroup h4 { color: rgba(0, 0, 0, 0.5); }
+  .checkboxLabel { color: var(--foreground); }
+  .clearButton, .resetLayoutButton {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--foreground);
+    border-color: rgba(0, 0, 0, 0.1);
   }
 }

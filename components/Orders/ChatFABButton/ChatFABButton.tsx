@@ -27,29 +27,35 @@ export default function ChatFABButton({ orderRef, onClick, initData }: ChatFABBu
       onClick={onClick}
       style={{
         position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        width: '56px',
-        height: '56px',
+        bottom: '30px',
+        right: '30px',
+        width: '64px',
+        height: '64px',
         borderRadius: '50%',
-        background: 'var(--primary-color)',
-        color: 'white',
-        border: 'none',
+        background: 'rgba(14, 241, 142, 0.15)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        color: 'var(--accent-green)',
+        border: '1px solid rgba(14, 241, 142, 0.3)',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        transition: 'all 0.3s',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         zIndex: 1000
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'var(--primary-hover-color)';
-        e.currentTarget.style.transform = 'scale(1.1)';
+        e.currentTarget.style.background = 'var(--accent-green)';
+        e.currentTarget.style.color = '#000';
+        e.currentTarget.style.transform = 'scale(1.1) rotate(5deg)';
+        e.currentTarget.style.boxShadow = '0 0 20px rgba(14, 241, 142, 0.4)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'var(--primary-color)';
-        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.background = 'rgba(14, 241, 142, 0.15)';
+        e.currentTarget.style.color = 'var(--accent-green)';
+        e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+        e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.3)';
       }}
       title={`Чат заявки ${orderRef}${messageCount > 0 ? ` (${messageCount})` : ''}`}
     >

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import css from "./Events.module.css";
 import { InnerEvent } from "@/types/types";
-import { Calendar, User, ChevronRight, CheckCircle2, AlertCircle, Circle, MapPin } from "lucide-react";
+import { Calendar, ChevronRight, CheckCircle2, AlertCircle, Circle } from "lucide-react";
 
 export default function EventsSmall({ events }: { events: InnerEvent[] }) {
   const router = useRouter();

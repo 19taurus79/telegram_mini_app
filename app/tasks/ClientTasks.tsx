@@ -47,7 +47,7 @@ export default function ClientTasks() {
     router.push(`/tasks/${id}`);
   };
 
-  const tasks = data ?? [];
+  const tasks: Task[] = data ?? [];
 
   return (
     <div className={css.listContainer}>

@@ -9,7 +9,9 @@ import css from "./Orders.module.css";
 import { getClients } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-// Old mobile version component
+import { Search, X } from "lucide-react";
+
+// Modern mobile version component
 function OrdersMobile({ initData }: { initData: string }) {
   const { searchValue, setSearchValue } = useFilter();
   
@@ -22,7 +24,7 @@ function OrdersMobile({ initData }: { initData: string }) {
 
   return (
     <div className={css.listContainer}>
-      <div style={{ padding: '10px 16px', position: 'relative' }}>
+      <div className={css.searchWrapper} style={{ position: 'relative', marginBottom: '16px' }}>
         <input 
           type="text" 
           placeholder="Пошук клієнта..." 
@@ -31,40 +33,35 @@ function OrdersMobile({ initData }: { initData: string }) {
           className={css.mobileSearchInput}
           style={{
             width: '100%',
-            padding: '10px 36px 10px 10px',
-            borderRadius: '8px',
-            border: '1px solid #ddd',
+            padding: '12px 40px 12px 16px',
             outline: 'none',
             fontSize: '16px'
           }}
         />
-        {searchValue && (
-          <button 
-            onClick={() => setSearchValue('')}
-            style={{
-              position: 'absolute',
-              right: '24px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              fontSize: '18px',
-              color: '#888',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
-        )}
+        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+          {searchValue ? (
+            <button 
+              onClick={() => setSearchValue('')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.5)',
+                cursor: 'pointer',
+                padding: '4px'
+              }}
+            >
+              <X size={20} />
+            </button>
+          ) : (
+            <Search size={20} style={{ color: 'var(--accent-green)', opacity: 0.6 }} />
+          )}
+        </div>
       </div>
       {clients?.map((client) => (
         <Link key={client.id} href={`/orders/${client.id}`} className={css.ref}>
           <div className={css.listItemButton}>
-            {client.client}
+            <span>{client.client}</span>
+            <span style={{ opacity: 0.3 }}>›</span>
           </div>
         </Link>
       ))}

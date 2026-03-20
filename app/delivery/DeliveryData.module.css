@@ -1,224 +1,261 @@
 .wrapper {
-  padding: 16px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .clientBlock {
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
 .clientHeader,
 .orderHeader {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
 }
 
 .clientTitle {
-  color: #666;
-  min-width: 100px;
+  color: var(--accent-green);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 120px;
 }
 
 .orderBlock {
-  margin-top: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .table {
   width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.rowHeader,
-.row {
-  display: flex;
-  border-bottom: 1px solid var(--border-color);
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  margin-top: 8px;
 }
 
 .rowHeader {
-  background: var(--background);
-  font-weight: bold;
   display: flex;
-  justify-content: space-between; /* прижимает к краям */
-  /* background: #f8f8f8; */
-  /* font-weight: bold; */
-  padding: 8px 12px;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.row:hover {
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
 }
 
 .cell {
   flex: 1;
-  padding: 8px;
-  word-break: break-word;
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.quantityCell {
+  width: 100px;
+  flex: 0 0 100px;
+  text-align: right;
+  padding: 14px 16px;
 }
 
 .quantity {
-  color: var(--foreground);
+  font-weight: 700;
+  color: var(--accent-green);
   cursor: pointer;
-  /* text-decoration: underline; */
+  padding: 4px 8px;
+  background: rgba(14, 241, 142, 0.1);
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-/* Modal styles */
+.quantity:hover {
+  background: var(--accent-green);
+  color: #000;
+}
+
+/* Modal styles - match global glassmorphism */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .modal {
-  background: var(--background);
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 280px;
-  max-width: 90vw;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  padding: 32px;
+  border-radius: 28px;
+  width: 95%;
+  max-width: 600px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modalTitle {
-  margin: 0 0 12px;
-  font-size: 18px;
-  font-weight: 600;
+  margin: 0 0 28px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: left;
+  letter-spacing: -0.5px;
 }
 
 .modalInput {
   width: 100%;
-  padding: 8px;
-  font-size: 16px;
-  margin-top: 8px;
-  resize: none; /* Убирает уголок растягивания */
-  field-sizing: content; /* Магия: высота подстраивается под контент */
-  min-height: 40px; /* Минимальная высота */
-  border-radius: 6px;
-  border: 1px solid #5b5b5b;
-  box-shadow: 9px -6px 11px 0px #000;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-top: 4px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.modalInput:focus {
+  border-color: var(--accent-green);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(14, 241, 142, 0.1);
 }
 
 .modalActions {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 16px;
+  margin-top: 32px;
 }
 
 .button {
-  padding: 6px 12px;
-  font-size: 14px;
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
 }
 
 .buttonSave {
-  background-color: green;
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 9px -6px 11px 0px #000;
+  background: var(--accent-green);
+  color: #000;
+}
+
+.buttonSave:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.4);
 }
 
 .buttonCancel {
-  background-color: red;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 9px -6px 11px 0px #000;
-}
-.quantityCell {
-  width: 80px; /* или min-width: 60px; */
-  text-align: center;
-  flex: 0 0 80px; /* фиксируем ширину */
-  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid var(--glass-border);
 }
 
-.headerProduct {
-  text-align: left;
+.buttonCancel:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.headerQuantity {
-  text-align: right;
-}
 .error {
-  color: red;
-  font-size: 14px;
-  margin-top: 6px;
-}
-/* styles/Button.module.css */
-
-.baseButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    box-shadow 0.3s ease;
-  /* min-width: 120px; Минимальная ширина для кнопок */
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 12px;
   text-align: center;
-  width: 100%;
 }
 
-/* Стили для кнопки "Отправить" (основное действие) */
+.deliveryActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
 .sendButton {
-  composes: baseButton; /* Наследует базовые стили */
-  background-color: #007bff; /* Синий фон */
-  color: #ffffff; /* Белый текст */
-  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  flex: 2;
+  background: var(--accent-green);
+  color: #000;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .sendButton:hover {
-  background-color: #0056b3; /* Темнее синий при наведении */
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.4);
 }
 
-.sendButton:active {
-  background-color: #004085; /* Еще темнее при нажатии */
-  box-shadow: 0 1px 2px rgba(0, 123, 255, 0.4);
-}
-
-/* Стили для кнопки "Удалить" (деструктивное действие) */
 .deleteButton {
-  composes: baseButton; /* Наследует базовые стили */
-  background-color: #dc3545; /* Красный фон */
-  color: #ffffff; /* Белый текст */
-  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  flex: 1;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .deleteButton:hover {
-  background-color: #c82333; /* Темнее красный при наведении */
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  background: #ef4444;
+  color: #fff;
 }
 
-.deleteButton:active {
-  background-color: #bd2130; /* Еще темнее при нажатии */
-  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.4);
+@media (max-width: 768px) {
+  .wrapper { padding: 16px; }
+  .deliveryActions { flex-direction: column; }
+  .clientBlock { padding: 16px; border-radius: 20px; }
+  .cell { font-size: 0.85rem; }
 }
 
-/* Дополнительные стили, например, для отмененной кнопки (если нужно) */
-/* .cancelButton {
-  composes: baseButton;
-  background-color: #6c757d;
-  color: #ffffff;
-}
-
-.cancelButton:hover {
-  background-color: #5a6268;
-} */
-.deliveryActions {
-  display: flex;
-  gap: 8px;
-  flex-direction: column;
-  margin-top: 10px;
-
+@media (prefers-color-scheme: light) {
+  .modal { background: #fff; }
+  .modalInput { background: #f8f9fa; color: #000; }
+  .clientBlock { background: rgba(255, 255, 255, 0.7); }
+  .row { background: rgba(255, 255, 255, 0.5); }
+  .clientHeader, .orderHeader, .cell { color: var(--foreground); }
 }

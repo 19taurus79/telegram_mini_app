@@ -10,7 +10,7 @@ import React from "react";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { Truck, Loader2 } from "lucide-react";
+import { Truck, Loader2, Check } from "lucide-react";
 import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -379,9 +379,9 @@ export default function DetailsWidget({
                       <td className={styles.td}>
                           {(() => {
                             const { color } = getItemStatus(item);
-                            if (color === "red") return <span className={styles.checkmarkRed}>✓</span>;
-                            if (color === "green") return <span className={styles.checkmarkGreen}>✓</span>;
-                            return <span className={styles.checkmarkYellow}>✓</span>;
+                            if (color === "red") return <Check size={20} className={styles.checkmarkRed} strokeWidth={3} />;
+                            if (color === "green") return <Check size={20} className={styles.checkmarkGreen} strokeWidth={3} />;
+                            return <Check size={20} className={styles.checkmarkYellow} strokeWidth={3} />;
                           })()}
                       </td>
                       <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>

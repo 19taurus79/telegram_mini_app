@@ -41,9 +41,10 @@ export default function LineOfBusinessFilter() {
         <div className={css.container}>
             {uniqueLoBs.map((lob, index) => (
                 <button 
-                    className={selectedLoBs.includes(lob) ? css.buttonActive : css.button} 
+                    className={`${css.button} ${selectedLoBs.includes(lob) ? css.buttonActive : ''}`} 
                     key={`${lob}-${index}`} 
                     onClick={() => handleButtonClick(lob)}
+                    data-text={lob}
                 >
                     {lob}
                 </button>

@@ -32,9 +32,10 @@ export default function ManagerFilter() {
         <div className={css.container}>
             {managers.map((manager: Manager, index: number) => (
                 <button 
-                    className={selectedManagers.includes(manager.manager) ? css.buttonActive : css.button} 
+                    className={`${css.button} ${selectedManagers.includes(manager.manager) ? css.buttonActive : ''}`} 
                     key={`${manager.id}-${index}`} 
                     onClick={() => handleButtonClick(manager.manager)}
+                    data-text={manager.manager.split(' ').slice(0, 1).join(' ')}
                 >
                     {manager.manager.split(' ').slice(0, 1).join(' ')}
                 </button>

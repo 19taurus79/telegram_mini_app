@@ -1,31 +1,7 @@
 .dashboardContainer {
   width: 100%;
-  min-height: 100vh;
-}
-
-.toolbarRow {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-  padding: 0 8px;
-}
-
-.resetButton {
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--foreground);
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.resetButton:hover {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
+  min-height: calc(100vh - var(--header-height));
+  padding: 1rem;
 }
 
 .gridLayout {
@@ -37,28 +13,33 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--card-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.gridItem:hover {
+  border-color: rgba(14, 241, 142, 0.2);
 }
 
 .gridItemHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-  background-color: var(--header-bg-color, #f9f9f9);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .titleContainer {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .headerContentContainer {
@@ -66,139 +47,104 @@
   align-items: center;
 }
 
-
 .dragHandle {
   cursor: grab;
-  font-size: 16px;
-  opacity: 0.7;
+  font-size: 18px;
+  color: var(--accent-green);
+  opacity: 0.6;
   user-select: none;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s;
 }
 
 .dragHandle:hover {
   opacity: 1;
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.dragHandle:active {
-  cursor: grabbing;
+  background-color: var(--accent-green-hover);
 }
 
 .gridItemTitle {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 
 .gridItemContent {
   flex: 1;
   overflow: auto;
-  padding: 12px;
+  padding: 16px;
 }
 
 /* Override react-grid-layout styles */
-/* Override react-grid-layout styles */
-.gridLayout :global(.react-grid-item) {
-  transition: all 200ms ease;
-  transition-property: left, top;
-}
-
-.gridLayout :global(.react-grid-item.cssTransforms) {
-  transition-property: transform;
-}
-
-.gridLayout :global(.react-grid-item.resizing) {
-  z-index: 1;
-  will-change: width, height;
-}
-
-.gridLayout :global(.react-grid-item.react-draggable-dragging) {
-  transition: none;
-  z-index: 3;
-  will-change: transform;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.gridLayout :global(.react-grid-placeholder) {
+  background: var(--accent-green);
+  opacity: 0.1;
+  border-radius: 20px;
+  z-index: 2;
 }
 
 .gridLayout :global(.react-grid-item > .react-resizable-handle) {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
-  background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
-  border-bottom-right-radius: 8px;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-}
-
-.gridLayout :global(.react-grid-item > .react-resizable-handle:hover) {
-  opacity: 1;
-}
-
-.gridLayout :global(.react-grid-placeholder) {
-  background: var(--primary-color);
-  opacity: 0.2;
-  border-radius: 8px;
-  transition-duration: 100ms;
-  z-index: 2;
+  background: linear-gradient(135deg, transparent 50%, var(--accent-green) 50%);
+  border-bottom-right-radius: 20px;
+  opacity: 0.3;
 }
 
 /* Mobile Layout */
 .mobileLayout {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding: 1rem;
 }
 
 .mobileSection {
   width: 100%;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .mobileSectionTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--foreground);
-  margin: 16px 0 8px 0;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, var(--header-bg-color) 0%, var(--secondary-bg-color) 100%);
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
 }
 
-.mobileSectionTitle:first-child {
-  margin-top: 0;
-}
-
-/* Стилі для акордеону */
+/* Акордеон */
 .accordionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  padding: 12px;
-  background-color: var(--header-bg-color, #f7f9fc);
-  border-radius: 8px;
-  margin: 16px 0 8px 0;
-  transition: background-color 0.2s ease;
+  padding: 16px 20px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: all 0.3s ease;
 }
 
 .accordionHeader:hover {
-  background-color: var(--hover-bg-color, #e8f0fe);
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
 }
 
 .accordionIcon {
-  font-size: 1rem;
-  transition: transform 0.3s ease;
-  color: var(--foreground, #666);
-  margin-left: 8px;
+  font-size: 0.8rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--accent-green);
 }
 
 .accordionIcon.open {
   transform: rotate(180deg);
+}
+
+@media (prefers-color-scheme: light) {
+  .gridItemTitle, .mobileSectionTitle { color: var(--foreground); }
+  .gridItem {
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+  .gridItemHeader { background: rgba(0, 0, 0, 0.02); }
 }

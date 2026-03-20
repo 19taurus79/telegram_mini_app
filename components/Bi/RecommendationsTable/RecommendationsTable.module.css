@@ -1,15 +1,20 @@
 .tableWrapper {
   width: 100%;
-  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-x: auto;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .title {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #fff;
+  opacity: 0.9;
 }
 
 .table {
@@ -21,19 +26,24 @@
 
 .th,
 .td {
-  border: 1px solid var(--border-color);
-  padding: 8px;
+  border: 1px solid var(--glass-border);
+  padding: 12px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--foreground);
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 .th {
-  background-color: var(--header-bg-color);
+  background: rgba(255, 255, 255, 0.05);
   position: relative;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .resizer {
@@ -41,8 +51,8 @@
   right: 0;
   top: 0;
   height: 100%;
-  width: 5px;
-  background: rgba(0, 0, 0, 0.5);
+  width: 4px;
+  background: var(--accent-green);
   cursor: col-resize;
   user-select: none;
   touch-action: none;
@@ -51,22 +61,28 @@
 }
 
 .th:hover .resizer {
-  opacity: 1;
+  opacity: 0.5;
 }
 
 .isResizing {
-  background: blue;
-  opacity: 1;
+  background: var(--accent-green);
+  opacity: 1 !important;
 }
 
 @media (max-width: 768px) {
   .th, .td {
-    padding: 6px;
-    font-size: 14px;
+    padding: 8px;
+    font-size: 0.85rem;
   }
   
   .title {
-      font-size: 1rem;
-      white-space: normal;
+    font-size: 1rem;
+    white-space: normal;
   }
+}
+
+@media (prefers-color-scheme: light) {
+  .tableWrapper { background: rgba(255, 255, 255, 0.7); }
+  .title, .th, .td { color: var(--foreground); }
+  .th { background: rgba(0, 0, 0, 0.05); color: rgba(0, 0, 0, 0.5); }
 }

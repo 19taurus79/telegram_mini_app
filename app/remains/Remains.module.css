@@ -1,161 +1,136 @@
-.listContainer {
-  grid-area: product;
-  overflow-y: auto;
-  height: 40vh; /* Висота для десктопної версії */
-}
-
 .listContainerUl {
   list-style: none;
-  padding: 0; /* Скидаємо відступи за замовчуванням */
+  padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .listItemButton {
-  background-color: var(--background);
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-
-  border-radius: 0.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .listItemButton:hover {
-  background-color: var(
-    --hover-bg-color
-  ); /* или var(--hover-bg), если используешь переменные */
-  color: var(--foreground);
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
+  transform: translateX(4px);
 }
 
 .link {
   display: block;
-    padding: 0.75rem 1rem;
-    width: 100%;
-    height: 100%;
+  padding: 12px 16px;
+  width: 100%;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
-.wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    grid-template-areas:
-            "product remains"
-            "moved orders";
+
+.backButton, .clearFilterButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .backButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  background-color: var(--background);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   color: var(--foreground);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s ease;
 }
 
 .backButton:hover {
-  background-color: var(--hover-bg-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .clearFilterButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: white;
-  background-color: var(--primary-color, #007bff);
+  background: var(--accent-green);
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.3);
 }
 
 .clearFilterButton:hover {
-  background-color: var(--primary-hover-color, #0056b3);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: #0cd97e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 241, 142, 0.4);
 }
 
-.clearFilterButton:active {
-  transform: translateY(0);
-}
-
-
-@media (max-width: 768px) {
-    .wrapper{
-        display: block;
-    }
-
-    /* На мобільних пристроях знімаємо обмеження по висоті */
-    .listContainer {
-        height: auto;
-        margin-bottom: 20px; /* Додаємо відступ знизу для розділення блоків */
-    }
-}
-
-/* Inline Search */
+/* Search Interface */
 .searchWrapper {
   position: relative;
-  padding: 8px;
-  background-color: var(--secondary-bg-color, rgba(0,0,0,0.03));
-  border-bottom: 1px solid var(--border-color);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 16px;
+  border-radius: 12px;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 36px 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-size: 14px;
-  box-sizing: border-box;
+  padding: 12px 40px 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .searchInput:focus {
-  border-color: var(--primary-color, #0070f3);
+  border-color: var(--accent-green);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px var(--accent-green-hover);
 }
 
-.clearSearchBtn {
+.clearSearchBtn, .searchIcon {
   position: absolute;
-  right: 16px;
+  right: 24px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--foreground);
-  opacity: 0.5;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.clearSearchBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  cursor: pointer;
+  color: #fff;
   padding: 4px;
-  border-radius: 4px;
-  transition: opacity 0.2s;
+  border-radius: 6px;
+  transition: background 0.2s;
 }
 
 .clearSearchBtn:hover {
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .searchIcon {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.4;
+  color: var(--accent-green);
+  opacity: 0.6;
   pointer-events: none;
+}
+
+@media (prefers-color-scheme: light) {
+  .searchInput { background: rgba(255, 255, 255, 0.5); color: #000; }
+  .searchWrapper { background: rgba(0, 0, 0, 0.02); }
+  .listItemButton { background: rgba(255, 255, 255, 0.8); }
 }

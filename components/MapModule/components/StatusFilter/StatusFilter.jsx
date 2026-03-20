@@ -11,7 +11,8 @@ export default function StatusFilter() {
 
     const isAllSelected = selectedStatuses.length === availableStatuses.length;
 
-    const handleSelectAll = () => {
+    const handleSelectAll = (e) => {
+        e.stopPropagation();
         if (isAllSelected) {
             setSelectedStatuses([]);
         } else {
@@ -22,8 +23,13 @@ export default function StatusFilter() {
     return (
         <div className={css.container}>
             <button 
-                className={isAllSelected ? css.buttonActive : css.button}
+                className={`${css.button} ${isAllSelected ? css.buttonActive : ''}`}
                 onClick={handleSelectAll}
+                data-text="Усі"
+                style={{ 
+                    '--status-color': 'var(--accent-green)',
+                    '--status-glow': 'rgba(14, 241, 142, 0.2)'
+                }}
             >
                 Усі
             </button>
@@ -33,10 +39,17 @@ export default function StatusFilter() {
                 
                 return (
                     <button 
-                        className={isActive ? css.buttonActive : css.button} 
+                        className={`${css.button} ${isActive ? css.buttonActive : ''}`} 
                         key={status} 
-                        onClick={() => toggleStatus(status)}
-                        style={isActive ? { backgroundColor: color, borderColor: color } : { borderLeft: `4px solid ${color}` }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStatus(status);
+                        }}
+                        data-text={status}
+                        style={{ 
+                            '--status-color': color,
+                            '--status-glow': `${color}44`
+                        }}
                     >
                         {status}
                     </button>

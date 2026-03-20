@@ -120,10 +120,20 @@ function Header() {
 
   return (
     <header className={css.header} ref={headerRef}>
-      <h2 className={css.logo}>
-        Ерідон Харків
+      <Link href="/" className={css.logoWrapper}>
+        <div className={css.logoIcon}>
+          <svg viewBox="0 0 100 100" className={css.sprout}>
+            <circle cx="50" cy="50" r="45" fill="#80b435" />
+            <path d="M50 80 Q50 40 70 30 M50 80 Q50 50 30 40" stroke="white" strokeWidth="6" fill="none" strokeLinecap="round" />
+            <path d="M50 70 L50 85" stroke="#facc15" strokeWidth="4" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div className={css.logoText}>
+          <span className={css.brand}>ЕРІДОН</span>
+          <span className={css.branch}>ХАРКІВ</span>
+        </div>
         {userData?.is_guest && <span className={css.guestBadge}>Лише читання</span>}
-      </h2>
+      </Link>
 
       <button
         className={css.navToggle}

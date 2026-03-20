@@ -2,68 +2,102 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  padding: 1rem 2rem;
-  background-color: var(--background);
-  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  padding: 0.8rem 2rem;
+  background: rgba(255, 255, 255, 0.05); /* Very light glass for dark theme */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
-  min-height: 60px; /* Ensure minimum height for initial render */
+  min-height: 70px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--foreground);
+.logoWrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.logoWrapper:hover {
+  opacity: 0.9;
+}
+
+.logoIcon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprout {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 8px rgba(128, 180, 53, 0.4));
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+.branch {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #80b435;
+  letter-spacing: 4px;
+  margin-top: 2px;
 }
 
 .guestBadge {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   background-color: #f59e0b;
   color: white;
   padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
+  border-radius: 8px;
+  font-weight: 700;
   text-transform: uppercase;
+  margin-left: 8px;
 }
-
 
 .navToggle {
   display: none;
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 1.5rem;
-  color: var(--foreground);
+  color: #fff;
   cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.navToggle:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .nav {
   display: flex;
   align-items: center;
-  transition: max-height 0.3s ease-in-out;
-  /* overflow: hidden; -- Removed to prevent clipping badges on desktop */
-}
-
-.navOpen {
-  max-height: 500px;
-  overflow: visible !important; /* Ensure visibility when open */
-}
-
-@media (max-width: 768px) {
-  .nav {
-    overflow: hidden; /* Keep hidden on mobile when transition is needed */
-  }
 }
 
 .navList {
   display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -71,76 +105,94 @@
 
 .navList li a {
   text-decoration: none;
-  color: var(--foreground);
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .navList li a:hover {
-  color: var(--primary-color, #0070f3);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .activeLink {
-  color: var(--primary-color, #0070f3) !important;
-  font-weight: 600 !important;
+  color: #0ef18e !important;
+  background: rgba(14, 241, 142, 0.1) !important;
+  font-weight: 700 !important;
 }
 
-@media (min-width: 769px) {
-  .activeLink {
-    border-bottom: 2px solid var(--primary-color, #0070f3);
-    padding-bottom: 2px;
+@media (max-width: 1024px) {
+  .navList {
+    gap: 0.8rem;
+  }
+  .navList li a {
+    font-size: 0.8rem;
+    padding: 6px 8px;
   }
 }
 
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  .nav {
-    width: 100%;
-    flex-direction: column;
-    max-height: 0;
-  }
-
-  .navOpen {
-    display: flex;
-    max-height: 500px; /* любое достаточно большое значение */
-  }
-
+@media (max-width: 900px) {
   .navToggle {
     display: block;
   }
-
+  .nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .navOpen {
+    max-height: 80vh;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
   .navList {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem 0;
+    padding: 20px;
+    width: 100%;
+    gap: 10px;
+  }
+  .navList li a {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px 20px;
   }
 }
 
 .deliveryLinkWrapper {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding-right: 4px; /* Space for the badge */
 }
 
 .badge {
   position: absolute;
-  top: -10px;
-  right: -14px;
+  top: -5px;
+  right: -5px;
   background-color: #ff3b30;
   color: white;
-  border-radius: 10px;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  min-width: 20px;
-  height: 20px;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 0.65rem;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
   pointer-events: none;
-  z-index: 10;
 }
 
 .vibrate {
@@ -149,10 +201,21 @@
 
 @keyframes vibrate {
   0%, 80%, 100% { transform: scale(1); }
-  82% { transform: scale(1.05) rotate(1deg); }
-  84% { transform: scale(1.05) rotate(-1deg); }
-  86% { transform: scale(1.05) rotate(1deg); }
-  88% { transform: scale(1.05) rotate(-1deg); }
+  82% { transform: scale(1.1) rotate(2deg); }
+  84% { transform: scale(1.1) rotate(-2deg); }
+  86% { transform: scale(1.1) rotate(2deg); }
+  88% { transform: scale(1.1) rotate(-2deg); }
+}
+
+@media (prefers-color-scheme: light) {
+  .header {
+    background: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  .brand { color: #212529; }
+  .navList li a { color: #495057; }
+  .navList li a:hover { background: rgba(0, 0, 0, 0.05); color: #000; }
+  .navToggle { color: #212529; background: rgba(0, 0, 0, 0.03); }
 }
 
 

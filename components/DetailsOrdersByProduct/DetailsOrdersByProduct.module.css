@@ -1,24 +1,18 @@
 .container {
-  padding: 10px;
-  grid-area: orders;
-    /*height: 40vh;*/
-    overflow: auto;
+  padding: 12px;
+  animation: fadeIn 0.4s ease-out;
 }
 
-/* Адаптивні стилі для мобільних пристроїв */
 @media (max-width: 768px) {
   .container {
-    height: auto;
-    max-height: 60vh;
     padding: 8px;
   }
 
-  /* Приховуємо таблицю на мобілці */
+  /* Table is hidden on mobile, using cards instead */
   .table {
     display: none;
   }
 
-  /* Показуємо карткове відображення */
   .mobileCards {
     display: flex;
     flex-direction: column;
@@ -26,33 +20,36 @@
   }
 
   .card {
-    background-color: var(--background, #fff);
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
 
   .cardHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    border-bottom: 1px solid var(--glass-border);
   }
 
   .cardTitle {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.95rem;
+    color: var(--accent-green);
   }
 
   .cardRow {
     display: flex;
     justify-content: space-between;
-    padding: 6px 0;
-    font-size: 0.9rem;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    padding: 8px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .cardRow:last-child {
@@ -60,138 +57,114 @@
   }
 
   .cardLabel {
-    color: var(--foreground, #666);
-    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .cardValue {
     font-weight: 600;
-    color: var(--foreground, #111);
     text-align: right;
   }
 }
 
-/* Приховуємо картки на десктопі */
 @media (min-width: 769px) {
   .mobileCards {
     display: none;
   }
 }
 
-/* Стилі для акордеону */
+/* Accordion */
 .accordionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  padding: 8px 12px;
-  background-color: var(--header-bg-color, #f7f9fc);
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: background-color 0.2s ease;
+  padding: 12px 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
 }
 
 .accordionHeader:hover {
-  background-color: var(--hover-bg-color, #e8f0fe);
-}
-
-.accordionHeader h3 {
-  margin: 0;
-  font-size: 1rem;
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
 }
 
 .accordionIcon {
   font-size: 0.8rem;
+  color: var(--accent-green);
   transition: transform 0.3s ease;
-  color: var(--foreground, #666);
 }
 
 .accordionIcon.open {
   transform: rotate(180deg);
 }
 
-.accordionContent {
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 1000px;
-  }
-}
-
-
-
 .table {
   width: 100%;
-  border-collapse: collapse;
-  border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 8px;
-  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0 6px;
   font-size: 0.9rem;
-  background-color: var(--background, #fff);
-  color: var(--foreground, #111);
-}
-
-.table th,
-.table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 .table th {
-  background-color: var(--background, #f7f9fc);
-  font-weight: 600;
-  color: var(--foreground, #555);
+  padding: 12px 16px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
+.table td {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
-.table tbody tr:hover {
-  background-color: var(--hover-bg-color, #f0f5ff);
+.table tr td:first-child {
+  border-left: 1px solid var(--glass-border);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
-.table td:last-child {
-  font-weight: 500;
+.table tr td:last-child {
+  border-right: 1px solid var(--glass-border);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.table tbody tr:hover td {
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
 }
 
 .sortableHeader {
   cursor: pointer;
-  user-select: none; /* Запобігає виділенню тексту при кліку */
+  transition: color 0.2s;
 }
 
 .sortableHeader:hover {
-  background-color: var(--hover-bg-color, #f0f5ff);
+  color: var(--accent-green);
 }
 
-.checkmarkHeader {
-  width: 40px;
-  text-align: center;
-  color: var(--foreground, #999);
-}
-
-.checkmarkCell span {
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.checkmarkCell {
-  text-align: center;
-  width: 40px;
-}
-
+/* Checkmarks */
 .checkmarkGreen {
-  color: #28a745; /* Яскравий зелений */
+  color: #0ef18e;
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 5px rgba(14, 241, 142, 0.3));
 }
 
 .checkmarkYellow {
-  color: #ffc107; /* Яскравий жовтий/бурштиновий */
+  color: #f59e0b;
+  font-size: 1.1rem;
 }
+
+@media (prefers-color-scheme: light) {
+  .table td { background: rgba(0, 0, 0, 0.02); }
+  .table th { color: rgba(0, 0, 0, 0.5); }
+  .card { background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
+}

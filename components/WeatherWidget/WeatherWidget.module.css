@@ -1,47 +1,53 @@
-/* Light theme styles (default) */
 .widget {
-  background-color: #ffffff;
-  color: #212529;
-  padding: 15px 20px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  color: #fff;
+  padding: 20px;
   text-align: center;
   max-width: 400px;
-  min-width: 300px; /* Ensure minimum width */
-  flex-basis: auto; /* Allow it to grow */
-  margin: 20px auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
+  min-width: 300px;
+  flex: 1;
   position: relative;
+  transition: transform 0.3s ease;
+}
+
+.widget:hover {
+  transform: translateY(-5px);
+  border-color: rgba(14, 241, 142, 0.3);
 }
 
 .refreshButton {
   position: absolute;
   top: 15px;
   right: 15px;
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #6c757d; /* Match the h3 color */
+  color: #0ef18e;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   z-index: 1;
 }
 
 .refreshButton:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(14, 241, 142, 0.2);
+  transform: rotate(30deg);
 }
 
 .widget h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  font-size: 1.2em;
-  color: #6c757d;
-  padding: 0 40px; /* Add padding to prevent overlap with corner button */
-  box-sizing: border-box;
+  font-size: 1.1rem;
+  color: #0ef18e;
+  padding: 0 40px;
 }
 
 .weatherData {
@@ -53,121 +59,102 @@
 }
 
 .emoji {
-  font-size: 2.5em;
+  font-size: 2.5rem;
 }
 
 .temp {
-  font-size: 2.2em;
-  font-weight: bold;
+  font-size: 2.2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #fff, #0ef18e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .desc {
-    font-size: 1em;
-    color: #495057;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background-color: rgba(255, 87, 87, 0.2);
+    color: #ff5757;
+    border: 1px solid rgba(255, 87, 87, 0.3);
 }
 
 .forecastSection {
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 15px;
     margin-top: 15px;
 }
 
 .forecastSection h4 {
     margin-top: 0;
-    margin-bottom: 10px;
-    color: #6c757d;
-    font-size: 1em;
+    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .hourlyForecast {
     display: flex;
     overflow-x: auto;
     gap: 15px;
-    padding-bottom: 15px; /* For scrollbar */
+    padding-bottom: 10px;
 }
 
 .hourItem {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     min-width: 60px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px;
+    border-radius: 12px;
 }
 
 .hourEmoji {
-    font-size: 1.5em;
+    font-size: 1.5rem;
 }
 
 .dailyForecast {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .dayItem {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 10px;
-    background-color: #f8f9fa;
-    border-radius: 6px;
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.dayItem:hover {
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .dayName {
-    font-weight: bold;
+    font-weight: 500;
     text-transform: capitalize;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .dayEmoji {
-    font-size: 1.5em;
+    font-size: 1.4rem;
 }
 
 .dayTemp {
     min-width: 70px;
     text-align: right;
+    font-size: 0.9rem;
 }
 
-/* Dark theme styles */
-@media (prefers-color-scheme: dark) {
-    .widget {
-        background-color: #2c3e50;
-        color: #ecf0f1;
-        border-color: #34495e;
-    }
-
-    .widget h3, .forecastSection h4 {
-        color: #95a5a6;
-    }
-
-    .refreshButton {
-        color: #95a5a6;
-    }
-
-    .refreshButton:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .desc {
-        color: #bdc3c7;
-    }
-
-    .error {
-        background-color: #c0392b;
-        color: #fff;
-        border: none;
-    }
-
-    .forecastSection {
-        border-top-color: #34495e;
-    }
-
-    .dayItem {
-        background-color: #34495e;
-    }
-}
+.dayTemp strong {
+    color: #0ef18e;
+}

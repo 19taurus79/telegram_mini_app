@@ -1,41 +1,75 @@
 .listContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
+  gap: 12px;
+  padding: 24px;
   list-style: none;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .listItemButton {
-  background-color: var(--background);
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  padding: 20px 24px;
+  border-radius: 20px;
   cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (hover: hover) {
-  .listItemButton:hover {
-    background-color: var(--hover-bg-color);
-    color: var(--foreground);
-  }
+.listItemButton:hover {
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
+.eventTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  flex: 1;
+}
 
-.link {
-  display: block;
+.eventDate {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
 }
-.event {
-  background-color: red;
+
+.statusIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  margin-right: 16px;
+  background: rgba(255, 255, 255, 0.05);
 }
-.inproccess {
-  background-color: yellow;
-  color: black;
+
+.done { color: var(--accent-green); }
+.inproccess { color: #fbbf24; }
+.event { color: #ef4444; }
+
+@media (max-width: 768px) {
+  .listContainer { padding: 16px; }
+  .listItemButton { padding: 16px; }
+  .eventTitle { font-size: 0.95rem; }
 }
-.done {
-  background-color: green;
+
+@media (prefers-color-scheme: light) {
+  .listItemButton { background: rgba(255, 255, 255, 0.7); }
+  .eventTitle { color: var(--foreground); }
+  .eventDate { color: rgba(0, 0, 0, 0.5); }
 }

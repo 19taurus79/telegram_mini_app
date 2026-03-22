@@ -110,8 +110,8 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
       
       <div className={css.list}>
         {sortedGrouping.map(({ status, dates, totalWeight, uniqueClientsCount }) => (
-          <div key={status} className={css.statusSection}>
-            <div className={css.statusHeader} style={{ backgroundColor: getStatusColor(status) }}>
+          <div key={status} className={css.statusSection} style={{ '--status-color': getStatusColor(status) }}>
+            <div className={css.statusHeader}>
               <span className={css.statusTitle}>{status}</span>
               <div className={css.statusAggregates}>
                 <span>👥 {uniqueClientsCount}</span>

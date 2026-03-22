@@ -1,8 +1,6 @@
 import { getOrdersDetailsById } from "@/lib/api";
 import TableOrderDetail from "./Table.client";
 import React from "react";
-import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
-import css from "./Detail.module.css";
 import { getServerInitData } from "@/lib/getServerInitData";
 
 type Props = {
@@ -59,10 +57,6 @@ export default async function filteredOrdersDetail({ params }: Props) {
   return (
     <>
       <TableOrderDetail details={details} />
-      <div className={css.btnWrapper}>
-        {/* <BackBtn /> */}
-        <DeliveryBtn />
-      </div>
     </>
   );
 }

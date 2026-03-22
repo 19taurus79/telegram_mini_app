@@ -1,54 +1,61 @@
 .container {
-  padding: 20px;
+  padding: 16px;
   width: 100%;
-  box-sizing: border-box;
 }
-
-.input {
-  width: 100%;
-  margin-bottom: 0;
-}
-
-
 
 .inputWrapper {
   position: relative;
-  /* display: flex; */ /* Removed flex, input will take full width */
-  /* align-items: center; */
   margin-bottom: 10px;
 }
 
 .clearButton {
   position: absolute;
-  right: 15px; /* Adjusted right position */
+  right: 15px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  color: #aaa;
-  padding: 0; /* Remove default button padding */
-  line-height: 1; /* Ensure consistent vertical alignment */
+  color: rgba(255, 255, 255, 0.4);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
 .clearButton:hover {
-  color: #333;
+  color: #ef4444;
 }
 
 .button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: var(--primary-color);
-  color: #fff;
+  padding: 14px;
+  font-size: 0.95rem;
+  background-color: var(--accent-green);
+  color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
-  margin-top: 10px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(14, 241, 142, 0.2);
 }
 
 .button:hover {
-  background-color: var(--primary-hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(14, 241, 142, 0.4);
+}
+
+:global([data-theme='light']) .clearButton {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme='light']) .clearButton:hover {
+  color: #ef4444;
+}
+
+:global([data-theme='light']) .inputWrapper :global(.MuiOutlinedInput-root) {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
 }

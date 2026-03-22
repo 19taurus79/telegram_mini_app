@@ -31,7 +31,6 @@ export default function OrderCommentModal({
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  const [selectedCommentType, setSelectedCommentType] = useState<'order' | 'product'>(commentType);
   const initData = useInitData();
   const userData = useUser((state) => state.userData);
   const isGuest = userData?.is_guest;
@@ -90,10 +89,10 @@ export default function OrderCommentModal({
     if (!newComment.trim()) return;
 
     const payload = {
-      comment_type: selectedCommentType,
+      comment_type: commentType,
       order_ref: orderRef,
-      product_id: selectedCommentType === 'product' ? productId : undefined,
-      product_name: selectedCommentType === 'product' ? productName : undefined,
+      product_id: commentType === 'product' ? productId : undefined,
+      product_name: commentType === 'product' ? productName : undefined,
       comment_text: newComment.trim(),
     };
     
@@ -186,28 +185,6 @@ export default function OrderCommentModal({
             <>
               {/* Форма додавання коментаря */}
               <form onSubmit={handleSubmit} className={styles.form}>
-                {productId && (
-                  <div style={{ marginBottom: '12px', display: 'flex', gap: '16px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        value="order"
-                        checked={selectedCommentType === 'order'}
-                        onChange={(e) => setSelectedCommentType(e.target.value as 'order')}
-                      />
-                      <span>Коментар до заявки</span>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        value="product"
-                        checked={selectedCommentType === 'product'}
-                        onChange={(e) => setSelectedCommentType(e.target.value as 'product')}
-                      />
-                      <span>Коментар до товару</span>
-                    </label>
-                  </div>
-                )}
                 <textarea
                   className={styles.textarea}
                   placeholder="Введіть коментар..."

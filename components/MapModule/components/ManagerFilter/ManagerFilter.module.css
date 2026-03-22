@@ -1,14 +1,15 @@
 .container {
-    padding: 10px;
+    padding: 12px; /* Pad to detach from edge */
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 12px;
+    background: transparent;
 
     /* На мобілці - скрол */
     overflow-x: auto;
     flex-wrap: nowrap;
-    scrollbar-width: thin;
+    scrollbar-width: none;
 
     /* На десктопі - перенос */
     @media (min-width: 768px) {
@@ -17,20 +18,31 @@
     }
 }
 
+.container::-webkit-scrollbar {
+    display: none;
+}
+
 .button {
-    padding: 6px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    padding: 8px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
     cursor: pointer;
-    transition: all 0.2s;
-    background: var(--secondary-bg-color);
-    color: var(--secondary-text-color);
-    font-size: 0.85em;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--card-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    color: var(--foreground);
+    opacity: 0.6;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     white-space: nowrap;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .button::after {
@@ -44,12 +56,23 @@
 }
 
 .button:hover {
-    background-color: var(--secondary-hover-color);
+    background-color: var(--glass-bg);
+    color: var(--foreground);
+    opacity: 1;
+    border-color: var(--glass-border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-premium);
 }
 
 .buttonActive {
-    border-color: var(--accent-green) !important;
-    background: rgba(14, 241, 142, 0.1) !important;
+    border-color: rgba(14, 241, 142, 0.4) !important;
+    background: linear-gradient(135deg, rgba(14, 241, 142, 0.15), rgba(14, 241, 142, 0.05)) !important;
     color: var(--accent-green) !important;
-    font-weight: 800;
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(14, 241, 142, 0.2);
+    opacity: 1;
+}
+
+:global([data-theme='light']) .buttonActive {
+    box-shadow: 0 0 15px rgba(14, 241, 142, 0.15);
 }

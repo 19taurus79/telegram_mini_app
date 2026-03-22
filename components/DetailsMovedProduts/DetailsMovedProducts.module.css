@@ -81,13 +81,15 @@
   border-bottom: 1px solid var(--glass-border);
 }
 
-.table tr td:first-child {
+.table tr td:first-child,
+.table tr th:first-child {
   border-left: 1px solid var(--glass-border);
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
 }
 
-.table tr td:last-child {
+.table tr td:last-child,
+.table tr th:last-child {
   border-right: 1px solid var(--glass-border);
   border-top-right-radius: 12px;
   border-bottom-right-radius: 12px;
@@ -136,8 +138,7 @@
   transform: rotate(180deg);
 }
 
-@media (prefers-color-scheme: light) {
-  .table td { background: rgba(0, 0, 0, 0.02); }
-  .table th { color: rgba(0, 0, 0, 0.5); }
-  .card { background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
-}
+:global([data-theme='light']) .table td { background: rgba(0, 0, 0, 0.02); }
+:global([data-theme='light']) .table th { color: rgba(0, 0, 0, 0.5); }
+:global([data-theme='light']) .card { background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
+:global([data-theme='light']) .cardLabel { color: rgba(0, 0, 0, 0.6); }

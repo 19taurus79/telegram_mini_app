@@ -1,19 +1,22 @@
 /* components/Remains/RemainsCard.module.css */
 
 .card {
-  background-color: var(--background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-color);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
 }
 
 .header {
@@ -55,7 +58,8 @@
 
 .expandIcon {
   margin-left: 12px;
-  color: var(--secondary-text-color);
+  color: var(--accent-green);
+  opacity: 0.8;
   transition: transform 0.3s ease;
 }
 
@@ -66,7 +70,7 @@
 .details {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px dashed var(--border-color);
+  border-top: 1px dashed var(--glass-border);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
@@ -97,4 +101,15 @@
   opacity: 0.6;
   font-size: 0.85em;
   margin-bottom: 2px;
+}
+
+:global([data-theme='light']) .card {
+  background: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .card:hover {
+  background: #f8fafc;
+  border-color: var(--accent-green);
 }

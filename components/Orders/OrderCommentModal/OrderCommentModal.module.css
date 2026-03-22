@@ -108,20 +108,21 @@
 
 .submitButton {
   margin-top: 12px;
-  padding: 10px 20px;
-  background-color: var(--primary-color);
-  color: white;
+  padding: 12px 24px;
+  background: var(--accent-green);
+  color: #000;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
 }
 
 .submitButton:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.3);
+  transform: translateY(-2px);
 }
 
 .submitButton:disabled {
@@ -225,18 +226,19 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background-color: #10b981;
-  color: white;
+  background: var(--accent-green);
+  color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .saveButton:hover:not(:disabled) {
-  background-color: #059669;
+  box-shadow: 0 4px 15px rgba(14, 241, 142, 0.3);
+  transform: translateY(-1px);
 }
 
 .saveButton:disabled {
@@ -246,10 +248,10 @@
 
 .cancelButton {
   padding: 8px 16px;
-  background-color: var(--hover-bg-color);
+  background: var(--glass-bg);
   color: var(--foreground);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -257,16 +259,62 @@
 }
 
 .cancelButton:hover {
-  background-color: var(--border-color);
+  background: var(--accent-green-hover);
+  border-color: var(--accent-green);
 }
 
 .readOnlyNotice {
-  padding: 12px;
-  background-color: #e3f2fd;
-  border-left: 4px solid #2196f3;
-  border-radius: 4px;
-  color: #1976d2;
+  padding: 12px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid #3b82f6;
+  border-radius: 10px;
+  color: #60a5fa;
   font-size: 14px;
   text-align: center;
   margin-bottom: 16px;
+}
+
+/* Light mode overrides */
+:global([data-theme='light']) .modal {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
+}
+
+:global([data-theme='light']) .header {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+:global([data-theme='light']) .title {
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .textarea {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .textarea:focus {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .comment {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+:global([data-theme='light']) .comment:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme='light']) .readOnlyNotice {
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+}
+
+:global([data-theme='light']) .cancelButton {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .cancelButton:hover {
+  background: #f1f5f9;
 }

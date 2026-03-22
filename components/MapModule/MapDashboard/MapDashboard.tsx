@@ -141,7 +141,7 @@ export default function MapDashboard() {
 
         {/* ─── Карта ─── */}
         <div key="map">
-          <div className={styles.gridItem}>
+          <div className={`${styles.gridItem} ${styles.mapGridItem}`}>
             <div className={styles.gridItemHeader}>
               <span className={styles.dragHandle}>⋮⋮</span>
               <h3 className={styles.gridItemTitle}>Карта</h3>

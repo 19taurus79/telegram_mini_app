@@ -1,11 +1,12 @@
 .container {
-    padding: 12px 4px;
+    padding: 12px 8px;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 12px;
     overflow-x: auto;
     scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .container::-webkit-scrollbar {
@@ -13,56 +14,48 @@
 }
 
 .button {
-    padding: 8px 16px;
+    padding: 10px 18px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
-    border-left: 4px solid var(--status-color, transparent);
-    border-radius: 10px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     white-space: nowrap;
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.8rem;
-    font-weight: 500;
+    color: var(--foreground);
+    opacity: 0.8;
+    font-size: 0.85rem;
+    font-weight: 600;
     box-sizing: border-box;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-.button::after {
-    content: attr(data-text);
-    height: 0;
-    visibility: hidden;
-    overflow: hidden;
-    user-select: none;
-    pointer-events: none;
-    font-weight: 700;
+    box-shadow: var(--shadow-premium);
 }
 
 .button:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .buttonActive {
-    border-color: var(--status-color, var(--accent-green)) !important;
-    color: #fff !important;
-    font-weight: 700;
+    opacity: 1 !important;
     background: var(--status-color) !important;
-    box-shadow: 0 4px 15px var(--status-glow, rgba(14, 241, 142, 0.2));
+    color: #fff !important;
+    border-color: var(--status-color) !important;
+    box-shadow: 0 8px 24px var(--status-glow, rgba(14, 241, 142, 0.3));
+    font-weight: 700;
+    transform: scale(1.05);
 }
 
-/*.buttonActive {
-    background: linear-gradient(90deg, var(--status-color) 100%, transparent 100%) no-repeat;
-    background-size: 0% 100%;
-    animation: fillLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}*/
-
-@keyframes fillLeft {
-    from { background-size: 0% 100%; }
-    to { background-size: 100% 100%; }
+:global([data-theme='light']) .button {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
+:global([data-theme='light']) .buttonActive {
+  box-shadow: 0 8px 20px var(--status-glow, rgba(15, 23, 42, 0.15));
+}

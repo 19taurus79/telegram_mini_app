@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast"; // Import Toaster
 import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
 import TelegramNavigation from "../components/TelegramNavigation";
 import AuthGuard from "@/components/AuthGuard/AuthGuard";
+import ThemeProvider from "@/components/ThemeProvider/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,12 +43,30 @@ export default function RootLayout({
           src="https://telegram.org/js/telegram-web-app.js?58"
           strategy="beforeInteractive"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                let theme = localStorage.getItem('theme-storage');
+                if (theme) {
+                  theme = JSON.parse(theme).state.theme;
+                }
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches) || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                } else if (theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.setAttribute('data-theme', 'light');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <TanStackProvider>
           <FilterProvider>
             <DeliveryProvider>
               <AuthGuard />
+              <ThemeProvider />
               <Header />
               <TelegramRouter />
               <TelegramNavigation />

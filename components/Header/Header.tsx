@@ -9,6 +9,8 @@ import Link from "next/link";
 import { useInitData } from "@/store/InitData";
 import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
+import { useTheme } from "@/store/Theme";
+import { Sun, Moon } from "lucide-react";
 
 function Header() {
   const headerRef = useRef<HTMLElement>(null);
@@ -22,12 +24,35 @@ function Header() {
   const setUserData = useUser((state) => state.setUserData);
   
   const [isMounted, setIsMounted] = useState(false);
+  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('dark');
+  const { toggleTheme } = useTheme();
+
   useEffect(() => {
     setIsMounted(true);
+    setActualTheme((document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark');
+    
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'data-theme') {
+          setActualTheme((document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark');
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
   }, []);
   
   const { delivery } = useDelivery();
   const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
+  const [isVibrating, setIsVibrating] = useState(false);
+
+  useEffect(() => {
+    if (deliveryCount > 0) {
+      setIsVibrating(true);
+      const timer = setTimeout(() => setIsVibrating(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [deliveryCount]);
 
   const updateHeaderHeight = useCallback(() => {
     if (headerRef.current) {
@@ -135,6 +160,17 @@ function Header() {
         {userData?.is_guest && <span className={css.guestBadge}>Лише читання</span>}
       </Link>
 
+      {isMounted && (
+        <button
+          className={css.themeToggle}
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          title="Toggle theme"
+        >
+          {actualTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+      )}
+
       <button
         className={css.navToggle}
         onClick={() => {
@@ -172,7 +208,7 @@ function Header() {
             <Link 
               href="/delivery" 
               onClick={handleNavClick}
-              className={`${deliveryCount > 0 ? css.vibrate : ''} ${css.deliveryLinkWrapper} ${isActive('/delivery') ? css.activeLink : ''}`}
+              className={`${isVibrating ? css.vibrate : ''} ${css.deliveryLinkWrapper} ${isActive('/delivery') ? css.activeLink : ''}`}
             >
               Доставка
               {deliveryCount > 0 && (

@@ -9,7 +9,7 @@ import { getInitData } from "@/lib/getInitData";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
-import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare } from "lucide-react";
+import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Тип для вибраного елемента для редагування в модальному вікні.
@@ -78,8 +78,50 @@ const formatQuantity = (value: number): string => {
   return value.toFixed(2);
 };
 
+// Функция для форматирования номера телефона в формат +380 (XX) XXX-XX-XX
+const formatPhoneNumber = (value: string): string => {
+  if (!value) return "+380";
+  
+  // Оставляем только цифры
+  let digits = value.replace(/\D/g, "");
+  
+  // Если номер не начинается с 380, добавляем
+  if (!digits.startsWith("380")) {
+    // Если пользователь удалил 380, но ввел что-то другое, 
+    // пробуем прикрепить это к префиксу
+    if (digits.length > 0 && digits.length <= 9) {
+       digits = "380" + digits;
+    } else if (digits.length === 0) {
+       return "+380";
+    }
+  }
+  
+  // Ограничиваем 12 цифрами (380 + 9 цифр номера)
+  digits = digits.slice(0, 12);
+  
+  let formatted = "+380";
+  
+  // Форматируем оставшуюся часть
+  if (digits.length > 3) {
+    formatted += " (" + digits.substring(3, 5);
+  }
+  if (digits.length >= 6) {
+    formatted += ") " + digits.substring(5, 8);
+  }
+  if (digits.length >= 9) {
+    formatted += "-" + digits.substring(8, 10);
+  }
+  if (digits.length >= 11) {
+    formatted += "-" + digits.substring(10, 12);
+  }
+  
+  return formatted;
+};
+
 function DeliveryDataContent() {
-  const { delivery, updateQuantity, removeClientDelivery } = useDelivery();
+  const [isAnimatingSuccess, setIsAnimatingSuccess] = useState(false);
+  
+  const { delivery, removeClientDelivery, updateQuantity } = useDelivery();
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +140,7 @@ function DeliveryDataContent() {
   const [isAddressChange, setIsAddressChange] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -188,8 +231,8 @@ function DeliveryDataContent() {
   return (
     <div className={styles.wrapper}>
       {grouped.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '100px 20px', opacity: 0.5 }}>
-          <Package size={64} style={{ marginBottom: '16px' }} />
+        <div className={styles.emptyState}>
+          <Package size={64} className={styles.emptyIcon} />
           <h3>Кошик доставки порожній</h3>
           <p>Додайте товари з розділу замовлень</p>
         </div>
@@ -217,9 +260,9 @@ function DeliveryDataContent() {
                 {order.items.map((item) => (
                   <div className={styles.row} key={item.id}>
                     <div className={styles.cell}>
-                      <div style={{ fontWeight: 600 }}>{item.product}</div>
+                      <div className={styles.productName}>{item.product}</div>
                       {item.parties && item.parties.length > 0 && (
-                        <div style={{ marginTop: '4px', opacity: 0.6, fontSize: '0.8rem' }}>
+                        <div className={styles.partiesList}>
                           {item.parties.map((p, idx) => p.moved_q > 0 && (
                             <div key={idx}>↳ {p.party}: {formatQuantity(p.moved_q)}</div>
                           ))}
@@ -250,7 +293,7 @@ function DeliveryDataContent() {
                       ...formData,
                       address: `${address[0].region} обл., ${address[0].area} р-н, ${address[0].commune} громада, ${address[0].city}`,
                       contact: address[0].representative || "",
-                      phone: address[0].phone1 || "",
+                      phone: formatPhoneNumber(address[0].phone1 || ""),
                       latitude: address[0].latitude,
                       longitude: address[0].longitude,
                     });
@@ -308,36 +351,33 @@ function DeliveryDataContent() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className={styles.fieldGroup}>
-                <label className={styles.clientTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <label className={styles.fieldLabel}>
                   <MapPin size={16} /> Адреса доставки
                 </label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <textarea
-                    className={styles.modalInput}
+                    className={`${styles.modalInput} ${errors.address ? styles.invalid : ''}`}
                     value={formData.address}
                     readOnly={isAddressChange}
+                    rows={4}
                     style={{ margin: 0 }}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value, latitude: undefined, longitude: undefined })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, address: e.target.value, latitude: undefined, longitude: undefined });
+                      if (errors.address) setErrors({ ...errors, address: false });
+                    }}
                   />
                   <button 
                     onClick={() => setIsAddressChange(!isAddressChange)}
-                    style={{ 
-                      padding: '0 12px', 
-                      background: isAddressChange ? '#ef4444' : 'rgba(255,255,255,0.1)', 
-                      border: 'none', 
-                      borderRadius: '12px', 
-                      color: '#fff', 
-                      cursor: 'pointer' 
-                    }}
+                    className={`${styles.addressToggleButton} ${isAddressChange ? styles.active : ''}`}
                   >
                     {isAddressChange ? <X size={20} /> : <MapPin size={20} />}
                   </button>
                 </div>
                 {isAddressChange && (
-                  <div style={{ marginTop: '12px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                  <div className={styles.geocodingWrapper}>
                     <InputAddress onAddressSelect={handleAddressData}/>
                     {isGeocoding && (
-                      <button onClick={handleCustomAddressApply} style={{ width: '100%', marginTop: '12px', padding: '10px', background: 'var(--accent-green)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 700 }}>
+                      <button onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
                         Підтвердити адресу
                       </button>
                     )}
@@ -345,57 +385,71 @@ function DeliveryDataContent() {
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label className={styles.clientTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <User size={16} /> Отримувач
-                  </label>
+              <div>
+                <label className={styles.fieldLabel}>
+                  <User size={16} /> Отримувач
+                </label>
+                <input
+                  className={`${styles.modalInput} ${errors.contact ? styles.invalid : ''}`}
+                  value={formData.contact}
+                  onChange={(e) => {
+                    setFormData({ ...formData, contact: e.target.value });
+                    if (errors.contact) setErrors({ ...errors, contact: false });
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>
+                  <Phone size={16} /> Телефон
+                </label>
+                <input
+                  type="tel"
+                  className={`${styles.modalInput} ${errors.phone ? styles.invalid : ''}`}
+                  value={formData.phone}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) });
+                    if (errors.phone) setErrors({ ...errors, phone: false });
+                  }}
+                  onFocus={(e) => {
+                    if (!e.target.value) {
+                      setFormData({ ...formData, phone: "+380" });
+                      if (errors.phone) setErrors({ ...errors, phone: false });
+                    }
+                  }}
+                  placeholder="+380 (XX) XXX-XX-XX"
+                />
+              </div>
+
+              <div className={styles.inputWithIcon}>
+                <label className={styles.fieldLabel}>
+                  <Calendar size={16} /> Дата доставки
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Calendar size={18} className={styles.inputIcon} />
                   <input
-                    className={styles.modalInput}
-                    value={formData.contact}
-                    style={{ margin: 0 }}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className={styles.clientTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <Phone size={16} /> Телефон
-                  </label>
-                  <input
-                    type="tel"
-                    className={styles.modalInput}
-                    value={formData.phone}
-                    style={{ margin: 0 }}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    type="date"
+                    className={`${styles.modalInput} ${errors.date ? styles.invalid : ''}`}
+                    value={formData.date}
+                    onChange={(e) => {
+                      setFormData({ ...formData, date: e.target.value });
+                      if (errors.date) setErrors({ ...errors, date: false });
+                    }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label className={styles.clientTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <Calendar size={16} /> Дата доставки
-                  </label>
-                  <input
-                    type="date"
-                    className={styles.modalInput}
-                    value={formData.date}
-                    style={{ margin: 0 }}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className={styles.clientTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <MessageSquare size={16} /> Коментар
-                  </label>
-                  <input
-                    className={styles.modalInput}
-                    value={formData.comment}
-                    style={{ margin: 0 }}
-                    placeholder="Додаткові інструкції..."
-                    onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                  />
-                </div>
+              <div>
+                <label className={styles.fieldLabel}>
+                  <MessageSquare size={16} /> Коментар
+                </label>
+                <textarea
+                  className={styles.modalInput}
+                  value={formData.comment}
+                  rows={2}
+                  placeholder="Додаткові інструкції..."
+                  onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                />
               </div>
             </div>
 
@@ -411,8 +465,15 @@ function DeliveryDataContent() {
                   setFormError(null);
                   const { address, contact, phone, date, comment } = formData;
                   
-                  if (!address || !contact || !phone || !date) {
-                    setFormError("Будь ласка, заповніть всі важливі поля");
+                  const newErrors: Record<string, boolean> = {};
+                  if (!address) newErrors.address = true;
+                  if (!contact) newErrors.contact = true;
+                  if (!phone || phone.length < 19) newErrors.phone = true; // +380 (XX) XXX-XX-XX is 19 chars
+                  if (!date) newErrors.date = true;
+
+                  if (Object.keys(newErrors).length > 0) {
+                    setErrors(newErrors);
+                    setFormError("Будь ласка, заповніть всі обов'язкові поля");
                     setIsLoading(false);
                     return;
                   }
@@ -421,6 +482,7 @@ function DeliveryDataContent() {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   if (selectedDate < today) {
+                    setErrors({ date: true });
                     setFormError("Дата доставки не може бути в минулому");
                     setIsLoading(false);
                     return;
@@ -497,9 +559,13 @@ function DeliveryDataContent() {
                   try {
                     const result = await sendDeliveryData(payload, getInitData());
                     if (result.status === "ok") {
-                      removeClientDelivery(formClient as string);
-                      setFormClient(null);
-                      toast.success("Доставку оформлено!");
+                      setIsAnimatingSuccess(true);
+                      setTimeout(() => {
+                        setIsAnimatingSuccess(false);
+                        removeClientDelivery(formClient as string);
+                        setFormClient(null);
+                        toast.success("Доставку оформлено!");
+                      }, 3000);
                     } else {
                       setFormError("Помилка сервера");
                     }
@@ -514,6 +580,17 @@ function DeliveryDataContent() {
               </button>
               <button className={styles.buttonCancel} onClick={() => setFormClient(null)}>Скасувати</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isAnimatingSuccess && (
+        <div className={styles.animationOverlay}>
+          <div className={styles.animationContainer}>
+            <Package size={80} className={styles.packageIcon} />
+            <Box size={100} className={styles.boxIcon} />
+            <Truck size={120} className={styles.truckIcon} />
+            <div className={styles.successText}>Відправлено!</div>
           </div>
         </div>
       )}

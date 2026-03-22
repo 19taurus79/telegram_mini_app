@@ -1,301 +1,296 @@
-/* --- Main Container --- */
 .listContainer {
-  padding: 10px;
-  font-family: Arial, sans-serif;
-  font-size: 0.95rem;
-  color: var(--foreground);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: calc(100vh - var(--header-height));
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+:global([data-theme='light']) .listContainer {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 /* --- Header Row --- */
 .listHeader {
   display: flex;
-  padding: 12px 15px;
-  font-weight: bold;
-  color: var(--foreground);
-  border-bottom: 2px solid var(--border-color);
-  margin-bottom: 8px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 2px solid var(--glass-border);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+:global([data-theme='light']) .listHeader {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.4);
 }
 
 /* --- Card Styles --- */
 .productCard {
-  background-color: var(--background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   overflow: hidden;
-  transition: background-color 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* --- Row and Cell Flexbox Layout --- */
+:global([data-theme='light']) .productCard {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.productCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-green);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Row and Cell Layout --- */
 .cardRow {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border-color); 
-  cursor: pointer;
-}
-
-.productCard .cardRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  padding: 14px 20px;
+  gap: 12px;
+  transition: background 0.2s;
 }
 
 .cardCellProduct {
   flex: 1;
-  padding: 8px;
-  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+}
+
+:global([data-theme='light']) .cardCellProduct {
+  color: var(--foreground);
+}
+
+.productName {
+  font-size: 1rem;
 }
 
 .cardCellQuantity {
-  flex-shrink: 0;
-  padding: 8px;
-  min-width: 60px;
+  flex: 0 0 70px;
   text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--accent-green);
+}
+
+:global([data-theme='light']) .cardCellQuantity {
+  color: #10b981;
 }
 
 .commentBadgeCell {
-  flex-shrink: 0;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  position: relative;
+  padding: 0;
 }
 
-.headerCellProduct {
-  flex: 1;
-}
-
-.headerCellQuantity {
-  flex: 0 0 80px;
-  text-align: center;
-}
+.headerCellProduct { flex: 1; }
+.headerCellQuantity { flex: 0 0 70px; text-align: center; }
 
 /* --- Party Section Styles --- */
 .partySection {
-  border-top: 1px solid var(--gray-alpha-200);
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--glass-border);
+  padding: 4px 0;
+}
+
+:global([data-theme='light']) .partySection {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
 }
 
 .partyRow {
-  font-size: 0.9em;
+  padding: 10px 20px 10px 44px; /* Indent for parties */
+  opacity: 0.8;
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.partyRow::before {
+  content: '↳';
+  position: absolute;
+  left: 24px;
+  color: var(--accent-green);
 }
 
 .party {
-  color: var(--primary-color, #0070f3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:global([data-theme='light']) .party {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .qParty {
-  color: var(--primary-color, #0070f3);
-  font-weight: bold;
+  color: var(--accent-green);
+  font-weight: 700;
 }
 
 /* --- NEW: Selection Style --- */
 .selected {
-  background-color: #406939;
+  border-color: var(--accent-green);
+  background: rgba(14, 241, 142, 0.05);
 }
 
-/* --- Utility classes --- */
-.centr {
-  text-align: center;
-}
-
-.btnWrapper {
-  display: flex;
-  justify-content: space-between;
-  margin: 16px 10px;
+:global([data-theme='light']) .selected {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: #10b981;
 }
 
 .alreadyInDelivery {
-  border: 1px solid #00c4cc;
+  border: 1.5px solid #00c4cc;
 }
 
 .deliveryBadge {
-  background-color: #00c4cc;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: bold;
+  background: #00c4cc;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-left: 8px;
-  vertical-align: middle;
-  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.checkmarkGreen {
-  color: #28a745; 
-  font-size: 1.2rem;
-  font-weight: bold;
-}
+/* Status Colors */
+.checkmarkGreen { color: #10b981; }
+.checkmarkYellow { color: #f59e0b; }
+.checkmarkRed { color: #ef4444; }
 
-.checkmarkYellow {
-  color: #ffc107; 
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.checkmarkRed {
-  color: #ef4444; 
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-/* --- Embedded Chat Section --- */
-.embeddedChatSection {
-  margin-top: 30px;
-  background: var(--background);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  height: 500px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-
-.embeddedChatHeader {
-  padding: 12px 20px;
-  background: var(--header-bg-color);
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 600;
-  color: var(--foreground);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.embeddedChatHeader h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.closeEmbeddedBtn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--foreground);
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.closeEmbeddedBtn:hover {
-  opacity: 1;
-}
-
-.embeddedChatContent {
-  flex: 1;
-  overflow: hidden;
-}
-
-/* --- Validation Modal Content (within Modal.tsx) --- */
+/* --- Validation Modal Content --- */
 .validationModalContent {
   width: 100%;
-  max-width: 350px;
-  min-width: 280px;
 }
 
 .modalTitle {
-  margin: -20px -20px 0 -20px; 
-  padding: 15px 20px;
-  background-color: var(--header-bg-color, #f8f9fa);
-  border-bottom: 1px solid var(--border-color);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+:global([data-theme='light']) .modalTitle {
   color: var(--foreground);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
 }
 
 .modalBody {
-  padding: 20px 0;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--foreground);
+  margin-bottom: 32px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+:global([data-theme='light']) .modalBody {
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .modalActions {
-  margin: 0 -20px -20px -20px; 
-  padding: 15px 20px;
-  background-color: var(--header-bg-color, #f8f9fa);
-  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  gap: 12px;
 }
 
 .confirmBtn, .cancelBtn, .changeQtyBtn {
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 800;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .confirmBtn {
-  background-color: var(--primary-color, #0070f3);
-  color: white;
-}
-
-.confirmBtn:hover {
-  opacity: 0.9;
+  background: var(--accent-green);
+  color: #000;
 }
 
 .cancelBtn {
-  background-color: var(--secondary-bg-color, #e2e8f0);
-  color: var(--foreground);
-  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid var(--glass-border);
 }
 
-.cancelBtn:hover {
-  opacity: 1;
+:global([data-theme='light']) .cancelBtn {
+  background: #f1f5f9;
+  color: rgba(0, 0, 0, 0.6);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .changeQtyBtn {
-  background-color: #3b82f6;
-  color: white;
-}
-
-/* --- Inline Edit Quantity --- */
-.editQtyContainer {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.inputLabel {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--foreground);
-  opacity: 0.8;
+  background: #3b82f6;
+  color: #fff;
 }
 
 .modalInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 14px;
+  border-radius: 12px;
+  color: #fff;
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
 }
 
-.modalInput:focus {
-  border-color: var(--primary-color);
+:global([data-theme='light']) .modalInput {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--foreground);
 }
 
 @media (min-width: 768px) {
   .modalActions {
-    flex-direction: row;
-    justify-content: flex-end;
+    flex-direction: row-reverse;
   }
+  .confirmBtn, .cancelBtn, .changeQtyBtn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .btnWrapper {
+    position: sticky;
+    bottom: 0px;
+    left: 0;
+    width: calc(100% + 32px); /* Compensate listContainer padding */
+    margin: 0 -16px -16px -16px;
+    padding: 16px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid var(--glass-border);
+  }
+  
+  :global([data-theme='light']) .btnWrapper {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .listContainer {
+    padding-bottom: 0; /* Button wrapper handles padding */
+  }
+}
+
+.btnWrapper {
+  margin-top: auto; /* Push to bottom of flex container */
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  z-index: 10;
 }

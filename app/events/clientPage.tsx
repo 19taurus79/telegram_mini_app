@@ -55,7 +55,7 @@ export default function EventsSmall({ events }: { events: InnerEvent[] }) {
             </div>
           </div>
 
-          <ChevronRight size={18} style={{ opacity: 0.3 }} />
+          <ChevronRight size={18} className={css.chevron} />
         </div>
       ))}
     </div>

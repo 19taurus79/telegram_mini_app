@@ -195,14 +195,13 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
         {/* Секция для заявок без адреса */}
         {filteredUnmappedApplications.length > 0 && (
           <div className={css.unmappedSection}>
-            <div className={css.letterHeader} style={{ backgroundColor: '#ffebee', color: '#d32f2f' }}>
+            <div className={css.letterHeader}>
               Без адреси ({filteredUnmappedApplications.length})
             </div>
             {filteredUnmappedApplications.map((item) => (
               <div 
                 key={item.client} 
-                className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
-                style={{ borderLeft: '4px solid #f44336', cursor: 'pointer' }}
+                className={`${css.item} ${css.unmappedItem} ${isMultiSelected(item) ? css.itemSelected : ''}`}
                 onClick={(e) => {
                   const isMultiClick = e && (e.ctrlKey || e.metaKey);
                   if (isMultiClick) {

@@ -11,16 +11,18 @@
   --background: #0f172a;
   --foreground: #f8fafc;
   --card-bg: rgba(255, 255, 255, 0.03);
+  
+  /* Premium Aesthetics */
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.05);
-    --card-bg: rgba(255, 255, 255, 0.8);
-  }
+:root[data-theme='light'] {
+  --background: #f8fafc;
+  --foreground: #020617; /* Maximized contrast */
+  --glass-bg: rgba(255, 255, 255, 0.7); /* Thicker milk glass */
+  --glass-border: rgba(255, 255, 255, 1);
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --shadow-premium: 0 20px 40px -10px rgba(15, 23, 42, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 1);
 }
 
 * {
@@ -43,18 +45,23 @@ body {
   background-attachment: fixed;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   
-  /* Premium background */
+  /* Premium background: Radial accents + Dark Overlay + Image */
   background-image: 
-    radial-gradient(circle at 0% 0%, rgba(14, 241, 142, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(128, 180, 53, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 0% 0%, rgba(14, 241, 142, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(128, 180, 53, 0.1) 0%, transparent 50%),
+    linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)),
+    url('/bg-agro.png');
+  background-size: 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: center, center, center, center;
 }
 
-@media (prefers-color-scheme: light) {
-  body {
-    background-image: 
-      radial-gradient(circle at 100% 0%, rgba(14, 241, 142, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 0% 100%, rgba(128, 180, 53, 0.05) 0%, transparent 40%);
-  }
+body[data-theme='light'] {
+  /* Radial accents + Stronger Milk Overlay + Image */
+  background-image: 
+    radial-gradient(circle at 100% 0%, rgba(14, 241, 142, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(128, 180, 53, 0.15) 0%, transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.88)),
+    url('/bg-agro.png');
 }
 
 /* Glassmorphism Utilities */
@@ -64,7 +71,7 @@ body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: var(--shadow-premium);
 }
 
 .glass-card {
@@ -137,9 +144,7 @@ body {
   border-bottom-right-radius: 12px;
 }
 
-@media (prefers-color-scheme: light) {
-  .premium-table th { color: rgba(0, 0, 0, 0.5); }
-}
+:root[data-theme='light'] .premium-table th { color: rgba(0, 0, 0, 0.5); }
 
 a {
   color: inherit;

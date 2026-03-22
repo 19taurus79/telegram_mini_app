@@ -10,30 +10,63 @@
 
 .controlBtn {
   position: relative;
-  width: 44px;
-  height: 44px;
-  background-color: white;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  background: rgba(15, 23, 42, 0.75); /* Dark background to make white icons visible over map */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-premium);
   cursor: pointer;
-  border: 1px solid #ccc;
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .controlBtn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .controlBtn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px) scale(1.05);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .controlBtn:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 
-.controlBtn svg {
-  flex-shrink: 0;
+/* Active states with smart glowing */
+.activeClients {
+  background: rgba(76, 175, 80, 0.2) !important;
+  color: #4caf50 !important;
+  border-color: rgba(76, 175, 80, 0.4) !important;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3) !important;
+}
+
+.activeDeliveries {
+  background: rgba(255, 87, 34, 0.2) !important;
+  color: #ff5722 !important;
+  border-color: rgba(255, 87, 34, 0.4) !important;
+  box-shadow: 0 0 20px rgba(255, 87, 34, 0.3) !important;
+}
+
+.activeRouting {
+  background: rgba(33, 150, 243, 0.2) !important;
+  color: #2196f3 !important;
+  border-color: rgba(33, 150, 243, 0.4) !important;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.3) !important;
+}
+
+.activeApplications {
+  background: rgba(76, 175, 80, 0.2) !important;
+  color: #4caf50 !important;
+  border-color: rgba(76, 175, 80, 0.4) !important;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3) !important;
 }
 
 /* Tooltip */

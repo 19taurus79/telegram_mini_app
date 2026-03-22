@@ -181,10 +181,32 @@
   }
   
   .navOpen {
-    max-height: 80vh;
+    max-height: calc(100vh - 100px);
     opacity: 1;
     transform: translateY(0) scale(1);
     padding-bottom: 24px;
+    overflow-y: auto;
+    
+    /* Elegant scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(14, 241, 142, 0.3) transparent;
+  }
+  
+  .navOpen::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .navOpen::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .navOpen::-webkit-scrollbar-thumb {
+    background: rgba(14, 241, 142, 0.4);
+    border-radius: 10px;
+  }
+  
+  .navOpen::-webkit-scrollbar-thumb:hover {
+    background: rgba(14, 241, 142, 0.6);
   }
   
   .navList {

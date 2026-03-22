@@ -58,6 +58,32 @@
   .cardValue {
     font-weight: 600;
   }
+
+  .header h3 {
+    font-size: 1.2rem;
+  }
+
+  .header h4 {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 12px;
+  }
+  .header h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .header h4 {
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
+    line-height: 1.4;
+  }
+  .container {
+    padding: 4px;
+  }
 }
 
 @media (min-width: 769px) {
@@ -157,6 +183,8 @@
 .header h3, .header h4 {
   margin: 0 0 10px 0;
   color: #fff;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Sections */
@@ -180,6 +208,8 @@
   color: #fff;
   font-size: 1.1rem;
   font-weight: 700;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Accordion */

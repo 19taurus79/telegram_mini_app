@@ -225,7 +225,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
             <div className={styles.gridItemHeader}>
               <div className={styles.headerLeft}>
                 <span className={styles.dragHandle}>⋮⋮</span>
-                <span className={styles.gridItemTitle}>Контракти</span>
+                <span className={styles.gridItemTitle}>Доповнення</span>
               </div>
               <div>
                 <button
@@ -233,7 +233,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                     showAllContracts ? styles.toggleButtonActive : ""
                   }`}
                   onClick={toggleShowAll}
-                  title="Показати товари по всім контрактам"
+                  title="Показати товари по всім доповненням"
                 >
                   <Layers size={14} /> Всі
                 </button>
@@ -259,7 +259,7 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                 <span className={styles.gridItemTitle}>
                   Деталі замовлення 
                   {selectedContracts.length > 0 && !showAllContracts ? ` (${selectedContracts.length})` : ""}
-                  {showAllContracts ? " (Всі контракти)" : ""}
+                  {showAllContracts ? " (Всі доповнення)" : ""}
                   {selectedClients.length > 1 ? ` — ${selectedClients.length} клієнтів` : ""}
                 </span>
               </div>

@@ -1,11 +1,11 @@
 .widget {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  color: #fff;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-premium);
+  color: var(--foreground);
   padding: 20px;
   text-align: center;
   max-width: 400px;
@@ -65,7 +65,7 @@
 .temp {
   font-size: 2.2rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #fff, #0ef18e);
+  background: linear-gradient(90deg, var(--foreground), #0ef18e);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -73,7 +73,8 @@
 
 .desc {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--foreground);
+    opacity: 0.7;
 }
 
 .error {
@@ -83,7 +84,7 @@
 }
 
 .forecastSection {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--glass-border);
     padding-top: 15px;
     margin-top: 15px;
 }
@@ -91,7 +92,8 @@
 .forecastSection h4 {
     margin-top: 0;
     margin-bottom: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--foreground);
+    opacity: 0.5;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -110,7 +112,7 @@
     align-items: center;
     gap: 4px;
     min-width: 60px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--card-bg);
     padding: 8px;
     border-radius: 12px;
 }
@@ -130,19 +132,20 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: var(--card-bg);
     border-radius: 12px;
     transition: background 0.2s;
 }
 
 .dayItem:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: var(--glass-bg);
 }
 
 .dayName {
     font-weight: 500;
     text-transform: capitalize;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--foreground);
+    opacity: 0.8;
 }
 
 .dayEmoji {

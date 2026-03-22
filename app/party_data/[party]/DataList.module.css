@@ -1,23 +1,44 @@
-/* DataList.module.css */
-
 .list {
-  list-style-type: none; /* убираем маркеры */
-  padding: 16px;
-  margin-bottom: 24px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--background);
-  max-width: 400px;
-  margin-left: 12px;
-  margin-right: 12px;
+  list-style-type: none;
+  padding: 24px;
+  margin: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .listItem {
-  font-size: 16px;
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 8px;
+}
+
+:global([data-theme='light']) .listItem {
   color: var(--foreground);
-  margin-bottom: 8px;
+  border-color: rgba(0, 0, 0, 0.05);
 }
 
 .listItem:last-child {
   margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* Light mode overrides */
+:global([data-theme='light']) .list {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }

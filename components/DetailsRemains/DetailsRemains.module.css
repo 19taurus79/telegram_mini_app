@@ -142,6 +142,23 @@
   color: #3b82f6;
 }
 
+/* Header Section */
+.header {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.header h3, .header h4 {
+  margin: 0 0 10px 0;
+  color: #fff;
+}
+
 /* Sections */
 .warehouseGroups {
   display: flex;
@@ -194,9 +211,37 @@
   transform: rotate(180deg);
 }
 
-@media (prefers-color-scheme: light) {
-  .table td { background: rgba(0, 0, 0, 0.02); }
-  .table th { color: rgba(0, 0, 0, 0.5); }
-  .warehouseTitle { color: var(--foreground); }
-  .card { background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
+:global([data-theme='light']) .table td { background: rgba(0, 0, 0, 0.02); }
+:global([data-theme='light']) .table th { color: rgba(0, 0, 0, 0.5); }
+:global([data-theme='light']) .warehouseTitle { color: var(--foreground); }
+:global([data-theme='light']) .card { background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
+:global([data-theme='light']) .cardLabel { color: rgba(0, 0, 0, 0.6); }
+
+/* Light Theme Overrides for Details Remains Header & Badges */
+:global([data-theme='light']) .header,
+:global([data-theme='light']) .warehouseGroup {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+:global([data-theme='light']) .header h3,
+:global([data-theme='light']) .header h4 {
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669; /* Darker green */
+}
+
+:global([data-theme='light']) .warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #b45309; /* Darker amber */
+}
+
+:global([data-theme='light']) .info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #1d4ed8; /* Darker blue */
 }

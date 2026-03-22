@@ -481,13 +481,13 @@ export default function BottomData({ onEditClient }) {
       return (
         <div className={css.container}>
           <div className={css.deliveryHeader}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h2 className={css.title}>📊 Сводка: {selectedDeliveries.length} достав.</h2>
+            <div className={css.deliveryTitleBox}>
+              <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>📊 Сводка: {selectedDeliveries.length} достав.</h2>
               <div className={css.itemTotalQuantity} style={{ fontSize: '1.1em' }}>
                 Всього: {totalWeight.toFixed(2)} кг
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className={css.deliveryActionsBox}>
               <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
                 <Printer size={14} /> Друк
               </button>
@@ -517,12 +517,12 @@ export default function BottomData({ onEditClient }) {
                       </div>
                       {expandedIds.has(d.id) && (
                         <div className={css.accordionContent}>
-                           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                               {!isGuest && (
                                 <>
                                   {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
-                                  <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: d.status === "Виконано" ? '#ff9800' : '#4caf50' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
-                                  {d.status !== "Виконано" && <button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px', backgroundColor: '#2196F3' }}>Змінити дату</button>}
+                                  <button className={`${css.deliveryEditBtn} ${d.status === "Виконано" ? css.btnOrange : css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
+                                  {d.status !== "Виконано" && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Змінити дату</button>}
                                   {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
                                 </>
                               )}
@@ -561,7 +561,7 @@ export default function BottomData({ onEditClient }) {
                 />
                 <div className={css.confirmActions}>
                   <button className={css.confirmCancel} onClick={() => setChangeDateTarget(null)}>Скасувати</button>
-                  <button className={css.deliveryEditBtn} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)} style={{ backgroundColor: '#2196F3' }}>Зберегти</button>
+                  <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)}>Зберегти</button>
                 </div>
               </div>
             </div>
@@ -573,32 +573,51 @@ export default function BottomData({ onEditClient }) {
     const isCompleted = delivery.status === "Виконано";
     return (
       <div className={css.container}>
-        <div className={css.deliveryHeader}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <h2 className={css.title}>🚀 Доставка: {delivery.client}</h2>
-            <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : ""}`}>{delivery.status}</span>
+        <div className={css.infoCard}>
+          <div className={css.deliveryHeader}>
+            <div className={css.deliveryTitleBox}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>Доставка: {delivery.client}</h2>
+                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : ""}`}>{delivery.status}</span>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-             <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-               <Printer size={14} /> Друк
-             </button>
-             {!isGuest && (
-               <>
-                 {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
-                 {!isCompleted && <button className={css.deliveryEditBtn} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }} style={{ backgroundColor: '#2196F3' }}>Змінити дату</button>}
-                 {isCompleted ? (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "В роботі")} style={{ backgroundColor: '#ff9800' }}>Змінити статус на "В роботі"</button>) : (<button className={css.deliveryEditBtn} onClick={() => handleUpdateStatus(delivery, "Виконано")} style={{ backgroundColor: '#4caf50' }}>Змінити статус на "Виконано"</button>)}
-                 {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
-               </>
-             )}
+          
+          {!isGuest && (
+            <div className={css.deliveryActionsRow}>
+              <div className={css.deliveryPrimaryActions}>
+                {isCompleted ? (
+                  <button className={`${css.deliveryActionPrimary} ${css.primaryOrange}`} onClick={() => handleUpdateStatus(delivery, "В роботі")}>← Повернути до "В роботі"</button>
+                ) : (
+                  <button className={`${css.deliveryActionPrimary} ${css.primaryGreen}`} onClick={() => handleUpdateStatus(delivery, "Виконано")}>✓ Позначити виконаним</button>
+                )}
+              </div>
+              <div className={css.deliverySecondaryActions}>
+                <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
+                  <Printer size={14} /> Друк
+                </button>
+                {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+                {!isCompleted && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }}>Змінити дату</button>}
+                {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
+              </div>
+            </div>
+          )}
+          
+          {isGuest && (
+            <div className={css.deliveryActionsRow}>
+              <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
+                <Printer size={14} /> Друк
+              </button>
+            </div>
+          )}
+          <div className={css.addressInfo}>
+              <p><strong>Адреса:</strong> {delivery.address}</p>
+              <p><strong>Менеджер:</strong> {delivery.manager}</p>
+              <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
+              <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
+              <p><strong>Контакт:</strong> {delivery.contact} (<a href={`tel:${delivery.phone}`}>{delivery.phone}</a>)</p>
+              {delivery.comment && <p className={css.comment}><strong>Коментар:</strong> {delivery.comment}</p>}
           </div>
-        </div>
-        <div className={css.addressInfo}>
-            <p><strong>Адреса:</strong> {delivery.address}</p>
-            <p><strong>Менеджер:</strong> {delivery.manager}</p>
-            <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
-            <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
-            <p><strong>Контакт:</strong> {delivery.contact} (<a href={`tel:${delivery.phone}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{delivery.phone}</a>)</p>
-            {delivery.comment && <p className={css.comment}><strong>Коментар:</strong> {delivery.comment}</p>}
         </div>
         {delivery.items && delivery.items.length > 0 && (
           <div className={css.itemsSection}>
@@ -631,7 +650,7 @@ export default function BottomData({ onEditClient }) {
               />
               <div className={css.confirmActions}>
                 <button className={css.confirmCancel} onClick={() => setChangeDateTarget(null)}>Скасувати</button>
-                <button className={css.deliveryEditBtn} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)} style={{ backgroundColor: '#2196F3' }}>Зберегти</button>
+                <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)}>Зберегти</button>
               </div>
             </div>
           </div>
@@ -678,11 +697,13 @@ export default function BottomData({ onEditClient }) {
       };
       return (
         <div className={css.container}>
-          <h2 className={css.title}>{selectedClient.client}</h2>
-          <h3>{selectedClient.orders[0].manager}</h3>
-          <p className={css.subtitle}>{`${selectedClient.address.region} обл., ${selectedClient.address.area} район, ${selectedClient.address.commune} громада, ${selectedClient.address.city}`}</p>
-          <p className={css.orderCount}>Всього заявок: {selectedClient.count}</p>
-          <p className={css.totalWeight}>Загальна вага: {selectedClient.totalWeight?.toFixed(2) || 0} кг</p>
+          <div className={css.infoCard}>
+            <h2 className={css.title}>{selectedClient.client}</h2>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '400', opacity: 0.8 }}>{selectedClient.orders[0].manager}</h3>
+            <p className={css.subtitle}>{`${selectedClient.address.region} обл., ${selectedClient.address.area} район, ${selectedClient.address.commune} громада, ${selectedClient.address.city}`}</p>
+            <p className={css.orderCount}>Всього заявок: {selectedClient.count}</p>
+            <p className={css.totalWeight}>Загальна вага: {selectedClient.totalWeight?.toFixed(2) || 0} кг</p>
+          </div>
           <div className={css.ordersContainer}>
             {Object.entries(groupedOrders).map(([contractNum, orders]) => (
               <div key={contractNum} className={css.contractGroup}>
@@ -715,14 +736,16 @@ export default function BottomData({ onEditClient }) {
     }
     return (
       <div className={css.container}>
-        <h2 className={css.title}>{selectedClient.client}</h2>
-        <div className={css.addressInfo}>
-            <p><strong>Адреса:</strong> {selectedClient.region} обл., {selectedClient.area} район, {selectedClient.commune} громада, {selectedClient.city}</p>
-            <p><strong>Менеджер:</strong> {selectedClient.manager}</p>
-            <p><strong>Контактна особа:</strong> {selectedClient.representative}</p>
-            <p><strong>Телефон:</strong> <a href={`tel:${selectedClient.phone1}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone1}</a></p>
-            {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`} style={{ textDecoration: 'underline', color: 'inherit' }}>{selectedClient.phone2}</a></p>}
-            {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
+        <div className={css.infoCard}>
+          <h2 className={css.title}>{selectedClient.client}</h2>
+          <div className={css.addressInfo}>
+              <p><strong>Адреса:</strong> {selectedClient.region} обл., {selectedClient.area} район, {selectedClient.commune} громада, {selectedClient.city}</p>
+              <p><strong>Менеджер:</strong> {selectedClient.manager}</p>
+              <p><strong>Контактна особа:</strong> {selectedClient.representative}</p>
+              <p><strong>Телефон:</strong> <a href={`tel:${selectedClient.phone1}`}>{selectedClient.phone1}</a></p>
+              {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`}>{selectedClient.phone2}</a></p>}
+              {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
+          </div>
         </div>
         {!isGuest && (
           <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>
@@ -741,10 +764,12 @@ export default function BottomData({ onEditClient }) {
 
   return (
     <div className={css.container}>
-      <h2 className={css.title}>Обрана адреса</h2>
-      <div className={css.addressInfo}>
-        <p><strong>Адреса:</strong> {addressData.display_name}</p>
-        {addressData.lat && <p><strong>Координати:</strong> {addressData.lat}, {addressData.lon}</p>}
+      <div className={css.infoCard}>
+        <h2 className={css.title}>Обрана адреса</h2>
+        <div className={css.addressInfo}>
+          <p><strong>Адреса:</strong> {addressData.display_name}</p>
+          {addressData.lat && <p><strong>Координати:</strong> {addressData.lat}, {addressData.lon}</p>}
+        </div>
       </div>
     </div>
   );

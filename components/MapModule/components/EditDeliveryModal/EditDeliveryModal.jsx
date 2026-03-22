@@ -698,7 +698,7 @@ export default function EditDeliveryModal() {
                  setIsPrintView(true);
                }}
              >
-               Сформувати форму
+               До друку
              </button>
            </div>
          </div>
@@ -876,7 +876,7 @@ export default function EditDeliveryModal() {
                       {/* Вложенная таблица для партий */}
                       {item.parties && item.parties.length > 0 && (
                         <tr>
-                          <td colSpan="5" style={{ padding: '0 10px 10px 40px' }}>
+                          <td colSpan="5" style={{ padding: '0 12px 12px 40px' }}>
                             <table className={css.nestedTable}>
                               <thead>
                                 <tr>

@@ -59,10 +59,6 @@ export default async function filteredOrdersDetail({ params }: Props) {
   return (
     <>
       <TableOrderDetail details={details} />
-      <div className={css.btnWrapper}>
-        {/* <BackBtn /> */}
-        <DeliveryBtn />
-      </div>
     </>
   );
 }

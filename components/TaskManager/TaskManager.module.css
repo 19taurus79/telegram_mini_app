@@ -3,13 +3,13 @@
   max-width: 1200px;
   margin: 20px auto;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  color: #fff;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-premium);
+  color: var(--foreground);
 }
 
 .title {
@@ -32,10 +32,10 @@
 }
 
 .section {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -73,10 +73,10 @@
 }
 
 .item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   padding: 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -85,7 +85,7 @@
 }
 
 .item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   border-color: rgba(14, 241, 142, 0.5);
   transform: scale(1.02);
 }
@@ -100,12 +100,13 @@
 .itemTitle {
   font-weight: 500;
   font-size: 0.95rem;
-  color: #fff;
+  color: var(--foreground);
 }
 
 .itemMeta {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--foreground);
+  opacity: 0.5;
 }
 
 .status {
@@ -122,7 +123,8 @@
 
 .noData {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--foreground);
+  opacity: 0.3;
   text-align: center;
   padding: 20px 0;
 }

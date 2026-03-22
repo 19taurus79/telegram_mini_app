@@ -191,39 +191,69 @@ export default function InputAddress({ onAddressSelect }) {
   const autocompleteSx = {
     "& .MuiOutlinedInput-root": {
       color: "var(--foreground)",
-      backgroundColor: "var(--background)",
-      "& fieldset": { borderColor: "var(--border-color)" },
-      "&:hover fieldset": { borderColor: "var(--foreground)" },
-      "&.Mui-focused fieldset": { borderColor: "var(--primary-color)" },
-      "&.Mui-disabled fieldset": { borderColor: "var(--border-color)" },
+      backgroundColor: "rgba(255, 255, 255, 0.03)",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      borderRadius: "14px",
+      "& fieldset": { 
+        borderColor: "rgba(255, 255, 255, 0.1)",
+        transition: "border-color 0.3s ease" 
+      },
+      "&:hover fieldset": { borderColor: "var(--accent-green)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--accent-green)" },
     },
     "& .MuiInputLabel-root": { 
       color: "var(--foreground)", 
-      opacity: 0.7,
-      backgroundColor: "var(--background)",
-      padding: "0 4px"
+      opacity: 0.6,
+      backgroundColor: "transparent",
+      padding: "0 8px"
     },
-    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary-color)", opacity: 1 },
-    "& .MuiInputLabel-root.Mui-disabled": { color: "var(--foreground)", opacity: 0.3 },
-    "& .MuiSvgIcon-root": { color: "var(--foreground)" },
-    "& + .MuiAutocomplete-popper .MuiAutocomplete-paper": {
-      backgroundColor: "var(--background)",
-      color: "var(--foreground)",
-      border: "1px solid var(--border-color)",
+    "& .MuiInputLabel-root.Mui-focused": { 
+      color: "var(--accent-green)", 
+      opacity: 1 
     },
-    "& + .MuiAutocomplete-popper .MuiAutocomplete-option": {
+    "& .MuiSvgIcon-root": { color: "var(--foreground)", opacity: 0.7 },
+  };
+
+  const popperSx = {
+    zIndex: 10100,
+    "& .MuiAutocomplete-paper": {
+      backgroundColor: "rgba(15, 23, 42, 0.9)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
       color: "var(--foreground)",
-      "&:hover": { backgroundColor: "var(--hover-bg-color)" },
-      "&[aria-selected='true']": { backgroundColor: "var(--secondary-bg-color)", color: "var(--secondary-text-color)" },
-      "&[aria-selected='true']:hover": { backgroundColor: "var(--secondary-hover-color)" },
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      borderRadius: "16px",
+      marginTop: "8px",
+      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.5)",
+      "& .MuiAutocomplete-option": {
+        padding: "12px 16px",
+        height: "auto",
+        "&:hover": { backgroundColor: "rgba(14, 241, 142, 0.1)" },
+        "&[aria-selected='true']": { 
+          backgroundColor: "rgba(14, 241, 142, 0.15)", 
+          color: "var(--accent-green)" 
+        },
+        "&[aria-selected='true']:hover": { backgroundColor: "rgba(14, 241, 142, 0.25)" },
+      },
+      "& .MuiAutocomplete-noOptions": {
+        color: "var(--foreground)",
+        padding: "20px",
+        opacity: 0.6
+      }
     },
-    "& + .MuiAutocomplete-popper .MuiAutocomplete-noOptions": {
-      color: "var(--foreground)",
-      backgroundColor: "var(--background)"
-    },
-    "& + .MuiAutocomplete-popper .MuiAutocomplete-loading": {
-      color: "var(--foreground)",
-      backgroundColor: "var(--background)"
+    ":global([data-theme='light']) & .MuiAutocomplete-paper": {
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      color: "#1e293b",
+      borderColor: "rgba(0, 0, 0, 0.1)",
+      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+      "& .MuiAutocomplete-option": {
+        "&:hover": { backgroundColor: "rgba(16, 185, 129, 0.1)" },
+        "&[aria-selected='true']": { 
+          backgroundColor: "rgba(16, 185, 129, 0.1)", 
+          color: "#059669" 
+        },
+      }
     }
   };
 
@@ -260,7 +290,7 @@ export default function InputAddress({ onAddressSelect }) {
               }}
             />
           )}
-          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
+          slotProps={{ popper: { sx: popperSx } }}
         />
 
         {/* Компонент для поиска и выбора населенного пункта */}
@@ -311,7 +341,7 @@ export default function InputAddress({ onAddressSelect }) {
               </li>
             );
           }}
-          slotProps={{ popper: { sx: { zIndex: 10100 } } }}
+          slotProps={{ popper: { sx: popperSx } }}
         />
       </Box>
 

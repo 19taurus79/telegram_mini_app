@@ -1,4 +1,5 @@
 import css from './MapControls.module.css';
+import clsx from 'clsx';
 
 export default function MapControls({ 
   areApplicationsVisible, 
@@ -14,13 +15,9 @@ export default function MapControls({
     <div className={css.controlsPanel}>
       {/* Clients Toggle */}
       <div 
-        className={css.controlBtn}
+        className={clsx(css.controlBtn, areClientsVisible && css.activeClients)}
         onClick={toggleClients}
         title={areClientsVisible ? 'Скрити контрагентів' : 'Показати контрагентів'}
-        style={{
-          background: areClientsVisible ? '#4caf50' : 'white',
-          color: areClientsVisible ? 'white' : 'black',
-        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -35,13 +32,9 @@ export default function MapControls({
 
       {/* Deliveries Toggle */}
       <div 
-        className={css.controlBtn}
+        className={clsx(css.controlBtn, areDeliveriesVisible && css.activeDeliveries)}
         onClick={toggleDeliveries}
         title={areDeliveriesVisible ? 'Приховати доставки' : 'Показати доставки'}
-        style={{
-          background: areDeliveriesVisible ? '#ff5722' : 'white',
-          color: areDeliveriesVisible ? 'white' : 'black',
-        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M42 32V19H33V9H6V32" />
@@ -57,13 +50,9 @@ export default function MapControls({
 
       {/* Routing Toggle */}
       <div 
-        className={css.controlBtn}
+        className={clsx(css.controlBtn, isRoutingMode && css.activeRouting)}
         onClick={toggleRoutingMode}
         title={isRoutingMode ? 'Вимкнути режим маршруту' : 'Увімкнути режим маршруту'}
-        style={{
-          background: isRoutingMode ? '#2196f3' : 'white',
-          color: isRoutingMode ? 'white' : 'black',
-        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="6" cy="19" r="3"></circle>
@@ -77,13 +66,9 @@ export default function MapControls({
 
       {/* Applications Toggle */}
       <div 
-        className={css.controlBtn}
+        className={clsx(css.controlBtn, areApplicationsVisible && css.activeApplications)}
         onClick={toggleApplications}
         title={areApplicationsVisible ? 'Приховати заявки' : 'Показати заявки'}
-        style={{
-          background: areApplicationsVisible ? '#4caf50' : 'white',
-          color: areApplicationsVisible ? 'white' : 'black',
-        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>

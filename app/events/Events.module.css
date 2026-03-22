@@ -34,7 +34,7 @@
 .eventTitle {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--foreground);
   flex: 1;
 }
 
@@ -62,14 +62,31 @@
 .inproccess { color: #fbbf24; }
 .event { color: #ef4444; }
 
+.chevron {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+:global([data-theme='light']) .chevron {
+  opacity: 0.6;
+}
+
 @media (max-width: 768px) {
   .listContainer { padding: 16px; }
   .listItemButton { padding: 16px; }
   .eventTitle { font-size: 0.95rem; }
 }
 
-@media (prefers-color-scheme: light) {
-  .listItemButton { background: rgba(255, 255, 255, 0.7); }
-  .eventTitle { color: var(--foreground); }
-  .eventDate { color: rgba(0, 0, 0, 0.5); }
+:global([data-theme='light']) .listItemButton {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+:global([data-theme='light']) .eventDate {
+  color: rgba(15, 23, 42, 0.5);
+}
+
+:global([data-theme='light']) .statusIcon {
+  background: rgba(15, 23, 42, 0.05);
 }

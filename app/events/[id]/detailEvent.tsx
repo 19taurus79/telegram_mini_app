@@ -48,9 +48,7 @@ export default function DetailEvent({ id }: { id: string }) {
       <div className={css.listContainer}>
         <div className={css.listItemButton}>
           {data.description.split("\n").map((description, index) => (
-            <div key={index}>
-              <p>{description}</p>
-            </div>
+            <p key={index}>{description}</p>
           ))}
         </div>
       </div>

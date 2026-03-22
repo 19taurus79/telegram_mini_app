@@ -40,3 +40,12 @@
     display: none;
   }
 }
+
+:global([data-theme='light']) .switchButton {
+  color: rgba(2, 6, 23, 0.6);
+}
+
+:global([data-theme='light']) .switchButton:hover {
+  color: #020617;
+  background: rgba(0, 0, 0, 0.05);
+}

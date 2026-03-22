@@ -94,7 +94,7 @@ export default function ContractsWidget({
           </div>
         ))}
         {!contracts?.length && (
-          <p style={{ padding: "10px", opacity: 0.6 }}>Контрактів не знайдено</p>
+          <p style={{ padding: "10px", opacity: 0.6 }}>Доповнень не знайдено</p>
         )}
       </div>
 

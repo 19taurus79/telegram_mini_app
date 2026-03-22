@@ -184,7 +184,7 @@
 
   .productName {
     font-weight: 700;
-    color: #fff;
+    color: var(--foreground);
     font-size: 15px;
     line-height: 1.4;
     display: block;
@@ -220,7 +220,7 @@
   .statValue {
     font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    color: var(--foreground);
   }
 
   .missingValue {
@@ -246,16 +246,16 @@
     gap: 8px;
     font-size: 12px;
     font-weight: 600;
-    color: white;
+    color: var(--foreground);
     opacity: 0.9;
   }
 
   .swipeRightHint {
-    color: white;
+    color: var(--foreground);
   }
 
   .swipeLeftHint {
-    color: white;
+    color: var(--foreground);
   }
 
   .swipeArrow {
@@ -283,19 +283,3 @@
   }
 }
 
-/* Dark theme overrides for mobile */
-@media (max-width: 768px) and (prefers-color-scheme: dark) {
-  .mobileCard {
-    background: #404040;
-    border: 2px solid #555555;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  }
-
-  .statItem {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .swipeHint {
-    background: rgba(255, 255, 255, 0.05);
-  }
-}

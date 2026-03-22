@@ -1,11 +1,11 @@
 .widget {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  color: #fff;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-premium);
+  color: var(--foreground);
   padding: 20px;
   text-align: center;
   max-width: 400px;
@@ -63,24 +63,25 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--card-bg);
   padding: 12px;
   border-radius: 16px;
   min-width: 80px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
 }
 
 .currency {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--foreground);
+  opacity: 0.5;
   text-transform: uppercase;
 }
 
 .value {
   font-size: 1.8rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #fff, #0ef18e);
+  background: linear-gradient(90deg, var(--foreground), #0ef18e);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

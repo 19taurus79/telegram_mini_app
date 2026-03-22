@@ -17,6 +17,7 @@ import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommen
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import Modal from "@/components/Modal/Modal";
+import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 
 type OrderDetailItem = {
   orders_q: number;
@@ -449,6 +450,10 @@ function TableOrderDetail({ details }: Detail) {
           isMobileProp={isMobile}
         />
       )}
+
+      <div className={css.btnWrapper}>
+        <DeliveryBtn />
+      </div>
     </div>
   );
 }

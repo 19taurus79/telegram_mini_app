@@ -50,12 +50,10 @@
   }
 }
 
-@media (prefers-color-scheme: light) {
-  .toggleFilterButton {
-    color: var(--foreground);
-    background: rgba(255, 255, 255, 0.7);
-  }
-  .toggleFilterButton:hover {
-    color: #000;
-  }
+:global([data-theme='light']) .toggleFilterButton {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.7);
+}
+:global([data-theme='light']) .toggleFilterButton:hover {
+  color: #000;
 }

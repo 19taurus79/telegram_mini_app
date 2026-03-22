@@ -45,32 +45,37 @@ export default function FilteredOrders({ params }: Props) {
                 href={`/detail/${item.contract_supplement}`}
                 className={css.link}
               >
-                {item.contract_supplement}
-                <span className={css.businessSpan}>{item.line_of_business}</span>
-                <span
-                  className={clsx(
+                <div className={css.contractSupplement}>{item.contract_supplement}</div>
+                
+                <div className={css.detailRow}>
+                  <div className={css.label}>Вид діяльності</div>
+                  <div className={css.value}>{item.line_of_business}</div>
+                </div>
+
+                <div className={css.detailRow}>
+                  <div className={css.label}>Статус документа</div>
+                  <div className={clsx(
+                    css.value,
                     item.document_status === "затверджено" && css.statusOk,
-                    item.document_status === "створено менеджером" &&
-                      css.statusWaiting,
-                    item.document_status === "продукція затверджена" &&
-                      css.statusWaiting,
+                    item.document_status === "створено менеджером" && css.statusWaiting,
+                    item.document_status === "продукція затверджена" && css.statusWaiting,
                     item.document_status === "до розгляду" && css.statusWaiting,
                     item.document_status === "розглядається" && css.statusWaiting,
                     item.document_status === "відхилено" && css.statusFailed
-                  )}
-                >
-                  {item.document_status}
-                </span>
-                <span
-                  className={clsx(
-                    css.businessSpan,
-                    item.delivery_status?.includes("Так")
-                      ? css.statusOk
-                      : css.statusFailed
-                  )}
-                >
-                  До постачання: {item.delivery_status}
-                </span>
+                  )}>
+                    {item.document_status}
+                  </div>
+                </div>
+
+                <div className={css.detailRow}>
+                  <div className={css.label}>Статус постачання</div>
+                  <div className={clsx(
+                    css.value,
+                    item.delivery_status?.includes("Так") ? css.statusOk : css.statusFailed
+                  )}>
+                    {item.delivery_status}
+                  </div>
+                </div>
               </Link>
               <div className={css.commentBadgeWrapper}>
                 <OrderCommentBadge

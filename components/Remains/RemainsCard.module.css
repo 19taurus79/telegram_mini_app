@@ -13,6 +13,12 @@
   transition: all 0.3s ease;
 }
 
+@media (max-width: 480px) {
+  .card {
+    padding: 10px;
+  }
+}
+
 .card:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   border-color: var(--accent-green);
@@ -33,12 +39,15 @@
   font-weight: 600;
   color: var(--foreground);
   margin-bottom: 4px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .counts {
   display: flex;
-  gap: 16px;
-  font-size: 0.9em;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.85em;
   color: var(--foreground);
 }
 

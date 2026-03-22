@@ -55,7 +55,7 @@ export default function TaskManager() {
         <span className={css.itemTitle}>{event.event}</span>
         <span className={clsx(css.status, css[`status_${event.event_status}`])} />
       </div>
-      <div className={css.itemMeta}>Автор: {event.event_who_changed_name || "Система"}</div>
+      <div className={css.itemMeta}>Автор: {event.event_who_changed_name || event.event_creator_name || "Система"}</div>
     </Link>
   );
 

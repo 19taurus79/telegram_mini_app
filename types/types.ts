@@ -274,6 +274,7 @@ export type InnerEvent = {
   id: string;
   event_id: string;
   event_creator: number | null;
+  event_creator_name: string | null;
   event_status: number;
   event_who_changed_id: number | null;
   event_who_changed_name: string | null;

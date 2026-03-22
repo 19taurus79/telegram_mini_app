@@ -228,32 +228,30 @@ function TableOrderDetail({ details }: Detail) {
           className={`${css.productCard} ${
             isSelected(item.id) ? css.selected : ""
           } ${getDeliveryForItem(item) ? css.alreadyInDelivery : ""}`}
+          onClick={async () => {
+            if (addingToDeliveryId === item.id) return;
+            
+            const isItemInDelivery = isSelected(item.id);
+            if (!isItemInDelivery) {
+                 const { validationType } = getItemStatus(item);
+                 if (validationType !== "none") {
+                     setValidationModal({
+                         isOpen: true,
+                         item,
+                         type: validationType
+                     });
+                     return;
+                 }
+                 await handleAddToDelivery(item);
+            } else {
+                setDelivery(item);
+                toast.success(`Вилучено: ${item.product}`);
+            }
+         }}
         >
           {/* Main Product Row */}
           <div className={css.cardRow}>
-            <div
-              className={css.cardCellProduct}
-              onClick={async () => {
-                 if (addingToDeliveryId === item.id) return;
-                 
-                 const isItemInDelivery = isSelected(item.id);
-                 if (!isItemInDelivery) {
-                      const { validationType } = getItemStatus(item);
-                      if (validationType !== "none") {
-                          setValidationModal({
-                              isOpen: true,
-                              item,
-                              type: validationType
-                          });
-                          return;
-                      }
-                      await handleAddToDelivery(item);
-                 } else {
-                     setDelivery(item);
-                     toast.success(`Вилучено: ${item.product}`);
-                 }
-              }}
-            >
+            <div className={css.cardCellProduct}>
               <span className={css.productName}>{item.product}</span>
               {getDeliveryForItem(item) && (
                   <span className={css.deliveryBadge}>В доставці</span>
@@ -272,7 +270,7 @@ function TableOrderDetail({ details }: Detail) {
             >
               {item.quantity}
             </div>
-            <div className={css.commentBadgeCell}>
+            <div className={css.commentBadgeCell} onClick={(e) => e.stopPropagation()}>
               <OrderCommentBadge
                 orderRef={item.order}
                 productName={item.product}
@@ -301,7 +299,10 @@ function TableOrderDetail({ details }: Detail) {
                       >
                         <div
                           className={`${css.cardCellProduct} ${css.party}`}
-                          onClick={() => HandleClick(party)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            HandleClick(party);
+                          }}
                         >
                           {party.party}
                         </div>

@@ -121,7 +121,7 @@ const formatPhoneNumber = (value: string): string => {
 function DeliveryDataContent() {
   const [isAnimatingSuccess, setIsAnimatingSuccess] = useState(false);
   
-  const { delivery, setDelivery, removeClientDelivery, updateQuantity, clearDelivery } = useDelivery();
+  const { delivery, removeClientDelivery, updateQuantity } = useDelivery();
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);

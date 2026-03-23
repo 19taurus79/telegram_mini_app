@@ -140,7 +140,7 @@ export default function BiDashboard({
         </div>
 
         <div key="stock-details">
-          <GridItem title="Вільні залишки">{stockDetails}</GridItem>
+          <GridItem title="Вільні залишки на складах">{stockDetails}</GridItem>
         </div>
 
         <div key="orders">

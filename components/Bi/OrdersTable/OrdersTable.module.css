@@ -4,36 +4,67 @@
 }
 
 .title {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: none;
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 12px;
   table-layout: fixed;
   min-width: 600px;
 }
 
-.th,
+.th {
+  background: transparent;
+  position: relative;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+  padding: 8px 12px;
+  border: none;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
 .td {
-  border: 1px solid var(--border-color);
-  padding: 8px;
-  text-align: left;
+  padding: 16px;
+  font-size: 0.9rem;
+  color: var(--foreground);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--foreground);
 }
 
-.th {
-  background-color: var(--header-bg-color);
-  position: relative;
-  font-weight: 600;
+.td:first-child {
+  border-left: 1px solid var(--glass-border);
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.td:last-child {
+  border-right: 1px solid var(--glass-border);
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+:global([data-theme='light']) .td {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.row:hover .td {
+  background: var(--accent-green-hover) !important;
+  border-color: rgba(14, 241, 142, 0.3) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .resizer {
@@ -59,8 +90,16 @@
   opacity: 1;
 }
 
+.row {
+  transition: all 0.2s ease;
+}
+
 .row:hover {
-  background-color: var(--hover-bg-color);
+  background-color: rgba(14, 241, 142, 0.08) !important;
+}
+
+:global([data-theme='light']) .row:hover {
+  background-color: rgba(14, 241, 142, 0.12) !important;
 }
 
 .copyableRow {

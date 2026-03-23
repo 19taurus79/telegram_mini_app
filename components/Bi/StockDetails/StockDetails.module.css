@@ -22,37 +22,63 @@
 }
 
 .tableContainer {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 12px;
 }
 
 .th {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 12px 16px;
+  background: transparent;
+  padding: 8px 16px;
   text-align: left;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid var(--glass-border);
+  letter-spacing: 0.05em;
   position: relative;
+  border: none;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .td {
-  padding: 12px 16px;
+  padding: 16px;
   font-size: 0.9rem;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.td:first-child {
+  border-left: 1px solid var(--glass-border);
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.td:last-child {
+  border-right: 1px solid var(--glass-border);
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+:global([data-theme='light']) .td {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.copyableRow:hover .td {
+  background: var(--accent-green-hover) !important;
+  border-color: rgba(14, 241, 142, 0.3) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .resizer {
@@ -103,28 +129,6 @@
   color: #000;
 }
 
-/* Light mode overrides */
-:global([data-theme='light']) .tableContainer {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-:global([data-theme='light']) .th {
-  background: #f1f5f9;
-  color: rgba(0, 0, 0, 0.4);
-}
-
-:global([data-theme='light']) .td {
-  color: var(--foreground);
-  border-color: rgba(0, 0, 0, 0.05);
-}
-
-:global([data-theme='light']) .placeholder {
-  background: #f8fafc;
-  color: rgba(0, 0, 0, 0.4);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-:global([data-theme='light']) .title {
-  color: #10b981;
+.title {
+  display: none;
 }

@@ -45,12 +45,12 @@
   padding: 4px;
   border-radius: 8px;
   transition: all 0.2s;
-  color: #fff;
+  color: var(--foreground);
 }
 
 .dragHandle:hover {
   opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--accent-green-hover);
 }
 
 .dragHandle:active {
@@ -59,12 +59,12 @@
 
 .gridItemTitle {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.02em;
+  color: var(--foreground);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  opacity: 0.9;
+  opacity: 0.8;
 }
 
 .gridItemContent {
@@ -147,8 +147,11 @@
   border-left: 4px solid var(--accent-green);
 }
 
-@media (prefers-color-scheme: light) {
-  .gridItem { background: rgba(255, 255, 255, 0.7); }
-  .gridItemTitle, .mobileSectionTitle { color: var(--foreground); }
-  .dragHandle { color: var(--foreground); }
+:global([data-theme='light']) .gridItem {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .gridItemHeader {
+  background: rgba(0, 0, 0, 0.02);
 }

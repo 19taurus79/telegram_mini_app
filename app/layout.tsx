@@ -51,10 +51,13 @@ export default function RootLayout({
                 if (theme) {
                   theme = JSON.parse(theme).state.theme;
                 }
-                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches) || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                if (theme === 'dark' || !theme) {
                   document.documentElement.setAttribute('data-theme', 'dark');
-                } else if (theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                } else if (theme === 'light') {
                   document.documentElement.setAttribute('data-theme', 'light');
+                } else if (theme === 'system') {
+                  const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  document.documentElement.setAttribute('data-theme', isSystemDark ? 'dark' : 'light');
                 }
               } catch (e) {}
             `,

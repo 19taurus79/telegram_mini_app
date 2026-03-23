@@ -38,12 +38,9 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.5);
-  padding-bottom: 4px;
-}
-
-:root[data-theme='light'] .th {
-  color: rgba(0, 0, 0, 0.5);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .td {
@@ -104,7 +101,6 @@
 .selectedRow td {
   background: rgba(14, 241, 142, 0.1) !important;
   border-color: var(--accent-green) !important;
-  color: #fff;
 }
 
 .selectedRow td:first-child {

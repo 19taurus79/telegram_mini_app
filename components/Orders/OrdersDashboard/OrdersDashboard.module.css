@@ -307,16 +307,18 @@
 .th {
   position: sticky;
   top: 0;
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  z-index: 10;
-  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 20;
+  padding: 18px 16px; /* Increased vertical padding for premium spacing */
   text-align: left;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid var(--glass-border);
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); /* Added shadow for depth over the sticky group */
 }
 
 .td {
@@ -352,9 +354,9 @@
   border-color: var(--accent-green) !important;
 }
 
-.checkmarkGreen { color: #0ef18e; stroke-width: 3; }
-.checkmarkYellow { color: #f59e0b; stroke-width: 3; }
-.checkmarkRed { color: #ef4444; stroke-width: 3; }
+.checkmarkGreen, :global([data-theme]) .checkmarkGreen { color: #0ef18e !important; }
+.checkmarkYellow, :global([data-theme]) .checkmarkYellow { color: #f59e0b !important; }
+.checkmarkRed, :global([data-theme]) .checkmarkRed { color: #ef4444 !important; }
 
 .alreadyInDeliveryRow td {
   border-top: 2px solid #00c4cc !important;
@@ -394,12 +396,17 @@
 }
 
 .clientGroupHeader {
-  background: rgba(14, 241, 142, 0.1);
+  position: sticky;
+  top: 56px; /* Reduced top to minimize "hole" during scroll */
+  background: rgba(30, 41, 59, 0.98); 
   color: var(--accent-green);
   font-weight: 800;
   padding: 10px 16px !important;
-  border: none !important;
-  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(14, 241, 142, 0.2) !important;
+  border-left: 5px solid var(--accent-green) !important;
+  backdrop-filter: blur(12px);
+  z-index: 15;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 :global([data-theme='light']) .gridItemTitle { color: var(--foreground); }
@@ -413,10 +420,18 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Premium depth */
 }
 
-/* White table headers with dark text */
+/* White table headers with dark text - Solid for light mode */
 :global([data-theme='light']) .th { 
-  background: rgba(255, 255, 255, 0.95); 
-  color: rgba(0, 0, 0, 0.5); 
+  background: #ffffff; 
+  color: #1e293b;
+  border-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .clientGroupHeader {
+  background: #f1f5f9; /* Slate-100 */
+  color: #10b981;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 :global([data-theme='light']) .contractHeader { color: var(--foreground); }

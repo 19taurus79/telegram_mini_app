@@ -90,9 +90,6 @@
   color: var(--accent-green);
 }
 
-:global([data-theme='light']) .cardCellQuantity {
-  color: #10b981;
-}
 
 .commentBadgeCell {
   padding: 0;
@@ -168,10 +165,11 @@
   white-space: nowrap;
 }
 
-/* Status Colors */
-.checkmarkGreen { color: #10b981; }
-.checkmarkYellow { color: #f59e0b; }
-.checkmarkRed { color: #ef4444; }
+/* Status Colors (Traffic Light) */
+/* Increased specificity to ensure theme overrides don't break them */
+.checkmarkGreen, :global([data-theme]) .checkmarkGreen { color: #10b981 !important; }
+.checkmarkYellow, :global([data-theme]) .checkmarkYellow { color: #f59e0b !important; }
+.checkmarkRed, :global([data-theme]) .checkmarkRed { color: #ef4444 !important; }
 
 /* --- Validation Modal Content --- */
 .validationModalContent {

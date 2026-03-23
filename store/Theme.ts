@@ -12,7 +12,7 @@ interface ThemeState {
 export const useTheme = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'system',
+      theme: 'dark',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((state) => {
         if (state.theme === 'light') return { theme: 'dark' };

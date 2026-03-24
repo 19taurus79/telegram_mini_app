@@ -16,6 +16,9 @@ import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommen
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { CommentsProvider } from "@/components/Orders/CommentsContext";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { useReactToPrint } from "react-to-print";
+import { FileDown, Printer } from "lucide-react";
 
 type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "none";
 
@@ -46,7 +49,6 @@ const getItemStatus = (item: OrdersDetails) => {
     validationType = "maybeInTransit";
   }
 
-  // Дополнительная проверка на количество перемещенного товара
   if (validationType === "none" || validationType === "maybeInTransit") {
     if (sumMovedQ > 0 && sumMovedQ < diffQ) {
       validationType = "insufficientMove";
@@ -93,9 +95,37 @@ export default function DetailsWidget({
 
   const effectiveInitData = useInitData();
   const { setDelivery, hasItem, updateQuantity } = useDelivery();
+  const printableRef = React.useRef<HTMLDivElement>(null);
 
-  // Детекція мобільного пристрою - не потрібна для віджета десктопа, але якщо ми хочемо лишити адаптивність...
-  // Проте в даному файлі вона не використовується далі.
+  const handlePrint = useReactToPrint({
+    contentRef: printableRef,
+    documentTitle: `Деталі_замовлення_${new Date().toLocaleDateString()}`,
+  });
+
+  const handleExportExcel = () => {
+    if (!detailsList || detailsList.length === 0) {
+      toast.error("Немає даних для експорту");
+      return;
+    }
+
+    const dataToExport = detailsList.map(item => ({
+      "Клієнт": item.client || "—",
+      "Доповнення": item.contract_supplement,
+      "Товар": getProductName(item),
+      "Кількість": item.different,
+      "Переміщено": item.parties?.map(p => `${p.moved_q}${p.party ? ` (${p.party})` : ''}`).join(", ") || "-",
+      "Бух. залишок": item.buh,
+      "Скл. залишок": item.skl,
+      "Потреба": item.orders_q,
+      "Статус": getItemStatus(item).color === "green" ? "Готово" : (getItemStatus(item).color === "red" ? "Немає" : "В дорозі")
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Details");
+    XLSX.writeFile(wb, `Order_Details_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Excel файл згенеровано");
+  };
 
   const getItemId = (item: OrdersDetails) => {
     return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
@@ -126,8 +156,6 @@ export default function DetailsWidget({
     },
     enabled: !!effectiveInitData
   });
-
-  // Автоматичне відкриття чату - видалено для десктоп віджета
 
   const getDeliveryForItem = (item: OrdersDetails) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
@@ -225,7 +253,6 @@ export default function DetailsWidget({
     const itemId = getItemId(item);
     
     if (hasItem(itemId)) {
-        // Для видалення достатньо об'єкта з правильним ID за поточною логікою стору
         setDelivery({ id: itemId } as DeliveryItem); 
         return;
     }
@@ -295,112 +322,129 @@ export default function DetailsWidget({
 
   return (
     <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
+      <div className={styles.widgetHeader}>
+        <div className={styles.headerLeft}>
+          <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>
+            {detailsList ? `Знайдено рядків: ${detailsList.length}` : 'Виберіть доповнення'}
+          </span>
+        </div>
+        <div className={styles.headerActions}>
+          <button className={`${styles.actionBtn} ${styles.excelBtn}`} onClick={handleExportExcel}>
+            <FileDown size={16} />
+            <span>Зберегти в Excel</span>
+          </button>
+          <button className={`${styles.actionBtn} ${styles.printBtn}`} onClick={() => handlePrint()}>
+            <Printer size={16} />
+            <span>Друк</span>
+          </button>
+        </div>
+      </div>
+
       <div className={styles.tableContainer}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th className={styles.th}>Доповнення</th>
-            <th className={styles.th}>Товар</th>
-            <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
-            <th className={styles.th}>Переміщено (Партії)</th>
-            <th className={styles.th}>Залишки (Загальні)</th>
-            <th className={styles.th}>Потреба по підрозділу</th>
-            <th className={styles.th}>Готовність до відвантаження</th>
-            <th className={styles.th} style={{ width: "40px", textAlign: "center" }}><Truck size={16} /></th>
-            <th className={styles.th} style={{ width: "40px", textAlign: "center" }}>Коментарі</th>
-          </tr>
-        </thead>
-        <tbody>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.th}>Доповнення</th>
+              <th className={styles.th}>Товар</th>
+              <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
+              <th className={styles.th}>Переміщено (Партії)</th>
+              <th className={styles.th}>Залишки (Загальні)</th>
+              <th className={styles.th}>Потреба по підрозділу</th>
+              <th className={styles.th}>Готовність до відвантаження</th>
+              <th className={styles.th} style={{ width: "40px", textAlign: "center" }}><Truck size={16} /></th>
+              <th className={styles.th} style={{ width: "40px", textAlign: "center" }}>Коментарі</th>
+            </tr>
+          </thead>
+          <tbody>
             {isLoading && (
-                <tr>
-                    <td colSpan={9} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
-                </tr>
+              <tr>
+                <td colSpan={9} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
+              </tr>
             )}
             
-          {(() => {
-            if (!detailsList || detailsList.length === 0) {
-              return !isLoading ? (
-                <tr>
-                  <td colSpan={9} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
-                    {selectedContracts.length > 0 ? "Даних не знайдено" : "Оберіть доповнення"}
-                  </td>
-                </tr>
-              ) : null;
-            }
-
-            const grouped: { client: string; items: OrdersDetails[] }[] = [];
-            const clientMap = new Map<string, OrdersDetails[]>();
-            detailsList.forEach((item: OrdersDetails) => {
-              const key = item.client || "—";
-              if (!clientMap.has(key)) {
-                clientMap.set(key, []);
-                grouped.push({ client: key, items: clientMap.get(key)! });
+            {(() => {
+              if (!detailsList || detailsList.length === 0) {
+                return !isLoading ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
+                      {selectedContracts.length > 0 ? "Даних не знайдено" : "Оберіть доповнення"}
+                    </td>
+                  </tr>
+                ) : null;
               }
-              clientMap.get(key)!.push(item);
-            });
 
-            return grouped.map((group) => (
-              <React.Fragment key={group.client}>
-                <tr>
-                  <td colSpan={9} className={styles.clientGroupHeader}>👤 {group.client}</td>
-                </tr>
-                {group.items.map((item: OrdersDetails) => {
-                  const itemId = getItemId(item);
-                  const isSelected = hasItem(itemId);
-                  const inDelivery = getDeliveryForItem(item);
+              const grouped: { client: string; items: OrdersDetails[] }[] = [];
+              const clientMap = new Map<string, OrdersDetails[]>();
+              detailsList.forEach((item: OrdersDetails) => {
+                const key = item.client || "—";
+                if (!clientMap.has(key)) {
+                  clientMap.set(key, []);
+                  grouped.push({ client: key, items: clientMap.get(key)! });
+                }
+                clientMap.get(key)!.push(item);
+              });
 
-                  return (
-                    <tr 
-                      key={item.id} 
-                      className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
-                    >
-                      <td className={styles.td}>{item.contract_supplement}</td>
-                       <td className={styles.td}>
-                        {getProductName(item)}
-                        {inDelivery && <span className={styles.deliveryBadge}>В доставці</span>}
-                      </td>
-                      <td className={styles.td}>{item.different}</td>
-                      <td className={styles.td} onClick={() => handlePartyClick(item)} style={{ cursor: item.parties?.length > 0 ? "pointer" : "default" }}>
-                        {item.parties?.length > 0 ? (
+              return grouped.map((group) => (
+                <React.Fragment key={group.client}>
+                  <tr>
+                    <td colSpan={9} className={styles.clientGroupHeader}>👤 {group.client}</td>
+                  </tr>
+                  {group.items.map((item: OrdersDetails) => {
+                    const itemId = getItemId(item);
+                    const isSelected = hasItem(itemId);
+                    const inDelivery = getDeliveryForItem(item);
+
+                    return (
+                      <tr 
+                        key={item.id} 
+                        className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
+                      >
+                        <td className={styles.td}>{item.contract_supplement}</td>
+                        <td className={styles.td}>
+                          {getProductName(item)}
+                          {inDelivery && <span className={styles.deliveryBadge}>В доставці</span>}
+                        </td>
+                        <td className={styles.td}>{item.different}</td>
+                        <td className={styles.td} onClick={() => handlePartyClick(item)} style={{ cursor: item.parties?.length > 0 ? "pointer" : "default" }}>
+                          {item.parties?.length > 0 ? (
+                            <div style={{ fontSize: "11px" }}>
+                              {item.parties.map((p, i) => (
+                                <div key={i}>{p.moved_q} {p.party ? `(${p.party})` : ''}</div>
+                              ))}
+                            </div>
+                          ) : "-"}
+                        </td>
+                        <td className={styles.td} onClick={() => handleRemainsClick(item)} style={{ cursor: item.buh > 0 ? "pointer" : "default" }}>
                           <div style={{ fontSize: "11px" }}>
-                            {item.parties.map((p, i) => (
-                              <div key={i}>{p.moved_q} {p.party ? `(${p.party})` : ''}</div>
-                            ))}
+                            <div>Бух: {item.buh}</div>
+                            <div>Скл: {item.skl}</div>
                           </div>
-                        ) : "-"}
-                      </td>
-                      <td className={styles.td} onClick={() => handleRemainsClick(item)} style={{ cursor: item.buh > 0 ? "pointer" : "default" }}>
-                        <div style={{ fontSize: "11px" }}>
-                          <div>Бух: {item.buh}</div>
-                          <div>Скл: {item.skl}</div>
-                        </div>
-                      </td>
-                      <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer" }}>{item.orders_q}</td> 
-                      <td className={styles.td}>
+                        </td>
+                        <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer" }}>{item.orders_q}</td> 
+                        <td className={styles.td}>
                           {(() => {
                             const { color } = getItemStatus(item);
-                            if (color === "red") return <Check size={20} className={styles.checkmarkRed} strokeWidth={3} />;
-                            if (color === "green") return <Check size={20} className={styles.checkmarkGreen} strokeWidth={3} />;
-                            return <Check size={20} className={styles.checkmarkYellow} strokeWidth={3} />;
+                            return <Check size={20} className={color === "red" ? styles.checkmarkRed : (color === "green" ? styles.checkmarkGreen : styles.checkmarkYellow)} strokeWidth={3} />;
                           })()}
-                      </td>
-                      <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>
-                         {addingToDeliveryId === itemId ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 0 : 2} />}
-                       </td>
-                       <td className={styles.td} style={{ textAlign: "center" }}>
-                         <OrderCommentBadge orderRef={item.contract_supplement} productName={getProductName(item)} initData={effectiveInitData} onClick={() => setCommentModalData({ orderRef: item.contract_supplement, productId: item.product, productName: getProductName(item) })} />
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>
+                          {addingToDeliveryId === itemId ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 0 : 2} />}
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "center" }}>
+                          <OrderCommentBadge orderRef={item.contract_supplement} productName={getProductName(item)} initData={effectiveInitData} onClick={() => setCommentModalData({ orderRef: item.contract_supplement, productId: item.product, productName: getProductName(item) })} />
                         </td>
                       </tr>
-                  );
-                })}
-              </React.Fragment>
-            ));
-          })()}
-        </tbody>
-      </table>
+                    );
+                  })}
+                </React.Fragment>
+              ));
+            })()}
+          </tbody>
+        </table>
+      </div>
 
       {selectedProductForModal && (
-          <Modal onClose={closeModal}><DetailsOrdersByProduct selectedProductId={selectedProductForModal} /></Modal>
+        <Modal onClose={closeModal}><DetailsOrdersByProduct selectedProductId={selectedProductForModal} /></Modal>
       )}
 
       {commentModalData && (
@@ -411,7 +455,6 @@ export default function DetailsWidget({
         <Modal onClose={() => setSelectedProductForRemainsModal(null)}><DetailsRemains selectedProductId={selectedProductForRemainsModal.productId} filterParties={selectedProductForRemainsModal.partyNames} /></Modal>
       )}
 
-      {/* Валідаційна модалка */}
       {validationModal.isOpen && validationModal.item && (
         <Modal onClose={() => setValidationModal({ isOpen: false, item: null, type: "none" })}>
           <div className={styles.validationModalContent}>
@@ -446,11 +489,11 @@ export default function DetailsWidget({
                 </button>
               )}
               
-              {validationModal.type === "editingQuantity" ? (
-                <button 
-                  className={styles.confirmBtn} 
-                  onClick={async () => {
-                    const item = validationModal.item!;
+              <button 
+                className={styles.confirmBtn} 
+                onClick={async () => {
+                  const item = validationModal.item!;
+                  if (validationModal.type === "editingQuantity") {
                     const qty = Number(editQuantityValue);
                     if (isNaN(qty) || qty < 0) {
                         toast.error("Введіть коректну кількість");
@@ -458,26 +501,99 @@ export default function DetailsWidget({
                     }
                     setValidationModal({ isOpen: false, item: null, type: "none" });
                     await handleAddToDelivery(item, qty);
-                  }}
-                >
-                  Зберегти
-                </button>
-              ) : (
-                <button 
-                  className={styles.confirmBtn} 
-                  onClick={async () => {
-                    const item = validationModal.item!;
+                  } else {
                     setValidationModal({ isOpen: false, item: null, type: "none" });
                     await handleAddToDelivery(item);
-                  }}
-                >
-                  {validationModal.type === "insufficientMove" ? "Продовжити все одно" : "Додати все одно"}
-                </button>
-              )}
+                  }
+                }}
+              >
+                {validationModal.type === "editingQuantity" ? "Зберегти" : (validationModal.type === "insufficientMove" ? "Продовжити все одно" : "Додати все одно")}
+              </button>
             </div>
           </div>
         </Modal>
       )}
+
+      {/* Hidden Printable Area */}
+      <div className={styles.printableArea} ref={printableRef}>
+        <div className={styles.printHeader}>
+          <h2>Деталі замовлення</h2>
+          <p>Дата формування: {new Date().toLocaleString('uk-UA')}</p>
+        </div>
+        
+        <table className={styles.printTable}>
+          <thead>
+            <tr>
+              <th style={{ width: '10%' }}>Доповнення</th>
+              <th style={{ width: '30%' }}>Товар</th>
+              <th style={{ width: '8%', textAlign: 'center' }}>Кіл-ть</th>
+              <th style={{ width: '20%' }}>Партії / Переміщено</th>
+              <th>Бул/Скл</th>
+              <th>Потреба</th>
+              <th>Статус</th>
+              <th style={{ width: '15%' }}>Примітки</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(detailsList && detailsList.length > 0) && (
+              (() => {
+                const sortedItems = [...detailsList].sort((a,b) => (a.client || "").localeCompare(b.client || ""));
+                return sortedItems.map((item, index) => {
+                  const showClientHeader = index === 0 || (sortedItems[index - 1].client !== item.client);
+                  const delivery = getDeliveryForItem(item);
+                  const hasInLocalDelivery = hasItem(getItemId(item));
+                  const itemComments = (commentsMap[item.contract_supplement] || []).filter(c => c.product_id === item.product);
+                  
+                  const { color } = getItemStatus(item);
+                  let statusLabel = color === 'green' ? "(Зелений)" : (color === 'yellow' ? "(Жовтий)" : "(Червоний)");
+
+                  return (
+                    <React.Fragment key={`${item.id}_${index}`}>
+                      {showClientHeader && (
+                        <tr className={styles.printClientHeader}>
+                          <td colSpan={8}><strong>{item.client || "—"}</strong></td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td>{item.contract_supplement}</td>
+                        <td>{getProductName(item)}</td>
+                        <td style={{ textAlign: 'center' }}><strong>{item.different}</strong></td>
+                        <td>
+                          {item.parties && item.parties.length > 0 ? (
+                            item.parties.map((p, pIdx) => (
+                              <div key={pIdx} style={{ fontSize: '9pt' }}>
+                                {p.party ? `${p.party}: ` : ''}{p.moved_q}
+                              </div>
+                            ))
+                          ) : "—"}
+                        </td>
+                        <td>{item.buh} / {item.skl}</td>
+                        <td>{item.orders_q}</td>
+                        <td>
+                          <span className={color === 'green' ? styles.checkmarkGreen : color === 'yellow' ? styles.checkmarkYellow : styles.checkmarkRed}>
+                            {color === 'green' ? '✔' : color === 'yellow' ? '⏳' : '✖'}
+                          </span>
+                          <span style={{ fontSize: '8pt', marginLeft: '4px' }}>{statusLabel}</span>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '8pt' }}>
+                            {delivery && <div>🚛 Доставка ({delivery.status})</div>}
+                            {hasInLocalDelivery && <div>🛒 У кошику</div>}
+                            {itemComments.map((c, i) => (
+                              <div key={i} style={{ fontStyle: 'italic', borderTop: i > 0 ? '1px solid #eee' : 'none' }}>
+                                • {c.comment_text}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                });
+              })()
+            )}
+          </tbody>
+        </table>
       </div>
     </CommentsProvider>
   );

@@ -206,3 +206,26 @@ body:has(main > div[style*="height: 100%"]) main {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.02);
 }
+
+/* Global Print Overrides to prevent clipping and allow multi-page printing */
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  
+  #__next, main {
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* Target common grid layout constraints */
+  .react-grid-layout {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

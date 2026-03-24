@@ -545,7 +545,7 @@ export default function DetailsWidget({
                   const itemComments = (commentsMap[item.contract_supplement] || []).filter(c => c.product_id === item.product);
                   
                   const { color } = getItemStatus(item);
-                  let statusLabel = color === 'green' ? "(Зелений)" : (color === 'yellow' ? "(Жовтий)" : "(Червоний)");
+                  const statusLabel = color === 'green' ? "(Зелений)" : (color === 'yellow' ? "(Жовтий)" : "(Червоний)");
 
                   return (
                     <React.Fragment key={`${item.id}_${index}`}>

@@ -14,6 +14,15 @@
   
   /* Premium Aesthetics */
   --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+
+  /* Modal Tokens */
+  --modal-backdrop: rgba(0, 0, 0, 0.6);
+  --modal-bg-dark: rgba(15, 23, 42, 0.95);
+  --modal-bg-light: rgba(255, 255, 255, 0.98);
+  --modal-bg-dark-solid: rgb(15, 23, 42);
+  --modal-bg-light-solid: rgb(255, 255, 255);
+  --modal-blur: blur(20px);
+  --modal-radius: 24px;
 }
 
 :root[data-theme='light'] {

@@ -2,6 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import { useDelivery } from "@/context/DeliveryContext";
+import styles from "./DeliveryModal.module.css";
+
+// Locally define or import types if they aren't exported. 
+// In this case, we can't easily import GroupedDelivery as it's not exported from DeliveryContext.
+// Let's define it here to match the Context.
+interface GroupedDelivery {
+  client: string;
+  manager: string;
+  orders: {
+    order: string;
+    products: {
+      product: string;
+      quantity: number;
+    }[];
+  }[];
+}
 
 export default function DeliveryWithModal() {
   const {
@@ -25,7 +41,7 @@ export default function DeliveryWithModal() {
   return (
     <>
       <div>
-        {groupedByClient.map((group) => (
+        {groupedByClient.map((group: GroupedDelivery) => (
           <div key={group.client} style={{ marginBottom: 20 }}>
             <div>
               <strong>Менеджер:</strong> {group.manager}
@@ -34,7 +50,7 @@ export default function DeliveryWithModal() {
               <strong>Клиент:</strong> {group.client}
             </div>
 
-            {group.orders.map((order) => (
+            {group.orders.map((order: GroupedDelivery["orders"][number]) => (
               <div key={order.order} style={{ marginTop: 10 }}>
                 <div>
                   <strong>Заказ:</strong> {order.order}
@@ -47,24 +63,19 @@ export default function DeliveryWithModal() {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.products.map((p, idx) => (
+                    {order.products.map((p: GroupedDelivery["orders"][number]["products"][number], idx: number) => (
                       <tr key={idx}>
                         <td>{p.product}</td>
                         <td
                           style={{ cursor: "pointer", color: "blue" }}
                           onClick={() => {
-                            // Нам нужен полный OnDelivery объект для открытия модалки
-                            // По id и названию, надо найти элемент в onDeliveryArr
-                            // Упростим: пусть у тебя есть item для вызова
-                            // Но если нет, можно хранить map в контексте
-                            // Здесь для примера просто вызываем handleRowClick с данными
                             handleRowClick({
                               client: group.client,
                               manager: group.manager,
                               order: order.order,
                               product: p.product,
                               quantity: p.quantity,
-                              id: order.order + p.product, // Собери id так же, как в контексте
+                              id: order.order + p.product,
                             });
                           }}
                         >
@@ -81,51 +92,31 @@ export default function DeliveryWithModal() {
       </div>
 
       {modalItem && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-          onClick={() => setModalItem(null)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: 20,
-              borderRadius: 8,
-              minWidth: 300,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3>Изменить количество</h3>
+        <div className={styles.overlay} onClick={() => setModalItem(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.title}>Изменить количество</h3>
             <p>
               Товар: <b>{modalItem.product}</b>
             </p>
             <input
               type="number"
               min={1}
+              className={styles.input}
               value={inputQty}
               onChange={(e) => setInputQty(Number(e.target.value))}
-              style={{
-                width: "100%",
-                marginBottom: 12,
-                padding: 8,
-                fontSize: 16,
-              }}
+              autoFocus
             />
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
-            >
-              <button onClick={() => setModalItem(null)}>Отмена</button>
-              <button onClick={() => confirmAddWithQuantity(inputQty)}>
+            <div className={styles.footer}>
+              <button 
+                className={`${styles.btn} ${styles.btnSecondary}`}
+                onClick={() => setModalItem(null)}
+              >
+                Отмена
+              </button>
+              <button 
+                className={`${styles.btn} ${styles.btnPrimary}`}
+                onClick={() => confirmAddWithQuantity(inputQty)}
+              >
                 Сохранить
               </button>
             </div>

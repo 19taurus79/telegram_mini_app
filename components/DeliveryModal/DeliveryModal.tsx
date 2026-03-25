@@ -3,10 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useDelivery } from "@/context/DeliveryContext";
 import styles from "./DeliveryModal.module.css";
+import Portal from "@/components/Portal";
 
-// Locally define or import types if they aren't exported. 
-// In this case, we can't easily import GroupedDelivery as it's not exported from DeliveryContext.
-// Let's define it here to match the Context.
 interface GroupedDelivery {
   client: string;
   manager: string;
@@ -92,36 +90,38 @@ export default function DeliveryWithModal() {
       </div>
 
       {modalItem && (
-        <div className={styles.overlay} onClick={() => setModalItem(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.title}>Изменить количество</h3>
-            <p>
-              Товар: <b>{modalItem.product}</b>
-            </p>
-            <input
-              type="number"
-              min={1}
-              className={styles.input}
-              value={inputQty}
-              onChange={(e) => setInputQty(Number(e.target.value))}
-              autoFocus
-            />
-            <div className={styles.footer}>
-              <button 
-                className={`${styles.btn} ${styles.btnSecondary}`}
-                onClick={() => setModalItem(null)}
-              >
-                Отмена
-              </button>
-              <button 
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                onClick={() => confirmAddWithQuantity(inputQty)}
-              >
-                Сохранить
-              </button>
+        <Portal>
+          <div className={styles.overlay} onClick={() => setModalItem(null)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <h3 className={styles.title}>Изменить количество</h3>
+              <p>
+                Товар: <b>{modalItem.product}</b>
+              </p>
+              <input
+                type="number"
+                min={1}
+                className={styles.input}
+                value={inputQty}
+                onChange={(e) => setInputQty(Number(e.target.value))}
+                autoFocus
+              />
+              <div className={styles.footer}>
+                <button 
+                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  onClick={() => setModalItem(null)}
+                >
+                  Отмена
+                </button>
+                <button 
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  onClick={() => confirmAddWithQuantity(inputQty)}
+                >
+                  Сохранить
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </>
   );

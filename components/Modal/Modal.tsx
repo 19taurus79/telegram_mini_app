@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import React, { useEffect, useCallback } from "react";
 import styles from "./Modal.module.css";
+import Portal from "@/components/Portal";
 
 type Props = {
   children: React.ReactNode;
@@ -13,11 +14,11 @@ const Modal = ({ children, onClose }: Props) => {
   const router = useRouter();
 
   const close = useCallback(() => {
-      if (onClose) {
-          onClose();
-      } else {
-          router.back();
-      }
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
   }, [onClose, router]);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ const Modal = ({ children, onClose }: Props) => {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "auto"; // Or ""
+      document.body.style.overflow = "auto";
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [close]);
@@ -43,23 +44,25 @@ const Modal = ({ children, onClose }: Props) => {
   };
 
   return (
-    <div
-      onClick={onBackdropClick}
-      className={styles.backdrop}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className={styles.modalContent}>
-        {children}
-        <button
-          onClick={close}
-          className={styles.closeButton}
-          aria-label="Close modal"
-        >
-          ×
-        </button>
+    <Portal>
+      <div
+        onClick={onBackdropClick}
+        className={styles.backdrop}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className={styles.modalContent}>
+          {children}
+          <button
+            onClick={close}
+            className={styles.closeButton}
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 };
 

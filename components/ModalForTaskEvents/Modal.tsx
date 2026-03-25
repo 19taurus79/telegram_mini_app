@@ -1,5 +1,6 @@
 import css from "./Modal.module.css";
 import React from "react";
+import Portal from "@/components/Portal";
 
 type ModalProps = {
   isOpen: boolean;
@@ -15,14 +16,16 @@ const ModalTaskEvent: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className={css.overlay} onClick={onClose}>
-      <div className={css.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={css.closeBtn} onClick={onClose} aria-label="Закрыть">
-          &times;
-        </button>
-        {children}
+    <Portal>
+      <div className={css.overlay} onClick={onClose}>
+        <div className={css.modal} onClick={(e) => e.stopPropagation()}>
+          <button className={css.closeBtn} onClick={onClose} aria-label="Закрыть">
+            &times;
+          </button>
+          {children}
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 };
 

@@ -76,6 +76,7 @@ export default function RootLayout({
               {children}
               {/* {modal} */}
               <ScrollToTopButton />
+              <div id="modal-root" />
             </DeliveryProvider>
           </FilterProvider>
           {/* <ReactQueryDevtools initialIsOpen={false} /> */}

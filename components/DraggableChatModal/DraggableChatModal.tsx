@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import OrderChatPanel from '@/components/Orders/OrderChatPanel/OrderChatPanel';
 import css from './DraggableChatModal.module.css';
+import Portal from '@/components/Portal';
 
 interface DraggableChatModalProps {
   orderRef: string;
@@ -139,7 +140,7 @@ export default function DraggableChatModal({
   }, [handleClose]);
 
   return (
-    <>
+    <Portal>
       {/* Mobile backdrop */}
       {isMobile && (
         <div
@@ -194,6 +195,6 @@ export default function DraggableChatModal({
           <OrderChatPanel orderRef={orderRef} />
         </div>
       </div>
-    </>
+    </Portal>
   );
 }

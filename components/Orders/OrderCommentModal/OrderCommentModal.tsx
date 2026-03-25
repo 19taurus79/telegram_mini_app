@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@/store/User';
 import styles from './OrderCommentModal.module.css';
+import Portal from '@/components/Portal';
 
 interface OrderCommentModalProps {
   orderRef: string;
@@ -161,152 +162,154 @@ export default function OrderCommentModal({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h3 className={styles.title}>
-            {commentType === 'product' ? (
+    <Portal>
+      <div className={styles.overlay} onClick={onClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.header}>
+            <h3 className={styles.title}>
+              {commentType === 'product' ? (
+                <>
+                  Коментарі до товару: <span style={{ color: '#3b82f6' }}>{productName}</span>
+                </>
+              ) : (
+                <>
+                  Коментарі до заявки: <span style={{ color: '#3b82f6' }}>{orderRef}</span>
+                </>
+              )}
+            </h3>
+            <button className={styles.closeButton} onClick={onClose}>
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className={styles.content}>
+            {!effectiveReadOnly && (
               <>
-                Коментарі до товару: <span style={{ color: '#3b82f6' }}>{productName}</span>
-              </>
-            ) : (
-              <>
-                Коментарі до заявки: <span style={{ color: '#3b82f6' }}>{orderRef}</span>
+                {/* Форма додавання коментаря */}
+                <form onSubmit={handleSubmit} className={styles.form}>
+                  <textarea
+                    className={styles.textarea}
+                    placeholder="Введіть коментар..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    rows={3}
+                    disabled={createMutation.isPending}
+                  />
+                  <button
+                    type="submit"
+                    className={styles.submitButton}
+                    disabled={!newComment.trim() || createMutation.isPending}
+                  >
+                    {createMutation.isPending ? 'Додавання...' : 'Додати коментар'}
+                  </button>
+                </form>
               </>
             )}
-          </h3>
-          <button className={styles.closeButton} onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
 
-        <div className={styles.content}>
-          {!effectiveReadOnly && (
-            <>
-              {/* Форма додавання коментаря */}
-              <form onSubmit={handleSubmit} className={styles.form}>
-                <textarea
-                  className={styles.textarea}
-                  placeholder="Введіть коментар..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={3}
-                  disabled={createMutation.isPending}
-                />
-                <button
-                  type="submit"
-                  className={styles.submitButton}
-                  disabled={!newComment.trim() || createMutation.isPending}
-                >
-                  {createMutation.isPending ? 'Додавання...' : 'Додати коментар'}
-                </button>
-              </form>
-            </>
-          )}
+            {effectiveReadOnly && (
+              <div className={styles.readOnlyNotice}>
+                {isGuest ? '📖 Режим "Тільки читання". Ваші права доступу не дозволяють залишати коментарі.' : '📖 Режим перегляду. Для редагування коментарів перейдіть в розділ "Заявки"'}
+              </div>
+            )}
 
-          {effectiveReadOnly && (
-            <div className={styles.readOnlyNotice}>
-              {isGuest ? '📖 Режим "Тільки читання". Ваші права доступу не дозволяють залишати коментарі.' : '📖 Режим перегляду. Для редагування коментарів перейдіть в розділ "Заявки"'}
-            </div>
-          )}
-
-          {/* Список коментарів */}
-          <div className={styles.commentsList}>
-            {isLoading ? (
-              <div className={styles.loading}>Завантаження...</div>
-            ) : comments.length === 0 ? (
-              <div className={styles.empty}>Коментарів поки немає</div>
-            ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className={styles.comment}>
-                  <div className={styles.commentHeader}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className={styles.commentAuthor}>
-                        {comment.created_by_name}
-                      </span>
-                      {comment.comment_type === 'order' && (
-                        <span style={{
-                          fontSize: '10px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          backgroundColor: '#3b82f6',
-                          color: 'white',
-                          fontWeight: '600'
-                        }}>
-                          ЗАЯВКА
+            {/* Список коментарів */}
+            <div className={styles.commentsList}>
+              {isLoading ? (
+                <div className={styles.loading}>Завантаження...</div>
+              ) : comments.length === 0 ? (
+                <div className={styles.empty}>Коментарів поки немає</div>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className={styles.comment}>
+                    <div className={styles.commentHeader}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className={styles.commentAuthor}>
+                          {comment.created_by_name}
                         </span>
-                      )}
-                      {comment.comment_type === 'product' && (
-                        <span style={{
-                          fontSize: '10px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          fontWeight: '600'
-                        }}>
-                          ТОВАР
+                        {comment.comment_type === 'order' && (
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            fontWeight: '600'
+                          }}>
+                            ЗАЯВКА
+                          </span>
+                        )}
+                        {comment.comment_type === 'product' && (
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            fontWeight: '600'
+                          }}>
+                            ТОВАР
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.commentActions}>
+                        <span className={styles.commentDate}>
+                          {formatDate(comment.created_at)}
                         </span>
-                      )}
-                    </div>
-                    <div className={styles.commentActions}>
-                      <span className={styles.commentDate}>
-                        {formatDate(comment.created_at)}
-                      </span>
-                      {!effectiveReadOnly && editingId !== comment.id && (
-                        <>
-                          <button
-                            className={styles.iconButton}
-                            onClick={() => handleEdit(comment)}
-                            title="Редагувати"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            className={styles.iconButton}
-                            onClick={() => handleDelete(comment.id)}
-                            title="Видалити"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {editingId === comment.id ? (
-                    <div className={styles.editForm}>
-                      <textarea
-                        className={styles.textarea}
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        rows={3}
-                        autoFocus
-                      />
-                      <div className={styles.editActions}>
-                        <button
-                          className={styles.saveButton}
-                          onClick={() => handleSaveEdit(comment.id)}
-                          disabled={!editText.trim()}
-                        >
-                          <Check size={16} /> Зберегти
-                        </button>
-                        <button
-                          className={styles.cancelButton}
-                          onClick={handleCancelEdit}
-                        >
-                          Скасувати
-                        </button>
+                        {!effectiveReadOnly && editingId !== comment.id && (
+                          <>
+                            <button
+                              className={styles.iconButton}
+                              onClick={() => handleEdit(comment)}
+                              title="Редагувати"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              className={styles.iconButton}
+                              onClick={() => handleDelete(comment.id)}
+                              title="Видалити"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className={styles.commentText}>{comment.comment_text}</div>
-                  )}
-                </div>
-              ))
-            )}
+                    {editingId === comment.id ? (
+                      <div className={styles.editForm}>
+                        <textarea
+                          className={styles.textarea}
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          rows={3}
+                          autoFocus
+                        />
+                        <div className={styles.editActions}>
+                          <button
+                            className={styles.saveButton}
+                            onClick={() => handleSaveEdit(comment.id)}
+                            disabled={!editText.trim()}
+                          >
+                            <Check size={16} /> Зберегти
+                          </button>
+                          <button
+                            className={styles.cancelButton}
+                            onClick={handleCancelEdit}
+                          >
+                            Скасувати
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.commentText}>{comment.comment_text}</div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Portal>
   );
 }

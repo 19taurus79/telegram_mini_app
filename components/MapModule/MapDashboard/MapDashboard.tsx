@@ -11,6 +11,7 @@ import BottomData from "../components/bottomData/bottomData";
 import Loader from "@/components/Loader/Loader";
 import EditClientModal from "../components/EditClientModal/EditClientModal";
 import EditDeliveryModal from "../components/EditDeliveryModal/EditDeliveryModal";
+import Portal from "@/components/Portal";
 import { useMapControlStore } from "../store/mapControlStore";
 import { useApplicationsStore } from "../store/applicationsStore";
 import { useDisplayAddressStore } from "../store/displayAddress";
@@ -107,13 +108,10 @@ export default function MapDashboard() {
     []
   );
 
-
-
   if (!isClient) return null;
 
   return (
     <div className={styles.dashboardContainer}>
-
 
       <ResponsiveGridLayout
         className={styles.gridLayout}
@@ -148,7 +146,6 @@ export default function MapDashboard() {
             </div>
             <div className={styles.mapContent}>
               <MapFeature onAddressSelect={() => {}} />
-
             </div>
           </div>
         </div>
@@ -168,13 +165,17 @@ export default function MapDashboard() {
       </ResponsiveGridLayout>
 
       {/* Модальные окна, которые отображаются поверх всего */}
-      <EditClientModal 
-        isOpen={isEditModalOpen} 
-        onClose={() => setIsEditModalOpen(false)} 
-        onSave={handleSaveClient} 
-        client={editingClient} 
-      />
-      <EditDeliveryModal />
+      <Portal>
+        <EditClientModal 
+          isOpen={isEditModalOpen} 
+          onClose={() => setIsEditModalOpen(false)} 
+          onSave={handleSaveClient} 
+          client={editingClient} 
+        />
+      </Portal>
+      <Portal>
+        <EditDeliveryModal />
+      </Portal>
     </div>
   );
 }

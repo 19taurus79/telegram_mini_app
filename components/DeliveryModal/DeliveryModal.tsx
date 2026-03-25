@@ -4,6 +4,21 @@ import React, { useState, useEffect } from "react";
 import { useDelivery } from "@/context/DeliveryContext";
 import styles from "./DeliveryModal.module.css";
 
+// Locally define or import types if they aren't exported. 
+// In this case, we can't easily import GroupedDelivery as it's not exported from DeliveryContext.
+// Let's define it here to match the Context.
+interface GroupedDelivery {
+  client: string;
+  manager: string;
+  orders: {
+    order: string;
+    products: {
+      product: string;
+      quantity: number;
+    }[];
+  }[];
+}
+
 export default function DeliveryWithModal() {
   const {
     groupedByClient,
@@ -26,7 +41,7 @@ export default function DeliveryWithModal() {
   return (
     <>
       <div>
-        {groupedByClient.map((group: any) => (
+        {groupedByClient.map((group: GroupedDelivery) => (
           <div key={group.client} style={{ marginBottom: 20 }}>
             <div>
               <strong>Менеджер:</strong> {group.manager}
@@ -35,7 +50,7 @@ export default function DeliveryWithModal() {
               <strong>Клиент:</strong> {group.client}
             </div>
 
-            {group.orders.map((order: any) => (
+            {group.orders.map((order: GroupedDelivery["orders"][number]) => (
               <div key={order.order} style={{ marginTop: 10 }}>
                 <div>
                   <strong>Заказ:</strong> {order.order}
@@ -48,7 +63,7 @@ export default function DeliveryWithModal() {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.products.map((p: any, idx: number) => (
+                    {order.products.map((p: GroupedDelivery["orders"][number]["products"][number], idx: number) => (
                       <tr key={idx}>
                         <td>{p.product}</td>
                         <td

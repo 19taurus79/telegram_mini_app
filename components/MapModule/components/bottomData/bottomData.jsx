@@ -7,6 +7,7 @@ import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -327,7 +328,7 @@ export default function BottomData({ onEditClient }) {
         </div>
         <div className={css.selectionActions}>
           <button onClick={handleExport} className={css.actionButton}><Download size={16} /> Експорт в XLSX</button>
-          <button onClick={handlePrint} className={css.actionButton}><Printer size={16} /> Друк</button>
+          <button onClick={handlePrint} className={css.actionButton}><LucidePrinter size={16} /> Друк</button>
         </div>
         
         {/* Видимая часть (аккордеон) */}
@@ -491,7 +492,7 @@ export default function BottomData({ onEditClient }) {
             </div>
             <div className={css.deliveryActionsBox}>
               <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                <Printer size={14} /> Друк
+                <LucidePrinter size={14} /> Друк
               </button>
               {!isGuest && (
                 <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
@@ -596,7 +597,10 @@ export default function BottomData({ onEditClient }) {
               </div>
               <div className={css.deliverySecondaryActions}>
                 <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                  <Printer size={14} /> Друк
+                  <LucidePrinter 
+                    size={14} 
+                  /> 
+                  Друк
                 </button>
                 {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
                 {!isCompleted && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }}>Змінити дату</button>}
@@ -608,7 +612,7 @@ export default function BottomData({ onEditClient }) {
           {isGuest && (
             <div className={css.deliveryActionsRow}>
               <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                <Printer size={14} /> Друк
+                <LucidePrinter size={14} /> Друк
               </button>
             </div>
           )}

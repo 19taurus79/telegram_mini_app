@@ -7,7 +7,7 @@ import {
   getIdRemainsByParty,
   getWeightForProduct,
 } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, ExternalLink } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
@@ -252,12 +252,22 @@ function TableOrderDetail({ details }: Detail) {
           {/* Main Product Row */}
           <div className={css.cardRow}>
             <div className={css.cardCellProduct}>
-              <span className={css.productName}>{item.product}</span>
+              <div className={css.productNameWrapper}>
+                <span className={css.productName}>{item.product}</span>
+                {isSelected(item.id) && (
+                    <div className={css.selectionIndicator}>
+                        <Check size={14} strokeWidth={3} />
+                    </div>
+                )}
+              </div>
               {getDeliveryForItem(item) && (
-                  <span className={css.deliveryBadge}>В доставці</span>
+                  <span className={css.deliveryBadge}>
+                    <ExternalLink size={10} className="mr-1" />
+                    В доставці
+                  </span>
               )}
               {addingToDeliveryId === item.id && (
-                  <Loader2 className="animate-spin ml-2 h-4 w-4 inline" />
+                  <Loader2 className="animate-spin ml-2 h-4 w-4 inline text-accent-green" />
               )}
             </div>
             <div

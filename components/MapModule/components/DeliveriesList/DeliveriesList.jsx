@@ -12,7 +12,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     selectedDeliveries,
     toggleSelectedDelivery
   } = useApplicationsStore();
-  const { selectedStatuses } = useMapControlStore();
+  const { selectedStatuses, selectedDates, toggleDate } = useMapControlStore();
   const [expandedDates, setExpandedDates] = useState(new Set());
 
   const toggleDateExpansion = (date) => {
@@ -27,16 +27,31 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     });
   };
 
+  const handleDateClick = (date, e) => {
+    e.stopPropagation();
+    const isMulti = e.ctrlKey || e.metaKey;
+    toggleDate(date, isMulti);
+  };
+
   // 1. Фильтрация
   const filteredDeliveries = deliveries.filter(d => {
+    const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
+    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
+    const dateMatch = selectedDates.length === 0 || selectedDates.includes(d.delivery_date || "Без дати");
+    return statusMatch && managerMatch && dateMatch;
+  });
+
+  // Для списка (аккордеонов) мы фильтруем по статусу и менеджеру, но НЕ по дате, 
+  // чтобы все даты оставались видимыми в интерфейсе
+  const listDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
     const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
     return statusMatch && managerMatch;
   });
 
-  // 2. Новая группировка и сортировка
+  // 2. Новая группировка и сортировка (используем listDeliveries)
   const grouping = {};
-  filteredDeliveries.forEach(item => {
+  listDeliveries.forEach(item => {
     const status = item.status || "Без статусу";
     const date = item.delivery_date || "Без дати";
     const manager = item.manager || "Без менеджера";
@@ -121,12 +136,23 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
 
             {dates.map(({ date, managers, totalWeight: dateWeight, uniqueClientsCount: dateClientsCount }) => {
               const isExpanded = expandedDates.has(date);
+              const isDateFiltered = selectedDates.includes(date);
               return (
                 <div key={date} className={css.dateSection}>
-                  <div className={css.dateHeader} onClick={() => toggleDateExpansion(date)}>
+                  <div 
+                    className={`${css.dateHeader} ${isDateFiltered ? css.dateHeaderSelected : ''}`} 
+                    onClick={() => toggleDateExpansion(date)}
+                  >
                     <span className={css.dateTitle}>
                       <span className={css.accordionToggle}>{isExpanded ? '▼' : '▶'}</span>
-                      {date}
+                      <span className={css.dateLabel}>{date}</span>
+                      <button 
+                        className={css.calendarBtn}
+                        onClick={(e) => handleDateClick(date, e)}
+                        title="Фільтрувати за цією датою (Ctrl для множинного вибору)"
+                      >
+                        📅
+                      </button>
                     </span>
                     <div className={css.dateAggregates}>
                       <span>👥 {dateClientsCount}</span>

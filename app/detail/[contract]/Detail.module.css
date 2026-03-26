@@ -56,7 +56,10 @@
 .productCard:hover {
   transform: translateY(-2px);
   border-color: var(--accent-green);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.productCard:active {
+  transform: scale(0.98);
 }
 
 /* --- Row and Cell Layout --- */
@@ -72,14 +75,45 @@
   flex: 1;
   font-weight: 600;
   color: #fff;
+  min-width: 0; /* Allow shrinking below content size */
 }
 
 :global([data-theme='light']) .cardCellProduct {
   color: var(--foreground);
 }
 
+.productNameWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .productName {
   font-size: 1rem;
+  white-space: normal;
+  word-break: break-word; /* Allow wrapping for long names */
+  display: block;
+  line-height: 1.3;
+}
+
+.selectionIndicator {
+  background: var(--accent-green);
+  color: #000;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .cardCellQuantity {
@@ -88,11 +122,13 @@
   font-weight: 800;
   font-size: 1.1rem;
   color: var(--accent-green);
+  flex-shrink: 0;
 }
 
 
 .commentBadgeCell {
   padding: 0;
+  flex-shrink: 0;
 }
 
 .headerCellProduct { flex: 1; }
@@ -139,17 +175,26 @@
 
 /* --- NEW: Selection Style --- */
 .selected {
-  border-color: var(--accent-green);
-  background: rgba(14, 241, 142, 0.05);
+  border-color: var(--accent-green) !important;
+  background: rgba(14, 241, 142, 0.08) !important;
+  box-shadow: 0 0 20px rgba(14, 241, 142, 0.1);
+  animation: selectPulse 2s infinite ease-in-out;
+}
+
+@keyframes selectPulse {
+  0% { box-shadow: 0 0 0px rgba(14, 241, 142, 0); }
+  50% { box-shadow: 0 0 15px rgba(14, 241, 142, 0.2); }
+  100% { box-shadow: 0 0 0px rgba(14, 241, 142, 0); }
 }
 
 :global([data-theme='light']) .selected {
-  background: rgba(16, 185, 129, 0.05);
-  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: #10b981 !important;
 }
 
 .alreadyInDelivery {
   border: 1.5px solid #00c4cc;
+  background: rgba(0, 196, 204, 0.03);
 }
 
 .deliveryBadge {
@@ -157,9 +202,10 @@
   color: #fff;
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 6px;
-  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;

@@ -190,6 +190,19 @@
   gap: 8px;
 }
 
+.nomenclatureText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.commentBadgeWrapper {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
 .deliveryBadge {
   font-size: 10px;
   background: var(--accent-green);

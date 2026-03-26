@@ -7,10 +7,12 @@ import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer, ChevronDown, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
+import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 
 export default function BottomData({ onEditClient }) {
+  const [commentModalData, setCommentModalData] = useState(null);
   const { 
     selectedClient, 
     selectedDelivery, 
@@ -711,7 +713,26 @@ export default function BottomData({ onEditClient }) {
                 <ul className={css.ordersList}>
                   {orders.map((order, index) => (
                     <li key={index} className={`${css.orderItem} ${isInDelivery(order) ? css.inDeliveryRow : ""}`}>
-                      <div className={css.productName}>{order.nomenclature}{isInDelivery(order) && (<span className={css.deliveryBadge}>В ДОСТАВЦІ</span>)}</div>
+                      <div className={css.productName}>
+                        <span className={css.nomenclatureText}>{order.nomenclature}</span>
+                        <div 
+                          className={css.commentBadgeWrapper}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCommentModalData({ 
+                              orderRef: order.contract_supplement,
+                              productName: order.nomenclature
+                            });
+                          }}
+                        >
+                          <OrderCommentBadge
+                              orderRef={order.contract_supplement}
+                              productName={order.nomenclature}
+                              onClick={() => {}}
+                          />
+                        </div>
+                        {isInDelivery(order) && (<span className={css.deliveryBadge}>В ДОСТАВЦІ</span>)}
+                      </div>
                       <div className={css.orderDetails}>
                         <span>Кількість: {order.different} | Вага: {order.total_weight?.toFixed(2) || 0} кг</span>
                       </div>
@@ -771,6 +792,15 @@ export default function BottomData({ onEditClient }) {
           {addressData.lat && <p><strong>Координати:</strong> {addressData.lat}, {addressData.lon}</p>}
         </div>
       </div>
+      {commentModalData && (
+        <OrderCommentModal
+          orderRef={commentModalData.orderRef}
+          commentType="product"
+          productName={commentModalData.productName}
+          onClose={() => setCommentModalData(null)}
+          readOnly={true}
+        />
+      )}
     </div>
   );
 }

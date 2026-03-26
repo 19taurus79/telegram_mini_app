@@ -5,6 +5,7 @@ export const useMapControlStore = create((set) => ({
   areClientsVisible: false,
   areDeliveriesVisible: true,
   selectedStatuses: [],
+  selectedDates: [],
   
   availableStatuses: [],
 
@@ -40,5 +41,26 @@ export const useMapControlStore = create((set) => ({
       ? state.selectedStatuses.filter(s => s !== status)
       : [...state.selectedStatuses, status]
   })),
+
+  setSelectedDates: (dates) => set((state) => ({
+    selectedDates: typeof dates === 'function' ? dates(state.selectedDates) : dates
+  })),
+  toggleDate: (date, isMulti) => set((state) => {
+    if (isMulti) {
+      const isSelected = state.selectedDates.includes(date);
+      return {
+        selectedDates: isSelected
+          ? state.selectedDates.filter(d => d !== date)
+          : [...state.selectedDates, date]
+      };
+    } else {
+      // If clicking the only selected date, clear it. Otherwise, set to just this date.
+      const isOnlySelected = state.selectedDates.length === 1 && state.selectedDates[0] === date;
+      return {
+        selectedDates: isOnlySelected ? [] : [date]
+      };
+    }
+  }),
+  clearDateFilters: () => set({ selectedDates: [] }),
 }));
 

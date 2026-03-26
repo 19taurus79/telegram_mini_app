@@ -59,9 +59,7 @@
 }
 
 .statusHeader {
-  background: var(--card-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--card-bg-solid, #1a1a1a); /* Force solid background */
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   color: var(--foreground);
@@ -74,7 +72,61 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme='light']) .statusHeader {
+  background: #ffffff;
+}
+
+.dateHeaderSelected {
+  background: var(--accent-green-transparent, rgba(14, 241, 142, 0.15)) !important;
+  border-color: var(--accent-green) !important;
+  box-shadow: 0 0 15px var(--accent-green-transparent) !important;
+}
+
+.dateLabel {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .dateLabel {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.calendarBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 16px;
+  filter: grayscale(1) opacity(0.5);
+  transition: all 0.2s;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.calendarBtn:hover {
+  filter: grayscale(0) opacity(1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dateHeaderSelected .calendarBtn {
+  filter: grayscale(0) opacity(1);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .statusAggregates {

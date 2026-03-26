@@ -12,11 +12,13 @@ import { useDisplayAddressStore } from "./store/displayAddress"; // Хранил
 import { useApplicationsStore } from "./store/applicationsStore"; // Глобальное хранилище для заявок, доставок, клиентов
 import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
 import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
-import { getDeliveries } from "../../lib/api";
+import { getDeliveries, getOrderComments } from "../../lib/api";
 import Header from "./components/Header/Header";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getInitData } from "@/lib/getInitData";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { CommentsProvider } from "@/components/Orders/CommentsContext";
+import { OrderComment } from "@/types/types";
 import { customIcon, clientIcon, warehouseIcon, deliveryIcon } from "./leaflet-icon"; // Кастомные иконки для маркеров
 import { getStatusColor } from "./statusUtils"; // Утилита для получения цвета статуса доставки
 import { warehouses } from "./warehouses"; // Статические данные о складах
@@ -216,6 +218,8 @@ export default function MapFeature({ onAddressSelect }) {
 
   // Состояние для отображения адреса, выбранного через поиск
   const { addressData, setAddressData } = useDisplayAddressStore();
+  const queryClient = useQueryClient();
+  const initData = getInitData();
   
   // Глобальное состояние для заявок, клиентов, доставок и их выбора
   const {
@@ -263,6 +267,7 @@ export default function MapFeature({ onAddressSelect }) {
     setDeliveriesVisible,
     selectedStatuses,
     setSelectedStatuses,
+    selectedDates, // Додаємо selectedDates
     availableStatuses,
     setAvailableStatuses,
     flyToCoords,
@@ -288,11 +293,12 @@ export default function MapFeature({ onAddressSelect }) {
     ? clients.filter(client => selectedManagers.includes(client.manager))
     : clients;
 
-  // Фильтрация доставок по статусу и менеджеру
+  // Фильтрация доставок по статусу, менеджеру и дате
   const filteredDeliveries = deliveries.filter(d => {
     const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
     const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
-    return statusMatch && managerMatch;
+    const dateMatch = selectedDates.length === 0 || selectedDates.includes(d.delivery_date || "Без дати");
+    return statusMatch && managerMatch && dateMatch;
   });
 
   // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
@@ -441,6 +447,46 @@ export default function MapFeature({ onAddressSelect }) {
     }
   }, [clientsData, setClients]);
 
+  // Збираємо всі ID доповнень (контрактів) для батч-запиту коментарів
+  const contractsIds = useMemo(() => {
+    const ids = new Set();
+    applications.forEach(app => {
+        app.orders?.forEach(o => {
+            if (o.contract_supplement) ids.add(o.contract_supplement);
+        });
+    });
+    return Array.from(ids);
+  }, [applications]);
+
+  // Батч-запит на коментарі для всіх доповнень
+  const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
+    queryKey: ["batchComments", contractsIds],
+    queryFn: async () => {
+      const allComments = await getOrderComments(contractsIds, undefined, initData || undefined);
+      
+      // Наповнюємо індивідуальні кеші для OrderCommentBadge
+      contractsIds.forEach(id => {
+        const itemComments = allComments.filter(c => c.order_ref === id);
+        queryClient.setQueryData(["comments", id], itemComments);
+      });
+      
+      return allComments;
+    },
+    enabled: contractsIds.length > 0 && !!initData,
+    staleTime: 60000,
+  });
+
+  const commentsMap = useMemo(() => {
+    const map = {};
+    if (batchCommentsData) {
+      batchCommentsData.forEach(c => {
+        if (!map[c.order_ref]) map[c.order_ref] = [];
+        map[c.order_ref].push(c);
+      });
+    }
+    return map;
+  }, [batchCommentsData]);
+
   // Загрузка и обработка доставок с помощью React Query
   const { data: fetchedDeliveries } = useQuery({
     queryKey: ['deliveries'],
@@ -537,20 +583,20 @@ export default function MapFeature({ onAddressSelect }) {
   }
 
   return (
-    <div className={css.container} style={{ height: '100%', overflow: 'hidden' }}>
-
-      {/* Основной контейнер карты */}
-      <div className={css.map} ref={containerRef}>
-        <MapContainer
-          className={css.leafletMap}
-          ref={mapRef}
-          center={
-            addressData.lat
-              ? [addressData.lat, addressData.lon]
-              : [49.973022, 35.984668] // Координаты по умолчанию (Харьков)
-          }
-          zoom={13}
-        >
+    <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
+      <div className={css.container} style={{ height: '100%', overflow: 'hidden' }}>
+        {/* Основной контейнер карты */}
+        <div className={css.map} ref={containerRef}>
+          <MapContainer
+            className={css.leafletMap}
+            ref={mapRef}
+            center={
+              addressData.lat
+                ? [addressData.lat, addressData.lon]
+                : [49.973022, 35.984668] // Координаты по умолчанию (Харьков)
+            }
+            zoom={13}
+          >
           {/* Компоненты, отрисовываемые поверх карты */}
           <MapControls
             areApplicationsVisible={areApplicationsVisible}
@@ -822,5 +868,6 @@ export default function MapFeature({ onAddressSelect }) {
         />
       </div>
     </div>
+    </CommentsProvider>
   );
 }

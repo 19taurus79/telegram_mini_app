@@ -162,19 +162,29 @@
 
   .clientName {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 14px;
     color: var(--foreground);
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .contractInfo {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 2px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
   }
 
   :global([data-theme='light']) .contractInfo {
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  .commentBadgeWrapper {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
   }
 
   .cardGrid {

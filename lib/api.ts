@@ -57,10 +57,13 @@ export const getRemainsByProduct = async ({
   product: string;
   initData: string;
 }) => {
-  const { data } = await axios.get<Remains[]>(`/data/remains_by_product/${encodeURIComponent(product)}`, {
+  const { data } = await axios.get<Remains[]>(`/data/remains_by_product`, {
     headers: {
       "Content-Type": "application/json",
       "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      product: product,
     },
   });
   return data;
@@ -128,7 +131,7 @@ export const getOrders = async ({
   client: string;
   initData: string;
 }) => {
-  const { data } = await axios.get<Order[]>(`/data/orders/${client}`, {
+  const { data } = await axios.get<Order[]>(`/data/orders`, {
     headers: {
       "Content-Type": "application/json",
       "X-Telegram-Init-Data": initData,
@@ -166,7 +169,7 @@ export const getContracts = async ({
   client: number;
   initData: string;
 }) => {
-  const { data } = await axios.get<Contract[]>(`/data/contracts/${client}`, {
+  const { data } = await axios.get<Contract[]>(`/data/contracts`, {
     headers: {
       "Content-Type": "application/json",
       "X-Telegram-Init-Data": initData,
@@ -288,7 +291,7 @@ export const getTotalSumOrderByProduct = async ({
   initData: string;
 }) => {
   const { data } = await axios.get<TotalOrder[]>(
-    `/data/sum_order_by_product/${product}`,
+    `/data/sum_order_by_product`,
     {
       headers: {
         "Content-Type": "application/json",
@@ -310,7 +313,7 @@ export const getOrdersByProduct = async ({
   initData: string;
 }) => {
   const { data } = await axios.get<Order[]>(
-    `/data/order_by_product/${product}`,
+    `/data/order_by_product`,
     {
       headers: {
         "Content-Type": "application/json",
@@ -467,11 +470,14 @@ export const getMovedDataByProduct = async ({
   initData: string;
 }) => {
   const { data } = await axios.get<MovedData[]>(
-    `/data/moved_products/${productId}`,
+    `/data/moved_products`,
     {
       headers: {
         "Content-Type": "application/json",
         "X-Telegram-Init-Data": initData,
+      },
+      params: {
+        product_id: productId,
       },
     }
   );

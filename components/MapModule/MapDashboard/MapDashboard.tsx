@@ -17,7 +17,7 @@ import { useApplicationsStore } from "../store/applicationsStore";
 import { useDisplayAddressStore } from "../store/displayAddress";
 import { ClientAddress, GeocodedAddress } from "@/types/types";
 import MobileFilters from "../components/MobileFilters/MobileFilters";
-import { SlidersHorizontal, Map as MapIcon, Database } from "lucide-react";
+import { SlidersHorizontal, Database } from "lucide-react";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 

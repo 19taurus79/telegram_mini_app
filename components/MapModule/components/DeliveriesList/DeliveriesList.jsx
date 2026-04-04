@@ -6,7 +6,7 @@ import StatusFilter from "../StatusFilter/StatusFilter";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import { getStatusColor } from "../../statusUtils";
 
-export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery }) {
+export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
     selectedManagers,
     selectedDeliveries,
@@ -108,16 +108,20 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
 
   return (
     <div className={css.container}>
-      <div className={css.collapsibleHeader} onClick={() => setAreFiltersVisible(prev => !prev)}>
-        <span>Фільтри</span>
-        <span className={`${css.accordionToggle} ${areFiltersVisible ? css.rotated : ''}`}>▼</span>
-      </div>
+      {!isMobile && (
+        <>
+          <div className={css.collapsibleHeader} onClick={() => setAreFiltersVisible(prev => !prev)}>
+            <span>Фільтри</span>
+            <span className={`${css.accordionToggle} ${areFiltersVisible ? css.rotated : ''}`}>▼</span>
+          </div>
 
-      {areFiltersVisible && (
-        <div className={css.filtersContainer}>
-          <ManagerFilter />
-          <StatusFilter />
-        </div>
+          {areFiltersVisible && (
+            <div className={css.filtersContainer}>
+              <ManagerFilter />
+              <StatusFilter />
+            </div>
+          )}
+        </>
       )}
       <div className={css.header}>
         <h3>Доставки ({filteredDeliveries.length})</h3>

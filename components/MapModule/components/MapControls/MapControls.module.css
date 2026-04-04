@@ -111,3 +111,23 @@
     display: none;
   }
 }
+
+/* Mobile Panel Mode (Inside Filter Drawer) */
+.mobilePanelMode {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+.mobilePanelMode .controlBtn {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.mobilePanelMode .controlBtn svg {
+  width: 22px !important;
+  height: 22px !important;
+}

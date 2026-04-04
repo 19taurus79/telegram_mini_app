@@ -9,10 +9,11 @@ export default function MapControls({
   areDeliveriesVisible,
   toggleDeliveries,
   isRoutingMode,
-  toggleRoutingMode
+  toggleRoutingMode,
+  isMobilePanel = false
 }) {
   return (
-    <div className={css.controlsPanel}>
+    <div className={clsx(css.controlsPanel, isMobilePanel && css.mobilePanelMode)}>
       {/* Clients Toggle */}
       <div 
         className={clsx(css.controlBtn, areClientsVisible && css.activeClients)}

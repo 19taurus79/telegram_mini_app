@@ -16,6 +16,8 @@ import { useMapControlStore } from "../store/mapControlStore";
 import { useApplicationsStore } from "../store/applicationsStore";
 import { useDisplayAddressStore } from "../store/displayAddress";
 import { ClientAddress, GeocodedAddress } from "@/types/types";
+import MobileFilters from "../components/MobileFilters/MobileFilters";
+import { SlidersHorizontal, Map as MapIcon, Database } from "lucide-react";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -59,6 +61,23 @@ export default function MapDashboard() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientAddress | null>(null);
+
+  // Mobile optimization states
+  const [isMobile, setIsMobile] = useState(false);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
+
+  // Check mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile(); // Initial check
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Обробляємо запит на відкриття EditClientModal (від MapSidePanel через Zustand)
   useEffect(() => {
@@ -110,6 +129,92 @@ export default function MapDashboard() {
 
   if (!isClient) return null;
 
+  if (isMobile) {
+    return (
+      <div className={styles.mobileDashboardContainer}>
+        {/* Фільтри (Left Panel) */}
+        <div className={`${styles.mobileSidePanel} ${styles.leftPanel} ${isLeftPanelOpen ? styles.panelOpen : ''}`}>
+          <div className={styles.panelHeader}>
+            <h3 className={styles.panelTitle}>Фільтри</h3>
+            <button className={styles.panelCloseBtn} onClick={() => setIsLeftPanelOpen(false)}>✕</button>
+          </div>
+          <div className={styles.panelContent}>
+            <MobileFilters />
+          </div>
+        </div>
+
+        {/* Дані (Right Panel) */}
+        <div className={`${styles.mobileSidePanel} ${styles.rightPanel} ${isRightPanelOpen ? styles.panelOpen : ''}`}>
+          <div className={styles.panelHeader}>
+            <h3 className={styles.panelTitle}>Списки та Дані</h3>
+            <button className={styles.panelCloseBtn} onClick={() => setIsRightPanelOpen(false)}>✕</button>
+          </div>
+          <div className={styles.panelContent}>
+            {/* isMobile передаємо, щоб відключити внутрішні фільтри у списках, бо вони тепер зліва */}
+            <MapSidePanel isMobile={true} />
+          </div>
+        </div>
+
+        {/* Карта займає весь корисний простір */}
+        <div className={styles.mobileMapContainer}>
+          <MapFeature onAddressSelect={() => {}} setIsSheetOpen={setIsBottomSheetOpen} isMobile={isMobile} />
+        </div>
+
+        {/* Плаваючі кнопки виклику панелей */}
+        <div className={styles.fabContainer}>
+          <button 
+            className={styles.fabBtn} 
+            onClick={() => setIsLeftPanelOpen(true)}
+            title="Фільтри"
+          >
+            <SlidersHorizontal size={24} />
+          </button>
+          <button 
+            className={styles.fabBtn} 
+            onClick={() => setIsRightPanelOpen(true)}
+            title="Дані та Списки"
+          >
+            <Database size={24} />
+          </button>
+        </div>
+
+        {/* Задник для панелей */}
+        {(isLeftPanelOpen || isRightPanelOpen) && (
+          <div 
+            className={styles.panelOverlay} 
+            onClick={() => { setIsLeftPanelOpen(false); setIsRightPanelOpen(false); }}
+          />
+        )}
+
+        {/* Bottom Sheet для деталей */}
+        <div className={`${styles.bottomSheet} ${isBottomSheetOpen ? styles.bottomSheetOpen : ''}`}>
+          <div 
+            className={styles.bottomSheetHandleRow}
+            onClick={() => setIsBottomSheetOpen(false)}
+          >
+            <div className={styles.bottomSheetHandle} />
+          </div>
+          <div className={styles.bottomSheetContent}>
+            <BottomData onEditClient={() => {setIsBottomSheetOpen(false); setIsEditModalOpen(true);}} />
+          </div>
+        </div>
+
+        {/* Модальные окна, которые отображаются поверх всего */}
+        <Portal>
+          <EditClientModal 
+            isOpen={isEditModalOpen} 
+            onClose={() => setIsEditModalOpen(false)} 
+            onSave={handleSaveClient} 
+            client={editingClient} 
+          />
+        </Portal>
+        <Portal>
+          <EditDeliveryModal />
+        </Portal>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.dashboardContainer}>
 
@@ -145,7 +250,7 @@ export default function MapDashboard() {
               <h3 className={styles.gridItemTitle}>Карта</h3>
             </div>
             <div className={styles.mapContent}>
-              <MapFeature onAddressSelect={() => {}} />
+              <MapFeature onAddressSelect={() => {}} setIsSheetOpen={() => {}} />
             </div>
           </div>
         </div>

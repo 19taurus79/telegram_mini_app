@@ -212,8 +212,10 @@ const getDynamicGroupedIcon = (baseIconUrl, count, weight) => {
  * Основной компонент карты, который собирает все элементы в единое целое.
  * @param {object} props - Свойства.
  * @param {function} props.onAddressSelect - Колбэк при выборе адреса через поиск.
+ * @param {function} props.setIsSheetOpen - Колбэк для открытия модальной шторки деталей (Bottom Sheet).
+ * @param {boolean} [props.isMobile=false] - Чи запущено на мобільному (приховує власні MapControls).
  */
-export default function MapFeature({ onAddressSelect }) {
+export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {}, isMobile = false }) {
   // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ ---
 
   // Состояние для отображения адреса, выбранного через поиск
@@ -246,12 +248,11 @@ export default function MapFeature({ onAddressSelect }) {
     toggleMultiSelectedItem
   } = useApplicationsStore();
 
-  const setIsSheetOpen = () => {}; // Dummy function (or remove later if not needed)
   
   // Локальное состояние для управления видимостью UI элементов
   const [currentZoom, setCurrentZoom] = useState(13);
-
-  const [isRoutingMode, setIsRoutingMode] = useState(false);
+  
+  // Додаткове дебаг-значення для маршрутів
   const [routeWaypoints, setRouteWaypoints] = useState([]);
   const [routeInfo, setRouteInfo] = useState(null);
 
@@ -270,6 +271,8 @@ export default function MapFeature({ onAddressSelect }) {
     selectedDates, // Додаємо selectedDates
     availableStatuses,
     setAvailableStatuses,
+    isRoutingMode,
+    toggleRoutingMode,
     flyToCoords,
     setFlyToCoords,
   } = useMapControlStore();
@@ -325,13 +328,15 @@ export default function MapFeature({ onAddressSelect }) {
   /**
    * Переключает режим построения маршрута.
    */
+  // --- ЗБІР ДАНИХ ДЛЯ МАРШРУТУ ---
+  // Будуємо маршрут, якщо увімкнений режим (isRoutingMode) і є хоча б одна активна (selected) заявка/доставка
   const handleToggleRoutingMode = useCallback(() => {
-    setIsRoutingMode(prev => !prev);
+    toggleRoutingMode();
     if (isRoutingMode) { // При выключении режима - сбрасываем маршрут
       setRouteWaypoints([]);
       setRouteInfo(null);
     }
-  }, [isRoutingMode]);
+  }, [isRoutingMode, toggleRoutingMode]);
 
   /**
    * Добавляет точку в маршрут при клике на маркер в режиме маршрутизации.
@@ -596,18 +601,21 @@ export default function MapFeature({ onAddressSelect }) {
                 : [49.973022, 35.984668] // Координаты по умолчанию (Харьков)
             }
             zoom={13}
+            zoomControl={false}
           >
           {/* Компоненты, отрисовываемые поверх карты */}
-          <MapControls
-            areApplicationsVisible={areApplicationsVisible}
-            toggleApplications={toggleApplications}
-            areClientsVisible={areClientsVisible}
-            toggleClients={toggleClients}
-            areDeliveriesVisible={areDeliveriesVisible}
-            toggleDeliveries={() => setDeliveriesVisible(!areDeliveriesVisible)}
-            isRoutingMode={isRoutingMode}
-            toggleRoutingMode={handleToggleRoutingMode}
-          />
+          {!isMobile && (
+            <MapControls
+              areApplicationsVisible={areApplicationsVisible}
+              toggleApplications={toggleApplications}
+              areClientsVisible={areClientsVisible}
+              toggleClients={toggleClients}
+              areDeliveriesVisible={areDeliveriesVisible}
+              toggleDeliveries={toggleDeliveries}
+              isRoutingMode={isRoutingMode}
+              toggleRoutingMode={toggleRoutingMode}
+            />
+          )}
 
           <ZoomTracker onZoomChange={setCurrentZoom} />
           
@@ -840,12 +848,14 @@ export default function MapFeature({ onAddressSelect }) {
           {/* Контроллер для принудительного перемещения карты */}
           <MapController coords={flyToCoords} />
           {/* Контрол для рисования на карте (выделения) */}
-          <DrawControl 
-            applications={filteredApplications}
-            clients={filteredClients}
-            deliveries={filteredDeliveries}
-            onSelectionCreate={handleSelectionCreate}
-          />
+          {!isMobile && (
+            <DrawControl 
+              applications={filteredApplications}
+              clients={filteredClients}
+              deliveries={filteredDeliveries}
+              onSelectionCreate={handleSelectionCreate}
+            />
+          )}
           {/* Контрол для отрисовки маршрута (если активен режим) */}
           {isRoutingMode && (
             <RoutingControl 

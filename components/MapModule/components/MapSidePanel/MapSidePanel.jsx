@@ -11,8 +11,9 @@ import InputAddress from "../inputAddress/InputAddress";
  * MapSidePanel — панель зі списками доставок / заявок / клієнтів або пошуком адреси.
  * Рендериться як окремий блок у MapDashboard.
  * Комунікація з картою — через Zustand stores.
+ * @param {{ isMobile?: boolean }} props
  */
-export default function MapSidePanel() {
+export default function MapSidePanel({ isMobile = false }) {
   const {
     deliveries,
     clients,
@@ -44,6 +45,7 @@ export default function MapSidePanel() {
         onFlyTo={handleFlyTo}
         onSelectDelivery={(delivery) => setSelectedDelivery(delivery)}
         selectedStatuses={selectedStatuses}
+        isMobile={isMobile}
       />
     );
   }
@@ -54,6 +56,7 @@ export default function MapSidePanel() {
         onClose={() => {}}
         onFlyTo={handleFlyTo}
         onAddClient={handleAddClient}
+        isMobile={isMobile}
       />
     );
   }

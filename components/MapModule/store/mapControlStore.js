@@ -9,6 +9,10 @@ export const useMapControlStore = create((set) => ({
   
   availableStatuses: [],
 
+  // Загальні стани карти
+  isRoutingMode: false,
+  toggleRoutingMode: () => set((state) => ({ isRoutingMode: !state.isRoutingMode })),
+
   // Координати для програмного переміщення карти
   flyToCoords: null,
   setFlyToCoords: (coords) => set({ flyToCoords: coords }),

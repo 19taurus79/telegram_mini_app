@@ -5,7 +5,7 @@ import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { ChevronDown } from "lucide-react";
 
-export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
+export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobile = false }) {
   const { 
     applications, 
     unmappedApplications, 
@@ -131,21 +131,23 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient }) {
 
   return (
     <div className={css.container}>
-      <div className={css.accordionContainer}>
-        <div 
-          className={css.accordionHeader} 
-          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-        >
-          <span>Фільтри</span>
-          <ChevronDown className={`${css.accordionIcon} ${isFiltersOpen ? css.open : ''}`} size={18} />
+      {!isMobile && (
+        <div className={css.accordionContainer}>
+          <div 
+            className={css.accordionHeader} 
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+          >
+            <span>Фільтри</span>
+            <ChevronDown className={`${css.accordionIcon} ${isFiltersOpen ? css.open : ''}`} size={18} />
+          </div>
+          <div className={`${css.accordionContent} ${isFiltersOpen ? css.open : ''}`}>
+            <div className={css.filterLabel}>Менеджер</div>
+            <ManagerFilter />
+            <div className={css.filterLabel}>Вид діяльності</div>
+            <LineOfBusinessFilter />
+          </div>
         </div>
-        <div className={`${css.accordionContent} ${isFiltersOpen ? css.open : ''}`}>
-          <div className={css.filterLabel}>Менеджер</div>
-          <ManagerFilter />
-          <div className={css.filterLabel}>Вид діяльності</div>
-          <LineOfBusinessFilter />
-        </div>
-      </div>
+      )}
       <div className={css.header}>
         <h3>Список заявок ({filteredApplications.length}) | Без адреси: {filteredUnmappedApplications.length}</h3>
       </div>

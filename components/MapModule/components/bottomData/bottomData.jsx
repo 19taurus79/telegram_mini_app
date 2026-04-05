@@ -7,7 +7,7 @@ import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -640,7 +640,18 @@ export default function BottomData({ onEditClient }) {
               <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
               <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
               <p><strong>Контакт:</strong> {delivery.contact} (<a href={`tel:${delivery.phone}`}>{delivery.phone}</a>)</p>
-              {delivery.comment && <p className={css.comment}><strong>Коментар:</strong> {delivery.comment}</p>}
+              {delivery.comment && (
+                <div className={css.comment}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: '#f59e0b', marginBottom: '4px' }}>
+                    <div className={css.flashingIcon}>
+                      <AlertTriangle size={18} fill="#ef444466" />
+                    </div>
+                    <MessageCircle size={16} />
+                    <span>Коментар:</span>
+                  </div>
+                  {delivery.comment}
+                </div>
+              )}
           </div>
         </div>
         {delivery.items && delivery.items.length > 0 && (

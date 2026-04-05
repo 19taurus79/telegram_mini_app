@@ -233,11 +233,15 @@ export default function EditDeliveryModal() {
   /**
    * Добавляет партию из таблицы остатков (справа) к выбранному товару (слева).
    */
-  const handleAddPartyFromRemains = (remain) => {
+  const handleAddPartyFromRemains = (remainOrName) => {
     if (activeItemIdx === null) {
         toast.error("Спершу оберіть товар у лівій таблиці");
         return;
     }
+
+    const partyName = typeof remainOrName === 'string' 
+      ? remainOrName 
+      : (remainOrName.nomenclature_series || "Без серії");
 
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[activeItemIdx] };
@@ -245,7 +249,7 @@ export default function EditDeliveryModal() {
 
     // Проверка, что такая партия еще не добавлена
     const exists = parties.some(p => 
-        (p.party || "").trim().toLowerCase() === (remain.nomenclature_series || "").trim().toLowerCase()
+        (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
     );
     if (exists) {
       toast.error("Ця партія вже додана до цього товару");
@@ -253,14 +257,14 @@ export default function EditDeliveryModal() {
     }
 
     parties.push({
-      party: remain.nomenclature_series || "Без серії",
+      party: partyName,
       party_quantity: "" // Инициализируем пустым значением для удобного ввода
     });
 
     item.parties = parties;
     nextItems[activeItemIdx] = item;
     setDeliveryItems(nextItems);
-    toast.success(`Партію ${remain.nomenclature_series || ""} додано`);
+    toast.success(`Партію ${partyName} додано`);
   };
 
   /**
@@ -841,6 +845,11 @@ export default function EditDeliveryModal() {
                       <div><strong>Клієнт:</strong> {delivery.client}</div>
                       <div><strong>Дата доставки:</strong> {new Date(printDeliveryDate).toLocaleDateString('uk-UA')}</div>
                     </div>
+                    {delivery.comment && (
+                      <div className={css.printComment}>
+                        <strong>Примітка:</strong> {delivery.comment}
+                      </div>
+                    )}
                     <table className={css.printTable}>
                       <thead>
                         <tr>
@@ -1115,7 +1124,10 @@ export default function EditDeliveryModal() {
                 flex: "1 1 auto",
                 overflowY: "auto" 
               }}>
-                <DetailsOrdersByProduct selectedProductId={stockRemains[0].product} />
+                <DetailsOrdersByProduct 
+                  selectedProductId={stockRemains[0].product} 
+                  onPartyClick={handleAddPartyFromRemains}
+                />
               </div>
             )}
             {selectedProductId && (!stockRemains || stockRemains.length === 0) && (
@@ -1134,41 +1146,49 @@ export default function EditDeliveryModal() {
 
         {/* Футер с кнопками действий */}
         <div className={css.footer}>
-          <button 
-            className={`${css.button} ${css.cancelButton}`}
-            onClick={() => setIsEditDeliveryModalOpen(false)}
-          >
-            Скасувати
-          </button>
-          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+          <div className={css.footerLeft}>
             <button 
-              className={`${css.button} ${css.deleteDeliveryBtn}`}
-              onClick={handleGlobalDelete}
+              className={`${css.button} ${css.cancelButton}`}
+              onClick={() => setIsEditDeliveryModalOpen(false)}
             >
-              Видалити доставку
+              Скасувати
             </button>
-          )}
-          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+            {selectedDeliveries.every(d => d.status !== "Виконано") && (
+              <button 
+                className={`${css.button} ${css.deleteDeliveryBtn}`}
+                onClick={handleGlobalDelete}
+              >
+                Видалити доставку
+              </button>
+            )}
+          </div>
+
+          <div className={css.footerCenter}>
+            {selectedDeliveries.every(d => d.status !== "Виконано") && (
+              <button 
+                className={`${css.button} ${css.coDeliveryButton}`}
+                onClick={handleCODelivery}
+                title="Оформити доставку напряму з Центрального Офісу"
+              >
+                🚚 Доставка з ЦО
+              </button>
+            )}
+          </div>
+
+          <div className={css.footerRight}>
             <button 
-              className={`${css.button} ${css.coDeliveryButton}`}
-              onClick={handleCODelivery}
-              title="Оформити доставку напряму з Центрального Офісу"
+              className={`${css.button} ${css.saveButton}`}
+              onClick={handleReady}
             >
-              🚚 Доставка з ЦО
+              Готово
             </button>
-          )}
-          <button 
-            className={`${css.button} ${css.saveButton}`}
-            onClick={handleReady}
-          >
-            Готово
-          </button>
-          <button 
-            className={`${css.button} ${css.printButton}`}
-            onClick={handlePrintPreview}
-          >
-            🖨️ Друк
-          </button>
+            <button 
+              className={`${css.button} ${css.printButton}`}
+              onClick={handlePrintPreview}
+            >
+              🖨️ Друк
+            </button>
+          </div>
         </div>
  
         {/* Скрытое окно подтверждения удаления */}

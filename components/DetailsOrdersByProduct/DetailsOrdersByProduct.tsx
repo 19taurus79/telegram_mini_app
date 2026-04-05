@@ -8,8 +8,10 @@ import { useInitData } from "@/store/InitData";
 
 export default function DetailsOrdersByProduct({
   selectedProductId,
+  onPartyClick,
 }: {
   selectedProductId: string | null;
+  onPartyClick?: (partyName: string) => void;
 }) {
   const initData = useInitData((state) => state.initData);
   const [sortDirection, setSortDirection] = useState<
@@ -195,7 +197,12 @@ export default function DetailsOrdersByProduct({
               </thead>
               <tbody>
                 {partyAnalysis.map((p, idx) => (
-                  <tr key={idx}>
+                  <tr 
+                    key={idx} 
+                    onClick={() => onPartyClick?.(p.party)}
+                    style={{ cursor: onPartyClick ? 'pointer' : 'default' }}
+                    className={onPartyClick ? css.rowSelectable : ""}
+                  >
                     <td style={{ fontWeight: 600 }}>{p.party}</td>
                     <td>{p.buh} / {p.skl}</td>
                     <td style={{ color: "rgba(255,255,255,0.7)" }}>{p.moved > 0 ? p.moved : "—"}</td>

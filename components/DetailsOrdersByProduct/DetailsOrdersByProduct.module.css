@@ -142,6 +142,11 @@
   border-color: var(--accent-green);
 }
 
+.rowSelectable:hover td {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: var(--accent-green) !important;
+}
+
 .sortableHeader {
   cursor: pointer;
   transition: color 0.2s;

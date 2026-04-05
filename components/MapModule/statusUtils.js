@@ -28,6 +28,7 @@ export const STATUS_COLORS = {
     'створено': '#2196f3',
     'в роботі': '#ff9800',
     'виконано': '#4caf50',
+    'доставка з цо на клієнта': '#6366f1', // Indigo/Purple
 };
 
 export const getStatusColor = (status) => {
@@ -38,6 +39,7 @@ export const getStatusColor = (status) => {
     if (STATUS_COLORS[lowerStatus]) return STATUS_COLORS[lowerStatus];
     
     // Check partial matches or sensible defaults
+    if (lowerStatus.includes('цо')) return STATUS_COLORS['доставка з цо на клієнта'];
     if (lowerStatus.includes('нов') || lowerStatus.includes('creat') || lowerStatus.includes('створ')) return STATUS_COLORS['created'];
     if (lowerStatus.includes('пут') || lowerStatus.includes('ship') || lowerStatus.includes('транзит')) return STATUS_COLORS['shipped'];
     if (lowerStatus.includes('достав') || lowerStatus.includes('заверш') || lowerStatus.includes('complet') || lowerStatus.includes('виконан')) return STATUS_COLORS['delivered'];

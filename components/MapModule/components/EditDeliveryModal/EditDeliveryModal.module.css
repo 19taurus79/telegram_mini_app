@@ -326,6 +326,19 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* CO Delivery — solid blue/purple gradient */
+.coDeliveryButton {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.coDeliveryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
 /* Delete delivery — red ghost */
 .deleteDeliveryBtn {
   background: rgba(239, 68, 68, 0.1);

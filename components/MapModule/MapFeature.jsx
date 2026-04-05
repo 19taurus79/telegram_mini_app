@@ -265,7 +265,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     areClientsVisible,
     toggleClients,
     areDeliveriesVisible,
-    setDeliveriesVisible,
+    toggleDeliveries,
     selectedStatuses,
     setSelectedStatuses,
     selectedDates, // Додаємо selectedDates
@@ -520,7 +520,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
         // On first load (when prev is empty), set the default selection.
         // Default is all statuses EXCEPT "Виконано".
         if (prev.length === 0) {
-          return statuses.filter(s => s !== "Виконано");
+          return statuses.filter(s => s !== "Виконано" && s !== "completed");
         }
 
         // On subsequent loads, add any newly discovered statuses to the existing selection.

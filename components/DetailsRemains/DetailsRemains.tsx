@@ -299,7 +299,7 @@ export default function DetailsRemains({
 
                 <p className={css.warning}>
 
-                  ⚠️ Нестача для "затверджено":{" "}
+                  ⚠️ Нестача для &quot;затверджено&quot;:{" "}
                   {formatNumber(Math.max(0, ordersQ - totalBuh))}
                   {ordersQProd > 0 && ` (+ прод. затв.: ${formatNumber(ordersQProd)})`}
 

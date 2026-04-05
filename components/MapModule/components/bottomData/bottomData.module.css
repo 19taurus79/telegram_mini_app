@@ -331,6 +331,13 @@
   border: 1px solid var(--glass-border);
 }
 
+.statusCO {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+}
+
 .deliveryEditBtn, .printBtn {
   padding: 10px 16px;
   background: var(--glass-bg);
@@ -392,6 +399,18 @@
 .btnOrange:hover {
   background: rgba(255, 152, 0, 0.28) !important;
   box-shadow: 0 0 20px rgba(255, 183, 77, 0.2) !important;
+}
+
+.btnCO {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important;
+}
+.btnCO:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5) !important;
 }
 
 .deleteBtn, .deleteBtnSmall {

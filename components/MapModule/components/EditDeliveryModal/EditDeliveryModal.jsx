@@ -6,6 +6,7 @@ import { getInitData } from "@/lib/getInitData";
 import { getRemainsByProduct, updateDeliveryData, sendDeliveryData } from "@/lib/api";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 
 /**
  * Модальное окно для редактирования состава одной или нескольких доставок.
@@ -373,6 +374,38 @@ export default function EditDeliveryModal() {
   // Мемоизированный результат валидации, пересчитывается только при изменении `deliveryItems`
   const validatedItems = useMemo(() => getItemsWithErrors(), [deliveryItems]);
 
+  /**
+   * Карта остатков по партиям: nomenclature_series -> { totalBuh, totalSkl }
+   * Суммируем по всем складам, так как одна партия может лежать в нескольких местах.
+   */
+  const partyStockMap = useMemo(() => {
+    const map = {};
+    stockRemains.forEach(r => {
+      const key = (r.nomenclature_series || "").trim().toLowerCase();
+      if (!key) return;
+      if (!map[key]) map[key] = { totalBuh: 0, totalSkl: 0 };
+      map[key].totalBuh += parseFloat(r.buh) || 0;
+      map[key].totalSkl += parseFloat(r.skl) || 0;
+    });
+    return map;
+  }, [stockRemains]);
+
+  /**
+   * Возвращает статус партии относительно остатков на складе.
+   * 'ok'      — есть в остатках, и buh >= qty И skl >= qty
+   * 'low'     — есть в остатках, но хотя бы одно из значений (buh / skl) < qty
+   * 'unknown' — данных по этой партии нет (остатки ещё не загружены или партии нет)
+   */
+  const getPartyStockStatus = (partyName, partyQty) => {
+    if (!stockRemains.length) return 'unknown';
+    const key = (partyName || "").trim().toLowerCase();
+    const stock = partyStockMap[key];
+    if (!stock) return 'missing';
+    const qty = parseFloat(partyQty) || 0;
+    if (qty <= 0) return 'unknown';
+    return (stock.totalBuh >= qty && stock.totalSkl >= qty) ? 'ok' : 'low';
+  };
+
   // --- MAIN ACTION HANDLERS ---
 
   /**
@@ -462,8 +495,81 @@ export default function EditDeliveryModal() {
   };
 
   /**
+   * Кнопка "Доставка з ЦО". Оформлює доставку зі статусом "Доставка з ЦО на клієнта".
+   */
+  const handleCODelivery = async () => {
+    const itemsWithErrors = validatedItems.filter(item => item.hasError);
+
+    if (itemsWithErrors.length > 0) {
+      const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+      if (mismatch) {
+        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}.`);
+      } else {
+        const noParties = itemsWithErrors.find(i => i.errorType === 'no_parties');
+        toast.error(`Оберіть хоча б одну партію для товару: ${noParties.product}`);
+      }
+      return;
+    }
+
+    // Собираем обновленные данные по доставкам
+    const updatedDeliveries = selectedDeliveries.map(delivery => {
+      const deliveryUpdatedItems = validatedItems
+        .filter(item => item.deliveryId === delivery.id)
+        .map(item => {
+          const qty = parseFloat(item.quantity) || 0;
+          let parties = (item.parties || [])
+            .map(p => {
+              const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                ? p.party_quantity
+                : (p.moved_q || 0);
+              return { ...p, moved_q: parseFloat(qStr) || 0 };
+            })
+            .filter(p => p.moved_q > 0);
+
+          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
+        });
+      
+      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
+
+      return { 
+        ...delivery, 
+        status: 'Доставка з ЦО на клієнта', 
+        items: deliveryUpdatedItems, 
+        total_weight: newTotalWeight 
+      };
+    });
+
+    try {
+        const initData = getInitData();
+        await Promise.all(updatedDeliveries.map(d => {
+            const cleanItems = d.items.map(item => ({
+                product: String(item.product),
+                nomenclature: String(item.nomenclature || item.product),
+                quantity: parseFloat(item.quantity) || 0,
+                manager: String(item.manager || ""),
+                client: String(item.client),
+                orderRef: String(item.orderRef || item.order || item.order_ref || ""), 
+                weight: parseFloat(item.weight) || 0,
+                parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
+            }));
+            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData);
+        }));
+
+        updateDeliveries(updatedDeliveries);
+        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+
+        toast.success("Оформлено доставку з ЦО напряму клієнту");
+        setIsEditDeliveryModalOpen(false); // Close modal after this action as it's a bypass action
+    } catch (error) {
+        console.error("Failed to update CO delivery:", error);
+        toast.error("Помилка при збереженні змін");
+    }
+  };
+
+  /**
    * Кнопка "Друк". Готовит данные для печати и открывает окно выбора даты.
    */
+
   const handlePrintPreview = () => {
     const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
     if (!hasItems) {
@@ -570,8 +676,11 @@ export default function EditDeliveryModal() {
             latitude: parseFloat(originalDelivery.latitude) || 0,
             longitude: parseFloat(originalDelivery.longitude) || 0,
             total_weight: sumWeight,
-            orders: Object.values(ordersMap)
+            orders: Object.values(ordersMap),
+            // Зберігаємо оригінального автора заявки — адмін що ділить НЕ повинен ставати creator'ом
+            override_created_by: originalDelivery.created_by || null,
          };
+
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
 
          // Отправляем клон в базу через sendDeliveryData API
@@ -887,10 +996,39 @@ export default function EditDeliveryModal() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {item.parties.map((p, pIdx) => (
-                                  <tr key={pIdx}>
-                                    <td></td>
-                                    <td style={{ fontSize: '0.8rem' }}>{p.party}</td>
+                                {item.parties.map((p, pIdx) => {
+                                  const partyQty = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                                    ? p.party_quantity
+                                    : (p.moved_q || 0);
+                                  const stockStatus = idx === activeItemIdx
+                                    ? getPartyStockStatus(p.party, partyQty)
+                                    : 'unknown';
+                                  const partyRowStyle = stockStatus === 'ok'
+                                    ? { background: 'rgba(16, 185, 129, 0.12)', borderLeft: '3px solid #10b981' }
+                                    : (stockStatus === 'low' || stockStatus === 'missing')
+                                    ? { background: 'rgba(239, 68, 68, 0.10)', borderLeft: '3px solid #f87171' }
+                                    : {};
+                                  return (
+                                  <tr key={pIdx} style={partyRowStyle}>
+                                    <td style={{ width: '28px' }}>
+                                      {stockStatus === 'ok' && <span title="На складі достатньо (buh і skl)">✅</span>}
+                                      {stockStatus === 'low' && <span title="На складі недостатньо">⚠️</span>}
+                                      {stockStatus === 'missing' && <span title="Партії немає в залишках">⚠️</span>}
+                                    </td>
+                                    <td style={{ fontSize: '0.8rem', fontWeight: stockStatus === 'ok' ? 600 : 400 }}>
+                                      {p.party}
+                                      {stockStatus !== 'unknown' && (
+                                        <div style={{ fontSize: '0.68rem', opacity: 0.65, marginTop: '2px' }}>
+                                          {(() => {
+                                            const key = (p.party || '').trim().toLowerCase();
+                                            const st = partyStockMap[key];
+                                            return st
+                                              ? `Бух: ${st.totalBuh.toFixed(0)} · Скл: ${st.totalSkl.toFixed(0)}`
+                                              : 'Немає в залишках';
+                                          })()}
+                                        </div>
+                                      )}
+                                    </td>
                                     <td>
                                       <input 
                                         type="number" 
@@ -910,7 +1048,8 @@ export default function EditDeliveryModal() {
                                       </button>
                                     </td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </td>
@@ -966,6 +1105,30 @@ export default function EditDeliveryModal() {
                 </div>
               )}
             </div>
+
+            {/* Нижня частина: Аналітика (DetailsOrdersByProduct) */}
+            {selectedProductId && stockRemains && stockRemains.length > 0 && stockRemains[0].product && (
+              <div style={{ 
+                marginTop: '16px', 
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
+                paddingTop: '16px',
+                flex: "1 1 auto",
+                overflowY: "auto" 
+              }}>
+                <DetailsOrdersByProduct selectedProductId={stockRemains[0].product} />
+              </div>
+            )}
+            {selectedProductId && (!stockRemains || stockRemains.length === 0) && (
+              <div style={{ 
+                marginTop: '16px', 
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
+                paddingTop: '16px',
+                textAlign: 'center',
+                opacity: 0.6
+              }}>
+                ⚠️ Аналітика партій по заявкам недоступна через відсутність залишків для визначення товару.
+              </div>
+            )}
           </div>
         </div>
 
@@ -983,6 +1146,15 @@ export default function EditDeliveryModal() {
               onClick={handleGlobalDelete}
             >
               Видалити доставку
+            </button>
+          )}
+          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+            <button 
+              className={`${css.button} ${css.coDeliveryButton}`}
+              onClick={handleCODelivery}
+              title="Оформити доставку напряму з Центрального Офісу"
+            >
+              🚚 Доставка з ЦО
             </button>
           )}
           <button 

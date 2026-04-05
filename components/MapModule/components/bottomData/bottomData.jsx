@@ -513,7 +513,7 @@ export default function BottomData({ onEditClient }) {
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {expandedIds.has(d.id) ? '▼' : '▶'} ID: {d.id} | {d.address}
-                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : ""}`}>{d.status}</span>
+                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : ""}`}>{d.status}</span>
                           </span>
                           <span className={css.partyAmount}>{d.total_weight?.toFixed(2)} кг</span>
                         </div>
@@ -524,6 +524,15 @@ export default function BottomData({ onEditClient }) {
                               {!isGuest && (
                                 <>
                                   {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
+                                  {d.status !== "Виконано" && (
+                                    <button 
+                                      className={`${css.deliveryEditBtn} ${css.btnCO}`} 
+                                      onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "Доставка з ЦО на клієнта"); }} 
+                                      style={{ fontSize: '0.8em', padding: '4px 12px' }}
+                                    >
+                                      Доставка з ЦО
+                                    </button>
+                                  )}
                                   <button className={`${css.deliveryEditBtn} ${d.status === "Виконано" ? css.btnOrange : css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
                                   {d.status !== "Виконано" && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Змінити дату</button>}
                                   {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
@@ -581,7 +590,7 @@ export default function BottomData({ onEditClient }) {
             <div className={css.deliveryTitleBox}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>Доставка: {delivery.client}</h2>
-                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : ""}`}>{delivery.status}</span>
+                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : ""}`}>{delivery.status}</span>
               </div>
             </div>
           </div>
@@ -603,6 +612,15 @@ export default function BottomData({ onEditClient }) {
                   Друк
                 </button>
                 {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+                {!isCompleted && (
+                  <button 
+                    className={`${css.deliveryEditBtn} ${css.btnCO}`} 
+                    onClick={() => handleUpdateStatus(delivery, "Доставка з ЦО на клієнта")}
+                    title="Оформити доставку напряму з Центрального Офісу"
+                  >
+                    Доставка з ЦО
+                  </button>
+                )}
                 {!isCompleted && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }}>Змінити дату</button>}
                 {!isCompleted && <button className={css.deleteBtn} onClick={() => setDeleteConfirmTarget(delivery)}>Видалити</button>}
               </div>

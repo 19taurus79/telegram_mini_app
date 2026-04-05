@@ -29,7 +29,8 @@ export type DeliveryPayload = {
   longitude?: number;
   is_custom_address: boolean;
   orders: DeliveryOrder[];
-  status: string;
+  status?: string;
+  override_created_by?: number | null;
 };
 export type Product = {
   id: string;

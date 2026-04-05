@@ -305,6 +305,28 @@ export const getTotalSumOrderByProduct = async ({
   return data;
 };
 
+export const getOrdersTiersByProduct = async ({
+  product,
+  initData,
+}: {
+  product: string;
+  initData: string;
+}) => {
+  const { data } = await axios.get<{
+    product_id: string;
+    orders_q: number;
+    orders_q_product_confirmed: number;
+    orders_q_total: number;
+  }>(`/data/sum_orders_tiers_by_product`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+    params: { product },
+  });
+  return data;
+};
+
 export const getOrdersByProduct = async ({
   product,
   initData,

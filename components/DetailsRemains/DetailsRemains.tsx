@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import css from "./DetailsRemains.module.css";
-import { getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
+import { getOrdersTiersByProduct, getRemainsById } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
@@ -77,47 +77,36 @@ export default function DetailsRemains({
     );
   }, [rawRemainsData, filterParties]);
 
-  const { data: ordersSumData, isFetching: isOrdersSumFetching } = useQuery({
-
-    queryKey: ["ordersSumByProduct", selectedProductId, initData],
-
+  const { data: ordersTiersData, isFetching: isOrdersTiersFetching } = useQuery({
+    queryKey: ["ordersTiersByProduct", selectedProductId, initData],
     queryFn: () =>
-
-      getTotalSumOrderByProduct({
-
+      getOrdersTiersByProduct({
         product: selectedProductId!,
-
         initData: initData!,
-
       }),
-
     enabled: !!selectedProductId && !!initData,
-
     placeholderData: keepPreviousData,
-
   });
 
-
-
-  const totalOrdered = useMemo(
-
-    () => ordersSumData?.[0]?.total_orders || 0,
-
-    [ordersSumData]
-
-  );
+  // Tier 1: затверджено
+  const ordersQ       = ordersTiersData?.orders_q                ?? 0;
+  // Tier 2: продукція затверджена
+  const ordersQProd   = ordersTiersData?.orders_q_product_confirmed ?? 0;
+  // Всього
+  const totalOrdered  = ordersTiersData?.orders_q_total          ?? 0;
 
 
 
   const totalBuh = remainsData?.reduce((sum, item) => sum + item.buh, 0) || 0;
-
   const totalSkl = remainsData?.reduce((sum, item) => sum + item.skl, 0) || 0;
 
   const totalStorage =
-
     remainsData?.reduce((sum, item) => sum + item.storage, 0) || 0;
 
-  const availableStock = totalBuh - totalOrdered;
+  // Вільний залишок (відносно Tier 1 — затверджено)
+  const availableStock = totalBuh - ordersQ;
+  // Вільний залишок після врахування обох тирів
+  const availableStockFull = totalBuh - totalOrdered;
 
 
 
@@ -175,7 +164,7 @@ export default function DetailsRemains({
 
 
 
-  if (isRemainsFetching || isOrdersSumFetching) {
+  if (isRemainsFetching || isOrdersTiersFetching) {
 
     return <Loader />;
 
@@ -229,8 +218,20 @@ export default function DetailsRemains({
 
             `На збереганні: ${formatNumber(totalStorage)} |`}{" "}
 
-          Під заявками: {formatNumber(totalOrdered)} | Вільний залишок:{" "}
-
+          Під заявками:{" "}
+          <span title="Статус: затверджено" style={{ color: 'var(--color-success, #10b981)', fontWeight: 600 }}>
+            {formatNumber(ordersQ)}
+          </span>
+          {ordersQProd > 0 && (
+            <>
+              {" "}+{" "}
+              <span title="Статус: продукція затверджена" style={{ color: 'var(--color-warning, #f59e0b)', fontWeight: 600 }}>
+                {formatNumber(ordersQProd)}
+              </span>
+            </>
+          )}
+          {" "}={" "}{formatNumber(totalOrdered)}
+          {" "}| Вільний залишок:{" "}
           {formatNumber(Math.max(0, availableStock))}
 
           {availableStock < 0 && (
@@ -239,10 +240,15 @@ export default function DetailsRemains({
 
               {" "}
 
-              | Потреба: {formatNumber(-availableStock)}
+              | Нестача (затверджено): {formatNumber(-availableStock)}
 
             </span>
 
+          )}
+          {availableStock >= 0 && availableStockFull < 0 && (
+            <span className={css.deficit}>
+              {" "}| Нестача (з прод. затв.): {formatNumber(-availableStockFull)}
+            </span>
           )}
 
         </h4>
@@ -293,9 +299,18 @@ export default function DetailsRemains({
 
                 <p className={css.warning}>
 
-                  ⚠️ Увага! Для виконання всіх заявок не вистачає{" "}
+                  ⚠️ Нестача для "затверджено":{" "}
+                  {formatNumber(Math.max(0, ordersQ - totalBuh))}
+                  {ordersQProd > 0 && ` (+ прод. затв.: ${formatNumber(ordersQProd)})`}
 
-                  {formatNumber(totalOrdered - totalBuh)}!
+                </p>
+
+              ) : availableStockFull < 0 ? (
+
+                <p className={css.warning}>
+
+                  ✓ «Затверджено» покрито, але для «продукція затверджена» не вистачає{" "}
+                  {formatNumber(-availableStockFull)}
 
                 </p>
 
@@ -303,9 +318,7 @@ export default function DetailsRemains({
 
                 <p className={css.success}>
 
-                  ✓ Все в порядку! Замовленої кількості вистачає для виконання
-
-                  всіх заявок!
+                  ✓ Все в порядку! Залишок покриває всі заявки (обидва рівні)!
 
                 </p>
 

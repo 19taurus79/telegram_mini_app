@@ -7,7 +7,6 @@ import {
   Package, 
   Truck, 
   Map as MapIcon, 
-  Settings, 
   ClipboardList, 
   Calendar, 
   CheckSquare, 

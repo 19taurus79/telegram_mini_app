@@ -13,6 +13,7 @@ import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
 import TelegramNavigation from "../components/TelegramNavigation";
 import AuthGuard from "@/components/AuthGuard/AuthGuard";
 import ThemeProvider from "@/components/ThemeProvider/ThemeProvider";
+import DesktopSidebar from "@/components/DesktopSidebar/DesktopSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,9 +72,12 @@ export default function RootLayout({
               <AuthGuard />
               <ThemeProvider />
               <Header />
+              <DesktopSidebar />
               <TelegramRouter />
               <TelegramNavigation />
-              {children}
+              <main className="main-content">
+                {children}
+              </main>
               {/* {modal} */}
               <ScrollToTopButton />
               <div id="modal-root" />

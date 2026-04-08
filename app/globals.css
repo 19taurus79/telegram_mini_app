@@ -161,15 +161,24 @@ a {
 }
 
 /* Map page height handling */
-main {
+main, .main-content {
   min-height: calc(100vh - var(--header-height));
+  transition: padding-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body:has(main > div[style*="height: 100%"]) {
+@media (min-width: 1024px) {
+  .main-content {
+    padding-left: 76px; /* Offset for collapsed sidebar */
+  }
+}
+
+body:has(main > div[style*="height: 100%"]),
+body:has(.main-content > div[style*="height: 100%"]) {
   padding-top: 0;
 }
 
-body:has(main > div[style*="height: 100%"]) main {
+body:has(main > div[style*="height: 100%"]) main,
+body:has(.main-content > div[style*="height: 100%"]) .main-content {
   min-height: 100vh;
   padding-top: var(--header-height);
 }

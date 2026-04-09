@@ -523,11 +523,12 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
           return statuses.filter(s => s !== "Виконано" && s !== "completed");
         }
 
-        // On subsequent loads, add any newly discovered statuses to the existing selection.
+        // On subsequent loads, add any newly discovered statuses to the existing selection
+        // (including new ones like "Самовивіз").
         const currentStatuses = new Set(prev);
         let changed = false;
         statuses.forEach(s => {
-          if (!currentStatuses.has(s)) {
+          if (!currentStatuses.has(s) && s !== "Виконано" && s !== "completed") {
             currentStatuses.add(s);
             changed = true;
           }
@@ -666,7 +667,19 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
           
           {/* Рендеринг маркеров доставок (если слой включен) */}
           {areDeliveriesVisible && (() => {
-            const groupedDeliveries = groupItemsByLocation(filteredDeliveries);
+            const KOROTYCH = { lat: 49.97291981610772, lng: 35.984822605914864 };
+            // Pickup deliveries: no real coordinates (0, null, undefined) OR status/address is 'Самовивіз'
+            const isPickupDelivery = (d) => {
+              const hasNoCoords = !parseFloat(d.latitude) && !parseFloat(d.longitude);
+              const isPickupStatus = (d.status || '').toLowerCase().includes('самовив');
+              return hasNoCoords || isPickupStatus;
+            };
+            const mapDeliveries = filteredDeliveries.map(d =>
+              isPickupDelivery(d)
+                ? { ...d, latitude: KOROTYCH.lat, longitude: KOROTYCH.lng, _isPickup: true }
+                : d
+            );
+            const groupedDeliveries = groupItemsByLocation(mapDeliveries);
             return groupedDeliveries.flatMap((group) => {
               return group.map((delivery, index) => {
                 const position = applyOffset(delivery.latitude, delivery.longitude, index, group.length, currentZoom);

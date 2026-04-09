@@ -95,7 +95,16 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
       toggleSelectedDelivery(item);
     } else {
       if (onSelectDelivery) onSelectDelivery(item);
-      if (onFlyTo) onFlyTo(item.latitude, item.longitude);
+      if (onFlyTo) {
+        // Fallback to Korotych warehouse if coordinates are empty/zero (for pickups)
+        let lat = parseFloat(item.latitude);
+        let lng = parseFloat(item.longitude);
+        if (!lat && !lng) {
+          lat = 49.97291981610772;
+          lng = 35.984822605914864;
+        }
+        onFlyTo(lat, lng);
+      }
       if (onClose) onClose();
     }
   };

@@ -135,6 +135,7 @@ function DeliveryDataContent() {
     comment: "",
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
+    isPickup: false,
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [isAddressChange, setIsAddressChange] = useState(false);
@@ -350,76 +351,107 @@ function DeliveryDataContent() {
             <h3 className={styles.modalTitle}>Доставка: {formClient}</h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>
-                  <MapPin size={16} /> Адреса доставки
-                </label>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <textarea
-                    className={`${styles.modalInput} ${errors.address ? styles.invalid : ''}`}
-                    value={formData.address}
-                    readOnly={isAddressChange}
-                    rows={4}
-                    style={{ margin: 0 }}
+              {/* Premium Pickup Toggle */}
+              <label
+                className={`${styles.pickupToggleContainer} ${formData.isPickup ? styles.active : ''}`}
+                htmlFor="pickup-checkbox"
+              >
+                <div className={styles.pickupToggleLeft}>
+                  <span className={styles.pickupToggleIcon}>
+                    <Package size={22} />
+                  </span>
+                  <span className={styles.pickupToggleLabel}>Самовивіз</span>
+                </div>
+                <label className={styles.switch}>
+                  <input
+                    type="checkbox"
+                    id="pickup-checkbox"
+                    checked={formData.isPickup}
                     onChange={(e) => {
-                      setFormData({ ...formData, address: e.target.value, latitude: undefined, longitude: undefined });
-                      if (errors.address) setErrors({ ...errors, address: false });
+                      setFormData(prev => ({ ...prev, isPickup: e.target.checked }));
+                      if (e.target.checked) {
+                        if (errors.address) setErrors({ ...errors, address: false });
+                        setIsAddressChange(false);
+                      }
                     }}
                   />
-                  <button 
-                    onClick={() => setIsAddressChange(!isAddressChange)}
-                    className={`${styles.addressToggleButton} ${isAddressChange ? styles.active : ''}`}
-                  >
-                    {isAddressChange ? <X size={20} /> : <MapPin size={20} />}
-                  </button>
-                </div>
-                {isAddressChange && (
-                  <div className={styles.geocodingWrapper}>
-                    <InputAddress onAddressSelect={handleAddressData}/>
-                    {isGeocoding && (
-                      <button onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
-                        Підтвердити адресу
-                      </button>
-                    )}
+                  <span className={styles.slider}></span>
+                </label>
+              </label>
+
+              {!formData.isPickup && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    <MapPin size={16} /> Адреса доставки
+                  </label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <textarea
+                      className={`${styles.modalInput} ${errors.address ? styles.invalid : ''}`}
+                      value={formData.address}
+                      readOnly={true}
+                      rows={3}
+                      style={{ margin: 0, resize: 'none' }}
+                      placeholder="Оберіть адресу через карту"
+                    />
+                    <button
+                      onClick={() => setIsAddressChange(!isAddressChange)}
+                      className={`${styles.addressToggleButton} ${isAddressChange ? styles.active : ''}`}
+                    >
+                      {isAddressChange ? <X size={20} /> : <MapPin size={20} />}
+                    </button>
                   </div>
-                )}
-              </div>
+                  {isAddressChange && (
+                    <div className={styles.geocodingWrapper}>
+                      <InputAddress onAddressSelect={handleAddressData}/>
+                      {isGeocoding && (
+                        <button onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
+                          Підтвердити адресу
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <div>
-                <label className={styles.fieldLabel}>
-                  <User size={16} /> Отримувач
-                </label>
-                <input
-                  className={`${styles.modalInput} ${errors.contact ? styles.invalid : ''}`}
-                  value={formData.contact}
-                  onChange={(e) => {
-                    setFormData({ ...formData, contact: e.target.value });
-                    if (errors.contact) setErrors({ ...errors, contact: false });
-                  }}
-                />
-              </div>
+              {!formData.isPickup && (
+                <div>
+                  <label className={styles.fieldLabel}>
+                    <User size={16} /> Отримувач
+                  </label>
+                  <input
+                    className={`${styles.modalInput} ${errors.contact ? styles.invalid : ''}`}
+                    value={formData.contact}
+                    onChange={(e) => {
+                      setFormData({ ...formData, contact: e.target.value });
+                      if (errors.contact) setErrors({ ...errors, contact: false });
+                    }}
+                  />
+                </div>
+              )}
 
-              <div>
-                <label className={styles.fieldLabel}>
-                  <Phone size={16} /> Телефон
-                </label>
-                <input
-                  type="tel"
-                  className={`${styles.modalInput} ${errors.phone ? styles.invalid : ''}`}
-                  value={formData.phone}
-                  onChange={(e) => {
-                    setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) });
-                    if (errors.phone) setErrors({ ...errors, phone: false });
-                  }}
-                  onFocus={(e) => {
-                    if (!e.target.value) {
-                      setFormData({ ...formData, phone: "+380" });
+              {!formData.isPickup && (
+                <div>
+                  <label className={styles.fieldLabel}>
+                    <Phone size={16} /> Телефон
+                  </label>
+                  <input
+                    type="tel"
+                    className={`${styles.modalInput} ${errors.phone ? styles.invalid : ''}`}
+                    value={formData.phone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) });
                       if (errors.phone) setErrors({ ...errors, phone: false });
-                    }
-                  }}
-                  placeholder="+380 (XX) XXX-XX-XX"
-                />
-              </div>
+                    }}
+                    onFocus={(e) => {
+                      if (!e.target.value) {
+                        setFormData({ ...formData, phone: "+380" });
+                        if (errors.phone) setErrors({ ...errors, phone: false });
+                      }
+                    }}
+                    placeholder="+380 (XX) XXX-XX-XX"
+                  />
+                </div>
+              )}
 
               <div className={styles.inputWithIcon}>
                 <label className={styles.fieldLabel}>
@@ -463,12 +495,12 @@ function DeliveryDataContent() {
                 onClick={async () => {
                   setIsLoading(true);
                   setFormError(null);
-                  const { address, contact, phone, date, comment } = formData;
+                  const { address, contact, phone, date, comment, isPickup } = formData;
                   
                   const newErrors: Record<string, boolean> = {};
-                  if (!address) newErrors.address = true;
-                  if (!contact) newErrors.contact = true;
-                  if (!phone || phone.length < 19) newErrors.phone = true; // +380 (XX) XXX-XX-XX is 19 chars
+                  if (!address && !isPickup) newErrors.address = true;
+                  if (!isPickup && !contact) newErrors.contact = true;
+                  if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
                   if (!date) newErrors.date = true;
 
                   if (Object.keys(newErrors).length > 0) {
@@ -491,7 +523,7 @@ function DeliveryDataContent() {
                   let latitude = formData.latitude;
                   let longitude = formData.longitude;
 
-                  if (latitude === undefined || longitude === undefined) {
+                  if (!isPickup && (latitude === undefined || longitude === undefined)) {
                     try {
                       const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
                       if (geocodeResponse.ok) {
@@ -551,9 +583,15 @@ function DeliveryDataContent() {
                       return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
                   }, 0) || 0) * 100) / 100;
 
+                  const payloadStatus = isPickup ? "Самовивіз" : "Створено";
+
                   const payload: DeliveryPayload = {
                     client: formClient as string,
-                    manager, address, latitude, longitude, contact, phone, date, comment, total_weight, orders, status: "Створено", is_custom_address: true,
+                    manager, 
+                    address: isPickup ? "Самовивіз" : address, 
+                    latitude: isPickup ? 0 : latitude, 
+                    longitude: isPickup ? 0 : longitude, 
+                    contact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
                   };
 
                   try {

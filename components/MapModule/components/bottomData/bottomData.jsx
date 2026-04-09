@@ -513,7 +513,7 @@ export default function BottomData({ onEditClient }) {
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {expandedIds.has(d.id) ? '▼' : '▶'} ID: {d.id} | {d.address}
-                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : ""}`}>{d.status}</span>
+                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : ""}`}>{d.status}</span>
                           </span>
                           <span className={css.partyAmount}>{d.total_weight?.toFixed(2)} кг</span>
                         </div>
@@ -590,7 +590,7 @@ export default function BottomData({ onEditClient }) {
             <div className={css.deliveryTitleBox}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>Доставка: {delivery.client}</h2>
-                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : ""}`}>{delivery.status}</span>
+                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : ""}`}>{delivery.status}</span>
               </div>
             </div>
           </div>

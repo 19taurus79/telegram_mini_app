@@ -1,12 +1,32 @@
 .container {
-    padding: 12px 8px;
+    padding: 12px 16px;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
+    align-items: center;
     gap: 12px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    
+    /* Premium Fade Effect */
+    -webkit-mask-image: linear-gradient(
+        to right, 
+        transparent, 
+        black 40px, 
+        black calc(100% - 40px), 
+        transparent
+    );
+    mask-image: linear-gradient(
+        to right, 
+        transparent, 
+        black 40px, 
+        black calc(100% - 40px), 
+        transparent
+    );
 }
 
 .container::-webkit-scrollbar {
@@ -14,7 +34,7 @@
 }
 
 .button {
-    padding: 10px 18px;
+    padding: 10px 20px;
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -32,6 +52,8 @@
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-premium);
+    scroll-snap-align: center;
+    flex-shrink: 0;
 }
 
 .button:hover {

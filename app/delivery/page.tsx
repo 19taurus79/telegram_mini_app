@@ -348,10 +348,11 @@ function DeliveryDataContent() {
       {formClient && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal} style={{ maxWidth: '600px' }}>
-            <h3 className={styles.modalTitle}>Доставка: {formClient}</h3>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Доставка: {formClient}</h3>
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Premium Pickup Toggle */}
+            <div className={styles.modalBody}>
               <label
                 className={`${styles.pickupToggleContainer} ${formData.isPickup ? styles.active : ''}`}
                 htmlFor="pickup-checkbox"
@@ -483,140 +484,142 @@ function DeliveryDataContent() {
                   onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
                 />
               </div>
+
+              {formError && <div className={styles.error}>{formError}</div>}
             </div>
 
-            {formError && <div className={styles.error}>{formError}</div>}
+            <div className={styles.modalFooter}>
+              <div className={styles.modalActions}>
+                <button
+                  disabled={isLoading}
+                  className={styles.buttonSave}
+                  style={{ padding: '16px' }}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setFormError(null);
+                    const { address, contact, phone, date, comment, isPickup } = formData;
+                    
+                    const newErrors: Record<string, boolean> = {};
+                    if (!address && !isPickup) newErrors.address = true;
+                    if (!isPickup && !contact) newErrors.contact = true;
+                    if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
+                    if (!date) newErrors.date = true;
 
-            <div className={styles.modalActions}>
-              <button
-                disabled={isLoading}
-                className={styles.buttonSave}
-                style={{ padding: '16px' }}
-                onClick={async () => {
-                  setIsLoading(true);
-                  setFormError(null);
-                  const { address, contact, phone, date, comment, isPickup } = formData;
-                  
-                  const newErrors: Record<string, boolean> = {};
-                  if (!address && !isPickup) newErrors.address = true;
-                  if (!isPickup && !contact) newErrors.contact = true;
-                  if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
-                  if (!date) newErrors.date = true;
+                    if (Object.keys(newErrors).length > 0) {
+                      setErrors(newErrors);
+                      setFormError("Будь ласка, заповніть всі обов'язкові поля");
+                      setIsLoading(false);
+                      return;
+                    }
 
-                  if (Object.keys(newErrors).length > 0) {
-                    setErrors(newErrors);
-                    setFormError("Будь ласка, заповніть всі обов'язкові поля");
-                    setIsLoading(false);
-                    return;
-                  }
+                    const selectedDate = new Date(date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate < today) {
+                      setErrors({ date: true });
+                      setFormError("Дата доставки не може бути в минулому");
+                      setIsLoading(false);
+                      return;
+                    }
 
-                  const selectedDate = new Date(date);
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  if (selectedDate < today) {
-                    setErrors({ date: true });
-                    setFormError("Дата доставки не може бути в минулому");
-                    setIsLoading(false);
-                    return;
-                  }
+                    let latitude = formData.latitude;
+                    let longitude = formData.longitude;
 
-                  let latitude = formData.latitude;
-                  let longitude = formData.longitude;
-
-                  if (!isPickup && (latitude === undefined || longitude === undefined)) {
-                    try {
-                      const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
-                      if (geocodeResponse.ok) {
-                        const geocodeData = await geocodeResponse.json();
-                        if (geocodeData && geocodeData.length > 0) {
-                          latitude = parseFloat(geocodeData[0].lat);
-                          longitude = parseFloat(geocodeData[0].lon);
+                    if (!isPickup && (latitude === undefined || longitude === undefined)) {
+                      try {
+                        const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
+                        if (geocodeResponse.ok) {
+                          const geocodeData = await geocodeResponse.json();
+                          if (geocodeData && geocodeData.length > 0) {
+                            latitude = parseFloat(geocodeData[0].lat);
+                            longitude = parseFloat(geocodeData[0].lon);
+                          } else {
+                            setFormError("Не вдалося визначити координати адреси");
+                            setIsLoading(false);
+                            return;
+                          }
                         } else {
-                          setFormError("Не вдалося визначити координати адреси");
+                          setFormError("Помилка геокодування");
                           setIsLoading(false);
                           return;
                         }
-                      } else {
-                        setFormError("Помилка геокодування");
+                      } catch {
+                        setFormError("Помилка з'єднання");
                         setIsLoading(false);
                         return;
                       }
+                    }
+
+                    const clientData = grouped.find((c) => c.client === formClient);
+                    const manager = clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
+                    const orders = (clientData?.orders.map((order) => {
+                        const validItems = order.items
+                            .filter(item => item.quantity > 0)
+                            .map((item) => ({
+                                product: item.product || item.nomenclature,
+                                quantity: item.quantity,
+                                order_ref: order.order,
+                                parties: (() => {
+                                    const activeParties = (item.parties || []).map((p: Party) => ({
+                                        party: p.party || "",
+                                        moved_q: p.moved_q ?? p.party_quantity ?? 0
+                                    })).filter((p) => p.moved_q > 0);
+                                    if (activeParties.length === 0 && item.quantity > 0) {
+                                        return [{ party: "", moved_q: item.quantity }];
+                                    }
+                                    return activeParties;
+                                })(),
+                                weight: item.weight,
+                                orders_q: item.orders_q,
+                            }));
+                        return { order: order.order, items: validItems };
+                    }).filter((o) => o.items.length > 0)) ?? [];
+
+                    if (orders.length === 0) {
+                        setFormError("Немає товарів для відправки");
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    const total_weight = Math.round((orders.reduce((acc: number, order) => {
+                        return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
+                    }, 0) || 0) * 100) / 100;
+
+                    const payloadStatus = isPickup ? "Самовивіз" : "Створено";
+
+                    const payload: DeliveryPayload = {
+                      client: formClient as string,
+                      manager, 
+                      address: isPickup ? "Самовивіз" : address, 
+                      latitude: isPickup ? 0 : latitude, 
+                      longitude: isPickup ? 0 : longitude, 
+                      contact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
+                    };
+
+                    try {
+                      const result = await sendDeliveryData(payload, getInitData());
+                      if (result.status === "ok") {
+                        setIsAnimatingSuccess(true);
+                        setTimeout(() => {
+                          setIsAnimatingSuccess(false);
+                          removeClientDelivery(formClient as string);
+                          setFormClient(null);
+                          toast.success("Доставку оформлено!");
+                        }, 3000);
+                      } else {
+                        setFormError("Помилка сервера");
+                      }
                     } catch {
-                      setFormError("Помилка з'єднання");
+                      setFormError("Помилка мережі");
+                    } finally {
                       setIsLoading(false);
-                      return;
                     }
-                  }
-
-                  const clientData = grouped.find((c) => c.client === formClient);
-                  const manager = clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
-                  const orders = (clientData?.orders.map((order) => {
-                      const validItems = order.items
-                          .filter(item => item.quantity > 0)
-                          .map((item) => ({
-                              product: item.product || item.nomenclature,
-                              quantity: item.quantity,
-                              order_ref: order.order,
-                              parties: (() => {
-                                  const activeParties = (item.parties || []).map((p: Party) => ({
-                                      party: p.party || "",
-                                      moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                  })).filter((p) => p.moved_q > 0);
-                                  if (activeParties.length === 0 && item.quantity > 0) {
-                                      return [{ party: "", moved_q: item.quantity }];
-                                  }
-                                  return activeParties;
-                              })(),
-                              weight: item.weight,
-                              orders_q: item.orders_q,
-                          }));
-                      return { order: order.order, items: validItems };
-                  }).filter((o) => o.items.length > 0)) ?? [];
-
-                  if (orders.length === 0) {
-                      setFormError("Немає товарів для відправки");
-                      setIsLoading(false);
-                      return;
-                  }
-
-                  const total_weight = Math.round((orders.reduce((acc: number, order) => {
-                      return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
-                  }, 0) || 0) * 100) / 100;
-
-                  const payloadStatus = isPickup ? "Самовивіз" : "Створено";
-
-                  const payload: DeliveryPayload = {
-                    client: formClient as string,
-                    manager, 
-                    address: isPickup ? "Самовивіз" : address, 
-                    latitude: isPickup ? 0 : latitude, 
-                    longitude: isPickup ? 0 : longitude, 
-                    contact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
-                  };
-
-                  try {
-                    const result = await sendDeliveryData(payload, getInitData());
-                    if (result.status === "ok") {
-                      setIsAnimatingSuccess(true);
-                      setTimeout(() => {
-                        setIsAnimatingSuccess(false);
-                        removeClientDelivery(formClient as string);
-                        setFormClient(null);
-                        toast.success("Доставку оформлено!");
-                      }, 3000);
-                    } else {
-                      setFormError("Помилка сервера");
-                    }
-                  } catch {
-                    setFormError("Помилка мережі");
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-              >
-                {isLoading ? "Відправка..." : "Підтвердити та відправити"}
-              </button>
-              <button className={styles.buttonCancel} onClick={() => setFormClient(null)}>Скасувати</button>
+                  }}
+                >
+                  {isLoading ? "Відправка..." : "Підтвердити та відправити"}
+                </button>
+                <button className={styles.buttonCancel} onClick={() => setFormClient(null)}>Скасувати</button>
+              </div>
             </div>
           </div>
         </div>

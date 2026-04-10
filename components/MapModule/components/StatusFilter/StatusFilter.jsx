@@ -1,11 +1,28 @@
 'use client'
 
+import { useRef, useEffect } from "react";
 import css from "./StatusFilter.module.css";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { getStatusColor } from "../../statusUtils";
 
 export default function StatusFilter() {
     const { selectedStatuses, toggleStatus, availableStatuses, setSelectedStatuses } = useMapControlStore();
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const handleWheel = (e) => {
+            if (e.deltaY === 0) return;
+            // Prevent vertical page scroll when scrolling over the horizontal container
+            e.preventDefault();
+            el.scrollLeft += e.deltaY;
+        };
+
+        el.addEventListener("wheel", handleWheel, { passive: false });
+        return () => el.removeEventListener("wheel", handleWheel);
+    }, [availableStatuses]);
 
     if (!availableStatuses || availableStatuses.length === 0) return null;
 
@@ -21,7 +38,7 @@ export default function StatusFilter() {
     };
 
     return (
-        <div className={css.container}>
+        <div className={css.container} ref={scrollRef}>
             <button 
                 className={`${css.button} ${isAllSelected ? css.buttonActive : ''}`}
                 onClick={handleSelectAll}

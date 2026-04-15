@@ -11,6 +11,7 @@ import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
 import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 // Тип для вибраного елемента для редагування в модальному вікні.
 type SelectedItem = {
@@ -144,6 +145,9 @@ function DeliveryDataContent() {
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const swipeSelectedItem = useSwipeToClose({ onClose: () => setSelectedItem(null), threshold: 120 });
+  const swipeFormClient = useSwipeToClose({ onClose: () => setFormClient(null), threshold: 150 });
 
   React.useEffect(() => {
     const editId = searchParams.get("editId");
@@ -323,9 +327,20 @@ function DeliveryDataContent() {
       ))}
 
       {selectedItem && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h3 className={styles.modalTitle}>Змінити кількість</h3>
+        <div className={styles.modalOverlay} onClick={() => setSelectedItem(null)}>
+          <div 
+            className={styles.modal} 
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              transform: swipeSelectedItem.offsetY > 0 ? `translateY(${swipeSelectedItem.offsetY}px)` : undefined,
+              transition: swipeSelectedItem.offsetY === 0 ? 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none'
+            }}
+          >
+            <div className={styles.dragHandle} {...swipeSelectedItem.handlers} />
+            <div className={styles.modalHeader} {...swipeSelectedItem.handlers}>
+              <h3 className={styles.modalTitle}>Змінити кількість</h3>
+            </div>
+            <div className={styles.modalBody} style={{ paddingTop: '10px' }}>
             <div style={{ position: 'relative' }}>
               <input
                 type="number"
@@ -337,18 +352,30 @@ function DeliveryDataContent() {
               <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>од.</span>
             </div>
             {error && <div className={styles.error}>{error}</div>}
-            <div className={styles.modalActions}>
-              <button onClick={handleSave} className={styles.buttonSave}>Зберегти</button>
-              <button onClick={() => setSelectedItem(null)} className={styles.buttonCancel}>Скасувати</button>
+            </div>
+            <div className={styles.modalFooter}>
+              <div className={styles.modalActions}>
+                <button onClick={handleSave} className={styles.buttonSave}>Зберегти</button>
+                <button onClick={() => setSelectedItem(null)} className={styles.buttonCancel}>Скасувати</button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {formClient && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal} style={{ maxWidth: '600px' }}>
-            <div className={styles.modalHeader}>
+        <div className={styles.modalOverlay} onClick={() => setFormClient(null)}>
+          <div 
+            className={styles.modal} 
+            style={{ 
+              maxWidth: '600px',
+              transform: swipeFormClient.offsetY > 0 ? `translateY(${swipeFormClient.offsetY}px)` : undefined,
+              transition: swipeFormClient.offsetY === 0 ? 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none'
+            }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.dragHandle} {...swipeFormClient.handlers} />
+            <div className={styles.modalHeader} {...swipeFormClient.handlers}>
               <h3 className={styles.modalTitle}>Доставка: {formClient}</h3>
             </div>
 

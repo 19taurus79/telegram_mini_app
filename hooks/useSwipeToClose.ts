@@ -10,11 +10,11 @@ export function useSwipeToClose({ onClose, threshold = 100 }: UseSwipeToClosePro
   const startY = useRef<number | null>(null);
   const currentY = useRef<number | null>(null);
 
-  const handleTouchStart = (e: TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     startY.current = e.touches[0].clientY;
   };
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (startY.current === null) return;
     currentY.current = e.touches[0].clientY;
     const deltaY = currentY.current - startY.current;

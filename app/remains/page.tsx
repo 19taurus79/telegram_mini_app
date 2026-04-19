@@ -199,7 +199,6 @@ function RemainsContent() {
         {/* Вбудований пошук — завжди відображається */}
         {showHeader && (
           <div className={css.headerWrapper}>
-            <h1 className={css.nativeTitle}>Залишки</h1>
             <div className={css.searchInterface}>
               <div className={css.searchWrapper}>
                 <Search size={18} className={css.searchIcon} />

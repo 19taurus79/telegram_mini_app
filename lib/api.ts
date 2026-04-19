@@ -269,6 +269,30 @@ export const changeDeliveryDate = async (
   return data;
 };
 
+export const batchUpdateDeliveries = async (
+  deliveryIds: number[],
+  status: string | null,
+  newDate: string | null,
+  initData: string
+) => {
+  const { data } = await axios.post<{ status: string; message: string }>(
+    "/delivery/batch_update",
+    {
+      delivery_ids: deliveryIds,
+      status: status,
+      new_date: newDate,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+
+  return data;
+};
+
 export const deleteDeliveryData = async (deliveryId: string, initData: string) => {
   const { data } = await axios.delete<{ status: string }>(
     "/delivery/delete",

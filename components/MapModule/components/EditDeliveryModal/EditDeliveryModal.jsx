@@ -595,7 +595,30 @@ export default function EditDeliveryModal() {
       return { ...delivery, items };
     }).filter(d => d.items.length > 0);
 
-    const sorted = [...validDeliveries].sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+    // Об'єднуємо замовлення одного клієнта
+    const groupedByClient = validDeliveries.reduce((acc, delivery) => {
+      const client = delivery.client || "Невідомий клієнт";
+      if (!acc[client]) {
+        acc[client] = {
+          client: client,
+          manager: delivery.manager || "",
+          items: [],
+          comments: []
+        };
+      }
+      acc[client].items.push(...delivery.items);
+      if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
+        acc[client].comments.push(delivery.comment);
+      }
+      return acc;
+    }, {});
+
+    const groupedDeliveries = Object.values(groupedByClient).map(group => ({
+      ...group,
+      comment: group.comments.join(" | ")
+    }));
+
+    const sorted = groupedDeliveries.sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
     setPrintData(sorted);
     setIsAskingDate(true);
   };

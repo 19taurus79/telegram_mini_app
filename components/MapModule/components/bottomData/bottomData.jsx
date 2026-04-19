@@ -3,7 +3,7 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
 import { getInitData } from "@/lib/getInitData";
-import { updateDeliveryData, changeDeliveryDate } from "@/lib/api";
+import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@/lib/api";
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
@@ -113,6 +113,9 @@ export default function BottomData({ onEditClient }) {
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); 
   const [changeDateTarget, setChangeDateTarget] = useState(null);
   const [newDate, setNewDate] = useState("");
+  const [checkedDeliveryIds, setCheckedDeliveryIds] = useState(new Set());
+  const [isBatchDateModalOpen, setIsBatchDateModalOpen] = useState(false);
+  const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
 
   const handleChangeDeliveryDate = async (d, newDateStr) => {
     if (!newDateStr) {
@@ -137,13 +140,63 @@ export default function BottomData({ onEditClient }) {
     }
   };
 
-  const toggleExpansion = (id) => { // Renamed from toggleExpand
+  const toggleExpansion = (id, event) => {
+    if (event && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      event.stopPropagation();
+      setCheckedDeliveryIds(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      return;
+    }
+
     setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  };
+
+  const handleBatchUpdate = async (status, date) => {
+    const ids = checkedDeliveryIds.size > 0 
+      ? Array.from(checkedDeliveryIds) 
+      : selectedDeliveries.map(d => d.id);
+      
+    if (ids.length === 0) return;
+    
+    const loadingToast = toast.loading(`Оновлення ${ids.length} доставок...`);
+    
+    try {
+      const initData = getInitData();
+      const res = await batchUpdateDeliveries(ids, status, date, initData);
+      
+      if (res && res.status === "ok") {
+        toast.success(`Оновлено ${ids.length} доставок`, { id: loadingToast });
+        
+        // Оновлюємо локальний стор
+        const updatedDeliveries = deliveries
+          .filter(d => ids.includes(d.id))
+          .map(d => ({
+            ...d,
+            ...(status ? { status } : {}),
+            ...(date ? { delivery_date: date } : {})
+          }));
+          
+        updateDeliveries(updatedDeliveries);
+        setCheckedDeliveryIds(new Set());
+        setIsBatchDateModalOpen(false);
+        setIsBatchStatusModalOpen(false);
+      } else {
+        toast.error("Помилка при пакетному оновленні", { id: loadingToast });
+      }
+    } catch (e) {
+      console.error("Batch update error:", e);
+      toast.error("Помилка при пакетному оновленні", { id: loadingToast });
+    }
   };
 
   const selectionSummary = useMemo(() => {
@@ -491,6 +544,23 @@ export default function BottomData({ onEditClient }) {
               </div>
             </div>
             <div className={css.deliveryActionsBox}>
+              <div style={{ display: 'flex', gap: '8px', marginRight: '16px', borderRight: '1px solid #ccc', paddingRight: '16px' }}>
+                <button 
+                  className={`${css.deliveryEditBtn} ${css.btnGreen}`} 
+                  onClick={() => setIsBatchStatusModalOpen(true)}
+                  title={checkedDeliveryIds.size > 0 ? `Змінити статус обраним (${checkedDeliveryIds.size})` : `Змінити статус ВСІМ (${selectedDeliveries.length})`}
+                >
+                  ✓ Статус (гр.)
+                </button>
+                <button 
+                  className={`${css.deliveryEditBtn} ${css.btnBlue}`} 
+                  onClick={() => { setIsBatchDateModalOpen(true); setNewDate(""); }}
+                  title={checkedDeliveryIds.size > 0 ? `Змінити дату обраним (${checkedDeliveryIds.size})` : `Змінити дату ВСІМ (${selectedDeliveries.length})`}
+                >
+                  📅 Дата (гр.)
+                </button>
+                {checkedDeliveryIds.size > 0 && <button className={css.deliveryEditBtn} onClick={() => setCheckedDeliveryIds(new Set())} style={{ background: '#eee', color: '#333' }}>Скинути ({checkedDeliveryIds.size})</button>}
+              </div>
               <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
                 <LucidePrinter size={14} /> Друк
               </button>
@@ -508,11 +578,11 @@ export default function BottomData({ onEditClient }) {
                 </div>
                 <div className={css.deliverySubList}>
                   {data.deliveries.map(d => (
-                    <div key={d.id} className={css.multiDeliveryBox}>
-                      <div className={css.accordionHeader} onClick={() => toggleExpansion(d.id)}>
+                    <div key={d.id} className={`${css.multiDeliveryBox} ${checkedDeliveryIds.has(d.id) ? css.checkedDelivery : ""}`}>
+                      <div className={css.accordionHeader} onClick={(e) => toggleExpansion(d.id, e)}>
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {expandedIds.has(d.id) ? '▼' : '▶'} ID: {d.id} | {d.address}
+                            {expandedIds.has(d.id) ? '▼' : '▶'} {checkedDeliveryIds.has(d.id) ? '✅ ' : ''}ID: {d.id} | {d.address}
                             <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : ""}`}>{d.status}</span>
                           </span>
                           <span className={css.partyAmount}>{d.total_weight?.toFixed(2)} кг</span>
@@ -574,6 +644,41 @@ export default function BottomData({ onEditClient }) {
                 <div className={css.confirmActions}>
                   <button className={css.confirmCancel} onClick={() => setChangeDateTarget(null)}>Скасувати</button>
                   <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => handleChangeDeliveryDate(changeDateTarget, newDate)}>Зберегти</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {isBatchDateModalOpen && (
+            <div className={css.confirmOverlay} onClick={() => setIsBatchDateModalOpen(false)}>
+              <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+                <h4>Групова зміна дати ({checkedDeliveryIds.size || selectedDeliveries.length} дост.)</h4>
+                <p style={{ marginBottom: '10px' }}>Вкажіть нову дату:</p>
+                <input 
+                  type="date" 
+                  value={newDate} 
+                  onChange={(e) => setNewDate(e.target.value)} 
+                  style={{ padding: '8px', marginBottom: '15px', width: '100%', border: '1px solid #ccc', borderRadius: '4px' }}
+                />
+                <div className={css.confirmActions}>
+                  <button className={css.confirmCancel} onClick={() => setIsBatchDateModalOpen(false)}>Скасувати</button>
+                  <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => handleBatchUpdate(null, newDate)}>Оновити</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {isBatchStatusModalOpen && (
+            <div className={css.confirmOverlay} onClick={() => setIsBatchStatusModalOpen(false)}>
+              <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
+                <h4>Групова зміна статусу ({checkedDeliveryIds.size || selectedDeliveries.length} дост.)</h4>
+                <p style={{ marginBottom: '15px' }}>Виберіть новий статус:</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button className={`${css.deliveryEditBtn} ${css.btnGreen}`} onClick={() => handleBatchUpdate("Виконано", null)}>✓ Виконано</button>
+                  <button className={`${css.deliveryEditBtn} ${css.btnOrange}`} onClick={() => handleBatchUpdate("В роботі", null)}>⚡ В роботі</button>
+                  <button className={`${css.deliveryEditBtn} ${css.btnCO}`} onClick={() => handleBatchUpdate("Доставка з ЦО на клієнта", null)}>🏢 Доставка з ЦО</button>
+                  <button className={`${css.deliveryEditBtn}`} style={{ background: '#94a2b8', color: 'white' }} onClick={() => handleBatchUpdate("Створено", null)}>📄 Створено</button>
+                </div>
+                <div className={css.confirmActions} style={{ marginTop: '20px' }}>
+                  <button className={css.confirmCancel} onClick={() => setIsBatchStatusModalOpen(false)} style={{ width: '100%' }}>Скасувати</button>
                 </div>
               </div>
             </div>

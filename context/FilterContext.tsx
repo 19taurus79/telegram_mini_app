@@ -7,6 +7,8 @@ import React, { createContext, useState, useContext, ReactNode } from "react";
 interface FilterContextType {
   selectedGroup: string | "";
   setSelectedGroup: (group: string | "") => void;
+  selectedSubGroup: string | "";
+  setSelectedSubGroup: (subGroup: string | "") => void;
   searchValue: string | "";
   setSearchValue: (value: string | "") => void;
 }
@@ -17,11 +19,16 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined);
 // Компонент-провайдер, который будет предоставлять состояние
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedGroup, setSelectedGroup] = useState<string | "">("");
+  const [selectedSubGroup, setSelectedSubGroup] = useState<string | "">("");
   const [searchValue, setSearchValue] = useState<string | "">("");
 
   return (
     <FilterContext.Provider
-      value={{ selectedGroup, setSelectedGroup, searchValue, setSearchValue }}
+      value={{ 
+        selectedGroup, setSelectedGroup, 
+        selectedSubGroup, setSelectedSubGroup, 
+        searchValue, setSearchValue 
+      }}
     >
       {children}
     </FilterContext.Provider>

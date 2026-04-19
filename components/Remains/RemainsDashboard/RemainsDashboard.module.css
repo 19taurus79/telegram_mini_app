@@ -153,3 +153,13 @@
 :global([data-theme='light']) .gridItemHeader { 
   background: rgba(0, 0, 0, 0.02); 
 }
+
+.tabContent {
+  width: 100%;
+  animation: tabFadeIn 0.25s ease-out;
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct } from "@/lib/api";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct, getCategoryTree } from "@/lib/api";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { ArrowLeft, Search, X, SlidersHorizontal, ChevronRight } from "lucide-react";
 import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -15,11 +15,16 @@ import { useInitData } from "@/store/InitData";
 import type { InitData } from "@/store/InitData";
 import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashboard";
 import DataSourceSwitch from "@/components/DataSourceSwitch/DataSourceSwitch";
+import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
 
 const DESKTOP_BREAKPOINT = 768;
 
 function RemainsContent() {
-  const { selectedGroup, searchValue, setSearchValue } = useFilter();
+  const { 
+    selectedGroup, setSelectedGroup, 
+    selectedSubGroup, setSelectedSubGroup,
+    searchValue, setSearchValue 
+  } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all'>('warehouse');
   const searchParams = useSearchParams();
@@ -28,10 +33,11 @@ function RemainsContent() {
   const initData = useInitData((state: InitData) => state.initData);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["products", dataSourceType, selectedGroup, searchValue, initData],
+    queryKey: ["products", dataSourceType, selectedGroup, selectedSubGroup, searchValue, initData],
     queryFn: () => {
         const params = {
             group: selectedGroup || null,
+            parentGroup: selectedSubGroup || null,
             searchValue: searchValue || null,
             initData: initData || "",
         };
@@ -45,7 +51,17 @@ function RemainsContent() {
     placeholderData: keepPreviousData,
   });
 
+  // Запит для отримання дерева категорій (для побудови меню фільтрів)
+  const { data: categoriesData } = useQuery({
+    queryKey: ["all_categories_tree", initData],
+    queryFn: () => getCategoryTree(initData || ""),
+    enabled: !!initData,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const [isMobile, setIsMobile] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   // const [showButtons, setShowButtons] = useState(true);
   // const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -136,35 +152,84 @@ function RemainsContent() {
     router.push("/orders");
   };
 
+  const groupsWithParents = useMemo(() => {
+    // Використовуємо ТІЛЬКИ categoriesData для побудови повного списку
+    // Не використовуємо data, бо він відфільтрований і звужує перелік у меню
+    const sourceData = categoriesData || [];
+    const map = new Map<string, Set<string>>();
+    sourceData.forEach(item => {
+      if (item.line_of_business) {
+        if (!map.has(item.line_of_business)) {
+          map.set(item.line_of_business, new Set());
+        }
+        if (item.parent_element) {
+          map.get(item.line_of_business)!.add(item.parent_element);
+        }
+      }
+    });
+    
+    // Пріоритетний список груп
+    const priority = ["ЗЗР", "Насіння", "Власне виробництво насіння", "Позакореневi добрива", "Міндобрива (основні)"];
+    const allGroups = Array.from(map.entries()).map(([name, parents]) => ({ 
+        name, 
+        subGroups: Array.from(parents).sort() 
+    }));
+    
+    const sorted = [...allGroups].sort((a, b) => {
+        const idxA = priority.indexOf(a.name);
+        const idxB = priority.indexOf(b.name);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    return [{ name: "Всі", subGroups: [] }, ...sorted];
+  }, [categoriesData]);
+
   const renderProductList = () => {
-    // Фільтрація списку на мобілці
     const filteredData = selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT
       ? (data || []).filter(item => item.id === selectedProductId)
       : (data || []);
 
+    const showHeader = !(selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT);
+
     return (
-      <div>
+      <div className={css.pageContent}>
         {/* Вбудований пошук — завжди відображається */}
-        <div className={css.searchWrapper}>
-          <input
-            type="text"
-            placeholder="Пошук товару..."
-            className={css.searchInput}
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
-          {searchValue ? (
-            <button
-              className={css.clearSearchBtn}
-              onClick={() => setSearchValue("")}
-              aria-label="Очистити пошук"
-            >
-              <X size={16} />
-            </button>
-          ) : (
-            <Search size={16} className={css.searchIcon} />
-          )}
-        </div>
+        {showHeader && (
+          <div className={css.headerWrapper}>
+            <h1 className={css.nativeTitle}>Залишки</h1>
+            <div className={css.searchInterface}>
+              <div className={css.searchWrapper}>
+                <Search size={18} className={css.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Пошук товару..."
+                  className={css.searchInput}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+                {searchValue && (
+                  <button
+                    className={css.clearSearchBtn}
+                    onClick={() => setSearchValue("")}
+                    aria-label="Очистити пошук"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <button 
+                className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
+                onClick={() => setIsFilterOpen(true)}
+                title="Фільтри"
+              >
+                <SlidersHorizontal size={20} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Стан завантаження / помилки / пустого списку */}
         {isLoading && <p style={{ padding: "10px" }}>Завантаження продуктів...</p>}
@@ -196,19 +261,87 @@ function RemainsContent() {
             )}
             <ul className={css.listContainerUl} style={{ padding: 0 }}>
               {filteredData.map((item) => (
-                <li className={css.listItemButton} key={item.id}>
+                <li className={css.productCard} key={item.id}>
                   <Link
                     href={`/remains/${item.id}`}
                     className={css.link}
                     onClick={(e) => handleProductClick(e, item.id)}
                   >
-                    {item.product}
+                    <span className={css.productName}>{item.product}</span>
+                    <div className={css.productMeta}>
+                      <span>📦 {item.line_of_business || 'Без групи'}</span>
+                    </div>
+                    {item.parent_element && (
+                      <div className={css.productMeta}>
+                        <span>📁 {item.parent_element}</span>
+                      </div>
+                    )}
+                    {typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT && (
+                      <ChevronRight size={18} className={css.chevron} />
+                    )}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+        <BottomSheet
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          title="Категорії товару"
+        >
+          <ul className={css.filterList}>
+            {groupsWithParents.map((group) => {
+              const isActive = (group.name === "Всі" && selectedGroup === "") || group.name === selectedGroup;
+              const isExpanded = expandedGroup === group.name;
+              
+              return (
+                <li key={group.name} className={css.filterItemWrapper}>
+                  <div
+                    className={`${css.filterItem} ${isActive && !selectedSubGroup ? css.activeFilterItem : ''}`}
+                    onClick={() => {
+                      const newValue = group.name === "Всі" ? "" : group.name;
+                      setSelectedGroup(newValue);
+                      setSelectedSubGroup(""); // Скидаємо підгрупу при виборі основної групи
+                      setIsFilterOpen(false);
+                    }}
+                  >
+                    <span>{group.name}</span>
+                    {group.name !== "Всі" && group.subGroups.length > 0 && (
+                         <button 
+                            className={`${css.expandBtn} ${isExpanded ? css.expanded : ''}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedGroup(isExpanded ? null : group.name);
+                            }}
+                         >
+                            <ChevronRight size={18} />
+                         </button>
+                    )}
+                  </div>
+                  {isExpanded && group.subGroups.length > 0 && (
+                    <div className={css.subGroupsList}>
+                        {group.subGroups.map(sub => (
+                            <div 
+                                key={sub} 
+                                className={`${css.subGroupItem} ${selectedSubGroup === sub ? css.activeSubGroup : ''}`}
+                                onClick={() => {
+                                    setSelectedGroup(group.name);
+                                    setSelectedSubGroup(sub);
+                                    setIsFilterOpen(false);
+                                }}
+                            >
+                                {sub}
+                            </div>
+                        ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </BottomSheet>
       </div>
     );
   };
@@ -221,6 +354,13 @@ function RemainsContent() {
       detailsRemains={<DetailsRemains selectedProductId={selectedProductId} />}
       detailsOrders={<DetailsOrdersByProduct selectedProductId={selectedProductId} />}
       detailsMoved={<DetailsMovedProducts selectedProductId={selectedProductId} />}
+      selectedProductId={selectedProductId}
+      onClearSelection={() => {
+        setSelectedProductId(null);
+        const currentParams = new URLSearchParams(searchParams.toString());
+        currentParams.delete('productId');
+        router.push(`/remains?${currentParams.toString()}`);
+      }}
     />
   );
 }

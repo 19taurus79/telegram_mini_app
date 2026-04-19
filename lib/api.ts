@@ -104,10 +104,12 @@ export const getAvRemainsById = async ({
 
 export const getProductOnWarehouse = async ({
   group,
+  parentGroup,
   searchValue,
   initData,
 }: {
   group: string | null;
+  parentGroup?: string | null;
   searchValue: string | null;
   initData: string;
 }) => {
@@ -118,6 +120,7 @@ export const getProductOnWarehouse = async ({
     },
     params: {
       category: group,
+      parent_category: parentGroup,
       name_part: searchValue,
     },
   });
@@ -415,10 +418,12 @@ export const getAllProduct = async ({
 
 export const getAllProductByGuide = async ({
                                       group,
+                                      parentGroup,
                                       searchValue,
                                       initData,
                                     }: {
   group: string | null;
+  parentGroup?: string | null;
   searchValue: string | null;
   initData: string;
 }) => {
@@ -429,7 +434,18 @@ export const getAllProductByGuide = async ({
     },
     params: {
       category: group,
+      parent_category: parentGroup,
       name_part: searchValue,
+    },
+  });
+  return data;
+};
+
+export const getCategoryTree = async (initData: string) => {
+  const { data } = await axios.get<{line_of_business: string, parent_element: string}[]>("/data/categories_tree", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
     },
   });
   return data;

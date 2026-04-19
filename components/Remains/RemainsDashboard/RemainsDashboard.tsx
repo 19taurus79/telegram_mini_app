@@ -5,6 +5,9 @@ import { Responsive, WidthProvider, Layout, Layouts } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import styles from "./RemainsDashboard.module.css";
+import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
+import SegmentedControl from "@/components/UI/SegmentedControl/SegmentedControl";
+import { Boxes, Truck, ClipboardList } from "lucide-react";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -61,8 +64,9 @@ interface RemainsDashboardProps {
   detailsOrders: React.ReactNode;
   detailsMoved: React.ReactNode;
   isMobile?: boolean;
-  onResetLayout?: () => void;
   headerContent?: React.ReactNode;
+  selectedProductId?: string | null;
+  onClearSelection?: () => void;
 }
 
 export default function RemainsDashboard({
@@ -70,15 +74,19 @@ export default function RemainsDashboard({
   detailsRemains,
   detailsOrders,
   detailsMoved,
-  isMobile = false,
+  isMobile,
   headerContent,
+  selectedProductId,
+  onClearSelection,
 }: RemainsDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);
-  const [isRemainsOpen, setIsRemainsOpen] = useState(true);
-  const [isMovedOpen, setIsMovedOpen] = useState(false);
-  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("remains");
 
+  // Reset tab when product changes
+  useEffect(() => {
+    setActiveTab("remains");
+  }, [selectedProductId]);
 
   // Load layouts from localStorage on mount
   useEffect(() => {
@@ -103,39 +111,39 @@ export default function RemainsDashboard({
     []
   );
 
-  // Don't render grid on mobile or during SSR
-  if (isMobile || !isClient) {
+  // SSR skeleton
+  if (!isClient) {
+    return <div className={styles.mobileLayout}>{productList}</div>;
+  }
+
+  // Mobile layout — Bottom Sheet with tabbed details
+  if (isMobile) {
     return (
       <div className={styles.mobileLayout}>
-        <h2 className={styles.mobileSectionTitle}>📦 Список продуктів</h2>
         <div className={styles.mobileSection}>{productList}</div>
         
-        {/* Залишки на складах - розгорнутий за замовчуванням */}
-        <div className={styles.accordionHeader} onClick={() => setIsRemainsOpen(!isRemainsOpen)}>
-          <h2 className={styles.mobileSectionTitle}>🏭 Залишки на складах</h2>
-          <span className={`${styles.accordionIcon} ${isRemainsOpen ? styles.open : ''}`}>▼</span>
-        </div>
-        {isRemainsOpen && (
-          <div className={styles.mobileSection}>{detailsRemains}</div>
-        )}
-        
-        {/* Переміщені товари - згорнутий за замовчуванням */}
-        <div className={styles.accordionHeader} onClick={() => setIsMovedOpen(!isMovedOpen)}>
-          <h2 className={styles.mobileSectionTitle}>🔄 Переміщено під заявки</h2>
-          <span className={`${styles.accordionIcon} ${isMovedOpen ? styles.open : ''}`}>▼</span>
-        </div>
-        {isMovedOpen && (
-          <div className={styles.mobileSection}>{detailsMoved}</div>
-        )}
-        
-        {/* Замовлення по продукту - згорнутий за замовчуванням */}
-        <div className={styles.accordionHeader} onClick={() => setIsOrdersOpen(!isOrdersOpen)}>
-          <h2 className={styles.mobileSectionTitle}>📑 Замовлення по товару</h2>
-          <span className={`${styles.accordionIcon} ${isOrdersOpen ? styles.open : ''}`}>▼</span>
-        </div>
-        {isOrdersOpen && (
-          <div className={styles.mobileSection}>{detailsOrders}</div>
-        )}
+        <BottomSheet
+          isOpen={!!selectedProductId}
+          onClose={onClearSelection || (() => {})}
+          title="Деталі товару"
+          isFullHeight={true}
+        >
+          <SegmentedControl
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { label: "Склади", value: "remains", icon: <Boxes size={16} /> },
+              { label: "Переміщено", value: "moved", icon: <Truck size={16} /> },
+              { label: "Заявки", value: "orders", icon: <ClipboardList size={16} /> },
+            ]}
+          />
+
+          <div className={styles.tabContent}>
+            {activeTab === "remains" && <div className={styles.mobileSection}>{detailsRemains}</div>}
+            {activeTab === "moved" && <div className={styles.mobileSection}>{detailsMoved}</div>}
+            {activeTab === "orders" && <div className={styles.mobileSection}>{detailsOrders}</div>}
+          </div>
+        </BottomSheet>
       </div>
     );
   }

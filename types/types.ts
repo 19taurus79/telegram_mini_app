@@ -36,6 +36,7 @@ export type Product = {
   id: string;
   product: string;
   line_of_business: string;
+  parent_element: string;
 };
 export type Remains = {
   id: string;

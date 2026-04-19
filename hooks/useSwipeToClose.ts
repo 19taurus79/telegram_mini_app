@@ -22,8 +22,6 @@ export function useSwipeToClose({ onClose, threshold = 100 }: UseSwipeToClosePro
     // Позволяем тянуть только вниз
     if (deltaY > 0) {
       setOffsetY(deltaY);
-      // Предотвращаем скролл страницы если мы тянем окно
-      e.preventDefault();
     }
   };
 

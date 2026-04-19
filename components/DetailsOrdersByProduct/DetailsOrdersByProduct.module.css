@@ -64,6 +64,10 @@
     font-weight: 600;
     text-align: right;
   }
+
+  .analysisSection {
+    display: none;
+  }
 }
 
 @media (min-width: 769px) {

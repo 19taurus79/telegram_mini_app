@@ -64,7 +64,6 @@ interface RemainsDashboardProps {
   detailsOrders: React.ReactNode;
   detailsMoved: React.ReactNode;
   isMobile?: boolean;
-  onResetLayout?: () => void;
   headerContent?: React.ReactNode;
   selectedProductId?: string | null;
   onClearSelection?: () => void;
@@ -79,7 +78,6 @@ export default function RemainsDashboard({
   headerContent,
   selectedProductId,
   onClearSelection,
-  onResetLayout,
 }: RemainsDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);

@@ -8,7 +8,7 @@ import { useDetailsDataStore } from "@/store/DetailsDataStore";
 import { useInitData } from "@/store/InitData";
 import RemainsCard from "@/components/Remains/RemainsCard";
 import Loader from "@/components/Loader/Loader";
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export default function DetailsRemains({
   selectedProductId,
@@ -63,8 +63,6 @@ export default function DetailsRemains({
 
   // Tier 1: затверджено
   const ordersQ       = ordersTiersData?.orders_q                ?? 0;
-  // Tier 2: продукція затверджена
-  const ordersQProd   = ordersTiersData?.orders_q_product_confirmed ?? 0;
   // Всього
   const totalOrdered  = ordersTiersData?.orders_q_total          ?? 0;
 
@@ -74,8 +72,6 @@ export default function DetailsRemains({
 
   // Вільний залишок (відносно Tier 1 — затверджено)
   const availableStock = totalBuh - ordersQ;
-  // Вільний залишок після врахування обох тирів
-  const availableStockFull = totalBuh - totalOrdered;
 
   const groupedRemains = useMemo(() => {
     if (!remainsData) return {};

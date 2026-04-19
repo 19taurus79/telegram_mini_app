@@ -5,15 +5,23 @@ import { useMapControlStore } from "../../store/mapControlStore";
 import StatusFilter from "../StatusFilter/StatusFilter";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import { getStatusColor } from "../../statusUtils";
+import { getInitData } from "@/lib/getInitData";
+import { batchUpdateDeliveries } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
     selectedManagers,
     selectedDeliveries,
-    toggleSelectedDelivery
+    toggleSelectedDelivery,
+    updateDeliveries,
+    clearSelectedDeliveries
   } = useApplicationsStore();
   const { selectedStatuses, selectedDates, toggleDate } = useMapControlStore();
   const [expandedDates, setExpandedDates] = useState(new Set());
+  const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
+  const [isBatchDateModalOpen, setIsBatchDateModalOpen] = useState(false);
+  const [newBatchDate, setNewBatchDate] = useState("");
 
   const toggleDateExpansion = (date) => {
     setExpandedDates(prev => {
@@ -28,6 +36,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   };
 
   const handleDateClick = (date, e) => {
+    e.preventDefault();
     e.stopPropagation();
     const isMulti = e.ctrlKey || e.metaKey;
     toggleDate(date, isMulti);
@@ -92,6 +101,8 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   const handleItemClick = (item, e) => {
     const isMultiClick = e && (e.ctrlKey || e.metaKey);
     if (isMultiClick) {
+      e.preventDefault();
+      e.stopPropagation();
       toggleSelectedDelivery(item);
     } else {
       if (onSelectDelivery) onSelectDelivery(item);
@@ -106,6 +117,40 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
         onFlyTo(lat, lng);
       }
       if (onClose) onClose();
+    }
+  };
+
+  const handleBatchUpdate = async (status, date) => {
+    if (selectedDeliveries.length === 0) return;
+    
+    const ids = selectedDeliveries.map(d => d.id);
+    const loadingToast = toast.loading(`Пакетне оновлення ${ids.length} доставок...`);
+    
+    try {
+      const initData = getInitData();
+      const res = await batchUpdateDeliveries(ids, status, date, initData);
+      
+      if (res && res.status === "ok") {
+        toast.success(`Оновлено ${ids.length} доставок`, { id: loadingToast });
+        
+        const updatedDeliveries = deliveries
+          .filter(d => ids.includes(d.id))
+          .map(d => ({
+            ...d,
+            ...(status ? { status } : {}),
+            ...(date ? { delivery_date: date } : {})
+          }));
+          
+        updateDeliveries(updatedDeliveries);
+        // Не очищуємо вибір, щоб користувач бачив результат
+        setIsBatchStatusModalOpen(false);
+        setIsBatchDateModalOpen(false);
+      } else {
+        toast.error("Помилка при пакетному оновленні", { id: loadingToast });
+      }
+    } catch (e) {
+      console.error("Batch update error:", e);
+      toast.error("Помилка при пакетному оновленні", { id: loadingToast });
     }
   };
 
@@ -132,9 +177,132 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
           )}
         </>
       )}
-      <div className={css.header}>
+      <div className={css.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3>Доставки ({filteredDeliveries.length})</h3>
+        {selectedDeliveries.length > 1 && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              className={css.batchBtn} 
+              style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              onClick={() => setIsBatchStatusModalOpen(true)}
+            >
+              ✓ Статус (гр.)
+            </button>
+            <button 
+              className={css.batchBtn} 
+              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              onClick={() => { setIsBatchDateModalOpen(true); setNewBatchDate(""); }}
+            >
+              📅 Дата (гр.)
+            </button>
+            <button 
+              className={css.batchBtn} 
+              style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              onClick={() => clearSelectedDeliveries()}
+            >
+              Скинути
+            </button>
+          </div>
+        )}
       </div>
+
+      {isBatchStatusModalOpen && (
+        <div 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            background: 'rgba(0,0,0,0.5)', zIndex: 9999, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(4px)'
+          }}
+          onClick={() => setIsBatchStatusModalOpen(false)}
+        >
+          <div 
+            style={{ 
+              background: 'var(--card-bg, #1a1a1a)', padding: '24px', borderRadius: '20px', 
+              width: '90%', maxWidth: '320px', border: '1px solid var(--glass-border, rgba(255,255,255,0.1))',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h4 style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 300 }}>Статус для {selectedDeliveries.length} дост.</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button 
+                style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                onClick={() => handleBatchUpdate("Виконано", null)}
+              >
+                ✓ Виконано
+              </button>
+              <button 
+                style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                onClick={() => handleBatchUpdate("В роботі", null)}
+              >
+                ⚡ В роботі
+              </button>
+              <button 
+                style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                onClick={() => handleBatchUpdate("Доставка з ЦО на клієнта", null)}
+              >
+                🏢 Доставка з ЦО
+              </button>
+              <button 
+                style={{ background: '#94a2b8', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                onClick={() => handleBatchUpdate("Створено", null)}
+              >
+                📄 Створено
+              </button>
+            </div>
+            <button 
+              style={{ width: '100%', marginTop: '20px', padding: '10px', background: 'transparent', border: '1px solid #444', color: '#888', borderRadius: '8px', cursor: 'pointer' }}
+              onClick={() => setIsBatchStatusModalOpen(false)}
+            >
+              Скасувати
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isBatchDateModalOpen && (
+        <div 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            background: 'rgba(0,0,0,0.5)', zIndex: 9999, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(4px)'
+          }}
+          onClick={() => setIsBatchDateModalOpen(false)}
+        >
+          <div 
+            style={{ 
+              background: 'var(--card-bg, #1a1a1a)', padding: '24px', borderRadius: '20px', 
+              width: '90%', maxWidth: '320px', border: '1px solid var(--glass-border, rgba(255,255,255,0.1))',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h4 style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 300 }}>Дата для {selectedDeliveries.length} дост.</h4>
+            <input 
+              type="date" 
+              value={newBatchDate}
+              onChange={(e) => setNewBatchDate(e.target.value)}
+              style={{ width: '100%', padding: '10px', background: '#333', border: '1px solid #444', borderRadius: '8px', color: 'white', marginBottom: '20px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                style={{ flex: 1, padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                onClick={() => handleBatchUpdate(null, newBatchDate)}
+              >
+                Оновити
+              </button>
+              <button 
+                style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid #444', color: '#888', borderRadius: '8px', cursor: 'pointer' }}
+                onClick={() => setIsBatchDateModalOpen(false)}
+              >
+                Скасувати
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className={css.list}>
         {sortedGrouping.map(({ status, dates, totalWeight, uniqueClientsCount }) => (

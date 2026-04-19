@@ -843,3 +843,13 @@
   background: transparent;
   opacity: 0.5;
 }
+
+.checkedDelivery {
+  border: 1px solid var(--accent-green) !important;
+  box-shadow: 0 0 15px rgba(14, 241, 142, 0.2);
+  background: rgba(14, 241, 142, 0.05) !important;
+}
+
+.checkedDelivery .accordionHeader {
+  background: rgba(14, 241, 142, 0.1);
+}

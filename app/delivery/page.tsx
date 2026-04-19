@@ -364,7 +364,7 @@ function DeliveryDataContent() {
       )}
 
       {formClient && (
-        <div className={styles.modalOverlay} onClick={() => setFormClient(null)}>
+        <div className={styles.modalOverlay}>
           <div 
             className={styles.modal} 
             style={{ 

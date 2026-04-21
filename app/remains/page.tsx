@@ -192,7 +192,7 @@ function RemainsContent() {
       ? (data || []).filter(item => item.id === selectedProductId)
       : (data || []);
 
-    const showHeader = !(selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT);
+
 
     return (
       <div className={css.pageContent}>

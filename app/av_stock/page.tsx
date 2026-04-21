@@ -7,7 +7,7 @@ import { useInitData } from "@/store/InitData";
 import type { InitData } from "@/store/InitData";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
-import { Search, X, ChevronRight, Boxes, FolderOpen, SlidersHorizontal, ChevronRight as ChevronIcon } from "lucide-react";
+import { Search, X, ChevronRight, Boxes, FolderOpen, SlidersHorizontal } from "lucide-react";
 import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
 import css from "./AvStock.module.css";
 
@@ -66,10 +66,7 @@ function AvStock() {
     setIsFilterOpen(false);
   };
 
-  const toggleGroup = (e: React.MouseEvent, groupName: string) => {
-    e.stopPropagation();
-    setExpandedGroup(expandedGroup === groupName ? null : groupName);
-  };
+
 
   return (
     <div className={css.pageContent}>

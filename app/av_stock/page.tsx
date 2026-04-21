@@ -60,7 +60,7 @@ function AvStock() {
     return sorted;
   }, [categoriesData]);
 
-  const handleGroupSelect = (groupName: string | null) => {
+  const handleGroupSelect = (groupName: string) => {
     setSelectedGroup(groupName);
     setSelectedSubGroup(""); // Reset subgroup entirely when a new category is chosen or cleared
     setIsFilterOpen(false);
@@ -144,7 +144,7 @@ function AvStock() {
         <ul className={css.filterList}>
           <li 
             className={`${css.filterItem} ${!selectedGroup ? css.activeFilterItem : ''}`}
-            onClick={() => handleGroupSelect(null)}
+            onClick={() => handleGroupSelect("")}
           >
             Усі товари
           </li>

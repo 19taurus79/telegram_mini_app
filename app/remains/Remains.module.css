@@ -39,14 +39,30 @@
   font-weight: 600;
   color: #fff;
   line-height: 1.4;
+  padding-right: 24px;
 }
 
 .productMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+.metaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .chevron {
@@ -98,17 +114,14 @@
 
 /* Header Interface */
 .headerWrapper {
-  position: sticky;
-  top: -1px;
-  z-index: 100;
-  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
-  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
-  padding: 16px 16px 8px 16px;
-  transition: all 0.3s ease;
+  flex-shrink: 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 16px;
+  transition: background 0.3s ease;
+  margin: -16px -16px 16px -16px;
 }
 
 .nativeTitle {
@@ -133,17 +146,22 @@
 .searchInput {
   width: 100%;
   padding: 12px 40px 12px 42px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
   color: #fff;
   font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .searchInput:focus {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.6);
   border-color: var(--accent-green);
 }
 
@@ -175,12 +193,13 @@
 }
 
 .filterBtn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   color: #fff;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,10 +218,12 @@
   color: #000;
 }
 
-@media (prefers-color-scheme: light) {
-  .searchInput { background: rgba(255, 255, 255, 0.5); color: #000; }
-  .searchWrapper { background: rgba(0, 0, 0, 0.02); }
-  .listItemButton { background: rgba(255, 255, 255, 0.8); }
+/* Light theme — main overrides */
+:global([data-theme='light']) .headerWrapper {
+  background: rgba(248, 250, 252, 0.97);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.06);
 }
 
 /* Page content wrapper */
@@ -223,22 +244,44 @@
 }
 
 /* Light theme overrides */
-:global([data-theme='light']) .nativeTitle { color: var(--foreground); }
-:global([data-theme='light']) .productName { color: var(--foreground); }
-:global([data-theme='light']) .productCard {
-  background: rgba(255, 255, 255, 0.8);
+:global([data-theme='light']) .productName { color: #0f172a; font-weight: 700; }
+:global([data-theme='light']) .productMeta { color: rgba(15, 23, 42, 0.55); }
+:global([data-theme='light']) .metaTag {
+  background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(15, 23, 42, 0.65);
 }
+:global([data-theme='light']) .productCard {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+}
+:global([data-theme='light']) .productCard:active {
+  background: #f8fafc;
+}
+:global([data-theme='light']) .chevron { opacity: 0.35; color: #334155; }
 :global([data-theme='light']) .searchInput {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.1);
   color: var(--foreground);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
 }
-:global([data-theme='light']) .headerWrapper { 
-  background: rgba(255, 255, 255, 0.7); 
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+:global([data-theme='light']) .searchInput::placeholder { color: rgba(0,0,0,0.35); }
+:global([data-theme='light']) .searchInput:focus {
+  background: #fff;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(14, 241, 142, 0.12);
 }
-:global([data-theme='light']) .filterBtn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: var(--foreground); }
+:global([data-theme='light']) .searchIcon { color: rgba(0,0,0,0.35); }
+:global([data-theme='light']) .filterBtn {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.1);
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+:global([data-theme='light']) .filterBtn:active { background: rgba(0,0,0,0.1); }
 
 /* Stagger animation for product cards */
 .listContainerUl li:nth-child(1)  { animation-delay: 0.04s; }
@@ -266,6 +309,12 @@
   cursor: pointer; 
   transition: all 0.2s; 
   font-size: 1rem; 
+}
+@media (min-width: 768px) {
+  .filterItem:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 }
 .filterItem:active { transform: scale(0.98); }
 .activeFilterItem { background: var(--accent-green); color: #000; font-weight: 600; box-shadow: 0 4px 15px rgba(14,241,142,0.3); border-color: var(--accent-green); }

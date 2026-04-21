@@ -34,6 +34,7 @@
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
 }
 
 .titleContainer {
@@ -45,6 +46,28 @@
 .headerContentContainer {
   display: flex;
   align-items: center;
+}
+
+/* Sub-header: sits between the title bar and the scrollable content */
+.gridItemSubHeader {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.015);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Mobile version: sticky sub-header within the mobileLayout */
+.mobileSubHeader {
+  flex-shrink: 0;
+  margin: -16px -16px 0 -16px;
+  padding: 10px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .dragHandle {
@@ -140,9 +163,9 @@
   transform: rotate(180deg);
 }
 
-:global([data-theme='light']) .gridItemTitle, 
-:global([data-theme='light']) .mobileSectionTitle { 
-  color: var(--foreground); 
+:global([data-theme='light']) .gridItemTitle,
+:global([data-theme='light']) .mobileSectionTitle {
+  color: var(--foreground);
 }
 
 :global([data-theme='light']) .gridItem {
@@ -150,8 +173,16 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-:global([data-theme='light']) .gridItemHeader { 
-  background: rgba(0, 0, 0, 0.02); 
+:global([data-theme='light']) .gridItemHeader {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+:global([data-theme='light']) .gridItemSubHeader {
+  background: rgba(0, 0, 0, 0.01);
+}
+
+:global([data-theme='light']) .mobileSubHeader {
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .tabContent {

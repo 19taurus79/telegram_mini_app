@@ -301,45 +301,68 @@
 
 /* Light mode overrides */
 :global([data-theme='light']) .modal {
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 :global([data-theme='light']) .header {
-  background: rgba(0, 0, 0, 0.02);
+  background: #f8fafc;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
 :global([data-theme='light']) .title {
-  color: var(--foreground);
+  color: #0f172a;
 }
 
 :global([data-theme='light']) .textarea {
-  background: rgba(0, 0, 0, 0.03);
-  color: var(--foreground);
+  background: #ffffff;
+  color: #1e293b;
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 :global([data-theme='light']) .textarea:focus {
-  background: rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border-color: var(--accent-green);
 }
 
 :global([data-theme='light']) .comment {
-  background: rgba(0, 0, 0, 0.02);
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 :global([data-theme='light']) .comment:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .commentAuthor {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .commentText {
+  color: #334155;
 }
 
 :global([data-theme='light']) .readOnlyNotice {
   background: rgba(59, 130, 246, 0.08);
   color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 :global([data-theme='light']) .cancelButton {
-  background: #f8fafc;
-  border-color: rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #64748b;
 }
 
 :global([data-theme='light']) .cancelButton:hover {
   background: #f1f5f9;
+  color: #334155;
 }
+
+:global([data-theme='light']) .iconButton {
+  color: rgba(0, 0, 0, 0.45);
+}
+

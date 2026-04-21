@@ -11,7 +11,8 @@ export default async function AvStockPage({ params }: Props) {
   console.log("av stock remains", remains);
   return (
     <>
-      <div className={css.container}>
+      <div className={css.pageContent}>
+        <div className={css.container}>
         <h2 className={css.heading}>{remains[0].nomenclature} вільно по РУ</h2>
         <ul className={css.table}>
           {remains.map((item) => (
@@ -21,6 +22,7 @@ export default async function AvStockPage({ params }: Props) {
             </li>
           ))}
         </ul>
+      </div>
       </div>
       {/* <BackBtn /> */}
     </>

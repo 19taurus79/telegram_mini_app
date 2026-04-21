@@ -33,15 +33,20 @@
 }
 
 .dragHandleWrapper {
-  padding: 12px 0 8px 0;
+  padding: 12px 0 16px 0;
   display: flex;
   justify-content: center;
-  cursor: grab;
+  cursor: pointer;
   touch-action: none;
+  transition: opacity 0.2s;
 }
 
-.dragHandleWrapper:active {
-  cursor: grabbing;
+.dragHandleWrapper:hover .dragHandle {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+:global([data-theme='light']) .dragHandleWrapper:hover .dragHandle {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .dragHandle {
@@ -49,6 +54,7 @@
   height: 5px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
+  transition: background 0.2s;
 }
 
 .header {
@@ -81,15 +87,70 @@
   to { opacity: 1; }
 }
 
-@media (prefers-color-scheme: light) {
+@keyframes modalPopIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Desktop Glassmorphism View */
+@media (min-width: 768px) {
+  .overlay {
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
   .sheet {
-    background: #fff;
-    color: #000;
+    width: 440px;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(14, 241, 142, 0.05);
+    max-height: 80vh;
+    animation: modalPopIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: none !important; /* Disable drag offset */
   }
+
+  .fullHeight {
+    height: 80vh;
+  }
+
+  .dragHandleWrapper {
+    display: none;
+  }
+
+  .header {
+    padding-top: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 16px;
+    padding-bottom: 20px;
+  }
+
   .title {
-    color: #000;
+    font-size: 1.25rem;
+    letter-spacing: -0.3px;
   }
-  .dragHandle {
-    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Light Theme Support */
+:global([data-theme='light']) .sheet {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+}
+:global([data-theme='light']) .title {
+  color: #000;
+}
+:global([data-theme='light']) .dragHandle {
+  background: rgba(0, 0, 0, 0.1);
+}
+:global([data-theme='light']) .header {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  :global([data-theme='light']) .sheet {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 40px rgba(0, 0, 0, 0.03);
   }
 }

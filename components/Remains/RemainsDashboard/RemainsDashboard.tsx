@@ -39,9 +39,10 @@ interface GridItemProps {
   title: string;
   children: React.ReactNode;
   headerContent?: React.ReactNode;
+  subHeader?: React.ReactNode;
 }
 
-const GridItem: React.FC<GridItemProps> = ({ title, children, headerContent }) => {
+const GridItem: React.FC<GridItemProps> = ({ title, children, headerContent, subHeader }) => {
   return (
     <div className={styles.gridItem}>
       <div className={styles.gridItemHeader}>
@@ -53,6 +54,11 @@ const GridItem: React.FC<GridItemProps> = ({ title, children, headerContent }) =
           {headerContent}
         </div>
       </div>
+      {subHeader && (
+        <div className={styles.gridItemSubHeader}>
+          {subHeader}
+        </div>
+      )}
       <div className={styles.gridItemContent}>{children}</div>
     </div>
   );
@@ -65,6 +71,7 @@ interface RemainsDashboardProps {
   detailsMoved: React.ReactNode;
   isMobile?: boolean;
   headerContent?: React.ReactNode;
+  subHeader?: React.ReactNode;
   selectedProductId?: string | null;
   onClearSelection?: () => void;
 }
@@ -76,6 +83,7 @@ export default function RemainsDashboard({
   detailsMoved,
   isMobile,
   headerContent,
+  subHeader,
   selectedProductId,
   onClearSelection,
 }: RemainsDashboardProps) {
@@ -113,13 +121,19 @@ export default function RemainsDashboard({
 
   // SSR skeleton
   if (!isClient) {
-    return <div className={styles.mobileLayout}>{productList}</div>;
+    return (
+      <div className={styles.mobileLayout}>
+        {subHeader && <div className={styles.mobileSubHeader}>{subHeader}</div>}
+        {productList}
+      </div>
+    );
   }
 
   // Mobile layout — Bottom Sheet with tabbed details
   if (isMobile) {
     return (
       <div className={styles.mobileLayout}>
+        {subHeader && <div className={styles.mobileSubHeader}>{subHeader}</div>}
         <div className={styles.mobileSection}>{productList}</div>
         
         <BottomSheet
@@ -164,7 +178,7 @@ export default function RemainsDashboard({
         containerPadding={[0, 0]}
       >
         <div key="product-list">
-          <GridItem title="Список продуктів" headerContent={headerContent}>
+          <GridItem title="Список продуктів" headerContent={headerContent} subHeader={subHeader}>
             {productList}
           </GridItem>
         </div>

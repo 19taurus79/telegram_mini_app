@@ -62,8 +62,7 @@ function RemainsContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
-  // const [showButtons, setShowButtons] = useState(true);
-  // const [lastScrollY, setLastScrollY] = useState(0);
+
 
 
   // Синхронізація URL search параметра з контекстом фільтра

@@ -15,7 +15,7 @@ function AvStock() {
   const { selectedGroup, setSelectedGroup, setSelectedSubGroup } = useFilter();
   const [searchValue, setSearchValue] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
   const initData = useInitData((state: InitData) => state.initData);
 
   const { data: productsData, isLoading } = useQuery({
@@ -144,7 +144,7 @@ function AvStock() {
         <ul className={css.filterList}>
           <li 
             className={`${css.filterItem} ${!selectedGroup ? css.activeFilterItem : ''}`}
-            onClick={() => handleGroupSelect(null, null)}
+            onClick={() => handleGroupSelect(null)}
           >
             Усі товари
           </li>

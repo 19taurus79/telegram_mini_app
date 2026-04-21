@@ -6,7 +6,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Search, X, SlidersHorizontal, ChevronRight } from "lucide-react";
+import { ArrowLeft, Search, X, SlidersHorizontal, ChevronRight, Layers, FolderOpen } from "lucide-react";
 import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -62,8 +62,7 @@ function RemainsContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
-  // const [showButtons, setShowButtons] = useState(true);
-  // const [lastScrollY, setLastScrollY] = useState(0);
+
 
 
   // Синхронізація URL search параметра з контекстом фільтра
@@ -192,44 +191,10 @@ function RemainsContent() {
       ? (data || []).filter(item => item.id === selectedProductId)
       : (data || []);
 
-    const showHeader = !(selectedProductId && typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT);
+
 
     return (
       <div className={css.pageContent}>
-        {/* Вбудований пошук — завжди відображається */}
-        {showHeader && (
-          <div className={css.headerWrapper}>
-            <div className={css.searchInterface}>
-              <div className={css.searchWrapper}>
-                <Search size={18} className={css.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Пошук товару..."
-                  className={css.searchInput}
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                />
-                {searchValue && (
-                  <button
-                    className={css.clearSearchBtn}
-                    onClick={() => setSearchValue("")}
-                    aria-label="Очистити пошук"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-              <button 
-                className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
-                onClick={() => setIsFilterOpen(true)}
-                title="Фільтри"
-              >
-                <SlidersHorizontal size={20} />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Стан завантаження / помилки / пустого списку */}
         {isLoading && <p style={{ padding: "10px" }}>Завантаження продуктів...</p>}
         {isError && <p style={{ padding: "10px" }}>Помилка завантаження: {error.message}</p>}
@@ -268,13 +233,17 @@ function RemainsContent() {
                   >
                     <span className={css.productName}>{item.product}</span>
                     <div className={css.productMeta}>
-                      <span>📦 {item.line_of_business || 'Без групи'}</span>
+                      <span className={css.metaTag}>
+                        <Layers size={11} />
+                        {item.line_of_business || 'Без групи'}
+                      </span>
+                      {item.parent_element && (
+                        <span className={css.metaTag}>
+                          <FolderOpen size={11} />
+                          {item.parent_element}
+                        </span>
+                      )}
                     </div>
-                    {item.parent_element && (
-                      <div className={css.productMeta}>
-                        <span>📁 {item.parent_element}</span>
-                      </div>
-                    )}
                     {typeof window !== "undefined" && window.innerWidth < DESKTOP_BREAKPOINT && (
                       <ChevronRight size={18} className={css.chevron} />
                     )}
@@ -345,10 +314,42 @@ function RemainsContent() {
     );
   };
 
+  const renderSearchHeader = () => (
+    <div className={css.searchInterface}>
+      <div className={css.searchWrapper}>
+        <Search size={18} className={css.searchIcon} />
+        <input
+          type="text"
+          placeholder="Пошук товару..."
+          className={css.searchInput}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+        />
+        {searchValue && (
+          <button
+            className={css.clearSearchBtn}
+            onClick={() => setSearchValue("")}
+            aria-label="Очистити пошук"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <button
+        className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
+        onClick={() => setIsFilterOpen(true)}
+        title="Фільтри"
+      >
+        <SlidersHorizontal size={20} />
+      </button>
+    </div>
+  );
+
   return (
     <RemainsDashboard
       isMobile={isMobile}
       headerContent={<DataSourceSwitch dataSource={dataSourceType} setDataSource={setDataSourceType} />}
+      subHeader={renderSearchHeader()}
       productList={renderProductList()}
       detailsRemains={<DetailsRemains selectedProductId={selectedProductId} />}
       detailsOrders={<DetailsOrdersByProduct selectedProductId={selectedProductId} />}

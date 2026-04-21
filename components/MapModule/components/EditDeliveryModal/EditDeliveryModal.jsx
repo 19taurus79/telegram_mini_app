@@ -46,6 +46,7 @@ export default function EditDeliveryModal() {
   const [itemToDelete, setItemToDelete] = useState(null); // Индекс удаляемого товара для модалки подтверждения
   const [selectedItemsToSplit, setSelectedItemsToSplit] = useState({}); // Хранение выбранных чекбоксов { [idx]: boolean }
   const [isSplitting, setIsSplitting] = useState(false); // Флаг загрузки при разделении доставки
+  const [isSaving, setIsSaving] = useState(false); // Флаг процесса сохранения
 
 
   // --- REFS AND HOOKS ---
@@ -429,6 +430,8 @@ export default function EditDeliveryModal() {
       return;
     }
 
+    setIsSaving(true);
+
     // Собираем обновленные данные по доставкам
     const updatedDeliveries = selectedDeliveries.map(delivery => {
       const deliveryUpdatedItems = validatedItems
@@ -489,12 +492,38 @@ export default function EditDeliveryModal() {
           ...d,
           items: d.items.filter(i => i.quantity > 0)
         }));
-        const sorted = [...validDeliveries].sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+
+        // Об'єднуємо замовлення одного клієнта
+        const groupedByClient = validDeliveries.reduce((acc, delivery) => {
+          const client = delivery.client || "Невідомий клієнт";
+          if (!acc[client]) {
+            acc[client] = {
+              client: client,
+              manager: delivery.manager || "",
+              items: [],
+              comments: []
+            };
+          }
+          acc[client].items.push(...delivery.items);
+          if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
+            acc[client].comments.push(delivery.comment);
+          }
+          return acc;
+        }, {});
+
+        const groupedDeliveries = Object.values(groupedByClient).map(group => ({
+          ...group,
+          comment: group.comments.join(" | ")
+        }));
+
+        const sorted = groupedDeliveries.sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
         setPrintData(sorted);
         setIsAskingDate(true);
     } catch (error) {
         console.error("Failed to update deliveries:", error);
         toast.error("Помилка при збереженні змін");
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -514,6 +543,8 @@ export default function EditDeliveryModal() {
       }
       return;
     }
+
+    setIsSaving(true);
 
     // Собираем обновленные данные по доставкам
     const updatedDeliveries = selectedDeliveries.map(delivery => {
@@ -567,6 +598,8 @@ export default function EditDeliveryModal() {
     } catch (error) {
         console.error("Failed to update CO delivery:", error);
         toast.error("Помилка при збереженні змін");
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -933,6 +966,12 @@ export default function EditDeliveryModal() {
         </div>
 
         <div className={css.content}>
+          {isSaving && (
+            <div className={css.loadingOverlay}>
+              <div className={css.spinner} />
+              <span>Збереження...</span>
+            </div>
+          )}
           {/* Левая панель: Товары в доставке */}
           <div className={css.leftPanel}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -1191,6 +1230,7 @@ export default function EditDeliveryModal() {
               <button 
                 className={`${css.button} ${css.coDeliveryButton}`}
                 onClick={handleCODelivery}
+                disabled={isSaving}
                 title="Оформити доставку напряму з Центрального Офісу"
               >
                 🚚 Доставка з ЦО
@@ -1202,12 +1242,14 @@ export default function EditDeliveryModal() {
             <button 
               className={`${css.button} ${css.saveButton}`}
               onClick={handleReady}
+              disabled={isSaving}
             >
-              Готово
+              {isSaving ? "⏳ Збереження..." : "Готово"}
             </button>
             <button 
               className={`${css.button} ${css.printButton}`}
               onClick={handlePrintPreview}
+              disabled={isSaving}
             >
               🖨️ Друк
             </button>

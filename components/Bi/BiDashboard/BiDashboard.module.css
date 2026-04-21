@@ -148,10 +148,28 @@
 }
 
 :global([data-theme='light']) .gridItem {
-  background: rgba(255, 255, 255, 0.7);
+  background: #ffffff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 :global([data-theme='light']) .gridItemHeader {
-  background: rgba(0, 0, 0, 0.02);
+  background: #f8fafc;
+  border-bottom-color: rgba(0, 0, 0, 0.05);
 }
+
+:global([data-theme='light']) .gridItemTitle {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .mobileSectionTitle {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme='light']) .gridItemContent::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+

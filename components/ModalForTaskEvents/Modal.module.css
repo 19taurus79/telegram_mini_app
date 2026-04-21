@@ -74,3 +74,23 @@
   color: #fff;
   z-index: 1;
 }
+
+/* Light Theme */
+:global([data-theme='light']) .modal {
+  background: rgba(255, 255, 255, 0.97);
+  color: var(--foreground);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+:global([data-theme='light']) .closeBtn {
+  color: var(--foreground);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 768px) {
+  :global([data-theme='light']) .modal {
+    background: #fff;
+  }
+}

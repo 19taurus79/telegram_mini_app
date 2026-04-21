@@ -136,6 +136,11 @@
   border-color: rgba(14, 241, 142, 0.2);
 }
 
+:global([data-theme='light']) .groupTitle:hover {
+  background: #f8fafc;
+  border-color: var(--accent-green);
+}
+
 .groupToggle {
   font-size: 12px;
   color: var(--primary-color);
@@ -309,3 +314,61 @@
   }
 }
 
+:global([data-theme='light']) .td {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme='light']) .th {
+  color: #64748b;
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .groupTitle {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme='light']) .groupCount {
+  color: #64748b;
+}
+
+:global([data-theme='light']) .mobileCard {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .cardHeader {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+:global([data-theme='light']) .productName {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .statItem {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .statLabel {
+  color: #64748b;
+}
+
+:global([data-theme='light']) .statValue {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .swipeHint {
+  background: rgba(0, 0, 0, 0.03);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme='light']) .swipeLeftHint, 
+:global([data-theme='light']) .swipeRightHint {
+  color: #334155;
+}

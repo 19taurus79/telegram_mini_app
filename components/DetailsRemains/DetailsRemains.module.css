@@ -333,3 +333,25 @@
   flex-direction: column;
   gap: 10px;
 }
+
+/* ===== COMPREHENSIVE LIGHT THEME FIX ===== */
+:global([data-theme='light']) .tile {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:global([data-theme='light']) .tileValue { color: var(--foreground); }
+:global([data-theme='light']) .tileLabel { color: rgba(0, 0, 0, 0.5); }
+:global([data-theme='light']) .accordionHeader {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:global([data-theme='light']) .accordionHeader:hover {
+  background: rgba(14, 241, 142, 0.07);
+}
+:global([data-theme='light']) .cardValue { color: var(--foreground); }
+:global([data-theme='light']) .cardHeader { border-bottom-color: rgba(0, 0, 0, 0.06); }
+:global([data-theme='light']) .card { background: #ffffff; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+:global([data-theme='light']) .cardLabel { color: rgba(0, 0, 0, 0.55); }
+:global([data-theme='light']) .table tbody tr:hover td { background: rgba(14,241,142,0.06); border-color: rgba(14,241,142,0.3); }
+:global([data-theme='light']) .deficit { color: #dc2626; }
+:global([data-theme='light']) .header, :global([data-theme='light']) .warehouseGroup { border-color: rgba(0,0,0,0.08); }

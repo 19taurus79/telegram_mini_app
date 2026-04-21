@@ -50,14 +50,13 @@
   white-space: nowrap;
 }
 
-@media (prefers-color-scheme: light) {
-  .container {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  .option {
-    color: rgba(0, 0, 0, 0.6);
-  }
-  .option.active {
-    color: #fff;
-  }
+:global([data-theme='light']) .container {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:global([data-theme='light']) .option {
+  color: rgba(0, 0, 0, 0.6);
+}
+:global([data-theme='light']) .option.active {
+  color: #000;
 }

@@ -1,6 +1,5 @@
 import React from 'react';
 import styles from './BottomSheet.module.css';
-import { useSwipeToClose } from '@/hooks/useSwipeToClose';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -12,8 +11,6 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ isOpen, onClose, title, children, footer, isFullHeight }: BottomSheetProps) {
-  const { offsetY, handlers } = useSwipeToClose({ onClose, threshold: 120 });
-
   if (!isOpen) return null;
 
   return (
@@ -23,17 +20,17 @@ export default function BottomSheet({ isOpen, onClose, title, children, footer, 
         onClick={(e) => {
           e.stopPropagation();
         }}
-        style={{ 
-          transform: offsetY > 0 ? `translateY(${offsetY}px)` : undefined,
-          transition: offsetY === 0 ? 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none'
-        }}
       >
-        <div className={styles.dragHandleWrapper} {...handlers}>
+        <div 
+          className={styles.dragHandleWrapper} 
+          onClick={onClose}
+          title="Закрити"
+        >
           <div className={styles.dragHandle} />
         </div>
         
         {title && (
-          <div className={styles.header} {...handlers}>
+          <div className={styles.header}>
             <h3 className={styles.title}>{title}</h3>
           </div>
         )}

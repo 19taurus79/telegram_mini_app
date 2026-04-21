@@ -88,9 +88,9 @@
 }
 
 .toggleButton {
-  background-color: #e0e0e0;
-  color: #000;
-  border: 1px solid #ccc;
+  background-color: var(--glass-bg);
+  color: var(--foreground);
+  border: 1px solid var(--glass-border);
   padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -135,5 +135,14 @@
 
 .customSelectItemMuted {
   padding: 10px;
-  color: var(--foreground-muted, #888);
+  color: var(--foreground-muted, rgba(255,255,255,0.5));
+}
+
+/* Light Theme */
+:global([data-theme='light']) .toggleButton {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+:global([data-theme='light']) .customSelectItem:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }

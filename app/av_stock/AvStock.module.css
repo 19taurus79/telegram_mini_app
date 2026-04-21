@@ -1,85 +1,323 @@
-.listContainer {
+.pageContent {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  list-style: none;
+  min-height: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
 }
 
-.listItemButton {
-  background-color: var(--background);
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+.headerWrapper {
+  flex-shrink: 0;
+  background: var(--glass-bg); /* Matches the main theme container */
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 16px;
+  margin-bottom: 16px; /* Simply pushing the list down */
+}
+
+.searchInterface {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filterBtn {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s;
 }
 
-.listItemButton:hover {
-  background-color: var(
-    --hover-bg-color
-  ); /* или var(--hover-bg), если используешь переменные */
-  color: var(--foreground);
+.filterBtn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.link {
-  display: block;
+.filterBtn.active {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000;
 }
 
 .searchWrapper {
   position: relative;
-  padding: 8px;
-  background-color: var(--secondary-bg-color, rgba(0,0,0,0.03));
-  border-bottom: 1px solid var(--border-color);
+  flex: 1;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 36px 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-size: 14px;
-  box-sizing: border-box;
+  padding: 12px 40px 12px 42px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .searchInput:focus {
-  border-color: var(--primary-color, #0070f3);
-}
-
-.clearBtn {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--foreground);
-  opacity: 0.5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: opacity 0.2s;
-}
-
-.clearBtn:hover {
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.6);
+  border-color: var(--accent-green, #0ef18e);
 }
 
 .searchIcon {
   position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.clearBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.listContainer {
+  list-style: none;
+  padding: 0 16px 30px 16px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.productCard {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+  backdrop-filter: var(--glass-blur, blur(10px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(10px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+  animation: cardSlideIn 0.3s ease-out both;
+}
+
+.productCard:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  width: 100%;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.productName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+  padding-right: 24px;
+}
+
+.productMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.chevron {
+  position: absolute;
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  opacity: 0.4;
-  pointer-events: none;
+  color: rgba(255, 255, 255, 0.3);
 }
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger animation */
+.listContainer li:nth-child(1)  { animation-delay: 0.04s; }
+.listContainer li:nth-child(2)  { animation-delay: 0.08s; }
+.listContainer li:nth-child(3)  { animation-delay: 0.12s; }
+.listContainer li:nth-child(4)  { animation-delay: 0.16s; }
+.listContainer li:nth-child(n+5) { animation-delay: 0.20s; }
+
+/* Light theme support */
+:global([data-theme='light']) .headerWrapper {
+  background: rgba(248, 250, 252, 0.97);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.06);
+}
+:global([data-theme='light']) .productName { color: #0f172a; font-weight: 700; }
+:global([data-theme='light']) .productMeta { color: rgba(15, 23, 42, 0.55); }
+:global([data-theme='light']) .metaItem {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(15, 23, 42, 0.65);
+}
+:global([data-theme='light']) .productCard {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+}
+:global([data-theme='light']) .productCard:active { background: #f8fafc; }
+:global([data-theme='light']) .chevron { opacity: 0.35; color: #334155; }
+:global([data-theme='light']) .searchInput {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+}
+:global([data-theme='light']) .searchInput::placeholder { color: rgba(0,0,0,0.35); }
+:global([data-theme='light']) .searchInput:focus {
+  background: #fff;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(14, 241, 142, 0.12);
+}
+:global([data-theme='light']) .searchIcon { color: rgba(0, 0, 0, 0.35); }
+:global([data-theme='light']) .filterBtn {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.1);
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+:global([data-theme='light']) .filterBtn:active { background: rgba(0,0,0,0.1); }
+
+/* Filter Bottom Sheet */
+.filterList { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.filterItemWrapper { display: flex; flex-direction: column; gap: 4px; }
+.filterItem { 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px; 
+  border-radius: 14px; 
+  background: rgba(255,255,255,0.03); 
+  border: 1px solid rgba(255,255,255,0.05); 
+  color: var(--foreground); 
+  cursor: pointer; 
+  transition: all 0.2s; 
+  font-size: 1rem; 
+}
+@media (min-width: 768px) {
+  .filterItem:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+.filterItem:active { transform: scale(0.98); }
+.activeFilterItem { background: var(--accent-green); color: #000; font-weight: 600; box-shadow: 0 4px 15px rgba(14,241,142,0.3); border-color: var(--accent-green); }
+
+.expandBtn {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  padding: 8px;
+  margin: -8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.expandBtn.expanded {
+  transform: rotate(90deg);
+  opacity: 1;
+  color: var(--accent-green);
+}
+
+.activeFilterItem .expandBtn {
+  color: #000;
+  opacity: 0.8;
+}
+
+.subGroupsList {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px 12px 32px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 0 16px 16px;
+  margin: -10px 8px 8px 8px;
+  gap: 2px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.subGroupItem {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.subGroupItem:active {
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(0.98);
+}
+
+.activeSubGroup {
+  color: var(--accent-green) !important;
+  background: rgba(var(--accent-green-rgb), 0.1);
+  font-weight: 600;
+}
+
+:global([data-theme='light']) .filterItem { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.05); }

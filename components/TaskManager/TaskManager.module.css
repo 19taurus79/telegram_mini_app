@@ -134,3 +134,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Light Theme */
+:global([data-theme='light']) .container {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+}
+:global([data-theme='light']) .section {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:global([data-theme='light']) .section:hover {
+  border-color: rgba(14, 241, 142, 0.4);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+:global([data-theme='light']) .item {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+:global([data-theme='light']) .item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(14, 241, 142, 0.4);
+}

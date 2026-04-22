@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useFilter } from "@/context/FilterContext";
 import styles from "./RemainsFiltersDesktop.module.css";
+import Portal from "@/components/Portal";
 
 interface Group {
   name: string;
@@ -36,11 +37,29 @@ export default function RemainsFiltersDesktop({ groups }: RemainsFiltersDesktopP
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [popoverCoords, setPopoverCoords] = useState({ top: 0, left: 0 });
+
+  // Update popover position when opened
+  useEffect(() => {
+    if (isPopoverOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPopoverCoords({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right - 280 + window.scrollX, // 280 is popover width
+      });
+    }
+  }, [isPopoverOpen]);
 
   // Close popover on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node) && 
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsPopoverOpen(false);
       }
     };
@@ -78,10 +97,6 @@ export default function RemainsFiltersDesktop({ groups }: RemainsFiltersDesktopP
 
   const activeFiltersCount = (selectedGroup ? 1 : 0) + (selectedSubGroup ? 1 : 0);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
@@ -136,8 +151,9 @@ export default function RemainsFiltersDesktop({ groups }: RemainsFiltersDesktopP
           )}
         </div>
         
-        <div style={{ position: "relative" }} ref={popoverRef}>
+        <div style={{ position: "relative" }}>
           <button
+            ref={buttonRef}
             className={`${styles.filterToggleBtn} ${selectedGroup ? styles.active : ""}`}
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}
             title="Всі категорії"
@@ -149,58 +165,68 @@ export default function RemainsFiltersDesktop({ groups }: RemainsFiltersDesktopP
           </button>
 
           {isPopoverOpen && (
-            <div className={styles.popoverContent}>
-              <div className={styles.popoverHeader}>Категорії та підгрупи</div>
-              <ul className={styles.popoverList}>
-                {groups.map((group) => {
-                  const isActive = (group.name === "Всі" && selectedGroup === "") || group.name === selectedGroup;
-                  const isExpanded = expandedGroup === group.name;
-                  
-                  return (
-                    <li key={group.name}>
-                      <div
-                        className={`${styles.popoverItem} ${isActive ? styles.popoverItemActive : ""}`}
-                        onClick={() => {
-                          if (group.subGroups.length > 0) {
-                            setExpandedGroup(isExpanded ? null : group.name);
-                          } else {
-                            handleGroupSelect(group.name);
-                          }
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          {getIcon(group.name)}
-                          <span>{group.name}</span>
+            <Portal>
+              <div 
+                className={styles.popoverContent} 
+                ref={popoverRef}
+                style={{
+                  top: popoverCoords.top,
+                  left: popoverCoords.left,
+                  position: "absolute"
+                }}
+              >
+                <div className={styles.popoverHeader}>Категорії та підгрупи</div>
+                <ul className={styles.popoverList}>
+                  {groups.map((group) => {
+                    const isActive = (group.name === "Всі" && selectedGroup === "") || group.name === selectedGroup;
+                    const isExpanded = expandedGroup === group.name;
+                    
+                    return (
+                      <li key={group.name}>
+                        <div
+                          className={`${styles.popoverItem} ${isActive ? styles.popoverItemActive : ""}`}
+                          onClick={() => {
+                            if (group.subGroups.length > 0) {
+                              setExpandedGroup(isExpanded ? null : group.name);
+                            } else {
+                              handleGroupSelect(group.name);
+                            }
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            {getIcon(group.name)}
+                            <span>{group.name}</span>
+                          </div>
+                          {group.subGroups.length > 0 && (
+                            <ChevronRight 
+                              size={16} 
+                              style={{ 
+                                transform: isExpanded ? "rotate(90deg)" : "none",
+                                transition: "transform 0.3s ease" 
+                              }} 
+                            />
+                          )}
                         </div>
-                        {group.subGroups.length > 0 && (
-                          <ChevronRight 
-                            size={16} 
-                            style={{ 
-                              transform: isExpanded ? "rotate(90deg)" : "none",
-                              transition: "transform 0.3s ease" 
-                            }} 
-                          />
+                        
+                        {isExpanded && group.subGroups.length > 0 && (
+                          <div className={styles.subGroupList}>
+                            {group.subGroups.map(sub => (
+                              <div 
+                                key={sub} 
+                                className={`${styles.subGroupItem} ${selectedSubGroup === sub ? styles.subGroupActive : ""}`}
+                                onClick={() => handleSubGroupSelect(group.name, sub)}
+                              >
+                                {sub}
+                              </div>
+                            ))}
+                          </div>
                         )}
-                      </div>
-                      
-                      {isExpanded && group.subGroups.length > 0 && (
-                        <div className={styles.subGroupList}>
-                          {group.subGroups.map(sub => (
-                            <div 
-                              key={sub} 
-                              className={`${styles.subGroupItem} ${selectedSubGroup === sub ? styles.subGroupActive : ""}`}
-                              onClick={() => handleSubGroupSelect(group.name, sub)}
-                            >
-                              {sub}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </Portal>
           )}
         </div>
       </div>

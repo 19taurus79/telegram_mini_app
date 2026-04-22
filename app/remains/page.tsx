@@ -16,6 +16,7 @@ import type { InitData } from "@/store/InitData";
 import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashboard";
 import DataSourceSwitch from "@/components/DataSourceSwitch/DataSourceSwitch";
 import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
+import RemainsFiltersDesktop from "./RemainsFiltersDesktop";
 
 const DESKTOP_BREAKPOINT = 768;
 
@@ -314,36 +315,42 @@ function RemainsContent() {
     );
   };
 
-  const renderSearchHeader = () => (
-    <div className={css.searchInterface}>
-      <div className={css.searchWrapper}>
-        <Search size={18} className={css.searchIcon} />
-        <input
-          type="text"
-          placeholder="Пошук товару..."
-          className={css.searchInput}
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-        />
-        {searchValue && (
+  const renderSearchHeader = () => {
+    if (isMobile) {
+      return (
+        <div className={css.searchInterface}>
+          <div className={css.searchWrapper}>
+            <Search size={18} className={css.searchIcon} />
+            <input
+              type="text"
+              placeholder="Пошук товару..."
+              className={css.searchInput}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+            {searchValue && (
+              <button
+                className={css.clearSearchBtn}
+                onClick={() => setSearchValue("")}
+                aria-label="Очистити пошук"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <button
-            className={css.clearSearchBtn}
-            onClick={() => setSearchValue("")}
-            aria-label="Очистити пошук"
+            className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
+            onClick={() => setIsFilterOpen(true)}
+            title="Фільтри"
           >
-            <X size={14} />
+            <SlidersHorizontal size={20} />
           </button>
-        )}
-      </div>
-      <button
-        className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
-        onClick={() => setIsFilterOpen(true)}
-        title="Фільтри"
-      >
-        <SlidersHorizontal size={20} />
-      </button>
-    </div>
-  );
+        </div>
+      );
+    }
+
+    return <RemainsFiltersDesktop groups={groupsWithParents} />;
+  };
 
   return (
     <RemainsDashboard

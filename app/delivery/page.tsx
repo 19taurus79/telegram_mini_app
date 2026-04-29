@@ -4,7 +4,7 @@ import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { getAddressByClient, sendDeliveryData } from "@/lib/api";
-import NovaPoshtaSelector from "@/components/NovaPoshta/NovaPoshtaSelector";
+import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -140,7 +140,7 @@ function DeliveryDataContent() {
     isPickup: false,
     isNP: false,
   });
-  const [npSelection, setNpSelection] = useState<any>(null);
+  const [npSelection, setNpSelection] = useState<NPSelection | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isAddressChange, setIsAddressChange] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -617,10 +617,10 @@ function DeliveryDataContent() {
                                 quantity: item.quantity,
                                 order_ref: order.order,
                                 parties: (() => {
-                                    const activeParties = (item.parties || []).map((p: any) => ({
+                                    const activeParties = (item.parties || []).map((p: Party) => ({
                                         party: p.party || "",
                                         moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                    })).filter((p: any) => p.moved_q > 0);
+                                    })).filter((p: { party: string; moved_q: number }) => p.moved_q > 0);
                                     if (activeParties.length === 0 && item.quantity > 0) {
                                         return [{ party: "", moved_q: item.quantity }];
                                     }

@@ -162,7 +162,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
     };
     
     fetchWarehouses();
-  }, [selectedCity?.settlement_ref, deliveryType, initData]); // Corrected deps to fix ESLint warning
+  }, [selectedCity?.settlement_ref, selectedCity?.ref, deliveryType, initData]); // Corrected deps to fix ESLint warning
 
   // Company Search by EDRPOU/IPN
   useEffect(() => {

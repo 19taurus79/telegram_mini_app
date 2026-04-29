@@ -182,22 +182,19 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
         {selectedDeliveries.length > 1 && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button 
-              className={css.batchBtn} 
-              style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              className={`${css.batchBtn} ${css.batchBtnGreen}`}
               onClick={() => setIsBatchStatusModalOpen(true)}
             >
-              ✓ Статус (гр.)
+              🔄 Статус (масово)
             </button>
             <button 
-              className={css.batchBtn} 
-              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              className={`${css.batchBtn} ${css.batchBtnBlue}`}
               onClick={() => { setIsBatchDateModalOpen(true); setNewBatchDate(""); }}
             >
-              📅 Дата (гр.)
+              📅 Дата (масово)
             </button>
             <button 
-              className={css.batchBtn} 
-              style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              className={`${css.batchBtn} ${css.batchBtnPurple}`}
               onClick={() => clearSelectedDeliveries()}
             >
               Скинути

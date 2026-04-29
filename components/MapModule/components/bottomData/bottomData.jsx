@@ -550,14 +550,14 @@ export default function BottomData({ onEditClient }) {
                   onClick={() => setIsBatchStatusModalOpen(true)}
                   title={checkedDeliveryIds.size > 0 ? `Змінити статус обраним (${checkedDeliveryIds.size})` : `Змінити статус ВСІМ (${selectedDeliveries.length})`}
                 >
-                  ✓ Статус (гр.)
+                  🔄 Статус (масово)
                 </button>
                 <button 
                   className={`${css.deliveryEditBtn} ${css.btnBlue}`} 
                   onClick={() => { setIsBatchDateModalOpen(true); setNewDate(""); }}
                   title={checkedDeliveryIds.size > 0 ? `Змінити дату обраним (${checkedDeliveryIds.size})` : `Змінити дату ВСІМ (${selectedDeliveries.length})`}
                 >
-                  📅 Дата (гр.)
+                  📅 Дата (масово)
                 </button>
                 {checkedDeliveryIds.size > 0 && <button className={css.deliveryEditBtn} onClick={() => setCheckedDeliveryIds(new Set())} style={{ background: '#eee', color: '#333' }}>Скинути ({checkedDeliveryIds.size})</button>}
               </div>

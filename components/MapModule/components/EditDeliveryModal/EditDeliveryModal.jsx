@@ -388,9 +388,10 @@ export default function EditDeliveryModal() {
     stockRemains.forEach(r => {
       const key = (r.nomenclature_series || "").trim().toLowerCase();
       if (!key) return;
-      if (!map[key]) map[key] = { totalBuh: 0, totalSkl: 0 };
+      if (!map[key]) map[key] = { totalBuh: 0, totalSkl: 0, totalStorage: 0 };
       map[key].totalBuh += parseFloat(r.buh) || 0;
       map[key].totalSkl += parseFloat(r.skl) || 0;
+      map[key].totalStorage += parseFloat(r.storage) || 0;
     });
     return map;
   }, [stockRemains]);
@@ -408,7 +409,11 @@ export default function EditDeliveryModal() {
     if (!stock) return 'missing';
     const qty = parseFloat(partyQty) || 0;
     if (qty <= 0) return 'unknown';
-    return (stock.totalBuh >= qty && stock.totalSkl >= qty) ? 'ok' : 'low';
+    
+    const realBuh = stock.totalBuh - stock.totalStorage;
+    const realSkl = stock.totalSkl - stock.totalStorage;
+    
+    return (realBuh >= qty && realSkl >= qty) ? 'ok' : 'low';
   };
 
   // --- MAIN ACTION HANDLERS ---
@@ -1093,9 +1098,10 @@ export default function EditDeliveryModal() {
                                           {(() => {
                                             const key = (p.party || '').trim().toLowerCase();
                                             const st = partyStockMap[key];
-                                            return st
-                                              ? `Бух: ${st.totalBuh.toFixed(0)} · Скл: ${st.totalSkl.toFixed(0)}`
-                                              : 'Немає в залишках';
+                                            if (!st) return 'Немає в залишках';
+                                            const realBuh = st.totalBuh - st.totalStorage;
+                                            const realSkl = st.totalSkl - st.totalStorage;
+                                            return `Бух: ${realBuh.toFixed(0)} · Скл: ${realSkl.toFixed(0)}`;
                                           })()}
                                         </div>
                                       )}

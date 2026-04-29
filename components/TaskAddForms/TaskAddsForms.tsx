@@ -14,16 +14,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Client } from "@/types/types";
-
-// --- Start of Typing ---
+import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 
 // Specific value types for each form
 interface NPFormValues {
   order: string;
   product: string;
-  client: string;
-  where: string;
-  payment: string;
+  npSelection: NPSelection | null;
 }
 
 interface PDFormValues {
@@ -32,34 +29,21 @@ interface PDFormValues {
   subdivision: string;
   who: string;
 }
-interface EXWFormValues {
-  documentType: "видаткова" | "доповнення";
-  date: string;
-  client: string;
-  order: string;
-  product: string;
-  car_model: string;
-  car_number: string;
-  car_weight: string;
-  trailer_number: string;
-  trailer_weight: string;
-  driver_name: string;
-  address: string;
-}
+
 
 interface FREEFormValues {
   note: string;
 }
 
 // A union of all possible value types
-type AllFormValues = NPFormValues | PDFormValues | EXWFormValues | FREEFormValues;
+type AllFormValues = NPFormValues | PDFormValues | FREEFormValues;
 
 // Type for a single form field - now generic to be type-safe
 interface FormField<T> {
   name: keyof T;
   label: string;
   type?: string;
-  as?: "input" | "textarea" | "buttongroup" | "custom_select";
+  as?: "input" | "textarea" | "buttongroup" | "custom_select" | "novaposhta";
   rows?: number;
   options?: { value: string; label: string }[];
   dataType?: "clients";
@@ -80,7 +64,7 @@ interface FormConfig<T extends AllFormValues> {
 const formConfigs: {
   NP: FormConfig<NPFormValues>;
   PD: FormConfig<PDFormValues>;
-  EXW: FormConfig<EXWFormValues>;
+
   FREE: FormConfig<FREEFormValues>;
 } = {
   NP: {
@@ -88,9 +72,7 @@ const formConfigs: {
     initialValues: {
       order: "",
       product: "",
-      client: "",
-      where: "",
-      payment: "",
+      npSelection: null,
     },
     fields: [
       { name: "order", label: "Номер доповнення", type: "text" },
@@ -100,16 +82,29 @@ const formConfigs: {
         as: "textarea",
         rows: 3,
       },
-      { name: "client", label: "Отримувач", type: "text" },
-      { name: "where", label: "Куди відправити", type: "text" },
-      { name: "payment", label: "Платник", type: "text" },
+      { name: "npSelection", label: "Доставка", as: "novaposhta" },
     ],
-    createNote: (values) =>
-      `Доповнення: ${values.order}
-Товар: ${values.product}
-Отримувач: ${values.client}
-Куди відправити: ${values.where}
-Платник: ${values.payment}`,
+    createNote: (values) => {
+      const { order, product, npSelection } = values;
+      let note = `Доповнення: ${order}\nТовар: ${product}`;
+      
+      if (npSelection) {
+        const city = npSelection.city?.main_description || "";
+        const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
+                            npSelection.deliveryType === "postomat" ? "Поштомат" : "Адреса";
+        const warehouse = npSelection.warehouse?.description || npSelection.address;
+        
+        note += `\nМісто: ${city}\nДоставка: ${deliveryType}\nПункт: ${warehouse}`;
+        
+        if (npSelection.recipientType === "company") {
+          note += `\nОтримувач: ${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou})`;
+        }
+        
+        note += `\nПлатник: ${npSelection.payer === "sender" ? "Відправник" : "Отримувач"}`;
+        note += `\nВид оплати: ${npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий"}`;
+      }
+      return note;
+    },
     title: "Нова Пошта",
   },
   PD: {
@@ -142,78 +137,7 @@ const formConfigs: {
 Погоджено з: ${values.who}`,
     title: "Товар по домовленості",
   },
-  EXW: {
-    legend: "Дані для оформлення самовивозу зі складу",
-    initialValues: {
-      documentType: "доповнення",
-      date: "", // Set to empty string to prevent hydration error
-      client: "",
-      order: "",
-      product: "",
-      car_model: "",
-      car_number: "",
-      car_weight: "",
-      trailer_number: "",
-      trailer_weight: "",
-      driver_name: "",
-      address: "",
-    },
-    fields: [
-      {
-        name: "documentType",
-        label: "Тип документу",
-        as: "buttongroup",
-        options: [
-          { value: "доповнення", label: "Доповнення" },
-          { value: "видаткова", label: "Видаткова" },
-        ],
-      },
-      { name: "date", label: "Дата самовивозу", type: "date" },
-      {
-        name: "client",
-        label: "Клієнт",
-        as: "custom_select",
-        dataType: "clients",
-      },
-      { name: "order", label: "Номер документу", type: "text" },
-      {
-        name: "product",
-        label: "Товар з кількістю",
-        as: "textarea",
-        rows: 3,
-      },
-      { name: "car_model", label: "Марка авто", type: "text" },
-      { name: "car_number", label: "Номер авто", type: "text" },
-      {
-        name: "car_weight",
-        label: "Вага авто без навантаження (т)",
-        type: "text",
-      },
-      { name: "trailer_number", label: "Номер причепа", type: "text" },
-      {
-        name: "trailer_weight",
-        label: "Вага причепа без навантаження (т)",
-        type: "text",
-      },
-      { name: "driver_name", label: "ПІБ водія", type: "text" },
-      { name: "address", label: "Адреса розвантаження", type: "text" },
-    ],
-    createNote: (values) =>
-      `Дата самовивозу: ${values.date}
-Клієнт: ${values.client}
-${
-        values.documentType === "видаткова" ? "Видаткова" : "Доповнення"
-      }: ${values.order}
-Товар: ${values.product}
-Марка авто: ${values.car_model}
-Номер авто: ${values.car_number}
-Вага авто без навантаження (т): ${values.car_weight}
-Номер причепа: ${values.trailer_number}
-Вага причепа без навантаження (т): ${values.trailer_weight}
-ПІБ водія: ${values.driver_name}
-Адреса розвантаження: ${values.address}`,
-    title: "Самовивіз",
-  },
+
   FREE: {
     legend: "Довільна форма",
     initialValues: {
@@ -404,6 +328,16 @@ const GenericTaskForm = <T extends AllFormValues>({
                 );
               }
 
+              if (field.as === "novaposhta") {
+                return (
+                  <div className={css.fieldContainer} key={field.name as string}>
+                    <NovaPoshtaSelector 
+                      onSelect={(selection) => formikProps.setFieldValue(field.name as string, selection)}
+                    />
+                  </div>
+                );
+              }
+
               return (
                 <div
                   className={css.fieldContainer}
@@ -540,18 +474,7 @@ export default function TaskForm() {
           isClientsLoading={isClientsLoading}
         />
       );
-    case "EXW":
-      return (
-        <GenericTaskForm
-          config={formConfigs.EXW}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          clients={clients}
-          clientSearch={clientSearch}
-          setClientSearch={setClientSearch}
-          isClientsLoading={isClientsLoading}
-        />
-      );
+
     case "FREE":
       return (
         <GenericTaskForm

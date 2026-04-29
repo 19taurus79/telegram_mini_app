@@ -1,148 +1,296 @@
+/* Premium Glassmorphism Form Container */
 .form {
-  max-width: 400px;
-  margin: auto;
-  padding: 20px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--background);
+  max-width: 500px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 32px;
+  background: var(--glass-bg, rgba(25, 25, 35, 0.6));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  color: var(--foreground);
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .form {
+    padding: 20px;
+    border-radius: 16px;
+    margin: 10px auto;
+  }
+}
+
+.fieldset {
+  border: none;
+  padding: 0;
+  margin-bottom: 28px;
+  background: transparent;
+}
+
+.legend {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--foreground);
+  padding: 0 0 16px 0;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  margin-bottom: 24px;
+  display: block;
+  width: 100%;
+  text-align: left;
+  letter-spacing: -0.015em;
 }
 
 .fieldContainer {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
 }
 
 .label {
-  margin-bottom: 5px;
-  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--foreground);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .field {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--background);
+  padding: 14px 16px;
+  font-size: 1rem;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
   color: var(--foreground);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.field:focus {
+  border-color: #0070f3;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(0, 112, 243, 0.25);
+}
+
+/* Auto-resize for textarea */
+textarea.field {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
 }
 
 .error {
-  color: red;
-  margin-top: 5px;
-  font-size: 14px;
+  color: #ff4d4f;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btnContainer {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.submitButton, .cancelButton {
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
 }
 
 .submitButton {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  background-color: green;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
-}
-.cancelButton {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  background-color: yellow;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
+  background: linear-gradient(135deg, #0070f3 0%, #005bb5 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+  flex: 2;
 }
 
 .submitButton:hover {
-  background-color: #005bb5;
-}
-.legend {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: var(--foreground);
-  padding: 5px 10px;
-  border-bottom: 2px solid #0070f3;
-  margin-bottom: 15px;
-  display: block;
-  width: fit-content;
-  text-align: center;
-}
-.fieldset {
-  border: 2px solid #0070f3; /* цвет рамки */
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  background-color: var(--background); /* светлый фон */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 112, 243, 0.4);
+  background: linear-gradient(135deg, #007aff 0%, #0062c9 100%);
 }
 
-.btnContainer {
-  display: flex;
-  justify-content: space-between;
+.submitButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.3);
 }
-/* / For the Button Group (theme-independent style) / .toggleButtonContainer { */
+
+.cancelButton {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  flex: 1;
+}
+
+.cancelButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Button Group Options */
 .toggleButtonContainer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.05));
 }
 
 .toggleButton {
-  background-color: var(--glass-bg);
+  flex: 1;
+  background: transparent;
   color: var(--foreground);
-  border: 1px solid var(--glass-border);
-  padding: 8px 12px;
-  border-radius: 4px;
+  opacity: 0.7;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0.9;
 }
 
 .toggleButtonSelected {
-  background-color: #0070f3;
-  color: #fff;
-  border: 1px solid #0070f3;
-  padding: 8px 12px;
-  border-radius: 4px;
+  flex: 1;
+  background: #0070f3;
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+  opacity: 1;
 }
 
-/* / For the Custom Select (theme-aware style) / */
+/* Custom Select Dropdown */
 .customSelectContainer {
   position: relative;
+  width: 100%;
 }
 
 .customSelectDropdown {
   position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
   width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--background);
-  max-height: 200px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  background: var(--dropdown-bg, rgba(25, 25, 35, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-height: 240px;
   overflow-y: auto;
-  z-index: 100;
-  margin-top: 4px;
+  z-index: 1000;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+}
+
+/* Scrollbar for dropdown */
+.customSelectDropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.customSelectDropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.customSelectDropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
 .customSelectItem {
-  padding: 10px;
+  padding: 12px 16px;
   cursor: pointer;
   white-space: normal;
   color: var(--foreground);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
 }
 
 .customSelectItem:hover {
-  background-color: var(--background-hover, #f0f0f0);
+  background: rgba(255, 255, 255, 0.08);
+  padding-left: 20px; /* Slight indent on hover */
 }
 
 .customSelectItemMuted {
-  padding: 10px;
-  color: var(--foreground-muted, rgba(255,255,255,0.5));
+  padding: 16px;
+  color: var(--foreground-muted, rgba(255,255,255,0.4));
+  font-size: 0.9rem;
+  text-align: center;
+  font-style: italic;
 }
 
-/* Light Theme */
-:global([data-theme='light']) .toggleButton {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.12);
+/* Light Theme Overrides */
+:global([data-theme='light']) .form {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
 }
+
+:global([data-theme='light']) .legend {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .field {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme='light']) .field:focus {
+  background: #ffffff;
+}
+
+:global([data-theme='light']) .cancelButton {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-theme='light']) .cancelButton:hover {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .toggleButtonContainer {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .toggleButton:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme='light']) .customSelectDropdown {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+}
+
 :global([data-theme='light']) .customSelectItem:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.05);
 }

@@ -303,9 +303,10 @@ textarea.modalInput {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--accent-green);
+  color: #fff;
+  opacity: 0.6;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -773,4 +774,60 @@ textarea.modalInput {
   60% { transform: translateX(0) rotate(1deg); opacity: 1; }
   75% { transform: translateX(400px); opacity: 1; }
   100% { transform: translateX(500px); opacity: 0; }
+}
+
+/* Nova Poshta Integration Styles */
+.deliveryTabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.deliveryTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.5;
+}
+
+.deliveryTab.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+  opacity: 1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.npSection {
+  animation: fadeIn 0.3s ease-out;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+:global([data-theme='light']) .deliveryTabs {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .deliveryTab {
+  color: var(--foreground);
+}
+
+:global([data-theme='light']) .deliveryTab.active {
+  background: #fff;
+  color: #10b981;
 }

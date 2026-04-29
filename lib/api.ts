@@ -634,11 +634,12 @@ export const checkEventInProgress = async (
 
   return data;
 };
-export const checkTaskCompleted = async (taskId: string, initData: string) => {
+export const checkTaskCompleted = async (taskId: string, initData: string, solution: string) => {
   const { data } = await axios.patch(
     `/data/task_completed`,
     {
       tasks_status: 2,
+      solution,
     },
     {
       params: {
@@ -1166,6 +1167,75 @@ export const sendChatNotification = async (
       },
     }
   );
+};
+
+// --- Nova Poshta API ---
+
+export interface NPCity {
+  present: string;
+  main_description: string;
+  area: string;
+  region: string;
+  settlement_ref: string;
+  ref: string;
+}
+
+export interface NPWarehouse {
+  description: string;
+  ref: string;
+  number: string;
+  type_ref: string;
+  post_machine: boolean;
+}
+
+export interface NPStreet {
+  ref: string;
+  description: string;
+  street_type: string;
+}
+
+export interface NPCounterparty {
+  Description: string;
+  Ref: string;
+  EDRPOU: string;
+}
+
+export interface NPResponse<T> {
+  success: boolean;
+  data: T;
+  errors?: string[];
+}
+
+export const getNPCities = async (q: string, initData: string): Promise<NPResponse<NPCity[]>> => {
+  const { data } = await axios.get<NPResponse<NPCity[]>>(`/nova-poshta/cities`, {
+    params: { q },
+    headers: { 'X-Telegram-Init-Data': initData }
+  });
+  return data;
+};
+
+export const getNPWarehouses = async (cityRef: string, initData: string, q?: string, typeRef?: string): Promise<NPResponse<NPWarehouse[]>> => {
+  const { data } = await axios.get<NPResponse<NPWarehouse[]>>(`/nova-poshta/warehouses`, {
+    params: { city_ref: cityRef, q, type_ref: typeRef },
+    headers: { 'X-Telegram-Init-Data': initData }
+  });
+  return data;
+};
+
+export const getNPStreets = async (cityRef: string, q: string, initData: string): Promise<NPResponse<NPStreet[]>> => {
+  const { data } = await axios.get<NPResponse<NPStreet[]>>(`/nova-poshta/streets`, {
+    params: { city_ref: cityRef, q },
+    headers: { 'X-Telegram-Init-Data': initData }
+  });
+  return data;
+};
+
+export const getNPCounterparty = async (edrpou: string, initData: string): Promise<NPResponse<NPCounterparty[]>> => {
+  const { data } = await axios.get<NPResponse<NPCounterparty[]>>(`/nova-poshta/counterparty`, {
+    params: { edrpou },
+    headers: { 'X-Telegram-Init-Data': initData }
+  });
+  return data;
 };
 
 export default axios;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { getNPCities, getNPWarehouses, getNPCounterparty, getNPStreets, NPCity, NPWarehouse } from "@/lib/api";
+import { getNPCities, getNPWarehouses, getNPCounterparty, getNPStreets, NPCity, NPWarehouse, NPStreet } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
 import css from "./NovaPoshtaSelector.module.css";
 import { 
@@ -12,10 +12,8 @@ import {
   Box, 
   User, 
   Building, 
-  CreditCard, 
   Loader2,
-  ChevronDown,
-  X
+  ChevronDown
 } from "lucide-react";
 
 export type NPDeliveryType = "branch" | "postomat" | "address";
@@ -33,7 +31,7 @@ export interface NPSelection {
   companyEdrpou: string;
   payer: NPPayerType;
   paymentMethod: NPPaymentMethod;
-  street: any | null;
+  street: NPStreet | null;
   house: string;
   isValid: boolean;
 }
@@ -61,8 +59,6 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
   const [isWarehouseLoading, setIsWarehouseLoading] = useState(false);
   const [showWarehouseDropdown, setShowWarehouseDropdown] = useState(false);
   
-  const [address, setAddress] = useState(initialSelection?.address || "");
-  
   const [recipientType, setRecipientType] = useState<NPRecipientType>(initialSelection?.recipientType || "person");
   const [companySearch, setCompanySearch] = useState(initialSelection?.companyEdrpou || "");
   const [companyName, setCompanyName] = useState(initialSelection?.companyName || "");
@@ -72,8 +68,8 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
   const [paymentMethod, setPaymentMethod] = useState<NPPaymentMethod>(initialSelection?.paymentMethod || "cash");
   
   const [streetSearch, setStreetSearch] = useState("");
-  const [streets, setStreets] = useState<any[]>([]);
-  const [selectedStreet, setSelectedStreet] = useState<any | null>(initialSelection?.street || null);
+  const [streets, setStreets] = useState<NPStreet[]>([]);
+  const [selectedStreet, setSelectedStreet] = useState<NPStreet | null>(initialSelection?.street || null);
   const [house, setHouse] = useState(initialSelection?.house || "");
   const [isStreetLoading, setIsStreetLoading] = useState(false);
   const [showStreetDropdown, setShowStreetDropdown] = useState(false);
@@ -151,7 +147,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         const res = await getNPWarehouses(selectedCity.settlement_ref, initData, undefined, undefined);
         if (res.success) {
           // Strict filtering based on the backend's post_machine flag
-          const filtered = res.data.filter((w: any) => {
+          const filtered = res.data.filter((w: NPWarehouse) => {
             if (deliveryType === "postomat") return w.post_machine === true;
             if (deliveryType === "branch") return w.post_machine === false;
             return true;
@@ -166,7 +162,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
     };
     
     fetchWarehouses();
-  }, [selectedCity?.ref, deliveryType]); // Remove initData from deps to avoid re-fetches if it changes
+  }, [selectedCity?.settlement_ref, deliveryType, initData]); // Corrected deps to fix ESLint warning
 
   // Company Search by EDRPOU/IPN
   useEffect(() => {

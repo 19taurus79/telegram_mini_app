@@ -1188,6 +1188,18 @@ export interface NPWarehouse {
   post_machine: boolean;
 }
 
+export interface NPStreet {
+  ref: string;
+  description: string;
+  street_type: string;
+}
+
+export interface NPCounterparty {
+  Description: string;
+  Ref: string;
+  EDRPOU: string;
+}
+
 export interface NPResponse<T> {
   success: boolean;
   data: T;
@@ -1210,16 +1222,16 @@ export const getNPWarehouses = async (cityRef: string, initData: string, q?: str
   return data;
 };
 
-export const getNPStreets = async (cityRef: string, q: string, initData: string): Promise<any> => {
-  const { data } = await axios.get(`/nova-poshta/streets`, {
+export const getNPStreets = async (cityRef: string, q: string, initData: string): Promise<NPResponse<NPStreet[]>> => {
+  const { data } = await axios.get<NPResponse<NPStreet[]>>(`/nova-poshta/streets`, {
     params: { city_ref: cityRef, q },
     headers: { 'X-Telegram-Init-Data': initData }
   });
   return data;
 };
 
-export const getNPCounterparty = async (edrpou: string, initData: string): Promise<any> => {
-  const { data } = await axios.get(`/nova-poshta/counterparty`, {
+export const getNPCounterparty = async (edrpou: string, initData: string): Promise<NPResponse<NPCounterparty[]>> => {
+  const { data } = await axios.get<NPResponse<NPCounterparty[]>>(`/nova-poshta/counterparty`, {
     params: { edrpou },
     headers: { 'X-Telegram-Init-Data': initData }
   });

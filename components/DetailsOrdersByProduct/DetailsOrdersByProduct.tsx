@@ -117,41 +117,70 @@ export default function DetailsOrdersByProduct({
   }, [data]);
 
   // Аналіз вільних залишків по партіях
-  const partyAnalysis = useMemo(() => {
-    if (!remainsData && !movedProducts) return [];
+  const { partyList, partyTotals } = useMemo(() => {
+    if (!remainsData && !movedProducts) return { partyList: [], partyTotals: null };
     
     // Групуємо залишки
-    const map = new Map<string, { buh: number; skl: number; moved: number }>();
+    const map = new Map<string, { buh: number; skl: number; moved: number; warehouses: Set<string> }>();
+    let totalBuh = 0;
+    let totalSkl = 0;
+    let totalMoved = 0;
+    const allWarehouses = new Set<string>();
     
     if (remainsData) {
       remainsData.forEach(r => {
         const party = (r.nomenclature_series || "Без серії").trim();
-        const current = map.get(party) || { buh: 0, skl: 0, moved: 0 };
-        current.buh += parseFloat(String(r.buh)) || 0;
-        current.skl += parseFloat(String(r.skl)) || 0;
+        const current = map.get(party) || { buh: 0, skl: 0, moved: 0, warehouses: new Set<string>() };
+        const b = parseFloat(String(r.buh)) || 0;
+        const s = parseFloat(String(r.skl)) || 0;
+        current.buh += b;
+        current.skl += s;
+        if (r.warehouse) {
+          current.warehouses.add(r.warehouse);
+          allWarehouses.add(r.warehouse);
+        }
         map.set(party, current);
+        
+        totalBuh += b;
+        totalSkl += s;
       });
     }
     
     if (movedProducts) {
       movedProducts.forEach(m => {
         const party = (m.party_sign_y || "Без серії").trim();
-        const current = map.get(party) || { buh: 0, skl: 0, moved: 0 };
-        current.moved += parseFloat(String(m.qt_moved)) || 0;
+        const current = map.get(party) || { buh: 0, skl: 0, moved: 0, warehouses: new Set<string>() };
+        const mQty = parseFloat(String(m.qt_moved)) || 0;
+        current.moved += mQty;
         map.set(party, current);
+        
+        totalMoved += mQty;
       });
     }
     
-    return Array.from(map.entries()).map(([party, stats]) => {
+    const list = Array.from(map.entries()).map(([party, stats]) => {
       return {
          party,
          buh: stats.buh,
          skl: stats.skl,
          moved: stats.moved,
          freeBuh: stats.buh - stats.moved,
-         freeSkl: stats.skl - stats.moved
+         freeSkl: stats.skl - stats.moved,
+         warehouses: Array.from(stats.warehouses)
       };
     }).sort((a, b) => (b.freeSkl - a.freeSkl));
+
+    return { 
+      partyList: list, 
+      partyTotals: {
+        buh: totalBuh,
+        skl: totalSkl,
+        moved: totalMoved,
+        freeBuh: totalBuh - totalMoved,
+        freeSkl: totalSkl - totalMoved,
+        warehouses: Array.from(allWarehouses)
+      } 
+    };
   }, [remainsData, movedProducts]);
 
   if (!selectedProductId) {
@@ -183,9 +212,26 @@ export default function DetailsOrdersByProduct({
   return (
       <div className={css.container}>
         {/* Таблиця аналізу партій */}
-        {partyAnalysis.length > 0 && (
+        {partyList.length > 0 && (
           <div className={css.analysisSection}>
-            <h3 className={css.analysisTitle}>📦 Аналіз вільного товару по партіях</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              <h3 className={css.analysisTitle} style={{ margin: 0 }}>📦 Аналіз вільного товару по партіях</h3>
+              {partyTotals && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                  {partyTotals.warehouses.length > 0 && (
+                    <span style={{ fontSize: '13px', background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🏢 Склад: <strong style={{ opacity: 0.9 }}>{partyTotals.warehouses.join(', ')}</strong>
+                    </span>
+                  )}
+                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: '#4ade80', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
+                    Загальний Бух: <strong>{partyTotals.buh.toFixed(2)}</strong>
+                  </span>
+                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: '#4ade80', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
+                    Загальний Скл: <strong>{partyTotals.skl.toFixed(2)}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
             <table className={css.table}>
               <thead>
                 <tr>
@@ -196,14 +242,19 @@ export default function DetailsOrdersByProduct({
                 </tr>
               </thead>
               <tbody>
-                {partyAnalysis.map((p, idx) => (
+                {partyList.map((p, idx) => (
                   <tr 
                     key={idx} 
                     onClick={() => onPartyClick?.(p.party)}
                     style={{ cursor: onPartyClick ? 'pointer' : 'default' }}
                     className={onPartyClick ? css.rowSelectable : ""}
                   >
-                    <td style={{ fontWeight: 600 }}>{p.party}</td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{p.party}</div>
+                      {p.warehouses.length > 0 && (
+                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>{p.warehouses.join(', ')}</div>
+                      )}
+                    </td>
                     <td>{p.buh} / {p.skl}</td>
                     <td style={{ color: "rgba(255,255,255,0.7)" }}>{p.moved > 0 ? p.moved : "—"}</td>
                     <td>
@@ -227,11 +278,17 @@ export default function DetailsOrdersByProduct({
             
             {/* Мобільні картки для аналізу */}
             <div className={css.mobileCards}>
-              {partyAnalysis.map((p, idx) => (
+              {partyList.map((p, idx) => (
                 <div key={idx} className={css.card}>
                   <div className={css.cardHeader}>
                     <span className={css.cardTitle}>Партія: {p.party}</span>
                   </div>
+                  {p.warehouses.length > 0 && (
+                    <div className={css.cardRow}>
+                      <span className={css.cardLabel}>Склад:</span>
+                      <span className={css.cardValue} style={{ fontSize: '12px', opacity: 0.8 }}>{p.warehouses.join(', ')}</span>
+                    </div>
+                  )}
                   <div className={css.cardRow}>
                     <span className={css.cardLabel}>Склад (Бух/Скл):</span>
                     <span className={css.cardValue}>{p.buh} / {p.skl}</span>

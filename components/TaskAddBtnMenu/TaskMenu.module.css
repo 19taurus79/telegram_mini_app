@@ -2,37 +2,82 @@ ul.buttonList {
   list-style: none;
   padding: 0;
   margin: 0;
-  margin-top: 30px;
+  margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px; /* отступ между кнопками */
+  gap: 16px; 
 }
 
 ul.buttonList li {
-  flex: 1 1 275px; /*  Позволяет элементам растягиваться и сжиматься с базовой шириной 275px */
+  flex: 1 1 calc(50% - 8px);
+  min-width: 250px;
   display: flex;
 }
 
+@media (max-width: 600px) {
+  ul.buttonList li {
+    flex: 1 1 100%;
+  }
+}
+
 ul.buttonList li button {
-  background-color: #0070f3; /* основной цвет кнопки */
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
-  font-size: 1rem;
+  background: var(--glass-bg, rgba(25, 25, 35, 0.6));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--foreground);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 24px 20px;
+  font-size: 1.05rem;
+  font-weight: 500;
   cursor: pointer;
-  width: 100%; /* Растягиваем кнопку на всю ширину li */
-  height: 100%;
-  text-align: center;
-  transition: background-color 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  user-select: none;
+  width: 100%;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+ul.buttonList li button::after {
+  content: '→';
+  font-size: 1.2rem;
+  opacity: 0.3;
+  transition: transform 0.3s ease, opacity 0.3s ease, color 0.3s ease;
+  margin-left: 12px;
 }
 
 ul.buttonList li button:hover {
-  background-color: #005bb5;
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+ul.buttonList li button:hover::after {
+  opacity: 1;
+  transform: translateX(4px);
+  color: #0070f3;
 }
 
 ul.buttonList li button:active {
-  background-color: #003f7f;
+  transform: translateY(1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Light Theme Overrides */
+:global([data-theme='light']) ul.buttonList li button {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+:global([data-theme='light']) ul.buttonList li button:hover {
+  background: #ffffff;
+  border-color: rgba(0, 112, 243, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }

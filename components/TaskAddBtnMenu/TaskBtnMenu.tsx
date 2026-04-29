@@ -30,11 +30,7 @@ export default function TaskAddBtnMenu() {
               Замовити товар по домовленності, якщо немає вільного
             </button>
           </li>
-          <li>
-            <button onClick={() => handleOpenMenu("EXW")}>
-              Оформити самовивіз
-            </button>
-          </li>
+
           <li>
             <button onClick={() => handleOpenMenu("FREE")}>
               Довільна форма

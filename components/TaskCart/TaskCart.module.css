@@ -1,41 +1,246 @@
-.listContainer {
+/* ═══════════════════════════════════
+   TaskCart — Premium Mobile-First Card
+   ═══════════════════════════════════ */
+
+.card {
+  margin: 16px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--glass-bg, rgba(18, 18, 28, 0.65));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Status Banner ── */
+.statusBanner {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  list-style: none;
-  border: solid 1px var(--border-color);
-  border-radius: 10px;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.listItemButton {
-  background-color: var(--background);
-  color: var(--foreground);
-  border-bottom: 1px solid var(--border-color);
-  padding: 0.75rem 1rem;
-  /* border-radius: 0.5rem; */
-  cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
-  text-align: center;
-}
-
-.listItemButton:hover {
-  background-color: var(
-    --hover-bg-color
-  ); /* или var(--hover-bg), если используешь переменные */
-  color: var(--foreground);
-}
-
-.link {
-  display: block;
+.pending {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border-bottom-color: rgba(251, 191, 36, 0.15);
 }
 
 .inProgress {
-  color: red;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-bottom-color: rgba(59, 130, 246, 0.15);
 }
 
 .completed {
-  color: green;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-bottom-color: rgba(16, 185, 129, 0.15);
+}
+
+.statusWho {
+  opacity: 0.65;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+}
+
+/* ── Hero Title Section ── */
+.heroSection {
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+/* Subtle decorative gradient blob */
+.heroSection::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.iconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--foreground, #fff);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* ── Notes / Details Section ── */
+.notesSection {
+  padding: 0 24px 24px;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--foreground, #fff);
+  opacity: 0.35;
+  margin-bottom: 14px;
+}
+
+.notesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.noteRow {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.2s ease;
+  animation: rowIn 0.4s ease both;
+}
+
+.noteRow:nth-child(1) { animation-delay: 0.05s; }
+.noteRow:nth-child(2) { animation-delay: 0.1s; }
+.noteRow:nth-child(3) { animation-delay: 0.15s; }
+.noteRow:nth-child(4) { animation-delay: 0.2s; }
+.noteRow:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.noteRow:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.noteKey {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--foreground, #fff);
+  opacity: 0.45;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.noteVal {
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: var(--foreground, #fff);
+  line-height: 1.5;
+}
+
+.notePlain {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.92rem;
+  color: var(--foreground, #fff);
+  line-height: 1.5;
+}
+
+/* ── Footer ── */
+.footer {
+  padding: 14px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.83rem;
+  color: var(--foreground, #fff);
+  opacity: 0.5;
+}
+
+.footer strong {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.footerIcon {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* ── Light Theme ── */
+:global([data-theme='light']) .card {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+:global([data-theme='light']) .iconWrap {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:global([data-theme='light']) .noteRow {
+  background: rgba(0, 0, 0, 0.03);
+}
+:global([data-theme='light']) .noteRow:hover {
+  background: rgba(0, 0, 0, 0.055);
+}
+:global([data-theme='light']) .notePlain {
+  background: rgba(0, 0, 0, 0.03);
+}
+:global([data-theme='light']) .noteKey {
+  opacity: 0.4;
+}
+:global([data-theme='light']) .footer {
+  border-top-color: rgba(0, 0, 0, 0.07);
+  opacity: 0.45;
+}
+:global([data-theme='light']) .statusBanner.pending {
+  background: rgba(251, 191, 36, 0.1);
+}
+:global([data-theme='light']) .statusBanner.inProgress {
+  background: rgba(59, 130, 246, 0.08);
+}
+:global([data-theme='light']) .statusBanner.completed {
+  background: rgba(16, 185, 129, 0.08);
+}
+:global([data-theme='light']) .heroSection::after {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.02) 0%, transparent 70%);
 }

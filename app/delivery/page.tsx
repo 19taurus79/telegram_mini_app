@@ -4,6 +4,7 @@ import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
 import { getAddressByClient, sendDeliveryData } from "@/lib/api";
+import NovaPoshtaSelector from "@/components/NovaPoshta/NovaPoshtaSelector";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -137,7 +138,9 @@ function DeliveryDataContent() {
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     isPickup: false,
+    isNP: false,
   });
+  const [npSelection, setNpSelection] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isAddressChange, setIsAddressChange] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -380,34 +383,36 @@ function DeliveryDataContent() {
             </div>
 
             <div className={styles.modalBody}>
-              <label
-                className={`${styles.pickupToggleContainer} ${formData.isPickup ? styles.active : ''}`}
-                htmlFor="pickup-checkbox"
-              >
-                <div className={styles.pickupToggleLeft}>
-                  <span className={styles.pickupToggleIcon}>
-                    <Package size={22} />
-                  </span>
-                  <span className={styles.pickupToggleLabel}>Самовивіз</span>
-                </div>
-                <label className={styles.switch}>
-                  <input
-                    type="checkbox"
-                    id="pickup-checkbox"
-                    checked={formData.isPickup}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, isPickup: e.target.checked }));
-                      if (e.target.checked) {
-                        if (errors.address) setErrors({ ...errors, address: false });
-                        setIsAddressChange(false);
-                      }
-                    }}
-                  />
-                  <span className={styles.slider}></span>
-                </label>
-              </label>
+              <div className={styles.deliveryTabs}>
+                <button 
+                  className={`${styles.deliveryTab} ${!formData.isPickup && !formData.isNP ? styles.active : ""}`}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: false }))}
+                >
+                  <Truck size={18} /> Доставка
+                </button>
+                <button 
+                  className={`${styles.deliveryTab} ${formData.isPickup ? styles.active : ""}`}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: true, isNP: false }))}
+                >
+                  <Package size={18} /> Самовивіз
+                </button>
+                <button 
+                  className={`${styles.deliveryTab} ${formData.isNP ? styles.active : ""}`}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: true }))}
+                >
+                  <Box size={18} /> Нова Пошта
+                </button>
+              </div>
 
-              {!formData.isPickup && (
+              {formData.isNP && (
+                <div className={styles.npSection}>
+                  <NovaPoshtaSelector 
+                    onSelect={(selection) => setNpSelection(selection)}
+                  />
+                </div>
+              )}
+
+              {!formData.isPickup && !formData.isNP && (
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>
                     <MapPin size={16} /> Адреса доставки
@@ -524,12 +529,18 @@ function DeliveryDataContent() {
                   onClick={async () => {
                     setIsLoading(true);
                     setFormError(null);
-                    const { address, contact, phone, date, comment, isPickup } = formData;
+                    const { address, contact, phone, date, comment, isPickup, isNP } = formData;
                     
+                    if (isNP && (!npSelection || !npSelection.isValid)) {
+                      setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
+                      setIsLoading(false);
+                      return;
+                    }
+
                     const newErrors: Record<string, boolean> = {};
-                    if (!address && !isPickup) newErrors.address = true;
-                    if (!isPickup && !contact) newErrors.contact = true;
-                    if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
+                    if (!address && !isPickup && !isNP) newErrors.address = true;
+                    if (!isPickup && !isNP && !contact) newErrors.contact = true;
+                    if (!isPickup && !isNP && (!phone || phone.length < 19)) newErrors.phone = true;
                     if (!date) newErrors.date = true;
 
                     if (Object.keys(newErrors).length > 0) {
@@ -551,8 +562,27 @@ function DeliveryDataContent() {
 
                     let latitude = formData.latitude;
                     let longitude = formData.longitude;
+                    let finalAddress = address;
+                    let finalContact = contact;
 
-                    if (!isPickup && (latitude === undefined || longitude === undefined)) {
+                    if (isNP && npSelection) {
+                      const city = npSelection.city?.main_description || "";
+                      const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
+                                          npSelection.deliveryType === "postomat" ? "Поштомат" : "Адресна доставка";
+                      const warehouse = npSelection.warehouse?.description || npSelection.address;
+                      
+                      finalAddress = `НОВА ПОШТА: ${city}, ${deliveryType}: ${warehouse}`;
+                      
+                      if (npSelection.recipientType === "company") {
+                        finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou})`;
+                      }
+                      
+                      const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
+                      const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
+                      finalAddress += ` | ${payerNote} | ${paymentNote}`;
+                      latitude = 0;
+                      longitude = 0;
+                    } else if (!isPickup && (latitude === undefined || longitude === undefined)) {
                       try {
                         const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
                         if (geocodeResponse.ok) {
@@ -587,10 +617,10 @@ function DeliveryDataContent() {
                                 quantity: item.quantity,
                                 order_ref: order.order,
                                 parties: (() => {
-                                    const activeParties = (item.parties || []).map((p: Party) => ({
+                                    const activeParties = (item.parties || []).map((p: any) => ({
                                         party: p.party || "",
                                         moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                    })).filter((p) => p.moved_q > 0);
+                                    })).filter((p: any) => p.moved_q > 0);
                                     if (activeParties.length === 0 && item.quantity > 0) {
                                         return [{ party: "", moved_q: item.quantity }];
                                     }
@@ -612,15 +642,15 @@ function DeliveryDataContent() {
                         return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
                     }, 0) || 0) * 100) / 100;
 
-                    const payloadStatus = isPickup ? "Самовивіз" : "Створено";
+                    const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
 
                     const payload: DeliveryPayload = {
                       client: formClient as string,
                       manager, 
-                      address: isPickup ? "Самовивіз" : address, 
+                      address: isPickup ? "Самовивіз" : finalAddress, 
                       latitude: isPickup ? 0 : latitude, 
                       longitude: isPickup ? 0 : longitude, 
-                      contact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
+                      contact: finalContact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
                     };
 
                     try {

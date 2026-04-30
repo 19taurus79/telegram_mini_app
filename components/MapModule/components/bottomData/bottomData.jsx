@@ -74,6 +74,11 @@ export default function BottomData({ onEditClient }) {
         const actorName = userData?.full_name_for_orders || "";
         const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData, actorName);
         
+        // Відображаємо попередження, якщо вони є
+        if (res && res.warnings && res.warnings.length > 0) {
+            res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+        }
+
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         
         if (isOk) {
@@ -129,6 +134,10 @@ export default function BottomData({ onEditClient }) {
       const initData = getInitData();
       const res = await changeDeliveryDate(String(d.id), newDateStr, initData);
 
+      if (res && res.warnings && res.warnings.length > 0) {
+        res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+      }
+
       if (res && res.status === "ok") {
         toast.success("Дату успішно змінено", { id: loadingToast });
         updateDeliveries([{ ...d, delivery_date: newDateStr }]);
@@ -174,6 +183,10 @@ export default function BottomData({ onEditClient }) {
     try {
       const initData = getInitData();
       const res = await batchUpdateDeliveries(ids, status, date, initData);
+      
+      if (res && res.warnings && res.warnings.length > 0) {
+        res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+      }
       
       if (res && res.status === "ok") {
         toast.success(`Оновлено ${ids.length} доставок`, { id: loadingToast });

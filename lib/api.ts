@@ -12,6 +12,7 @@ import {
   DeliveryUpdateItem,
   Remains,
   WeightCalculationItem,
+  ApiResponse,
   // TaskGoogle,
   TotalOrder,
   Event,
@@ -210,7 +211,7 @@ export const sendDeliveryData = async (
   payload: DeliveryPayload,
   initData: string
 ) => {
-  const { data } = await axios.post<{ status: string }>(
+  const { data } = await axios.post<ApiResponse>(
     "/delivery/send",
     payload,
     {
@@ -232,7 +233,7 @@ export const updateDeliveryData = async (
   initData: string,
   actorName: string = ""
 ) => {
-  const { data } = await axios.post<{ status: string }>(
+  const { data } = await axios.post<ApiResponse>(
     "/delivery/update",
     {
        delivery_id: deliveryId,

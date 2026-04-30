@@ -521,3 +521,10 @@ export type TelegramWidgetUser = {
   hash: string;
 };
 
+export type ApiResponse = {
+  status: string;
+  message?: string;
+  warnings?: string[];
+  [key: string]: any;
+};
+

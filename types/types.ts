@@ -31,6 +31,7 @@ export type DeliveryPayload = {
   orders: DeliveryOrder[];
   status?: string;
   override_created_by?: number | null;
+  actor_name?: string;
 };
 export type Product = {
   id: string;

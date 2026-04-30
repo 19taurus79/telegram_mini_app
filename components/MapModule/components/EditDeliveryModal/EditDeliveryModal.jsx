@@ -747,6 +747,7 @@ export default function EditDeliveryModal() {
             orders: Object.values(ordersMap),
             // Зберігаємо оригінального автора заявки — адмін що ділить НЕ повинен ставати creator'ом
             override_created_by: originalDelivery.created_by || null,
+            actor_name: actorName,
          };
 
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);

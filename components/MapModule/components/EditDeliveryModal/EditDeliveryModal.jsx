@@ -7,6 +7,7 @@ import { getRemainsByProduct, updateDeliveryData, sendDeliveryData } from "@/lib
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
+import { useUser } from "@/store/User";
 
 /**
  * Модальное окно для редактирования состава одной или нескольких доставок.
@@ -27,6 +28,8 @@ export default function EditDeliveryModal() {
   } = useApplicationsStore();
   
   const queryClient = useQueryClient();
+  const userData = useUser(state => state.userData);
+  const actorName = userData?.full_name || "";
 
   // Локальное состояние компонента
   const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок
@@ -480,7 +483,7 @@ export default function EditDeliveryModal() {
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
             // Передаем d.total_weight как 4-й аргумент
-            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData);
+            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
         }));
 
         updateDeliveries(updatedDeliveries); // Обновляем глобальный стор
@@ -592,7 +595,7 @@ export default function EditDeliveryModal() {
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
-            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData);
+            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
         }));
 
         updateDeliveries(updatedDeliveries);

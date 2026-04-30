@@ -71,7 +71,8 @@ export default function BottomData({ onEditClient }) {
         }));
 
         const totalWeight = sanitizedItems.reduce((sum, item) => sum + item.weight, 0);
-        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData);
+        const actorName = userData?.full_name || "";
+        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData, actorName);
         
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         

@@ -826,14 +826,31 @@ export default function BottomData({ onEditClient }) {
         }
         return parts.join(" ").trim();
       };
-      const isInDelivery = (order) => {
-        if (!deliveries || deliveries.length === 0) return false;
+      const getOrderDeliveryStatus = (order) => {
+        if (!deliveries || deliveries.length === 0) return null;
         const currentName = getProductName(order);
         const sClient = (selectedClient.client || "").trim().toLowerCase();
-        return deliveries.some(d => {
+        
+        // Находим все активные доставки, содержащие этот заказ
+        const matchingDeliveries = deliveries.filter(d => {
           const dClient = (d.client || "").trim().toLowerCase();
-          return dClient === sClient && ["Створено", "В роботі", "created"].includes(d.status) && d.items?.some(di => di.order_ref?.trim() === order.contract_supplement?.trim() && di.product?.trim() === currentName);
+          const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+          
+          return dClient === sClient && 
+                 activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase()) && 
+                 d.items?.some(di => 
+                    di.order_ref?.trim() === order.contract_supplement?.trim() && 
+                    di.product?.trim() === currentName
+                 );
         });
+
+        if (matchingDeliveries.length === 0) return null;
+
+        // Приоритет статусу ЦО
+        const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
+        if (coDelivery) return coDelivery.status;
+
+        return matchingDeliveries[0].status;
       };
       return (
         <div className={css.container}>
@@ -850,7 +867,7 @@ export default function BottomData({ onEditClient }) {
                 <h3 className={css.contractNumber}>Договір: {contractNum}</h3>
                 <ul className={css.ordersList}>
                   {orders.map((order, index) => (
-                    <li key={index} className={`${css.orderItem} ${isInDelivery(order) ? css.inDeliveryRow : ""}`}>
+                    <li key={index} className={`${css.orderItem} ${getOrderDeliveryStatus(order) ? css.inDeliveryRow : ""}`}>
                       <div className={css.productName}>
                         <span className={css.nomenclatureText}>{order.nomenclature}</span>
                         <div 
@@ -869,7 +886,17 @@ export default function BottomData({ onEditClient }) {
                               onClick={() => {}}
                           />
                         </div>
-                        {isInDelivery(order) && (<span className={css.deliveryBadge}>В ДОСТАВЦІ</span>)}
+                        {(() => {
+                          const status = getOrderDeliveryStatus(order);
+                          if (!status) return null;
+                          
+                          const isCO = status.toLowerCase().includes("цо");
+                          return (
+                            <span className={`${css.deliveryBadge} ${isCO ? css.badgeCO : ""}`}>
+                              {isCO ? "ДОСТАВКА З ЦО" : "В ДОСТАВЦІ"}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className={css.orderDetails}>
                         <span>Кількість: {order.different} | Вага: {order.total_weight?.toFixed(2) || 0} кг</span>

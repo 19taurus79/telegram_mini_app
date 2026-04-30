@@ -161,19 +161,23 @@ export default function DetailsWidget({
     if (!allDeliveries || allDeliveries.length === 0) return null;
     const currentName = getProductName(item);
     
-    const delivery = allDeliveries.find(d => {
-        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created" || d.status === "inprogress");
-        if (!statusMatch) return false;
+    // Находим все активные доставки для этого товара
+    const matchingDeliveries = allDeliveries.filter(d => {
+        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+        if (!activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase())) return false;
         
         return d.items?.some(di => {
-            const isRefNull = !di.order_ref;
-            const diRefMatch = isRefNull ? true : (di.order_ref as string).trim() === item.contract_supplement.trim();
+            const diRefMatch = !di.order_ref || (di.order_ref as string).trim() === item.contract_supplement.trim();
             const diProductMatch = di.product?.trim() === currentName;
             return diRefMatch && diProductMatch;
         });
     });
 
-    return delivery;
+    if (matchingDeliveries.length === 0) return null;
+
+    // Приоритет статусу ЦО
+    const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
+    return coDelivery || matchingDeliveries[0];
   };
 
   const handleRemainsClick = (item: OrdersDetails) => {
@@ -402,7 +406,11 @@ export default function DetailsWidget({
                         <td className={styles.td}>{item.contract_supplement}</td>
                         <td className={styles.td}>
                           {getProductName(item)}
-                          {inDelivery && <span className={styles.deliveryBadge}>В доставці</span>}
+                          {inDelivery && (
+                            <span className={`${styles.deliveryBadge} ${inDelivery.status?.toLowerCase().includes("цо") ? styles.badgeCO : ""}`}>
+                              {inDelivery.status?.toLowerCase().includes("цо") ? "ДОСТАВКА З ЦО" : "В доставці"}
+                            </span>
+                          )}
                         </td>
                         <td className={styles.td}>{item.different}</td>
                         <td className={styles.td} onClick={() => handlePartyClick(item)} style={{ cursor: item.parties?.length > 0 ? "pointer" : "default" }}>

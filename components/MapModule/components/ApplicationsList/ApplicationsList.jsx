@@ -33,34 +33,56 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
     return parts.join(" ").trim();
   };
 
-  const isInDelivery = (order, deliveries) => {
-    if (!deliveries || deliveries.length === 0) return false;
+  const getOrderDeliveryStatus = (order, deliveries) => {
+    if (!deliveries || deliveries.length === 0) return null;
     const currentName = getProductName(order);
     const sClient = (order.client || "").trim().toLowerCase();
     
-    return deliveries.some(d => {
+    const matchingDeliveries = deliveries.filter(d => {
       const dClient = (d.client || "").trim().toLowerCase();
+      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+      
       return dClient === sClient && 
-             ["Створено", "В роботі", "created"].includes(d.status) &&
+             activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase()) &&
              d.items?.some(di => 
                di.order_ref?.trim() === order.contract_supplement?.trim() && 
                di.product?.trim() === currentName
              );
     });
+
+    if (matchingDeliveries.length === 0) return null;
+    
+    // Приоритет статусу ЦО
+    const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
+    if (coDelivery) return coDelivery.status;
+
+    return matchingDeliveries[0].status;
   };
 
   const getDeliveryStatus = (item) => {
-    // Check if any order of this client is in delivery
-    const hasAnyInDelivery = item.orders?.some(order => isInDelivery(order, deliveries));
-    return hasAnyInDelivery ? 'full' : null;
+    // Находим наиболее приоритетный статус среди всех заказов клиента
+    let bestStatus = null;
+    for (const order of (item.orders || [])) {
+      const status = getOrderDeliveryStatus(order, deliveries);
+      if (status) {
+        if (status.toLowerCase().includes("цо")) return status; // ЦО - наивысший приоритет
+        bestStatus = status;
+      }
+    }
+    return bestStatus;
   };
 
   const renderClientName = (item) => {
     const status = getDeliveryStatus(item);
+    if (!status) return <div className={css.clientName}>{item.client}</div>;
+
+    const isCO = status.toLowerCase().includes("цо");
     return (
       <div className={css.clientName}>
-        {item.client}
-        {status === 'full' && <span title="Вже у доставці"> 🚚</span>}
+        <span className={css.clientNameText}>{item.client}</span>
+        <span className={`${css.statusBadge} ${isCO ? css.badgeCO : css.badgeDelivery}`}>
+          {isCO ? "ЦО" : "🚚"}
+        </span>
       </div>
     );
   };

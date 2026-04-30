@@ -29,7 +29,7 @@ export default function EditDeliveryModal() {
   
   const queryClient = useQueryClient();
   const userData = useUser(state => state.userData);
-  const actorName = userData?.full_name || "";
+  const actorName = userData?.full_name_for_orders || "";
 
   // Локальное состояние компонента
   const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок

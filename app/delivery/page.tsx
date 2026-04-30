@@ -126,7 +126,7 @@ function DeliveryDataContent() {
   
   const { delivery, removeClientDelivery, updateQuantity } = useDelivery();
   const userData = useUser(state => state.userData);
-  const actorName = userData?.full_name || "";
+  const actorName = userData?.full_name_for_orders || "";
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);

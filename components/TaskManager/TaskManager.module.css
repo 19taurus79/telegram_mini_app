@@ -12,10 +12,17 @@
   color: var(--foreground);
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 20px;
   background: linear-gradient(90deg, #0ef18e, #00d2ff);
   -webkit-background-clip: text;
   background-clip: text;
@@ -23,6 +30,54 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0;
+}
+
+.calendarButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 20px;
+  background: rgba(14, 241, 142, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #0ef18e;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 12px;
+  border: 1px solid rgba(14, 241, 142, 0.2);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.calendarButton:hover {
+  background: rgba(14, 241, 142, 0.2);
+  border-color: rgba(14, 241, 142, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 241, 142, 0.15);
+}
+
+.calendarIcon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .calendarButton {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    height: 50px;
+    font-size: 1rem;
+    border-radius: 16px;
+  }
 }
 
 .grid {

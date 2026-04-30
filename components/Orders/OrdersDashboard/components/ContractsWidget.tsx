@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getDeliveries } from "@/lib/api";
 import { Client, Contract } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import { Truck } from "lucide-react";

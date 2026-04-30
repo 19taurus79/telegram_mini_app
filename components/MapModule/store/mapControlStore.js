@@ -11,6 +11,8 @@ export const useMapControlStore = create(
       selectedDates: [],
       
       availableStatuses: [],
+      knownStatuses: [],
+      setKnownStatuses: (statuses) => set({ knownStatuses: statuses }),
 
       // Загальні стани карти
       isRoutingMode: false,
@@ -75,6 +77,7 @@ export const useMapControlStore = create(
       partialize: (state) => ({
         selectedStatuses: state.selectedStatuses,
         selectedDates: state.selectedDates,
+        knownStatuses: state.knownStatuses,
       }),
     }
   )

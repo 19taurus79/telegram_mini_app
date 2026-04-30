@@ -164,7 +164,7 @@ export default function DetailsOrdersByProduct({
          buh: stats.buh,
          skl: stats.skl,
          moved: stats.moved,
-         freeBuh: stats.buh - stats.moved,
+         freeBuh: stats.buh,
          freeSkl: stats.skl - stats.moved,
          warehouses: Array.from(stats.warehouses)
       };
@@ -176,7 +176,7 @@ export default function DetailsOrdersByProduct({
         buh: totalBuh,
         skl: totalSkl,
         moved: totalMoved,
-        freeBuh: totalBuh - totalMoved,
+        freeBuh: totalBuh,
         freeSkl: totalSkl - totalMoved,
         warehouses: Array.from(allWarehouses)
       } 

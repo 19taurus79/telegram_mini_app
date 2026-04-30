@@ -8,7 +8,6 @@
   color: var(--foreground);
   padding: 20px;
   text-align: center;
-  max-width: 400px;
   min-width: 300px;
   flex: 1;
   position: relative;

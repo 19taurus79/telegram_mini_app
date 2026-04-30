@@ -275,6 +275,8 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     toggleRoutingMode,
     flyToCoords,
     setFlyToCoords,
+    knownStatuses,
+    setKnownStatuses,
   } = useMapControlStore();
   
   // Ссылка на экземпляр карты
@@ -516,27 +518,33 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
       const statuses = [...new Set(fetchedDeliveries.map(d => d.status))];
       setAvailableStatuses(statuses);
       
-      setSelectedStatuses(prev => {
-        // On first load (when prev is empty), set the default selection.
-        // Default is all statuses EXCEPT "Виконано".
-        if (prev.length === 0) {
-          return statuses.filter(s => s !== "Виконано" && s !== "completed");
-        }
-
-        // On subsequent loads, add any newly discovered statuses to the existing selection
-        // (including new ones like "Самовивіз").
-        const currentStatuses = new Set(prev);
-        let changed = false;
-        statuses.forEach(s => {
-          if (!currentStatuses.has(s) && s !== "Виконано" && s !== "completed") {
-            currentStatuses.add(s);
-            changed = true;
-          }
+      // Identify genuinely new statuses we've never seen before
+      const newStatuses = statuses.filter(s => !knownStatuses.includes(s));
+      
+      if (newStatuses.length > 0) {
+        // Mark them as known
+        setKnownStatuses([...knownStatuses, ...newStatuses]);
+        
+        setSelectedStatuses(prev => {
+          // If this is the very first load and we had nothing selected,
+          // we might want to select everything EXCEPT 'Виконано'.
+          // But since knownStatuses is persistent, this logic will handle both
+          // initial load and future discoveries smoothly.
+          const currentStatuses = new Set(prev);
+          let changed = false;
+          
+          newStatuses.forEach(s => {
+            if (s !== "Виконано" && s !== "completed") {
+              currentStatuses.add(s);
+              changed = true;
+            }
+          });
+          
+          return changed ? Array.from(currentStatuses) : prev;
         });
-        return changed ? Array.from(currentStatuses) : prev;
-      });
+      }
     }
-  }, [fetchedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses]);
+  }, [fetchedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses, knownStatuses, setKnownStatuses]);
 
   // Перерахунок розміру карти при зміні flyToCoords (щоб уникнути «сірих плиток»)
   useEffect(() => {

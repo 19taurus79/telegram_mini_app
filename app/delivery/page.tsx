@@ -659,6 +659,12 @@ function DeliveryDataContent() {
 
                     try {
                       const result = await sendDeliveryData(payload, getInitData());
+                      
+                      // Відображаємо попередження, якщо вони є
+                      if (result && result.warnings && result.warnings.length > 0) {
+                        result.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+                      }
+
                       if (result.status === "ok") {
                         setIsAnimatingSuccess(true);
                         setTimeout(() => {

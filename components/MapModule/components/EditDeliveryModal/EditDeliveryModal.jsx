@@ -471,7 +471,7 @@ export default function EditDeliveryModal() {
     try {
         const initData = getInitData();
         // Отправляем данные по каждой доставке параллельно
-        await Promise.all(updatedDeliveries.map(d => {
+        await Promise.all(updatedDeliveries.map(async (d) => {
             const cleanItems = d.items.map(item => ({
                 product: String(item.product),
                 nomenclature: String(item.nomenclature || item.product),
@@ -482,8 +482,14 @@ export default function EditDeliveryModal() {
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
-            // Передаем d.total_weight как 4-й аргумент
-            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+            
+            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+            
+            // Відображаємо попередження для кожної доставки, якщо вони є
+            if (res && res.warnings && res.warnings.length > 0) {
+              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+            }
+            return res;
         }));
 
         updateDeliveries(updatedDeliveries); // Обновляем глобальный стор
@@ -584,7 +590,7 @@ export default function EditDeliveryModal() {
 
     try {
         const initData = getInitData();
-        await Promise.all(updatedDeliveries.map(d => {
+        await Promise.all(updatedDeliveries.map(async (d) => {
             const cleanItems = d.items.map(item => ({
                 product: String(item.product),
                 nomenclature: String(item.nomenclature || item.product),
@@ -595,7 +601,12 @@ export default function EditDeliveryModal() {
                 weight: parseFloat(item.weight) || 0,
                 parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
             }));
-            return updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+            
+            if (res && res.warnings && res.warnings.length > 0) {
+              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+            }
+            return res;
         }));
 
         updateDeliveries(updatedDeliveries);
@@ -753,7 +764,11 @@ export default function EditDeliveryModal() {
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
 
          // Отправляем клон в базу через sendDeliveryData API
-         await sendDeliveryData(clonePayload, initData);
+         const res = await sendDeliveryData(clonePayload, initData);
+         
+         if (res && res.warnings && res.warnings.length > 0) {
+            res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+         }
          successCount++;
       }
 

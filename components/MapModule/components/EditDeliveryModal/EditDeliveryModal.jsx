@@ -29,7 +29,7 @@ export default function EditDeliveryModal() {
   
   const queryClient = useQueryClient();
   const userData = useUser(state => state.userData);
-  const actorName = userData?.full_name || "";
+  const actorName = userData?.full_name_for_orders || "";
 
   // Локальное состояние компонента
   const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок
@@ -747,6 +747,7 @@ export default function EditDeliveryModal() {
             orders: Object.values(ordersMap),
             // Зберігаємо оригінального автора заявки — адмін що ділить НЕ повинен ставати creator'ом
             override_created_by: originalDelivery.created_by || null,
+            actor_name: actorName,
          };
 
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);

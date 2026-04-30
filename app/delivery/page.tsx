@@ -13,6 +13,7 @@ import InputAddress from "@/components/MapModule/components/inputAddress/InputAd
 import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useUser } from "@/store/User";
 
 // Тип для вибраного елемента для редагування в модальному вікні.
 type SelectedItem = {
@@ -124,6 +125,8 @@ function DeliveryDataContent() {
   const [isAnimatingSuccess, setIsAnimatingSuccess] = useState(false);
   
   const { delivery, removeClientDelivery, updateQuantity } = useDelivery();
+  const userData = useUser(state => state.userData);
+  const actorName = userData?.full_name_for_orders || "";
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -644,14 +647,15 @@ function DeliveryDataContent() {
 
                     const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
 
-                    const payload: DeliveryPayload = {
-                      client: formClient as string,
-                      manager, 
-                      address: isPickup ? "Самовивіз" : finalAddress, 
-                      latitude: isPickup ? 0 : latitude, 
-                      longitude: isPickup ? 0 : longitude, 
-                      contact: finalContact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
-                    };
+                      const payload: DeliveryPayload = {
+                        client: formClient as string,
+                        manager, 
+                        address: isPickup ? "Самовивіз" : finalAddress, 
+                        latitude: isPickup ? 0 : latitude, 
+                        longitude: isPickup ? 0 : longitude, 
+                        contact: finalContact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
+                        actor_name: actorName,
+                      };
 
                     try {
                       const result = await sendDeliveryData(payload, getInitData());

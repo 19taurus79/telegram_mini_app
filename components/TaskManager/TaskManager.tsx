@@ -45,16 +45,16 @@ export default function TaskManager() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  const sortItems = (items: any[]) => {
+  const sortItems = <T extends InnerEvent | TaskInner>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
       // 1. Сортування за статусом (0 -> 1 -> 2)
-      const statusA = a.event_status !== undefined ? a.event_status : a.task_status;
-      const statusB = b.event_status !== undefined ? b.event_status : b.task_status;
+      const statusA = (a as InnerEvent).event_status !== undefined ? (a as InnerEvent).event_status : (a as TaskInner).task_status;
+      const statusB = (b as InnerEvent).event_status !== undefined ? (b as InnerEvent).event_status : (b as TaskInner).task_status;
       if (statusA !== statusB) return statusA - statusB;
       
       // 2. Сортування за алфавітом (назва клієнта/завдання)
-      const titleA = a.event || a.task || "";
-      const titleB = b.event || b.task || "";
+      const titleA = (a as InnerEvent).event || (a as TaskInner).task || "";
+      const titleB = (b as InnerEvent).event || (b as TaskInner).task || "";
       return titleA.localeCompare(titleB);
     });
   };

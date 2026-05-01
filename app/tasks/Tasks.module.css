@@ -56,12 +56,16 @@
   margin-right: 16px;
 }
 
-.completed {
-  color: var(--accent-green);
+.created {
+  color: #ef4444; /* Світлофор: Червоний (Створено) */
 }
 
 .inProgress {
-  color: #fbbf24;
+  color: #fbbf24; /* Світлофор: Жовтий (В роботі) */
+}
+
+.completed {
+  color: var(--accent-green); /* Світлофор: Зелений (Виконано) */
 }
 
 @media (max-width: 768px) {

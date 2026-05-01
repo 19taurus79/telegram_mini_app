@@ -45,9 +45,23 @@ export default function TaskManager() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  const todayEvents = events?.filter((e) => e.start_event === todayStr) || [];
-  const tomorrowEvents = events?.filter((e) => e.start_event === tomorrowStr) || [];
-  const activeTasks = tasks?.filter((t) => t.task_status !== 2) || [];
+  const sortItems = (items: any[]) => {
+    return [...items].sort((a, b) => {
+      // 1. Сортування за статусом (0 -> 1 -> 2)
+      const statusA = a.event_status !== undefined ? a.event_status : a.task_status;
+      const statusB = b.event_status !== undefined ? b.event_status : b.task_status;
+      if (statusA !== statusB) return statusA - statusB;
+      
+      // 2. Сортування за алфавітом (назва клієнта/завдання)
+      const titleA = a.event || a.task || "";
+      const titleB = b.event || b.task || "";
+      return titleA.localeCompare(titleB);
+    });
+  };
+
+  const todayEvents = sortItems(events?.filter((e) => e.start_event === todayStr) || []);
+  const tomorrowEvents = sortItems(events?.filter((e) => e.start_event === tomorrowStr) || []);
+  const activeTasks = sortItems(tasks?.filter((t) => t.task_status !== 2) || []);
 
   const renderEvent = (event: InnerEvent) => (
     <Link key={event.id} href={`/events/${event.event_id}`} className={css.item}>

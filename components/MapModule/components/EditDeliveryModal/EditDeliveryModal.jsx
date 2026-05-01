@@ -1161,7 +1161,7 @@ export default function EditDeliveryModal() {
           {/* Правая панель: Остатки на складе */}
           <div className={css.rightPanel}>
             <h3 className={css.panelTitle}>⚖️ Залишки на складі</h3>
-            <div className={css.tableContainer}>
+            <div className={css.tableContainer} style={{ flex: '0 1 auto', minHeight: '200px', maxHeight: '45%' }}>
               {isLoadingRemains ? (
                 <div style={{ padding: '20px', textAlign: 'center' }}>Завантаження...</div>
               ) : stockRemains.length > 0 ? (
@@ -1208,8 +1208,8 @@ export default function EditDeliveryModal() {
                 marginTop: '16px', 
                 borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
                 paddingTop: '16px',
-                flex: "1 1 auto",
-                overflowY: "auto" 
+                flex: "1 1 0%",
+                overflow: "auto" 
               }}>
                 <DetailsOrdersByProduct 
                   selectedProductId={stockRemains[0].product} 

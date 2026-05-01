@@ -81,3 +81,31 @@
 :global([data-theme='light']) .buttonActive {
   box-shadow: 0 8px 20px var(--status-glow, rgba(15, 23, 42, 0.15));
 }
+
+.badge {
+    margin-left: 10px;
+    background: var(--status-color);
+    color: #fff;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px var(--status-glow, rgba(0, 0, 0, 0.2));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.buttonActive .badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    text-shadow: none;
+}
+
+.button:hover .badge {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px var(--status-glow, rgba(0, 0, 0, 0.3));
+}

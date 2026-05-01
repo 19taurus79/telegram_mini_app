@@ -49,6 +49,15 @@ export default function ClientTasks() {
 
   const tasks: Task[] = data ?? [];
 
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // 1. Сортування за статусом (Світлофор: 0-Червоний -> 1-Жовтий -> 2-Зелений)
+    if (a.task_status !== b.task_status) {
+      return a.task_status - b.task_status;
+    }
+    // 2. Сортування за алфавітом (Клієнт/Назва завдання) всередині одного статусу
+    return a.task.localeCompare(b.task);
+  });
+
   return (
     <div className={css.listContainer}>
       {isLoading && (
@@ -72,7 +81,7 @@ export default function ClientTasks() {
         </div>
       )}
 
-      {tasks.map((task) => (
+      {sortedTasks.map((task) => (
         <div
           key={task.task_id}
           className={css.listItemButton}
@@ -80,10 +89,13 @@ export default function ClientTasks() {
         >
           <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <div className={clsx(css.statusIcon, {
-              [css.completed]: task.task_status === 2,
+              [css.created]: task.task_status === 0,
               [css.inProgress]: task.task_status === 1,
+              [css.completed]: task.task_status === 2,
             })}>
-              {task.task_status === 2 ? <CheckCircle size={22} /> : <Clock size={22} />}
+              {task.task_status === 0 && <AlertCircle size={22} />}
+              {task.task_status === 1 && <Clock size={22} />}
+              {task.task_status === 2 && <CheckCircle size={22} />}
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

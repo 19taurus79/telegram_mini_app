@@ -172,9 +172,9 @@
   margin-right: 6px;
 }
 
-.status_0 { background: #ffaa00; box-shadow: 0 0 8px #ffaa00; } /* Нова */
-.status_1 { background: #00d2ff; box-shadow: 0 0 8px #00d2ff; } /* В роботі */
-.status_2 { background: #0ef18e; box-shadow: 0 0 8px #0ef18e; } /* Завершено */
+.status_0 { background: #ef4444; box-shadow: 0 0 8px #ef4444; } /* Світлофор: Червоний (Створено) */
+.status_1 { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; } /* Світлофор: Жовтий (В роботі) */
+.status_2 { background: #0ef18e; box-shadow: 0 0 8px #0ef18e; } /* Світлофор: Зелений (Виконано) */
 
 .noData {
   font-size: 0.9rem;

@@ -45,9 +45,23 @@ export default function TaskManager() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  const todayEvents = events?.filter((e) => e.start_event === todayStr) || [];
-  const tomorrowEvents = events?.filter((e) => e.start_event === tomorrowStr) || [];
-  const activeTasks = tasks?.filter((t) => t.task_status !== 2) || [];
+  const sortItems = <T extends InnerEvent | TaskInner>(items: T[]): T[] => {
+    return [...items].sort((a, b) => {
+      // 1. Сортування за статусом (0 -> 1 -> 2)
+      const statusA = (a as InnerEvent).event_status !== undefined ? (a as InnerEvent).event_status : (a as TaskInner).task_status;
+      const statusB = (b as InnerEvent).event_status !== undefined ? (b as InnerEvent).event_status : (b as TaskInner).task_status;
+      if (statusA !== statusB) return statusA - statusB;
+      
+      // 2. Сортування за алфавітом (назва клієнта/завдання)
+      const titleA = (a as InnerEvent).event || (a as TaskInner).task || "";
+      const titleB = (b as InnerEvent).event || (b as TaskInner).task || "";
+      return titleA.localeCompare(titleB);
+    });
+  };
+
+  const todayEvents = sortItems(events?.filter((e) => e.start_event === todayStr) || []);
+  const tomorrowEvents = sortItems(events?.filter((e) => e.start_event === tomorrowStr) || []);
+  const activeTasks = sortItems(tasks?.filter((t) => t.task_status !== 2) || []);
 
   const renderEvent = (event: InnerEvent) => (
     <Link key={event.id} href={`/events/${event.event_id}`} className={css.item}>

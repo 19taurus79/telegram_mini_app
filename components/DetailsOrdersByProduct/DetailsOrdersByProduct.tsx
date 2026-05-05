@@ -5,7 +5,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getMovedDataByProduct, getOrdersByProduct, getRemainsById } from "@/lib/api";
 import { CircleDollarSign, Coins, Wallet } from "lucide-react";
 import css from "./DetailsOrdersByProduct.module.css";
-import { Contract } from "@/types/types";
+import { Contract, Order, MovedData, Remains } from "@/types/types";
 import { useInitData } from "@/store/InitData";
 
 export default function DetailsOrdersByProduct({
@@ -25,7 +25,7 @@ export default function DetailsOrdersByProduct({
     isLoading: isLoadingOrders,
     isError: isErrorOrders,
     error: errorOrders,
-  } = useQuery({
+  } = useQuery<Order[]>({
     queryKey: ["ordersByProduct", selectedProductId, initData],
     queryFn: () =>
       getOrdersByProduct({ product: selectedProductId!, initData: initData! }),
@@ -38,7 +38,7 @@ export default function DetailsOrdersByProduct({
     isLoading: isLoadingMoved,
     isError: isErrorMoved,
     error: errorMoved,
-  } = useQuery({
+  } = useQuery<MovedData[]>({
     queryKey: ["movedProductsByProduct", selectedProductId, initData],
     queryFn: () =>
       getMovedDataByProduct({
@@ -52,7 +52,7 @@ export default function DetailsOrdersByProduct({
   const {
     data: remainsData,
     isLoading: isLoadingRemains,
-  } = useQuery({
+  } = useQuery<Remains[]>({
     queryKey: ["remainsById", selectedProductId, initData],
     queryFn: () =>
       getRemainsById({ productId: selectedProductId!, initData: initData! }),

@@ -120,6 +120,7 @@ export type Contract = {
   loan_percentage?: number;
   planned_amount?: number;
   actual_payment_amount?: number;
+  client?: string;
 };
 export type AvRemains = {
   id: string;

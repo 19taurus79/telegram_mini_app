@@ -26,7 +26,7 @@ export default function FilteredOrders({ params }: Props) {
     params.then((p) => setClientId(p.client));
   }, [params]);
 
-  const { data: contracts } = useQuery({
+  const { data: contracts } = useQuery<Contract[]>({
     queryKey: ["contracts", clientId, initData],
     queryFn: () => getContracts({ client: clientId!, initData }),
     enabled: !!clientId && !!initData,

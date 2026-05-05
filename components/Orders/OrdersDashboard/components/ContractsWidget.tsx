@@ -142,7 +142,7 @@ export default function ContractsWidget({
                     {contract.contract_supplement}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: '2px' }}>
-                    {contract.client}
+                    {contract.client || "—"}
                   </div>
                 </div>
                 

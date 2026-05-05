@@ -413,7 +413,7 @@ export default function EditDeliveryModal() {
     const qty = parseFloat(partyQty) || 0;
     if (qty <= 0) return 'unknown';
     
-    const realBuh = stock.totalBuh - stock.totalStorage;
+    const realBuh = stock.totalBuh;
     const realSkl = stock.totalSkl - stock.totalStorage;
     
     return (realBuh >= qty && realSkl >= qty) ? 'ok' : 'low';
@@ -1118,7 +1118,7 @@ export default function EditDeliveryModal() {
                                             const key = (p.party || '').trim().toLowerCase();
                                             const st = partyStockMap[key];
                                             if (!st) return 'Немає в залишках';
-                                            const realBuh = st.totalBuh - st.totalStorage;
+                                            const realBuh = st.totalBuh;
                                             const realSkl = st.totalSkl - st.totalStorage;
                                             return `Бух: ${realBuh.toFixed(0)} · Скл: ${realSkl.toFixed(0)}`;
                                           })()}

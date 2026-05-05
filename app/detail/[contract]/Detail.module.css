@@ -211,6 +211,12 @@
   white-space: nowrap;
 }
 
+.badgeCO {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
 /* Status Colors (Traffic Light) */
 /* Increased specificity to ensure theme overrides don't break them */
 .checkmarkGreen, :global([data-theme]) .checkmarkGreen { color: #10b981 !important; }

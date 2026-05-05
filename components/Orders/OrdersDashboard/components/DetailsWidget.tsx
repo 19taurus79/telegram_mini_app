@@ -368,7 +368,7 @@ export default function DetailsWidget({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>Доповнення / Тип</th>
+              <th className={styles.th}>Доповнення</th>
               <th className={styles.th}>Товар</th>
               <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
               <th className={styles.th}>Переміщено (Партії)</th>
@@ -425,19 +425,13 @@ export default function DetailsWidget({
                         <td className={styles.td}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontWeight: 700 }}>{item.contract_supplement}</span>
-                            {item.contract_type && (
-                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
-                                {item.contract_type}
-                              </span>
-                            )}
+
                           </div>
                         </td>
                         <td className={styles.td}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{getProductName(item)}</span>
-                            {item.contract_type && (
-                              <span style={{ fontSize: '10px', opacity: 0.6 }}>{item.contract_type}</span>
-                            )}
+
                           </div>
                           {inDelivery && (
                             <span className={`${styles.deliveryBadge} ${inDelivery.status?.toLowerCase().includes("цо") ? styles.badgeCO : ""}`}>

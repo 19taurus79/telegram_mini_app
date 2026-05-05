@@ -588,9 +588,6 @@ export default function DetailsWidget({
                   const delivery = getDeliveryForItem(item);
                   const hasInLocalDelivery = hasItem(getItemId(item));
                   const itemComments = (commentsMap[item.contract_supplement] || []).filter(c => c.product_id === item.product);
-                  
-                  const { color } = getItemStatus(item);
-                  
 
                   return (
                     <React.Fragment key={`${item.id}_${index}`}>

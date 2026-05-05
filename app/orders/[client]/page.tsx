@@ -3,8 +3,8 @@
 import { getContracts } from "@/lib/api";
 import Link from "next/link";
 import css from "./OrdersList.module.css";
-import clsx from "clsx";
 import { getInitData } from "@/lib/getInitData";
+import { Contract } from "@/types/types";
 import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -33,7 +33,7 @@ export default function FilteredOrders({ params }: Props) {
   });
 
   // Логіка визначення статусу оплати
-  const getPaymentInfo = (contract: any) => {
+  const getPaymentInfo = (contract: Contract) => {
     const isCredit100 = contract.loan_percentage === 100;
     const plan = contract.planned_amount || 0;
     const fact = contract.actual_payment_amount || 0;
@@ -72,7 +72,7 @@ export default function FilteredOrders({ params }: Props) {
   return (
     <>
       <ul className={css.list} style={{ padding: '12px', listStyle: 'none' }}>
-        {contracts.map((item) => {
+        {contracts.map((item: Contract) => {
           const pay = getPaymentInfo(item);
           return (
             <li key={item.contract_supplement} style={{ marginBottom: '16px' }}>

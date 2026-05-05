@@ -3,8 +3,10 @@
 import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getMovedDataByProduct, getOrdersByProduct, getRemainsById } from "@/lib/api";
-import { CircleDollarSign, Coins, Wallet, Box, Truck, MapPin } from "lucide-react";
+import { CircleDollarSign, Coins, Wallet } from "lucide-react";
 import css from "./DetailsOrdersByProduct.module.css";
+import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import { Contract } from "@/types/types";
 import { useInitData } from "@/store/InitData";
 
 export default function DetailsOrdersByProduct({
@@ -98,7 +100,7 @@ export default function DetailsOrdersByProduct({
   }, [movedProducts]);
 
   // Логіка визначення статусу оплати
-  const getPaymentInfo = (order: any) => {
+  const getPaymentInfo = (order: Contract) => {
     const isCredit100 = order.loan_percentage === 100;
     const plan = order.planned_amount || 0;
     const fact = order.actual_payment_amount || 0;

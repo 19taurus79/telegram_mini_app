@@ -10,7 +10,7 @@ import React from "react";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { Truck, Loader2, Check, CircleDollarSign, Coins, Wallet } from "lucide-react";
+import { Truck, Loader2 } from "lucide-react";
 import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -59,38 +59,6 @@ const getItemStatus = (item: OrdersDetails) => {
   return { color, validationType, sumMovedQ, diffQ };
 };
 
-// Логіка визначення статусу оплати
-const getPaymentInfo = (item: any) => {
-  const isCredit100 = item.loan_percentage === 100;
-  const plan = item.planned_amount || 0;
-  const fact = item.actual_payment_amount || 0;
-  
-  // Оплачено якщо кредит 100% або факт >= 90% від плану
-  const isPaid = isCredit100 || (plan > 0 && fact >= plan * 0.9);
-  const isPartial = !isPaid && fact > 0;
-
-  if (isPaid) return { 
-    label: "Оплачено", 
-    icon: <CircleDollarSign size={16} />, 
-    color: "#4ade80", 
-    bgColor: "rgba(34, 197, 94, 0.15)", 
-    border: "1px solid rgba(34, 197, 94, 0.4)" 
-  };
-  if (isPartial) return { 
-    label: "Частково", 
-    icon: <Wallet size={16} />, 
-    color: "#fbbf24", 
-    bgColor: "rgba(251, 191, 36, 0.15)", 
-    border: "1px solid rgba(251, 191, 36, 0.4)" 
-  };
-  return { 
-    label: "Не оплачено", 
-    icon: <Coins size={16} />, 
-    color: "#ef4444", 
-    bgColor: "rgba(239, 68, 68, 0.15)", 
-    border: "1px solid rgba(239, 68, 68, 0.4)" 
-  };
-};
 
 interface DetailsWidgetProps {
   initData: string;
@@ -176,7 +144,7 @@ export default function DetailsWidget({
     return parts.join(" ").trim();
   };
 
-  const { data: allDeliveries } = useQuery({
+  const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
     queryKey: ["deliveries"],
     queryFn: async () => {
         try {
@@ -336,7 +304,7 @@ export default function DetailsWidget({
 
   const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
 
-  const { data: detailsList, isLoading } = useQuery({
+  const { data: detailsList, isLoading } = useQuery<OrdersDetails[]>({
     queryKey: ["ordersDetailsFull", clientIds, contractsIds],
     queryFn: async () => {
         if (selectedClients.length === 0) return [];
@@ -538,8 +506,8 @@ export default function DetailsWidget({
                   {type === "outOfStock" && <p>Даного товару немає в наявності</p>}
                   {type === "maybeInTransit" && <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>}
                   {type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
-                  {type === "deliveryStatusNoSeed" && <p>Заявка має статус "До постачання: Ні". Швидше за все, насіння під цю заявку не було замовлено. Зверніться у відповідний відділ для зміни статусу.</p>}
-                  {type === "deliveryStatusNoOther" && <p>Заявка має статус "До постачання: Ні". Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "deliveryStatusNoSeed" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Швидше за все, насіння під цю заявку не було замовлено. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "deliveryStatusNoOther" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
                 </div>
               ))}
               
@@ -622,7 +590,7 @@ export default function DetailsWidget({
                   const itemComments = (commentsMap[item.contract_supplement] || []).filter(c => c.product_id === item.product);
                   
                   const { color } = getItemStatus(item);
-                  const statusLabel = color === 'green' ? "(Зелений)" : (color === 'yellow' ? "(Жовтий)" : "(Червоний)");
+                  
 
                   return (
                     <React.Fragment key={`${item.id}_${index}`}>

@@ -2,12 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getDeliveries } from "@/lib/api";
-import { Client, Contract } from "@/types/types";
+import { Client, Contract, DeliveryRequest } from "@/types/types";
 import styles from "../OrdersDashboard.module.css";
 import { useState } from "react";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
-import { Truck, CircleDollarSign, Coins, Wallet, MessageSquare } from "lucide-react";
+import { Truck, CircleDollarSign, Coins, Wallet } from "lucide-react";
 import clsx from "clsx";
 
 interface ContractsWidgetProps {
@@ -29,7 +29,7 @@ export default function ContractsWidget({
     orderRef: string;
   } | null>(null);
 
-  const { data: allDeliveries } = useQuery({
+  const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
     queryKey: ["deliveries"],
     queryFn: () => getDeliveries(initData),
     enabled: !!initData,
@@ -110,7 +110,7 @@ export default function ContractsWidget({
     <div className={styles.tableContainer}>
       <div className={styles.list}>
         {contracts?.map((contract) => {
-          const { isCO, isInDelivery } = getContractDeliveryInfo(contract.contract_supplement);
+          const { isCO, isInDelivery, date } = getContractDeliveryInfo(contract.contract_supplement);
           return (
             <div
               key={contract.contract_supplement}

@@ -96,6 +96,10 @@ export type Order = {
   fact: number;
   different: number;
   product: string;
+  contract_type?: string;
+  loan_percentage?: number;
+  planned_amount?: number;
+  actual_payment_amount?: number;
 };
 export type ContractDetails = {
   nomenclature: string;
@@ -112,6 +116,10 @@ export type Contract = {
   line_of_business: string;
   document_status: string;
   delivery_status: string;
+  contract_type?: string;
+  loan_percentage?: number;
+  planned_amount?: number;
+  actual_payment_amount?: number;
 };
 export type AvRemains = {
   id: string;
@@ -186,11 +194,17 @@ export type OrdersDetails = {
   buh: number;
   skl: number;
   qok: string;
+  line_of_business?: string;
+  delivery_status?: string;
   parties: {
     party: string;
     moved_q: number;
   }[];
   has_draft?: boolean;
+  contract_type?: string;
+  loan_percentage?: number;
+  planned_amount?: number;
+  actual_payment_amount?: number;
 };
 export type TaskGoogle = {
   kind: string;

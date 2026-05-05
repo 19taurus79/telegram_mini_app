@@ -647,15 +647,29 @@ function DeliveryDataContent() {
 
                     const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
 
-                      const payload: DeliveryPayload = {
-                        client: formClient as string,
-                        manager, 
-                        address: isPickup ? "Самовивіз" : finalAddress, 
-                        latitude: isPickup ? 0 : latitude, 
-                        longitude: isPickup ? 0 : longitude, 
-                        contact: finalContact, phone, date, comment, total_weight, orders, status: payloadStatus, is_custom_address: true,
-                        actor_name: actorName,
-                      };
+                    let finalComment = comment;
+                    if (isPickup) {
+                      finalComment = `САМОВИВІЗ. ${comment}`.trim();
+                    } else if (isNP) {
+                      finalComment = `${finalAddress}. ${comment}`.trim();
+                    }
+
+                    const payload: DeliveryPayload = {
+                      client: formClient as string,
+                      manager, 
+                      address: isPickup ? "Самовивіз" : finalAddress, 
+                      latitude: isPickup ? 0 : latitude, 
+                      longitude: isPickup ? 0 : longitude, 
+                      contact: finalContact, 
+                      phone, 
+                      date, 
+                      comment: finalComment, 
+                      total_weight, 
+                      orders, 
+                      status: payloadStatus, 
+                      is_custom_address: true,
+                      actor_name: actorName,
+                    };
 
                     try {
                       const result = await sendDeliveryData(payload, getInitData());

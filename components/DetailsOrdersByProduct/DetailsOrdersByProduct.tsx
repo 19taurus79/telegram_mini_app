@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getMovedDataByProduct, getOrdersByProduct, getRemainsById } from "@/lib/api";
+import { CircleDollarSign, Coins, Wallet, Box, Truck, MapPin } from "lucide-react";
 import css from "./DetailsOrdersByProduct.module.css";
 import { useInitData } from "@/store/InitData";
 
@@ -96,6 +97,39 @@ export default function DetailsOrdersByProduct({
     return map;
   }, [movedProducts]);
 
+  // Логіка визначення статусу оплати
+  const getPaymentInfo = (order: any) => {
+    const isCredit100 = order.loan_percentage === 100;
+    const plan = order.planned_amount || 0;
+    const fact = order.actual_payment_amount || 0;
+    
+    // Оплачено якщо кредит 100% або факт >= 90% від плану
+    const isPaid = isCredit100 || (plan > 0 && fact >= plan * 0.9);
+    const isPartial = !isPaid && fact > 0;
+
+    if (isPaid) return { 
+      label: "Оплачено", 
+      icon: <CircleDollarSign size={14} />, 
+      color: "#4ade80", 
+      bgColor: "rgba(34, 197, 94, 0.15)", 
+      border: "1px solid rgba(34, 197, 94, 0.4)" 
+    };
+    if (isPartial) return { 
+      label: "Частково", 
+      icon: <Wallet size={14} />, 
+      color: "#fbbf24", 
+      bgColor: "rgba(251, 191, 36, 0.15)", 
+      border: "1px solid rgba(251, 191, 36, 0.4)" 
+    };
+    return { 
+      label: "Не оплачено", 
+      icon: <Coins size={14} />, 
+      color: "#ef4444", 
+      bgColor: "rgba(239, 68, 68, 0.15)", 
+      border: "1px solid rgba(239, 68, 68, 0.4)" 
+    };
+  };
+
   // Підрахунок підсумків по статусах
   const orderSummary = useMemo(() => {
     if (!data) return { zatverdzeno: 0, productConfirmed: 0, other: 0, total: 0 };
@@ -121,20 +155,23 @@ export default function DetailsOrdersByProduct({
     if (!remainsData && !movedProducts) return { partyList: [], partyTotals: null };
     
     // Групуємо залишки
-    const map = new Map<string, { buh: number; skl: number; moved: number; warehouses: Set<string> }>();
+    const map = new Map<string, { buh: number; skl: number; storage: number; moved: number; warehouses: Set<string> }>();
     let totalBuh = 0;
     let totalSkl = 0;
+    let totalStorage = 0;
     let totalMoved = 0;
     const allWarehouses = new Set<string>();
     
     if (remainsData) {
       remainsData.forEach(r => {
         const party = (r.nomenclature_series || "Без серії").trim();
-        const current = map.get(party) || { buh: 0, skl: 0, moved: 0, warehouses: new Set<string>() };
+        const current = map.get(party) || { buh: 0, skl: 0, storage: 0, moved: 0, warehouses: new Set<string>() };
         const b = parseFloat(String(r.buh)) || 0;
         const s = parseFloat(String(r.skl)) || 0;
+        const st = parseFloat(String(r.storage)) || 0;
         current.buh += b;
         current.skl += s;
+        current.storage += st;
         if (r.warehouse) {
           current.warehouses.add(r.warehouse);
           allWarehouses.add(r.warehouse);
@@ -143,13 +180,14 @@ export default function DetailsOrdersByProduct({
         
         totalBuh += b;
         totalSkl += s;
+        totalStorage += st;
       });
     }
     
     if (movedProducts) {
       movedProducts.forEach(m => {
         const party = (m.party_sign_y || "Без серії").trim();
-        const current = map.get(party) || { buh: 0, skl: 0, moved: 0, warehouses: new Set<string>() };
+        const current = map.get(party) || { buh: 0, skl: 0, storage: 0, moved: 0, warehouses: new Set<string>() };
         const mQty = parseFloat(String(m.qt_moved)) || 0;
         current.moved += mQty;
         map.set(party, current);
@@ -163,9 +201,10 @@ export default function DetailsOrdersByProduct({
          party,
          buh: stats.buh,
          skl: stats.skl,
+         storage: stats.storage,
          moved: stats.moved,
          freeBuh: stats.buh,
-         freeSkl: stats.skl - stats.moved,
+         freeSkl: stats.skl - stats.moved - stats.storage,
          warehouses: Array.from(stats.warehouses)
       };
     }).sort((a, b) => (b.freeSkl - a.freeSkl));
@@ -175,9 +214,10 @@ export default function DetailsOrdersByProduct({
       partyTotals: {
         buh: totalBuh,
         skl: totalSkl,
+        storage: totalStorage,
         moved: totalMoved,
         freeBuh: totalBuh,
-        freeSkl: totalSkl - totalMoved,
+        freeSkl: totalSkl - totalMoved - totalStorage,
         warehouses: Array.from(allWarehouses)
       } 
     };
@@ -432,8 +472,10 @@ export default function DetailsOrdersByProduct({
                   <th>Менеджер</th>
                   <th>Клієнт</th>
                   <th>Доповнення</th>
+                  <th>Вид діяльності</th>
+                  <th>Док. статус</th>
                   <th onClick={handleSort} className={css.sortableHeader}>
-                    До постачання{" "}
+                    Постачання{" "}
                     {sortDirection === "ascending"
                         ? "↑"
                         : sortDirection === "descending"
@@ -441,6 +483,7 @@ export default function DetailsOrdersByProduct({
                             : ""}
                   </th>
                   <th>Кількість</th>
+                  <th className={css.checkmarkHeader}>Оплата</th>
                   <th className={css.checkmarkHeader}>Переміщено</th>
                 </tr>
                 </thead>
@@ -450,8 +493,55 @@ export default function DetailsOrdersByProduct({
                       <td>{order.manager}</td>
                       <td>{order.client}</td>
                       <td>{order.contract_supplement}</td>
-                      <td>{order.delivery_status}</td>
-                      <td>{order.different}</td>
+                      <td><span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{order.line_of_business}</span></td>
+                      <td>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 700,
+                          color: order.document_status === "затверджено" ? "#4ade80" : "#fbbf24",
+                          background: order.document_status === "затверджено" ? "rgba(74, 222, 128, 0.1)" : "rgba(251, 191, 36, 0.1)",
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>
+                          {order.document_status}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 500 }}>До пост:</span>
+                          <span style={{ 
+                            fontSize: '0.8rem', 
+                            fontWeight: 700,
+                            color: order.delivery_status?.includes("Так") ? "#4ade80" : "#ef4444"
+                          }}>
+                            {order.delivery_status?.includes("Так") ? "Так" : "Ні"}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center', fontWeight: 700 }}>{order.different}</td>
+                        <td className={css.checkmarkCell}>
+                          {(() => {
+                            const pay = getPaymentInfo(order);
+                            return (
+                              <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: pay.bgColor,
+                                color: pay.color,
+                                border: pay.border,
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                              }}>
+                                {pay.icon}
+                                <span style={{ display: 'none' }}>{pay.label}</span>
+                              </div>
+                            );
+                          })()}
+                        </td>
                       <td className={css.checkmarkCell}>
                         {(() => {
                           const movedQty =
@@ -498,12 +588,63 @@ export default function DetailsOrdersByProduct({
                           <span className={css.cardValue}>{order.contract_supplement}</span>
                         </div>
                         <div className={css.cardRow}>
+                          <span className={css.cardLabel}>Вид діяльності:</span>
+                          <span className={css.cardValue} style={{ fontSize: '11px', opacity: 0.8 }}>{order.line_of_business}</span>
+                        </div>
+                        {order.contract_type && (
+                           <div className={css.cardRow}>
+                             <span className={css.cardLabel}>Тип контракту:</span>
+                             <span className={css.cardValue} style={{ fontSize: '11px', opacity: 0.8 }}>{order.contract_type}</span>
+                           </div>
+                         )}
+                         <div className={css.cardRow}>
+                           <span className={css.cardLabel}>Статус документа:</span>
+                           <span className={css.cardValue} style={{ 
+                             color: order.document_status === "затверджено" ? "#4ade80" : "#fbbf24",
+                             fontWeight: 700
+                           }}>{order.document_status}</span>
+                         </div>
+                          <div className={css.cardRow}>
+                            <span className={css.cardLabel}>Оплата:</span>
+                            <span className={css.cardValue}>
+                              {(() => {
+                                const pay = getPaymentInfo(order);
+                                return (
+                                  <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: pay.bgColor,
+                                    color: pay.color,
+                                    border: pay.border,
+                                    padding: '6px 12px',
+                                    borderRadius: '10px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                  }}>
+                                    {pay.icon}
+                                    <span>{pay.label}</span>
+                                  </div>
+                                );
+                              })()}
+                            </span>
+                          </div>
+                        <div className={css.cardRow}>
                           <span className={css.cardLabel}>До постачання:</span>
-                          <span className={css.cardValue}>{order.delivery_status}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 500 }}>До постачання:</span>
+                            <span className={css.cardValue} style={{ 
+                              color: order.delivery_status?.includes("Так") ? "#4ade80" : "#ef4444",
+                              fontWeight: 700
+                            }}>
+                              {order.delivery_status?.includes("Так") ? "Так" : "Ні"}
+                            </span>
+                          </div>
                         </div>
                         <div className={css.cardRow}>
                           <span className={css.cardLabel}>Кількість:</span>
-                          <span className={css.cardValue}>{order.different}</span>
+                          <span className={css.cardValue} style={{ fontWeight: 800, fontSize: '1.1rem' }}>{order.different}</span>
                         </div>
                       </div>
                   );

@@ -7,7 +7,7 @@ import styles from "../OrdersDashboard.module.css";
 import { useState } from "react";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
-import { Truck } from "lucide-react";
+import { Truck, CircleDollarSign, Coins, Wallet, MessageSquare } from "lucide-react";
 import clsx from "clsx";
 
 interface ContractsWidgetProps {
@@ -36,10 +36,11 @@ export default function ContractsWidget({
   });
 
   const getContractDeliveryInfo = (contractRef: string) => {
-    if (!allDeliveries) return { isCO: false, isInDelivery: false };
+    if (!allDeliveries) return { isCO: false, isInDelivery: false, date: null };
     
     let isCO = false;
     let isInDelivery = false;
+    let date: string | null = null;
 
     allDeliveries.forEach(d => {
       const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
@@ -50,13 +51,50 @@ export default function ContractsWidget({
       if (hasItem) {
         if (d.status?.toLowerCase().includes("цо")) {
           isCO = true;
+          // Для ЦО дату тоже можно сохранить, но пользователь просил не добавлять ее в бейдж.
+          // Мы сохраним ее здесь, а в рендеринге будем решать.
+          date = d.delivery_date;
         } else {
           isInDelivery = true;
+          date = d.delivery_date;
         }
       }
     });
 
-    return { isCO, isInDelivery };
+    return { isCO, isInDelivery, date };
+  };
+
+  // Логіка визначення статусу оплати
+  const getPaymentInfo = (contract: Contract) => {
+    const isCredit100 = contract.loan_percentage === 100;
+    const plan = contract.planned_amount || 0;
+    const fact = contract.actual_payment_amount || 0;
+    
+    // Оплачено якщо кредит 100% або факт >= 90% від плану
+    const isPaid = isCredit100 || (plan > 0 && fact >= plan * 0.9);
+    const isPartial = !isPaid && fact > 0;
+
+    if (isPaid) return { 
+      label: "Оплачено", 
+      icon: <CircleDollarSign size={14} />, 
+      color: "#4ade80", 
+      bgColor: "rgba(34, 197, 94, 0.15)", 
+      border: "1px solid rgba(34, 197, 94, 0.4)" 
+    };
+    if (isPartial) return { 
+      label: "Частково", 
+      icon: <Wallet size={14} />, 
+      color: "#fbbf24", 
+      bgColor: "rgba(251, 191, 36, 0.15)", 
+      border: "1px solid rgba(251, 191, 36, 0.4)" 
+    };
+    return { 
+      label: "Не оплачено", 
+      icon: <Coins size={14} />, 
+      color: "#ef4444", 
+      bgColor: "rgba(239, 68, 68, 0.15)", 
+      border: "1px solid rgba(239, 68, 68, 0.4)" 
+    };
   };
 
   // Якщо клієнт не обраний, показуємо підказку
@@ -82,23 +120,74 @@ export default function ContractsWidget({
                 ),
               })}
               onClick={() => onSelectContract(contract)}
+              style={{ padding: '16px', position: 'relative', overflow: 'hidden' }}
             >
-              {/* Заголовок картки контракту зі статусом доставки */}
-              <div className={styles.contractHeader}>
-                <span style={{ flex: 1 }}>
-                  {contract.contract_supplement}
-                </span>
-                
-                {/* Бейджі доставки */}
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                  {(isCO || isInDelivery) && (
-                    <span className={styles.deliveryBadge} style={{ margin: 0, padding: '4px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={isCO && isInDelivery ? "Доставка (в т.ч. ЦО)" : (isCO ? "Доставка з ЦО" : "В доставці")}>
-                      <Truck size={14} />
-                    </span>
-                  )}
-                </div>
+              {/* Premium Accent line */}
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '4px',
+                background: selectedContracts.some(c => c.contract_supplement === contract.contract_supplement) 
+                  ? 'var(--accent-green)' 
+                  : 'transparent',
+                transition: 'all 0.3s ease'
+              }} />
 
-                <div onClick={(e) => e.stopPropagation()}>
+              {/* Header: Number + Icons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff', letterSpacing: '0.5px' }}>
+                    {contract.contract_supplement}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: '2px' }}>
+                    {contract.client}
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                  {/* Delivery Icon */}
+                  {(isCO || isInDelivery) && (
+                    <div style={{
+                      padding: '6px',
+                      background: isCO ? 'rgba(99, 102, 241, 0.2)' : 'rgba(0, 196, 204, 0.2)',
+                      color: isCO ? '#818cf8' : '#22d3ee',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${isCO ? 'rgba(99, 102, 241, 0.3)' : 'rgba(0, 196, 204, 0.3)'}`
+                    }} title={isCO ? "Доставка з ЦО" : `В доставці ${date ? `(${date})` : ""}`}>
+                      <Truck size={14} />
+                    </div>
+                  )}
+
+                  {/* Payment Icon Label */}
+                  {(() => {
+                    const pay = getPaymentInfo(contract);
+                    return (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 12px',
+                        background: pay.bgColor,
+                        color: pay.color,
+                        border: pay.border,
+                        borderRadius: '10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                      }}>
+                        {pay.icon}
+                        <span>{pay.label}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Comments */}
                   <OrderCommentBadge
                     orderRef={contract.contract_supplement}
                     onClick={() =>
@@ -108,6 +197,71 @@ export default function ContractsWidget({
                     }
                   />
                 </div>
+              </div>
+
+              {/* Body: Client/Bussiness info */}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600 }}>
+                    {contract.line_of_business}
+                  </div>
+                  {contract.contract_type && (
+                    <div style={{ 
+                      fontSize: '0.7rem', 
+                      color: 'rgba(255, 255, 255, 0.4)', 
+                      textAlign: 'right',
+                      fontStyle: 'italic',
+                      maxWidth: '60%'
+                    }}>
+                      {contract.contract_type}
+                    </div>
+                  )}
+                </div>
+
+                {/* Financial Info */}
+                {(contract.planned_amount !== undefined || contract.actual_payment_amount !== undefined) && (
+                  <div style={{ 
+                    marginTop: '10px', 
+                    padding: '8px', 
+                    background: 'rgba(255,255,255,0.03)', 
+                    borderRadius: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                      <span style={{ opacity: 0.5 }}>План:</span>
+                      <span style={{ fontWeight: 600, color: '#fff' }}>
+                        {contract.planned_amount?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                      <span style={{ opacity: 0.5 }}>Оплачено:</span>
+                      <span style={{ 
+                        fontWeight: 700, 
+                        color: (contract.actual_payment_amount || 0) >= (contract.planned_amount || 0) * 0.9 ? '#4ade80' : '#fff' 
+                      }}>
+                        {contract.actual_payment_amount?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer: Status Badges */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span
+                  className={clsx(
+                    styles.statusBadge,
+                    contract.document_status === "затверджено" && styles.statusOk,
+                    contract.document_status === "створено менеджером" && styles.statusWaiting,
+                    contract.document_status === "відхилено" && styles.statusFailed
+                  )}
+                  style={{ borderRadius: '6px', padding: '4px 8px' }}
+                >
+                  {contract.document_status}
+                </span>
+
                 <span
                   className={clsx(
                     styles.statusBadge,
@@ -115,26 +269,20 @@ export default function ContractsWidget({
                       ? styles.statusOk
                       : styles.statusFailed
                   )}
+                  style={{ 
+                    borderRadius: '6px', 
+                    padding: '4px 8px', 
+                    fontSize: '0.65rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="Статус до постачання"
                 >
-                  {contract.delivery_status}
-                </span>
-              </div>
-              {/* Вид діяльності */}
-              <div className={styles.contractSub}>
-                {contract.line_of_business}
-              </div>
-              {/* Статус документа (затверджено/відхилено тощо) */}
-              <div style={{ marginTop: "4px" }}>
-                <span
-                  className={clsx(
-                    styles.statusBadge,
-                    contract.document_status === "затверджено" && styles.statusOk,
-                    contract.document_status === "створено менеджером" &&
-                      styles.statusWaiting,
-                    contract.document_status === "відхилено" && styles.statusFailed
-                  )}
-                >
-                  {contract.document_status}
+                  <span style={{ opacity: 0.7, fontWeight: 500 }}>До постачання:</span>
+                  <span style={{ fontWeight: 800 }}>
+                    {contract.delivery_status?.includes("Так") ? "Так" : "Ні"}
+                  </span>
                 </span>
               </div>
             </div>

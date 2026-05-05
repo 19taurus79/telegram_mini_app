@@ -862,9 +862,9 @@ export default function BottomData({ onEditClient }) {
 
         // Приоритет статусу ЦО
         const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
-        if (coDelivery) return coDelivery.status;
+        if (coDelivery) return coDelivery;
 
-        return matchingDeliveries[0].status;
+        return matchingDeliveries[0];
       };
       return (
         <div className={css.container}>
@@ -901,13 +901,13 @@ export default function BottomData({ onEditClient }) {
                           />
                         </div>
                         {(() => {
-                          const status = getOrderDeliveryStatus(order);
-                          if (!status) return null;
+                          const delivery = getOrderDeliveryStatus(order);
+                          if (!delivery) return null;
                           
-                          const isCO = status.toLowerCase().includes("цо");
+                          const isCO = delivery.status?.toLowerCase().includes("цо");
                           return (
                             <span className={`${css.deliveryBadge} ${isCO ? css.badgeCO : ""}`}>
-                              {isCO ? "ДОСТАВКА З ЦО" : "В ДОСТАВЦІ"}
+                              {isCO ? "ДОСТАВКА З ЦО" : `В ДОСТАВЦІ ${delivery.delivery_date ? `(${delivery.delivery_date})` : ""}`}
                             </span>
                           );
                         })()}

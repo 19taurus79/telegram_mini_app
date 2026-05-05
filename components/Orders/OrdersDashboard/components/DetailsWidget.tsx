@@ -10,7 +10,7 @@ import React from "react";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { Truck, Loader2, Check } from "lucide-react";
+import { Truck, Loader2, Check, CircleDollarSign, Coins, Wallet } from "lucide-react";
 import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -20,12 +20,13 @@ import * as XLSX from "xlsx";
 import { useReactToPrint } from "react-to-print";
 import { FileDown, Printer } from "lucide-react";
 
-type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "none";
+type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "deliveryStatusNoSeed" | "deliveryStatusNoOther" | "none";
 
 interface ValidationModalState {
   isOpen: boolean;
   item: OrdersDetails | null;
   type: ValidationType;
+  types?: ValidationType[];
 }
 
 const getItemStatus = (item: OrdersDetails) => {
@@ -56,6 +57,39 @@ const getItemStatus = (item: OrdersDetails) => {
   }
 
   return { color, validationType, sumMovedQ, diffQ };
+};
+
+// Логіка визначення статусу оплати
+const getPaymentInfo = (item: any) => {
+  const isCredit100 = item.loan_percentage === 100;
+  const plan = item.planned_amount || 0;
+  const fact = item.actual_payment_amount || 0;
+  
+  // Оплачено якщо кредит 100% або факт >= 90% від плану
+  const isPaid = isCredit100 || (plan > 0 && fact >= plan * 0.9);
+  const isPartial = !isPaid && fact > 0;
+
+  if (isPaid) return { 
+    label: "Оплачено", 
+    icon: <CircleDollarSign size={16} />, 
+    color: "#4ade80", 
+    bgColor: "rgba(34, 197, 94, 0.15)", 
+    border: "1px solid rgba(34, 197, 94, 0.4)" 
+  };
+  if (isPartial) return { 
+    label: "Частково", 
+    icon: <Wallet size={16} />, 
+    color: "#fbbf24", 
+    bgColor: "rgba(251, 191, 36, 0.15)", 
+    border: "1px solid rgba(251, 191, 36, 0.4)" 
+  };
+  return { 
+    label: "Не оплачено", 
+    icon: <Coins size={16} />, 
+    color: "#ef4444", 
+    bgColor: "rgba(239, 68, 68, 0.15)", 
+    border: "1px solid rgba(239, 68, 68, 0.4)" 
+  };
 };
 
 interface DetailsWidgetProps {
@@ -116,8 +150,7 @@ export default function DetailsWidget({
       "Переміщено": item.parties?.map(p => `${p.moved_q}${p.party ? ` (${p.party})` : ''}`).join(", ") || "-",
       "Бух. залишок": item.buh,
       "Скл. залишок": item.skl,
-      "Потреба": item.orders_q,
-      "Статус": getItemStatus(item).color === "green" ? "Готово" : (getItemStatus(item).color === "red" ? "Немає" : "В дорозі")
+      "Потреба": item.orders_q
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -261,13 +294,32 @@ export default function DetailsWidget({
         return;
     }
 
+    const parentContract = selectedContracts.find(c => c.contract_supplement.trim() === item.contract_supplement.trim());
+    const deliveryStatus = item.delivery_status || parentContract?.delivery_status;
+    const lineOfBusiness = item.line_of_business || parentContract?.line_of_business;
+    const isSeed = ["Насіння", "Власне виробництво насіння"].includes(lineOfBusiness || "");
+
+    const warnings: ValidationType[] = [];
+    
+    if (deliveryStatus?.toLowerCase().includes("ні")) {
+        warnings.push(isSeed ? "deliveryStatusNoSeed" : "deliveryStatusNoOther");
+    }
+
     const { validationType } = getItemStatus(item);
     if (validationType !== "none") {
+        warnings.push(validationType);
+    }
+
+    if (warnings.length > 0) {
         setValidationModal({
             isOpen: true,
             item,
-            type: validationType
+            type: warnings[0],
+            types: warnings
         });
+        if (deliveryStatus?.toLowerCase().includes("ні")) {
+            toast.error("Зверніть увагу на статус заявки!");
+        }
         return;
     }
 
@@ -348,13 +400,12 @@ export default function DetailsWidget({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>Доповнення</th>
+              <th className={styles.th}>Доповнення / Тип</th>
               <th className={styles.th}>Товар</th>
               <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
               <th className={styles.th}>Переміщено (Партії)</th>
               <th className={styles.th}>Залишки (Загальні)</th>
-              <th className={styles.th}>Потреба по підрозділу</th>
-              <th className={styles.th}>Готовність до відвантаження</th>
+              <th className={styles.th}>Потреба</th>
               <th className={styles.th} style={{ width: "40px", textAlign: "center" }}><Truck size={16} /></th>
               <th className={styles.th} style={{ width: "40px", textAlign: "center" }}>Коментарі</th>
             </tr>
@@ -362,7 +413,7 @@ export default function DetailsWidget({
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
+                <td colSpan={8} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
               </tr>
             )}
             
@@ -370,7 +421,7 @@ export default function DetailsWidget({
               if (!detailsList || detailsList.length === 0) {
                 return !isLoading ? (
                   <tr>
-                    <td colSpan={9} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
+                    <td colSpan={8} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
                       {selectedContracts.length > 0 ? "Даних не знайдено" : "Оберіть доповнення"}
                     </td>
                   </tr>
@@ -391,7 +442,7 @@ export default function DetailsWidget({
               return grouped.map((group) => (
                 <React.Fragment key={group.client}>
                   <tr>
-                    <td colSpan={9} className={styles.clientGroupHeader}>👤 {group.client}</td>
+                    <td colSpan={8} className={styles.clientGroupHeader}>👤 {group.client}</td>
                   </tr>
                   {group.items.map((item: OrdersDetails) => {
                     const itemId = getItemId(item);
@@ -403,12 +454,28 @@ export default function DetailsWidget({
                         key={item.id} 
                         className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
                       >
-                        <td className={styles.td}>{item.contract_supplement}</td>
                         <td className={styles.td}>
-                          {getProductName(item)}
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontWeight: 700 }}>{item.contract_supplement}</span>
+                            {item.contract_type && (
+                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                                {item.contract_type}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className={styles.td}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{getProductName(item)}</span>
+                            {item.contract_type && (
+                              <span style={{ fontSize: '10px', opacity: 0.6 }}>{item.contract_type}</span>
+                            )}
+                          </div>
                           {inDelivery && (
                             <span className={`${styles.deliveryBadge} ${inDelivery.status?.toLowerCase().includes("цо") ? styles.badgeCO : ""}`}>
-                              {inDelivery.status?.toLowerCase().includes("цо") ? "ДОСТАВКА З ЦО" : "В доставці"}
+                              {inDelivery.status?.toLowerCase().includes("цо") 
+                                ? "ДОСТАВКА З ЦО" 
+                                : `В доставці ${inDelivery.delivery_date ? `(${inDelivery.delivery_date})` : ""}`}
                             </span>
                           )}
                         </td>
@@ -428,19 +495,15 @@ export default function DetailsWidget({
                             <div>Скл: {item.skl}</div>
                           </div>
                         </td>
-                        <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer" }}>{item.orders_q}</td> 
-                        <td className={styles.td}>
-                          {(() => {
-                            const { color } = getItemStatus(item);
-                            return <Check size={20} className={color === "red" ? styles.checkmarkRed : (color === "green" ? styles.checkmarkGreen : styles.checkmarkYellow)} strokeWidth={3} />;
-                          })()}
-                        </td>
+                        <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer", textAlign: 'center', fontWeight: 600 }}>
+                          {item.orders_q}
+                        </td> 
                         <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>
                           {addingToDeliveryId === itemId ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 0 : 2} />}
                         </td>
-                        <td className={styles.td} style={{ textAlign: "center" }}>
-                          <OrderCommentBadge orderRef={item.contract_supplement} productName={getProductName(item)} initData={effectiveInitData} onClick={() => setCommentModalData({ orderRef: item.contract_supplement, productId: item.product, productName: getProductName(item) })} />
-                        </td>
+                         <td className={styles.td} style={{ textAlign: "center" }}>
+                           <OrderCommentBadge orderRef={item.contract_supplement} productName={getProductName(item)} initData={effectiveInitData} onClick={() => setCommentModalData({ orderRef: item.contract_supplement, productId: item.product, productName: getProductName(item) })} />
+                         </td>
                       </tr>
                     );
                   })}
@@ -470,9 +533,15 @@ export default function DetailsWidget({
               {validationModal.type === "editingQuantity" ? "Зміна кількості" : "Увага!"}
             </h4>
             <div className={styles.modalBody}>
-              {validationModal.type === "outOfStock" && <p>Даного товару немає в наявності</p>}
-              {validationModal.type === "maybeInTransit" && <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>}
-              {validationModal.type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
+              {(validationModal.types || [validationModal.type]).map((type, idx) => (
+                <div key={type} style={{ marginBottom: idx < (validationModal.types?.length || 1) - 1 ? '12px' : 0 }}>
+                  {type === "outOfStock" && <p>Даного товару немає в наявності</p>}
+                  {type === "maybeInTransit" && <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>}
+                  {type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
+                  {type === "deliveryStatusNoSeed" && <p>Заявка має статус "До постачання: Ні". Швидше за все, насіння під цю заявку не було замовлено. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "deliveryStatusNoOther" && <p>Заявка має статус "До постачання: Ні". Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
+                </div>
+              ))}
               
               {validationModal.type === "editingQuantity" && (
                 <div className={styles.editQtyContainer}>
@@ -538,7 +607,7 @@ export default function DetailsWidget({
               <th style={{ width: '20%' }}>Партії / Переміщено</th>
               <th>Бул/Скл</th>
               <th>Потреба</th>
-              <th>Статус</th>
+              
               <th style={{ width: '15%' }}>Примітки</th>
             </tr>
           </thead>
@@ -559,7 +628,7 @@ export default function DetailsWidget({
                     <React.Fragment key={`${item.id}_${index}`}>
                       {showClientHeader && (
                         <tr className={styles.printClientHeader}>
-                          <td colSpan={8}><strong>{item.client || "—"}</strong></td>
+                          <td colSpan={7}><strong>{item.client || "—"}</strong></td>
                         </tr>
                       )}
                       <tr>
@@ -577,12 +646,7 @@ export default function DetailsWidget({
                         </td>
                         <td>{item.buh} / {item.skl}</td>
                         <td>{item.orders_q}</td>
-                        <td>
-                          <span className={color === 'green' ? styles.checkmarkGreen : color === 'yellow' ? styles.checkmarkYellow : styles.checkmarkRed}>
-                            {color === 'green' ? '✔' : color === 'yellow' ? '⏳' : '✖'}
-                          </span>
-                          <span style={{ fontSize: '8pt', marginLeft: '4px' }}>{statusLabel}</span>
-                        </td>
+
                         <td>
                           <div style={{ fontSize: '8pt' }}>
                             {delivery && <div>🚛 Доставка ({delivery.status})</div>}

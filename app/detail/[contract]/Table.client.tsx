@@ -142,7 +142,8 @@ function TableOrderDetail({ details }: Detail) {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     
     const delivery = allDeliveries.find(d => {
-        const statusMatch = (d.status === "Створено" || d.status === "В роботі" || d.status === "created" || d.status === "inprogress");
+        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+        const statusMatch = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
         if (!statusMatch) return false;
         
         return d.items?.some(di => {
@@ -261,9 +262,11 @@ function TableOrderDetail({ details }: Detail) {
                 )}
               </div>
               {getDeliveryForItem(item) && (
-                  <span className={css.deliveryBadge}>
+                  <span className={`${css.deliveryBadge} ${getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") ? css.badgeCO : ""}`}>
                     <ExternalLink size={10} className="mr-1" />
-                    В доставці
+                    {getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") 
+                      ? "ДОСТАВКА З ЦО" 
+                      : `В доставці ${getDeliveryForItem(item)?.delivery_date ? `(${getDeliveryForItem(item)?.delivery_date})` : ""}`}
                   </span>
               )}
               {addingToDeliveryId === item.id && (

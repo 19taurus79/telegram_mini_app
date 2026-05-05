@@ -5,7 +5,6 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getMovedDataByProduct, getOrdersByProduct, getRemainsById } from "@/lib/api";
 import { CircleDollarSign, Coins, Wallet } from "lucide-react";
 import css from "./DetailsOrdersByProduct.module.css";
-import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { Contract } from "@/types/types";
 import { useInitData } from "@/store/InitData";
 

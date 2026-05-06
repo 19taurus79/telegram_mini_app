@@ -11,9 +11,10 @@ export const useWebsocket = () => {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Получаем базовый URL API и меняем протокол на ws/wss
+    // Получаем базовый URL API и меняем протокол на ws/wss, 
+    // либо используем явно заданный URL для WebSocket из переменных окружения
     const apiUri = process.env.NEXT_PUBLIC_URL_API || 'http://localhost:8000';
-    const wsUri = apiUri.replace(/^http/, 'ws') + '/ws';
+    const wsUri = process.env.NEXT_PUBLIC_WS_URL || (apiUri.replace(/^http/, 'ws') + '/ws');
 
     const connect = () => {
       console.log('🔌 Connecting to WebSocket:', wsUri);

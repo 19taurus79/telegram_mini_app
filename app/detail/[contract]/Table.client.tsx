@@ -400,7 +400,7 @@ function TableOrderDetail({ details }: Detail) {
                   {type === "deliveryStatusNoOther" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
                   {type === "documentNotApproved" && (
                     <p>
-                        Заявка не має статусу "Затверджено" (поточний статус: <b>{validationModal.item?.document_status}</b>). 
+                        Заявка не має статусу &quot;Затверджено&quot; (поточний статус: <b>{validationModal.item?.document_status}</b>). 
                         Доставка може бути затримана до моменту затвердження.
                     </p>
                   )}

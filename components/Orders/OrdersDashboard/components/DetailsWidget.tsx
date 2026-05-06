@@ -20,7 +20,7 @@ import * as XLSX from "xlsx";
 import { useReactToPrint } from "react-to-print";
 import { FileDown, Printer } from "lucide-react";
 
-type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "deliveryStatusNoSeed" | "deliveryStatusNoOther" | "none";
+type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "deliveryStatusNoSeed" | "deliveryStatusNoOther" | "documentNotApproved" | "none";
 
 interface ValidationModalState {
   isOpen: boolean;
@@ -39,10 +39,10 @@ const getItemStatus = (item: OrdersDetails) => {
   let color: "red" | "green" | "yellow" = "yellow";
   let validationType: ValidationType = "none";
 
-  if (sumMovedQ === 0 && ordersQ > buhQ) {
+  if (sumMovedQ === 0 && (ordersQ > buhQ || (ordersQ === 0 && buhQ === 0))) {
     color = "red";
     validationType = "outOfStock";
-  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ && buhQ > 0) || (ordersQ <= buhQ && buhQ > 0 && buhQ <= sklQ)) {
     color = "green";
     validationType = "none";
   } else {
@@ -267,10 +267,16 @@ export default function DetailsWidget({
     const lineOfBusiness = item.line_of_business || parentContract?.line_of_business;
     const isSeed = ["Насіння", "Власне виробництво насіння"].includes(lineOfBusiness || "");
 
+    const documentStatus = item.document_status || parentContract?.document_status;
+
     const warnings: ValidationType[] = [];
     
     if (deliveryStatus?.toLowerCase().includes("ні")) {
         warnings.push(isSeed ? "deliveryStatusNoSeed" : "deliveryStatusNoOther");
+    }
+
+    if (documentStatus && documentStatus !== "затверджено") {
+        warnings.push("documentNotApproved");
     }
 
     const { validationType } = getItemStatus(item);
@@ -285,7 +291,7 @@ export default function DetailsWidget({
             type: warnings[0],
             types: warnings
         });
-        if (deliveryStatus?.toLowerCase().includes("ні")) {
+        if (deliveryStatus?.toLowerCase().includes("ні") || (documentStatus && documentStatus !== "затверджено")) {
             toast.error("Зверніть увагу на статус заявки!");
         }
         return;
@@ -502,6 +508,12 @@ export default function DetailsWidget({
                   {type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
                   {type === "deliveryStatusNoSeed" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Швидше за все, насіння під цю заявку не було замовлено. Зверніться у відповідний відділ для зміни статусу.</p>}
                   {type === "deliveryStatusNoOther" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "documentNotApproved" && (
+                    <p>
+                        Заявка не має статусу "Затверджено" (поточний статус: <b>{validationModal.item?.document_status}</b>). 
+                        Доставка може бути затримана до моменту затвердження.
+                    </p>
+                  )}
                 </div>
               ))}
               

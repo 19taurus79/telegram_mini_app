@@ -206,6 +206,7 @@ export type OrdersDetails = {
   loan_percentage?: number;
   planned_amount?: number;
   actual_payment_amount?: number;
+  document_status?: string;
 };
 export type TaskGoogle = {
   kind: string;

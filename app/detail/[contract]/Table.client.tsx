@@ -37,18 +37,22 @@ type OrderDetailItem = {
     party: string;
     moved_q: number;
   }[];
+  delivery_status?: string;
+  document_status?: string;
+  line_of_business?: string;
 };
 
 type Detail = {
   details: OrderDetailItem[];
 };
 
-type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "none";
+type ValidationType = "outOfStock" | "maybeInTransit" | "insufficientMove" | "editingQuantity" | "deliveryStatusNoSeed" | "deliveryStatusNoOther" | "documentNotApproved" | "none";
 
 interface ValidationModalState {
   isOpen: boolean;
   item: OrderDetailItem | null;
   type: ValidationType;
+  types?: ValidationType[];
 }
 
 const getItemStatus = (item: OrderDetailItem) => {
@@ -61,10 +65,10 @@ const getItemStatus = (item: OrderDetailItem) => {
   let color: "red" | "green" | "yellow" = "yellow";
   let validationType: ValidationType = "none";
 
-  if (sumMovedQ === 0 && ordersQ > buhQ) {
+  if (sumMovedQ === 0 && (ordersQ > buhQ || (ordersQ === 0 && buhQ === 0))) {
     color = "red";
     validationType = "outOfStock";
-  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ) || (ordersQ <= buhQ && buhQ <= sklQ)) {
+  } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ && buhQ > 0) || (ordersQ <= buhQ && buhQ > 0 && buhQ <= sklQ)) {
     color = "green";
     validationType = "none";
   } else {
@@ -174,7 +178,7 @@ function TableOrderDetail({ details }: Detail) {
     setAddingToDeliveryId(itemId);
     try {
         const weight = await getWeightForProduct({ item, initData });
-        const finalQty = customQty !== undefined ? customQty : item.quantity;
+        const finalQty = customQty !== undefined ? customQty : (item.quantity > 0 ? item.quantity : item.orders_q);
         
         if (isAlreadyIn) {
             updateQuantity(itemId, finalQty);
@@ -234,13 +238,36 @@ function TableOrderDetail({ details }: Detail) {
             
             const isItemInDelivery = isSelected(item.id);
             if (!isItemInDelivery) {
+                 const deliveryStatus = item.delivery_status;
+                 const documentStatus = item.document_status;
+                 const lineOfBusiness = item.line_of_business;
+                 const isSeed = ["Насіння", "Власне виробництво насіння"].includes(lineOfBusiness || "");
+
+                 const warnings: ValidationType[] = [];
+                 
+                 if (deliveryStatus?.toLowerCase().includes("ні")) {
+                     warnings.push(isSeed ? "deliveryStatusNoSeed" : "deliveryStatusNoOther");
+                 }
+
+                 if (documentStatus && documentStatus !== "затверджено") {
+                     warnings.push("documentNotApproved");
+                 }
+
                  const { validationType } = getItemStatus(item);
                  if (validationType !== "none") {
+                     warnings.push(validationType);
+                 }
+
+                 if (warnings.length > 0) {
                      setValidationModal({
                          isOpen: true,
                          item,
-                         type: validationType
+                         type: warnings[0],
+                         types: warnings
                      });
+                     if (deliveryStatus?.toLowerCase().includes("ні") || (documentStatus && documentStatus !== "затверджено")) {
+                         toast.error("Зверніть увагу на статус заявки!");
+                     }
                      return;
                  }
                  await handleAddToDelivery(item);
@@ -364,15 +391,21 @@ function TableOrderDetail({ details }: Detail) {
               {validationModal.type === "editingQuantity" ? "Зміна кількості" : "Увага!"}
             </h4>
             <div className={css.modalBody}>
-              {validationModal.type === "outOfStock" && (
-                <p>Даного товару немає в наявності</p>
-              )}
-              {validationModal.type === "maybeInTransit" && (
-                <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>
-              )}
-              {validationModal.type === "insufficientMove" && (
-                <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>
-              )}
+              {(validationModal.types || [validationModal.type]).map((type, idx) => (
+                <div key={type} style={{ marginBottom: idx < (validationModal.types?.length || 1) - 1 ? '12px' : 0 }}>
+                  {type === "outOfStock" && <p>Даного товару немає в наявності</p>}
+                  {type === "maybeInTransit" && <p>Можливо цього товару або цієї партії ще немає фізично на складі, можливо він в дорозі</p>}
+                  {type === "insufficientMove" && <p>Під цю заявку переміщено товару менше, ніж ви хочете відправити</p>}
+                  {type === "deliveryStatusNoSeed" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Швидше за все, насіння під цю заявку не було замовлено. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "deliveryStatusNoOther" && <p>Заявка має статус &quot;До постачання: Ні&quot;. Можуть виникнути проблеми з випискою документів. Зверніться у відповідний відділ для зміни статусу.</p>}
+                  {type === "documentNotApproved" && (
+                    <p>
+                        Заявка не має статусу "Затверджено" (поточний статус: <b>{validationModal.item?.document_status}</b>). 
+                        Доставка може бути затримана до моменту затвердження.
+                    </p>
+                  )}
+                </div>
+              ))}
               
               {validationModal.type === "editingQuantity" && (
                 <div className={css.editQtyContainer}>

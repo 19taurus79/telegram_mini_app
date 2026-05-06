@@ -51,6 +51,9 @@ export default async function filteredOrdersDetail({ params }: Props) {
       buh: item.buh,
       skl: item.skl,
       qok: item.qok,
+      delivery_status: item.delivery_status,
+      document_status: item.document_status,
+      line_of_business: item.line_of_business,
     };
   });
   console.log("details", details);

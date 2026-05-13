@@ -183,8 +183,10 @@ export default function DetailsWidget({
 
   const handleRemainsClick = (item: OrdersDetails) => {
     if (item.buh > 0) {
-      const searchParam = encodeURIComponent(item.nomenclature);
-      window.open(`/remains?search=${searchParam}`, "_blank");
+      const fullName = getProductName(item);
+      const searchParam = encodeURIComponent(fullName);
+      const productIdParam = encodeURIComponent(item.product);
+      window.open(`/remains?search=${searchParam}&productId=${productIdParam}`, "_blank");
     }
   };
 

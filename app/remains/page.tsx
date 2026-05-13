@@ -76,33 +76,49 @@ function RemainsContent() {
 
   // Автовибір елемента, який відповідає пошуку
   useEffect(() => {
+      const productIdParam = searchParams.get('productId');
       const searchParam = searchParams.get('search');
-      // Прибираємо умову !selectedProductId, щоб дозволити перемикання при зміні пошуку
-      if (searchParam && data && data.length > 0) {
-           // Шукаємо збіг (точний або входження)
-           // Припускаємо, що searchParam = "Nomenclature Party Season", а item.product це "Nomenclature Party Season ..."
-           // Або навпаки, якщо item.product коротший.
-           const searchLower = searchParam.toLowerCase();
+      
+      if (data && data.length > 0) {
+           // Якщо є productId — робимо точний вибір за ID
+           if (productIdParam) {
+               const exactMatch = data.find(item => item.id === productIdParam);
+               if (exactMatch) {
+                   if (selectedProductId !== exactMatch.id) {
+                       setSelectedProductId(exactMatch.id);
+                   }
+                   return;
+               }
+           }
            
-           // Спробуємо знайти елемент, ім'я якого містить пошуковий запит
-           // Або пошуковий запит міститься в імені елемента (на випадок якщо запит довгий)
-           const match = data.find(item => {
-               const productLower = item.product.toLowerCase();
-               return productLower.includes(searchLower) || searchLower.includes(productLower);
-           });
-           
-           if (match) {
-                // Встановлюємо ID тільки якщо він відрізняється від поточного, щоб уникнути циклів
-                if (selectedProductId !== match.id) {
-                    setSelectedProductId(match.id);
-                }
-           } else {
-               // Якщо точного збігу немає, беремо перший як фолбек (тільки якщо нічого не вибрано або це новий пошук)
-                // Але щоб не стрибало при кожному рендері, краще робити це тільки якщо це явно новий пошук
-                // Поки залишимо логіку "якщо нічого не знайдено - вибираємо перший"
-                if (!selectedProductId || !data.find(d => d.id === selectedProductId)) {
-                     setSelectedProductId(data[0].id);
-                }
+           // Фолбек на текстовий пошук, якщо productId не задано або не знайдено
+           if (searchParam) {
+               const searchLower = searchParam.toLowerCase();
+               
+               // Спочатку шукаємо точний збіг
+               const exactTextMatch = data.find(item => 
+                   item.product.toLowerCase() === searchLower
+               );
+               
+               if (exactTextMatch) {
+                   if (selectedProductId !== exactTextMatch.id) {
+                       setSelectedProductId(exactTextMatch.id);
+                   }
+               } else {
+                   // Фолбек на входження
+                   const partialMatch = data.find(item => {
+                       const productLower = item.product.toLowerCase();
+                       return productLower.includes(searchLower) || searchLower.includes(productLower);
+                   });
+                   
+                   if (partialMatch) {
+                       if (selectedProductId !== partialMatch.id) {
+                           setSelectedProductId(partialMatch.id);
+                       }
+                   } else if (!selectedProductId || !data.find(d => d.id === selectedProductId)) {
+                       setSelectedProductId(data[0].id);
+                   }
+               }
            }
       }
   }, [data, searchParams, selectedProductId]);

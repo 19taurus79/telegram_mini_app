@@ -138,10 +138,10 @@ export default function ContractsWidget({
               {/* Header: Number + Icons */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff', letterSpacing: '0.5px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--foreground)', letterSpacing: '0.5px' }}>
                     {contract.contract_supplement}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--foreground-muted)', fontWeight: 600, marginTop: '2px' }}>
                     {contract.client || "—"}
                   </div>
                 </div>
@@ -202,13 +202,13 @@ export default function ContractsWidget({
               {/* Body: Client/Bussiness info */}
               <div style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--foreground-muted)', fontWeight: 600 }}>
                     {contract.line_of_business}
                   </div>
                   {contract.contract_type && (
                     <div style={{ 
                       fontSize: '0.7rem', 
-                      color: 'rgba(255, 255, 255, 0.4)', 
+                      color: 'var(--foreground-muted)', 
                       textAlign: 'right',
                       fontStyle: 'italic',
                       maxWidth: '60%'
@@ -223,7 +223,7 @@ export default function ContractsWidget({
                   <div style={{ 
                     marginTop: '10px', 
                     padding: '8px', 
-                    background: 'rgba(255,255,255,0.03)', 
+                    background: 'var(--card-bg)', 
                     borderRadius: '8px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -231,7 +231,7 @@ export default function ContractsWidget({
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
                       <span style={{ opacity: 0.5 }}>План:</span>
-                      <span style={{ fontWeight: 600, color: '#fff' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>
                         {contract.planned_amount?.toLocaleString() || '0'}
                       </span>
                     </div>
@@ -239,7 +239,7 @@ export default function ContractsWidget({
                       <span style={{ opacity: 0.5 }}>Оплачено:</span>
                       <span style={{ 
                         fontWeight: 700, 
-                        color: (contract.actual_payment_amount || 0) >= (contract.planned_amount || 0) * 0.9 ? '#4ade80' : '#fff' 
+                        color: (contract.actual_payment_amount || 0) >= (contract.planned_amount || 0) * 0.9 ? '#4ade80' : 'var(--foreground)' 
                       }}>
                         {contract.actual_payment_amount?.toLocaleString() || '0'}
                       </span>

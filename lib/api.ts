@@ -716,6 +716,7 @@ export const getTaskStatus = async (task_id: string) => {
       task_id: task_id,
       task_status: 0,
       task_creator: null,
+      task_creator_name: null,
       task_who_changed_id: null,
       task_who_changed_name: null,
     };

@@ -7,6 +7,7 @@ import styles from "../OrdersDashboard.module.css";
 import { useMemo, useState } from "react";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
+import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
@@ -73,7 +74,7 @@ export default function DetailsWidget({
   selectedContracts,
   showAllContracts,
 }: DetailsWidgetProps) {
-  
+  const router = useRouter();
   const contractsIds = useMemo(() => {
      return selectedContracts.map(c => c.contract_supplement).sort().join(",");
   }, [selectedContracts]);
@@ -186,7 +187,7 @@ export default function DetailsWidget({
       const fullName = getProductName(item);
       const searchParam = encodeURIComponent(fullName);
       const productIdParam = encodeURIComponent(item.product);
-      window.open(`/remains?search=${searchParam}&productId=${productIdParam}`, "_blank");
+      router.push(`/remains?search=${searchParam}&productId=${productIdParam}`);
     }
   };
 

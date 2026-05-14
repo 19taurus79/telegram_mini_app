@@ -86,14 +86,23 @@ export default function TaskCart({
         </div>
       )}
 
-      {/* ── Creator ── */}
-      {taskStatus.task_who_changed_name && taskStatus.task_status !== 0 && (
+      {/* ── Footer / Meta ── */}
+      {(taskStatus.task_creator_name || (taskStatus.task_who_changed_name && taskStatus.task_status !== 0)) && (
         <div className={css.footer}>
           <User2 size={14} className={css.footerIcon} />
-          <span>
-            {taskStatus.task_status === 2 ? "Виконав" : "Виконує"}:{" "}
-            <strong>{taskStatus.task_who_changed_name}</strong>
-          </span>
+          <div className={css.footerContent}>
+            {taskStatus.task_creator_name && (
+              <span className={css.footerLine}>
+                Створив: <strong>{taskStatus.task_creator_name}</strong>
+              </span>
+            )}
+            {taskStatus.task_who_changed_name && taskStatus.task_status !== 0 && (
+              <span className={css.footerLine}>
+                {taskStatus.task_status === 2 ? "Виконав" : "Виконує"}:{" "}
+                <strong>{taskStatus.task_who_changed_name}</strong>
+              </span>
+            )}
+          </div>
         </div>
       )}
     </article>

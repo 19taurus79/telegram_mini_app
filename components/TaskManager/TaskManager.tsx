@@ -89,8 +89,6 @@ export default function TaskManager() {
         <h2 className={css.title}>🚀 Менеджер завдань</h2>
         <a 
           href="https://calendar.google.com/calendar/u/0?cid=dca9aa4129540be8ec133f20092e7f0a500897595fc1736cd295a739d9dc9466@group.calendar.google.com" 
-          target="_blank" 
-          rel="noopener noreferrer"
           className={css.calendarButton}
         >
           <span className={css.calendarIcon}>📅</span>

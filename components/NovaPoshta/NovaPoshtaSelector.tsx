@@ -222,7 +222,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
     house, 
     recipientType, 
     companySearch, 
-    companyName, 
+    companyName,
     payer, 
     paymentMethod,
     onSelect
@@ -246,7 +246,14 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
   }, []);
 
   return (
-    <div className={css.container}>
+    <div className={css.container} style={{ position: 'relative' }}>
+      {/* Loading Overlay */}
+      {(isCityLoading || isWarehouseLoading || isStreetLoading || isCompanyLoading) && (
+        <div className={css.loadingOverlay}>
+          <Loader2 size={32} className={`${css.icon} ${css.spin}`} style={{ position: 'static', opacity: 1 }} />
+        </div>
+      )}
+
       {/* ── City Selection ── */}
       <div className={css.fieldGroup} ref={cityRef}>
         <label className={css.label}>

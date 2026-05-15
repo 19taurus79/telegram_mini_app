@@ -542,8 +542,8 @@ function DeliveryDataContent() {
 
                     const newErrors: Record<string, boolean> = {};
                     if (!address && !isPickup && !isNP) newErrors.address = true;
-                    if (!isPickup && !isNP && !contact) newErrors.contact = true;
-                    if (!isPickup && !isNP && (!phone || phone.length < 19)) newErrors.phone = true;
+                    if (!isPickup && !contact) newErrors.contact = true;
+                    if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
                     if (!date) newErrors.date = true;
 
                     if (Object.keys(newErrors).length > 0) {
@@ -569,20 +569,26 @@ function DeliveryDataContent() {
                     let finalContact = contact;
 
                     if (isNP && npSelection) {
+                      const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
+                      const area = npSelection.city?.region ? `${npSelection.city.region} р-н, ` : "";
                       const city = npSelection.city?.main_description || "";
+                      const fullCity = `${region}${area}${city}`;
+                      
                       const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
                                           npSelection.deliveryType === "postomat" ? "Поштомат" : "Адресна доставка";
                       const warehouse = npSelection.warehouse?.description || npSelection.address;
                       
-                      finalAddress = `НОВА ПОШТА: ${city}, ${deliveryType}: ${warehouse}`;
-                      
                       if (npSelection.recipientType === "company") {
-                        finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou})`;
+                        finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou}), представник: ${contact}`;
+                      } else {
+                        finalContact = contact;
                       }
                       
                       const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
                       const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
-                      finalAddress += ` | ${payerNote} | ${paymentNote}`;
+                      
+                      finalAddress = `Нова Пошта: ${fullCity}, ${deliveryType}: ${warehouse} | ${payerNote} | ${paymentNote}`;
+                      
                       latitude = 0;
                       longitude = 0;
                     } else if (!isPickup && (latitude === undefined || longitude === undefined)) {
@@ -651,7 +657,8 @@ function DeliveryDataContent() {
                     if (isPickup) {
                       finalComment = `САМОВИВІЗ. ${comment}`.trim();
                     } else if (isNP) {
-                      finalComment = `${finalAddress}. ${comment}`.trim();
+                      const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${phone}`;
+                      finalComment = `${fullNPInfo}\n\n${comment}`.trim();
                     }
 
                     const payload: DeliveryPayload = {

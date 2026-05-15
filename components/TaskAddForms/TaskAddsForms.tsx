@@ -17,9 +17,9 @@ import { Client } from "@/types/types";
 import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 
 // Specific value types for each form
-interface NPFormValues {
-  order: string;
   product: string;
+  contact: string;
+  phone: string;
   npSelection: NPSelection | null;
 }
 
@@ -72,6 +72,8 @@ const formConfigs: {
     initialValues: {
       order: "",
       product: "",
+      contact: "",
+      phone: "+380",
       npSelection: null,
     },
     fields: [
@@ -82,26 +84,37 @@ const formConfigs: {
         as: "textarea",
         rows: 3,
       },
+      { name: "contact", label: "Отримувач (ПІБ)", type: "text" },
+      { name: "phone", label: "Телефон", type: "tel" },
       { name: "npSelection", label: "Доставка", as: "novaposhta" },
     ],
     createNote: (values) => {
-      const { order, product, npSelection } = values;
+      const { order, product, contact, phone, npSelection } = values;
       let note = `Доповнення: ${order}\nТовар: ${product}`;
       
       if (npSelection) {
+        const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
+        const area = npSelection.city?.region ? `${npSelection.city.region} р-н, ` : "";
         const city = npSelection.city?.main_description || "";
+        const fullCity = `${region}${area}${city}`;
+        
         const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
                             npSelection.deliveryType === "postomat" ? "Поштомат" : "Адреса";
         const warehouse = npSelection.warehouse?.description || npSelection.address;
         
-        note += `\nМісто: ${city}\nДоставка: ${deliveryType}\nПункт: ${warehouse}`;
+        note += `\nНова Пошта: ${fullCity}, ${deliveryType}: ${warehouse}`;
         
         if (npSelection.recipientType === "company") {
-          note += `\nОтримувач: ${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou})`;
+          note += `\nОрганізація: ${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou})`;
         }
         
-        note += `\nПлатник: ${npSelection.payer === "sender" ? "Відправник" : "Отримувач"}`;
-        note += `\nВид оплати: ${npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий"}`;
+        note += `\nОтримувач: ${contact}`;
+        note += `\nТелефон: ${phone}`;
+        
+        const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
+        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
+        
+        note += `\n${payerNote} | ${paymentNote}`;
       }
       return note;
     },

@@ -16,7 +16,8 @@ import {
 import { Client } from "@/types/types";
 import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 
-// Specific value types for each form
+interface NPFormValues {
+  order: string;
   product: string;
   contact: string;
   phone: string;

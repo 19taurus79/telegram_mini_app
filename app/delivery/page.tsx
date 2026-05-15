@@ -529,178 +529,185 @@ function DeliveryDataContent() {
                   disabled={isLoading}
                   className={styles.buttonSave}
                   style={{ padding: '16px' }}
-                  onClick={async () => {
-                    setIsLoading(true);
-                    setFormError(null);
-                    const { address, contact, phone, date, comment, isPickup, isNP } = formData;
-                    
-                    if (isNP && (!npSelection || !npSelection.isValid)) {
-                      setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
-                      setIsLoading(false);
-                      return;
-                    }
-
-                    const newErrors: Record<string, boolean> = {};
-                    if (!address && !isPickup && !isNP) newErrors.address = true;
-                    if (!isPickup && !contact) newErrors.contact = true;
-                    if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
-                    if (!date) newErrors.date = true;
-
-                    if (Object.keys(newErrors).length > 0) {
-                      setErrors(newErrors);
-                      setFormError("Будь ласка, заповніть всі обов'язкові поля");
-                      setIsLoading(false);
-                      return;
-                    }
-
-                    const selectedDate = new Date(date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (selectedDate < today) {
-                      setErrors({ date: true });
-                      setFormError("Дата доставки не може бути в минулому");
-                      setIsLoading(false);
-                      return;
-                    }
-
-                    let latitude = formData.latitude;
-                    let longitude = formData.longitude;
-                    let finalAddress = address;
-                    let finalContact = contact;
-
-                    if (isNP && npSelection) {
-                      const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
-                      const area = npSelection.city?.region ? `${npSelection.city.region} р-н, ` : "";
-                      const city = npSelection.city?.main_description || "";
-                      const fullCity = `${region}${area}${city}`;
+                  onClick={async (e) => {
+                    if (isLoading) return;
+                    const btn = e.currentTarget;
+                    btn.disabled = true;
+                    try {
+                      setIsLoading(true);
+                      setFormError(null);
+                      const { address, contact, phone, date, comment, isPickup, isNP } = formData;
                       
-                      const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
-                                          npSelection.deliveryType === "postomat" ? "Поштомат" : "Адресна доставка";
-                      const warehouse = npSelection.warehouse?.description || npSelection.address;
-                      
-                      if (npSelection.recipientType === "company") {
-                        finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou}), представник: ${contact}`;
-                      } else {
-                        finalContact = contact;
+                      if (isNP && (!npSelection || !npSelection.isValid)) {
+                        setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
+                        setIsLoading(false);
+                        return;
                       }
-                      
-                      const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
-                      const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
-                      
-                      finalAddress = `Нова Пошта: ${fullCity}, ${deliveryType}: ${warehouse} | ${payerNote} | ${paymentNote}`;
-                      
-                      latitude = 0;
-                      longitude = 0;
-                    } else if (!isPickup && (latitude === undefined || longitude === undefined)) {
-                      try {
-                        const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
-                        if (geocodeResponse.ok) {
-                          const geocodeData = await geocodeResponse.json();
-                          if (geocodeData && geocodeData.length > 0) {
-                            latitude = parseFloat(geocodeData[0].lat);
-                            longitude = parseFloat(geocodeData[0].lon);
+
+                      const newErrors: Record<string, boolean> = {};
+                      if (!address && !isPickup && !isNP) newErrors.address = true;
+                      if (!isPickup && !contact) newErrors.contact = true;
+                      if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
+                      if (!date) newErrors.date = true;
+
+                      if (Object.keys(newErrors).length > 0) {
+                        setErrors(newErrors);
+                        setFormError("Будь ласка, заповніть всі обов'язкові поля");
+                        setIsLoading(false);
+                        return;
+                      }
+
+                      const selectedDate = new Date(date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      if (selectedDate < today) {
+                        setErrors({ date: true });
+                        setFormError("Дата доставки не може бути в минулому");
+                        setIsLoading(false);
+                        return;
+                      }
+
+                      let latitude = formData.latitude;
+                      let longitude = formData.longitude;
+                      let finalAddress = address;
+                      let finalContact = contact;
+
+                      if (isNP && npSelection) {
+                        const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
+                        const area = npSelection.city?.region ? `${npSelection.city.region} р-н, ` : "";
+                        const city = npSelection.city?.main_description || "";
+                        const fullCity = `${region}${area}${city}`;
+                        
+                        const deliveryType = npSelection.deliveryType === "branch" ? "Відділення" : 
+                                            npSelection.deliveryType === "postomat" ? "Поштомат" : "Адресна доставка";
+                        const warehouse = npSelection.warehouse?.description || npSelection.address;
+                        
+                        if (npSelection.recipientType === "company") {
+                          finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou}), представник: ${contact}`;
+                        } else {
+                          finalContact = contact;
+                        }
+                        
+                        const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
+                        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
+                        
+                        finalAddress = `Нова Пошта: ${fullCity}, ${deliveryType}: ${warehouse} | ${payerNote} | ${paymentNote}`;
+                        
+                        latitude = 0;
+                        longitude = 0;
+                      } else if (!isPickup && (latitude === undefined || longitude === undefined)) {
+                        try {
+                          const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
+                          if (geocodeResponse.ok) {
+                            const geocodeData = await geocodeResponse.json();
+                            if (geocodeData && geocodeData.length > 0) {
+                              latitude = parseFloat(geocodeData[0].lat);
+                              longitude = parseFloat(geocodeData[0].lon);
+                            } else {
+                              setFormError("Не вдалося визначити координати адреси");
+                              setIsLoading(false);
+                              return;
+                            }
                           } else {
-                            setFormError("Не вдалося визначити координати адреси");
+                            setFormError("Помилка геокодування");
                             setIsLoading(false);
                             return;
                           }
-                        } else {
-                          setFormError("Помилка геокодування");
+                        } catch {
+                          setFormError("Помилка з'єднання");
                           setIsLoading(false);
                           return;
                         }
+                      }
+
+                      const clientData = grouped.find((c) => c.client === formClient);
+                      const manager = clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
+                      const orders = (clientData?.orders.map((order) => {
+                          const validItems = order.items
+                              .filter(item => item.quantity > 0)
+                              .map((item) => ({
+                                  product: item.product || item.nomenclature,
+                                  quantity: item.quantity,
+                                  order_ref: order.order,
+                                  parties: (() => {
+                                      const activeParties = (item.parties || []).map((p: Party) => ({
+                                          party: p.party || "",
+                                          moved_q: p.moved_q ?? p.party_quantity ?? 0
+                                      })).filter((p: { party: string; moved_q: number }) => p.moved_q > 0);
+                                      if (activeParties.length === 0 && item.quantity > 0) {
+                                          return [{ party: "", moved_q: item.quantity }];
+                                      }
+                                      return activeParties;
+                                  })(),
+                                  weight: item.weight,
+                                  orders_q: item.orders_q,
+                              }));
+                          return { order: order.order, items: validItems };
+                      }).filter((o) => o.items.length > 0)) ?? [];
+
+                      if (orders.length === 0) {
+                          setFormError("Немає товарів для відправки");
+                          setIsLoading(false);
+                          return;
+                      }
+
+                      const total_weight = Math.round((orders.reduce((acc: number, order) => {
+                          return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
+                      }, 0) || 0) * 100) / 100;
+
+                      const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
+
+                      let finalComment = comment;
+                      if (isPickup) {
+                        finalComment = `САМОВИВІЗ. ${comment}`.trim();
+                      } else if (isNP) {
+                        const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${phone}`;
+                        finalComment = `${fullNPInfo}\n\n${comment}`.trim();
+                      }
+
+                      const payload: DeliveryPayload = {
+                        client: formClient as string,
+                        manager, 
+                        address: isPickup ? "Самовивіз" : finalAddress, 
+                        latitude: isPickup ? 0 : latitude, 
+                        longitude: isPickup ? 0 : longitude, 
+                        contact: finalContact, 
+                        phone, 
+                        date, 
+                        comment: finalComment, 
+                        total_weight, 
+                        orders, 
+                        status: payloadStatus, 
+                        is_custom_address: true,
+                        actor_name: actorName,
+                      };
+
+                      try {
+                        const result = await sendDeliveryData(payload, getInitData());
+                        
+                        // Відображаємо попередження, якщо вони є
+                        if (result && result.warnings && result.warnings.length > 0) {
+                          result.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+                        }
+
+                        if (result.status === "ok") {
+                          setIsAnimatingSuccess(true);
+                          setTimeout(() => {
+                            setIsAnimatingSuccess(false);
+                            removeClientDelivery(formClient as string);
+                            setFormClient(null);
+                            toast.success("Доставку оформлено!");
+                          }, 3000);
+                        } else {
+                          setFormError("Помилка сервера");
+                        }
                       } catch {
-                        setFormError("Помилка з'єднання");
+                        setFormError("Помилка мережі");
+                      } finally {
                         setIsLoading(false);
-                        return;
                       }
-                    }
-
-                    const clientData = grouped.find((c) => c.client === formClient);
-                    const manager = clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
-                    const orders = (clientData?.orders.map((order) => {
-                        const validItems = order.items
-                            .filter(item => item.quantity > 0)
-                            .map((item) => ({
-                                product: item.product || item.nomenclature,
-                                quantity: item.quantity,
-                                order_ref: order.order,
-                                parties: (() => {
-                                    const activeParties = (item.parties || []).map((p: Party) => ({
-                                        party: p.party || "",
-                                        moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                    })).filter((p: { party: string; moved_q: number }) => p.moved_q > 0);
-                                    if (activeParties.length === 0 && item.quantity > 0) {
-                                        return [{ party: "", moved_q: item.quantity }];
-                                    }
-                                    return activeParties;
-                                })(),
-                                weight: item.weight,
-                                orders_q: item.orders_q,
-                            }));
-                        return { order: order.order, items: validItems };
-                    }).filter((o) => o.items.length > 0)) ?? [];
-
-                    if (orders.length === 0) {
-                        setFormError("Немає товарів для відправки");
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    const total_weight = Math.round((orders.reduce((acc: number, order) => {
-                        return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
-                    }, 0) || 0) * 100) / 100;
-
-                    const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
-
-                    let finalComment = comment;
-                    if (isPickup) {
-                      finalComment = `САМОВИВІЗ. ${comment}`.trim();
-                    } else if (isNP) {
-                      const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${phone}`;
-                      finalComment = `${fullNPInfo}\n\n${comment}`.trim();
-                    }
-
-                    const payload: DeliveryPayload = {
-                      client: formClient as string,
-                      manager, 
-                      address: isPickup ? "Самовивіз" : finalAddress, 
-                      latitude: isPickup ? 0 : latitude, 
-                      longitude: isPickup ? 0 : longitude, 
-                      contact: finalContact, 
-                      phone, 
-                      date, 
-                      comment: finalComment, 
-                      total_weight, 
-                      orders, 
-                      status: payloadStatus, 
-                      is_custom_address: true,
-                      actor_name: actorName,
-                    };
-
-                    try {
-                      const result = await sendDeliveryData(payload, getInitData());
-                      
-                      // Відображаємо попередження, якщо вони є
-                      if (result && result.warnings && result.warnings.length > 0) {
-                        result.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
-                      }
-
-                      if (result.status === "ok") {
-                        setIsAnimatingSuccess(true);
-                        setTimeout(() => {
-                          setIsAnimatingSuccess(false);
-                          removeClientDelivery(formClient as string);
-                          setFormClient(null);
-                          toast.success("Доставку оформлено!");
-                        }, 3000);
-                      } else {
-                        setFormError("Помилка сервера");
-                      }
-                    } catch {
-                      setFormError("Помилка мережі");
                     } finally {
-                      setIsLoading(false);
+                      btn.disabled = false;
                     }
                   }}
                 >

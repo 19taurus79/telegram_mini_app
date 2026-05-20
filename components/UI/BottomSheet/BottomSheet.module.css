@@ -70,6 +70,15 @@
   color: #fff;
 }
 
+.swipeHint {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
 .content {
   flex: 1;
   overflow-y: auto;
@@ -131,6 +140,10 @@
     font-size: 1.25rem;
     letter-spacing: -0.3px;
   }
+
+  .swipeHint {
+    display: none;
+  }
 }
 
 /* Light Theme Support */
@@ -141,6 +154,9 @@
 }
 :global([data-theme='light']) .title {
   color: #000;
+}
+:global([data-theme='light']) .swipeHint {
+  color: rgba(0, 0, 0, 0.45);
 }
 :global([data-theme='light']) .dragHandle {
   background: rgba(0, 0, 0, 0.1);

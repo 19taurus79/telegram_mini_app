@@ -9,7 +9,12 @@ interface TelegramWebApp {
   initData?: string;
   close: () => void;
   BackButton: TelegramWebAppBackButton;
-  // Добавьте другие свойства, если нужно
+  disableVerticalSwipes?: () => void;
+  enableVerticalSwipes?: () => void;
+  enableClosingConfirmation?: () => void;
+  disableClosingConfirmation?: () => void;
+  isVerticalSwipesEnabled?: boolean;
+  isClosingConfirmationEnabled?: boolean;
 }
 
 interface Window {

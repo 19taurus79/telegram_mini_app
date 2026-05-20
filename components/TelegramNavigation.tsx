@@ -30,6 +30,16 @@ export default function TelegramNavigation() {
       router.back();
     };
     tg.BackButton.onClick(handleBack);
+
+    // Отключаем свайп вниз для сворачивания (доступно в TG v7.7+)
+    if (typeof tg.disableVerticalSwipes === "function") {
+      tg.disableVerticalSwipes();
+    }
+
+    // Включаем подтверждение закрытия, чтобы свайпы назад не закрывали приложение случайно
+    if (typeof tg.enableClosingConfirmation === "function") {
+      tg.enableClosingConfirmation();
+    }
   }, [router]);
 
   // This effect shows or hides the back button based on the current path.

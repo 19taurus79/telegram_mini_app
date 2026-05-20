@@ -112,7 +112,18 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
     } catch (error) {
       toast.dismiss();
       console.error("Помилка при завантажені файлів:", error);
-      toast.error("Виникла помилка при завантажені. Подивиться в консоль для отримання деталій.");
+      
+      let errorMessage = "Виникла помилка при завантажені. Подивиться в консоль для отримання деталій.";
+      if (axios.isAxiosError(error) && error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === "object" && detail !== null && detail.message) {
+          errorMessage = detail.message;
+        } else if (typeof detail === "string") {
+          errorMessage = detail;
+        }
+      }
+      
+      toast.error(errorMessage, { duration: 6000 });
     } finally {
       setIsSubmitting(false);
     }

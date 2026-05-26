@@ -9,10 +9,10 @@
 }
 
 .container {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-  backdrop-filter: var(--glass-blur, blur(10px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(10px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 24px 20px;
   color: var(--foreground);
@@ -24,12 +24,16 @@
   font-weight: 700;
   margin-top: 0;
   margin-bottom: 24px;
-  color: #fff;
+  color: var(--foreground);
   line-height: 1.4;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--glass-border);
   letter-spacing: -0.3px;
 }
+
+/* ==============================
+   MOBILE — Аккордеон
+   ============================== */
 
 .table {
   list-style: none;
@@ -45,15 +49,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   transition: background 0.2s;
 }
 
 .cell_division {
   flex: 4;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--foreground);
+  opacity: 0.9;
   font-weight: 500;
   font-size: 0.95rem;
   padding-right: 12px;
@@ -63,35 +68,344 @@
   flex: none;
   text-align: right;
   font-weight: 700;
-  color: var(--accent-green, #0ef18e);
-  background: rgba(14, 241, 142, 0.1);
+  color: var(--accent-green);
+  background: var(--accent-green-hover);
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.95rem;
 }
+
+.rowContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover {
+  background: var(--glass-bg);
+}
+
+.divisionWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 4;
+}
+
+.chevronIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.warehouseDetails {
+  padding: 4px 12px 12px 36px;
+  animation: slideDown 0.2s ease-out both;
+}
+
+.warehouseList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warehouseItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px dashed var(--glass-border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.warehouseName {
+  color: var(--foreground);
+  opacity: 0.7;
+  padding-right: 12px;
+}
+
+.warehouseQty {
+  font-weight: 600;
+  color: var(--accent-green);
+  opacity: 0.9;
+}
+
+/* ==============================
+   DESKTOP — Master-Detail
+   ============================== */
+
+.masterDetail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 340px;
+}
+
+.masterPanel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--glass-border);
+  padding-right: 16px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--foreground);
+  opacity: 0.35;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.panelIcon {
+  opacity: 0.5;
+}
+
+.masterList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.masterItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  font-size: 0.88rem;
+  gap: 12px;
+}
+
+.masterItemClickable {
+  cursor: pointer;
+}
+
+.masterItemClickable:hover {
+  background: var(--glass-bg);
+}
+
+.masterItemActive {
+  background: var(--accent-green-hover);
+  border: 1px solid rgba(14, 241, 142, 0.25);
+}
+
+.masterItemActive:hover {
+  background: var(--accent-green-hover);
+}
+
+.masterItemName {
+  color: var(--foreground);
+  opacity: 0.85;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.masterItemActive .masterItemName {
+  opacity: 1;
+}
+
+.masterItemQty {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--accent-green);
+  background: var(--accent-green-hover);
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 0.82rem;
+}
+
+/* Detail Panel */
+
+.detailPanel {
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.detailHeader {
+  margin-bottom: 16px;
+}
+
+.detailHeaderTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.detailTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.detailSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--accent-green-hover);
+  border: 1px solid rgba(14, 241, 142, 0.15);
+  border-radius: 12px;
+}
+
+.detailSummaryLabel {
+  font-size: 0.82rem;
+  color: var(--foreground);
+  opacity: 0.45;
+}
+
+.detailSummaryValue {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent-green);
+}
+
+.detailList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+  animation: slideRight 0.2s ease-out both;
+}
+
+.detailItem:hover {
+  background: var(--glass-bg);
+}
+
+.detailItem:nth-child(1) { animation-delay: 0ms; }
+.detailItem:nth-child(2) { animation-delay: 40ms; }
+.detailItem:nth-child(3) { animation-delay: 80ms; }
+.detailItem:nth-child(4) { animation-delay: 120ms; }
+.detailItem:nth-child(5) { animation-delay: 160ms; }
+.detailItem:nth-child(6) { animation-delay: 200ms; }
+
+.detailItemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent-green-hover);
+  color: var(--accent-green);
+  flex-shrink: 0;
+}
+
+.detailItemName {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--foreground);
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.detailItemQty {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--accent-green);
+  font-size: 0.92rem;
+}
+
+/* Empty State */
+
+.detailEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 200px;
+  gap: 12px;
+}
+
+.detailEmptyIcon {
+  color: var(--glass-border);
+}
+
+.detailEmptyText {
+  color: var(--foreground);
+  opacity: 0.3;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ==============================
+   ANIMATIONS
+   ============================== */
 
 @keyframes cardSlideIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Light Theme Support */
-:global([data-theme='light']) .container {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.08);
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-:global([data-theme='light']) .heading {
-  color: #000;
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-:global([data-theme='light']) .row {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.04);
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-:global([data-theme='light']) .cell_division {
-  color: #000;
-}
-:global([data-theme='light']) .cell_available {
-  color: #006633;
-  background: rgba(14, 241, 142, 0.2);
+
+/* ==============================
+   DESKTOP OVERRIDES
+   ============================== */
+
+@media (min-width: 768px) {
+  .pageContent {
+    max-width: 900px;
+  }
+
+  .container {
+    padding: 28px 24px;
+  }
 }

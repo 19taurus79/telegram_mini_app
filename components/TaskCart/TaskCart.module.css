@@ -255,3 +255,122 @@
 :global([data-theme='light']) .heroSection::after {
   background: radial-gradient(circle, rgba(0, 0, 0, 0.02) 0%, transparent 70%);
 }
+
+/* ── Actual Delivery Section ── */
+.deliverySection {
+  padding: 0 24px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 8px;
+  padding-top: 24px;
+}
+
+:global([data-theme='light']) .deliverySection {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+
+.deliveryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.deliveryTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--foreground, #fff);
+  margin: 0;
+}
+
+.deliveryBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.deliveryItemsTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--foreground, #fff);
+  opacity: 0.35;
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.deliveryItemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deliveryItemRow {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:global([data-theme='light']) .deliveryItemRow {
+  background: rgba(0, 0, 0, 0.015);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground, #fff);
+}
+
+.itemQty {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3b82f6;
+  white-space: nowrap;
+}
+
+:global([data-theme='light']) .itemQty {
+  color: #2563eb;
+}
+
+.batchList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(59, 130, 246, 0.3);
+  margin-top: 2px;
+}
+
+.batchRow {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.batchName {
+  font-family: monospace;
+}
+
+.batchQty {
+  font-weight: 600;
+}

@@ -10,7 +10,7 @@ import { getInitData } from "@/lib/getInitData";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
-import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box } from "lucide-react";
+import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box, Car, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useUser } from "@/store/User";
@@ -142,6 +142,12 @@ function DeliveryDataContent() {
     longitude: undefined as number | undefined,
     isPickup: false,
     isNP: false,
+    needTTN: false,
+    ttnType: "self" as "self" | "client",
+    carMake: "",
+    carNumber: "",
+    trailerNumber: "",
+    driver: "",
   });
   const [npSelection, setNpSelection] = useState<NPSelection | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -301,18 +307,59 @@ function DeliveryDataContent() {
                   const address = await getAddressByClient(client.client);
                   if (address && address.length > 0) {
                     setFormData({
-                      ...formData,
                       address: `${address[0].region} обл., ${address[0].area} р-н, ${address[0].commune} громада, ${address[0].city}`,
                       contact: address[0].representative || "",
                       phone: formatPhoneNumber(address[0].phone1 || ""),
                       latitude: address[0].latitude,
                       longitude: address[0].longitude,
+                      date: "",
+                      comment: "",
+                      isPickup: false,
+                      isNP: false,
+                      needTTN: false,
+                      ttnType: "self",
+                      carMake: "",
+                      carNumber: "",
+                      trailerNumber: "",
+                      driver: "",
                     });
                   } else {
-                    setFormData({ ...formData, address: "", contact: "", phone: "", date: "", comment: "" });
+                    setFormData({
+                      address: "",
+                      contact: "",
+                      phone: "",
+                      date: "",
+                      comment: "",
+                      latitude: undefined,
+                      longitude: undefined,
+                      isPickup: false,
+                      isNP: false,
+                      needTTN: false,
+                      ttnType: "self",
+                      carMake: "",
+                      carNumber: "",
+                      trailerNumber: "",
+                      driver: "",
+                    });
                   }
                 } catch {
-                  setFormData({ ...formData, address: "", contact: "", phone: "", date: "", comment: "" });
+                  setFormData({
+                    address: "",
+                    contact: "",
+                    phone: "",
+                    date: "",
+                    comment: "",
+                    latitude: undefined,
+                    longitude: undefined,
+                    isPickup: false,
+                    isNP: false,
+                    needTTN: false,
+                    ttnType: "self",
+                    carMake: "",
+                    carNumber: "",
+                    trailerNumber: "",
+                    driver: "",
+                  });
                 } finally {
                   setIsLoading(false);
                   setFormError(null);
@@ -489,6 +536,150 @@ function DeliveryDataContent() {
                 </div>
               )}
 
+              {formData.isPickup && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className={`${styles.pickupToggleContainer} ${formData.needTTN ? styles.active : ""}`}>
+                    <div className={styles.pickupToggleLeft}>
+                      <span className={styles.pickupToggleIcon}>
+                        <FileText size={20} />
+                      </span>
+                      <label htmlFor="need-ttn-toggle" className={styles.pickupToggleLabel} style={{ cursor: 'pointer' }}>
+                        Потрібна ТТН
+                      </label>
+                    </div>
+                    <label className={styles.switch}>
+                      <input 
+                        id="need-ttn-toggle"
+                        type="checkbox" 
+                        checked={formData.needTTN} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, needTTN: e.target.checked }))} 
+                      />
+                      <span className={styles.slider}></span>
+                    </label>
+                  </div>
+
+                  {formData.needTTN && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Хто забирає вантаж?</label>
+                        <div className={styles.deliveryTabs}>
+                          <button 
+                            type="button"
+                            className={`${styles.deliveryTab} ${formData.ttnType === "self" ? styles.active : ""}`}
+                            onClick={() => setFormData(prev => ({ ...prev, ttnType: "self" }))}
+                          >
+                            Забираю сам
+                          </button>
+                          <button 
+                            type="button"
+                            className={`${styles.deliveryTab} ${formData.ttnType === "client" ? styles.active : ""}`}
+                            onClick={() => setFormData(prev => ({ ...prev, ttnType: "client" }))}
+                          >
+                            Забирає клієнт
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>
+                          <MapPin size={16} /> Адреса доставки
+                        </label>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <textarea
+                            className={`${styles.modalInput} ${errors.address ? styles.invalid : ''}`}
+                            value={formData.address}
+                            readOnly={true}
+                            rows={3}
+                            style={{ margin: 0, resize: 'none' }}
+                            placeholder="Оберіть адресу через карту"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsAddressChange(!isAddressChange)}
+                            className={`${styles.addressToggleButton} ${isAddressChange ? styles.active : ''}`}
+                          >
+                            {isAddressChange ? <X size={20} /> : <MapPin size={20} />}
+                          </button>
+                        </div>
+                        {isAddressChange && (
+                          <div className={styles.geocodingWrapper}>
+                            <InputAddress onAddressSelect={handleAddressData}/>
+                            {isGeocoding && (
+                              <button type="button" onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
+                                Підтвердити адресу
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {formData.ttnType === "client" && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          <div>
+                            <label className={styles.fieldLabel}>
+                              <Car size={16} /> Марка авто
+                            </label>
+                            <input
+                              className={`${styles.modalInput} ${errors.carMake ? styles.invalid : ''}`}
+                              value={formData.carMake}
+                              placeholder="Наприклад: MAN, DAF, Газель"
+                              onChange={(e) => {
+                                setFormData({ ...formData, carMake: e.target.value });
+                                if (errors.carMake) setErrors({ ...errors, carMake: false });
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={styles.fieldLabel}>
+                              <FileText size={16} /> Номер авто
+                            </label>
+                            <input
+                              className={`${styles.modalInput} ${errors.carNumber ? styles.invalid : ''}`}
+                              value={formData.carNumber}
+                              placeholder="Наприклад: AX1234HP"
+                              onChange={(e) => {
+                                setFormData({ ...formData, carNumber: e.target.value.toUpperCase() });
+                                if (errors.carNumber) setErrors({ ...errors, carNumber: false });
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={styles.fieldLabel}>
+                              <FileText size={16} /> Номер причепа (опціонально)
+                            </label>
+                            <input
+                              className={styles.modalInput}
+                              value={formData.trailerNumber}
+                              placeholder="Наприклад: AX5678XX"
+                              onChange={(e) => {
+                                setFormData({ ...formData, trailerNumber: e.target.value.toUpperCase() });
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={styles.fieldLabel}>
+                              <User size={16} /> Водій (ПІБ)
+                            </label>
+                            <input
+                              className={`${styles.modalInput} ${errors.driver ? styles.invalid : ''}`}
+                              value={formData.driver}
+                              placeholder="Прізвище, Ім'я, По батькові"
+                              onChange={(e) => {
+                                setFormData({ ...formData, driver: e.target.value });
+                                if (errors.driver) setErrors({ ...errors, driver: false });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className={styles.inputWithIcon}>
                 <label className={styles.fieldLabel}>
                   <Calendar size={16} /> Дата доставки
@@ -536,7 +727,7 @@ function DeliveryDataContent() {
                     try {
                       setIsLoading(true);
                       setFormError(null);
-                      const { address, contact, phone, date, comment, isPickup, isNP } = formData;
+                      const { address, contact, phone, date, comment, isPickup, isNP, needTTN, ttnType, carMake, carNumber, trailerNumber, driver } = formData;
                       
                       if (isNP && (!npSelection || !npSelection.isValid)) {
                         setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
@@ -546,9 +737,16 @@ function DeliveryDataContent() {
 
                       const newErrors: Record<string, boolean> = {};
                       if (!address && !isPickup && !isNP) newErrors.address = true;
+                      if (isPickup && needTTN && !address) newErrors.address = true;
                       if (!isPickup && !contact) newErrors.contact = true;
                       if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
                       if (!date) newErrors.date = true;
+
+                      if (isPickup && needTTN && ttnType === "client") {
+                        if (!carMake) newErrors.carMake = true;
+                        if (!carNumber) newErrors.carNumber = true;
+                        if (!driver) newErrors.driver = true;
+                      }
 
                       if (Object.keys(newErrors).length > 0) {
                         setErrors(newErrors);
@@ -589,13 +787,13 @@ function DeliveryDataContent() {
                         }
                         
                         const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
-                        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
+                        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготковковий";
                         
                         finalAddress = `Нова Пошта: ${fullCity}, ${deliveryType}: ${warehouse} | ${payerNote} | ${paymentNote}`;
                         
                         latitude = 0;
                         longitude = 0;
-                      } else if (!isPickup && (latitude === undefined || longitude === undefined)) {
+                      } else if (((!isPickup && !isNP) || (isPickup && needTTN)) && (latitude === undefined || longitude === undefined)) {
                         try {
                           const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
                           if (geocodeResponse.ok) {
@@ -659,7 +857,16 @@ function DeliveryDataContent() {
 
                       let finalComment = comment;
                       if (isPickup) {
-                        finalComment = `САМОВИВІЗ. ${comment}`.trim();
+                        if (needTTN) {
+                          if (ttnType === "client") {
+                            const trailerPart = trailerNumber ? `, Причіп: ${trailerNumber}` : "";
+                            finalComment = `САМОВИВІЗ (ТТН, Забирає клієнт). Авто: ${carMake}, Номер: ${carNumber}${trailerPart}, Водій: ${driver}. Адреса: ${finalAddress}\n\n${comment}`.trim();
+                          } else {
+                            finalComment = `САМОВИВІЗ (ТТН, Забираю сам). Адреса: ${finalAddress}\n\n${comment}`.trim();
+                          }
+                        } else {
+                          finalComment = `САМОВИВІЗ. ${comment}`.trim();
+                        }
                       } else if (isNP) {
                         const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${phone}`;
                         finalComment = `${fullNPInfo}\n\n${comment}`.trim();

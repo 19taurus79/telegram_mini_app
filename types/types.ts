@@ -122,6 +122,10 @@ export type Contract = {
   actual_payment_amount?: number;
   client?: string;
 };
+export type AvWarehouseDetail = {
+  warehouse: string;
+  available: number;
+};
 export type AvRemains = {
   id: string;
   nomenclature: string;
@@ -131,6 +135,7 @@ export type AvRemains = {
   line_of_business: string;
   available: number;
   product: string;
+  warehouses?: AvWarehouseDetail[];
 };
 export type GroupRemains = {
   product_id: string;

@@ -595,6 +595,73 @@ export const getTaskById = async (taskId: string) => {
   return data;
 };
 
+export const getDeliveryByTask = async (taskId: string) => {
+  const { data } = await axios.get<{
+    found: boolean;
+    order_ref?: string;
+    message?: string;
+    delivery?: {
+      id: number;
+      client: string;
+      manager: string;
+      address: string;
+      contact: string;
+      phone: string;
+      delivery_date: string | null;
+      comment: string;
+      total_weight: number;
+      status: string;
+    };
+    items?: {
+      id: number;
+      delivery: number;
+      order_ref: string;
+      product: string;
+      quantity: number;
+      party: string | null;
+      party_quantity: number | null;
+    }[];
+  }>(`/data/get_delivery_by_task`, {
+    params: {
+      task_id: taskId,
+    },
+  });
+  return data;
+};
+
+export const getDeliveryByEvent = async (eventId: string) => {
+  const { data } = await axios.get<{
+    found: boolean;
+    message?: string;
+    delivery?: {
+      id: number;
+      client: string;
+      manager: string;
+      address: string;
+      contact: string;
+      phone: string;
+      delivery_date: string | null;
+      comment: string;
+      total_weight: number;
+      status: string;
+    };
+    items?: {
+      id: number;
+      delivery: number;
+      order_ref: string;
+      product: string;
+      quantity: number;
+      party: string | null;
+      party_quantity: number | null;
+    }[];
+  }>(`/data/get_delivery_by_event`, {
+    params: {
+      event_id: eventId,
+    },
+  });
+  return data;
+};
+
 export const checkTaskInProgress = async (taskId: string, initData: string) => {
   const { data } = await axios.patch(
     `/data/task_in_progress`,

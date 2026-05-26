@@ -17,7 +17,6 @@ import {
   Warehouse,
   Package,
   MapPin,
-  ArrowLeft,
 } from "lucide-react";
 import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
 import css from "./AvStock.module.css";

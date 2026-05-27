@@ -31,9 +31,43 @@ import {
   UpdateChatMessagePayload
 } from "@/types/types";
 import axios from "axios";
+import { useInitData } from "@/store/InitData";
 
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
+
+// Global 401/403 Axios interceptor to handle token/session expiration
+if (typeof window !== "undefined") {
+  axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const isDev = process.env.NEXT_PUBLIC_DEV === "true";
+      if (
+        !isDev &&
+        error.response &&
+        (error.response.status === 401 || error.response.status === 403)
+      ) {
+        console.warn("[Axios Interceptor] Unauthorized request detected.");
+
+        // Clear local storage and cookies
+        localStorage.removeItem("tg_init_data");
+        localStorage.removeItem("tg_init_data_expires");
+        localStorage.removeItem("telegram_init_data");
+        document.cookie = "tg_init_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        const isMiniApp = Boolean(window.Telegram?.WebApp?.initData);
+        if (isMiniApp) {
+          // Inside Telegram Mini App: reload page to refresh session from parent container
+          window.location.reload();
+        } else {
+          // Outside Mini App: trigger global session expired modal instead of redirecting
+          useInitData.getState().setSessionExpired(true);
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+}
 
 export const getRemainsById = async ({
   productId,

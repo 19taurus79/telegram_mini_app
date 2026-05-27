@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast"; // Import Toaster
 import TelegramRouter from "@/components/TelegramRouter/TelegramRouter";
 import TelegramNavigation from "../components/TelegramNavigation";
 import AuthGuard from "@/components/AuthGuard/AuthGuard";
+import SessionExpiredModal from "@/components/SessionExpiredModal/SessionExpiredModal";
 import ThemeProvider from "@/components/ThemeProvider/ThemeProvider";
 import DesktopSidebar from "@/components/DesktopSidebar/DesktopSidebar";
 
@@ -70,6 +71,7 @@ export default function RootLayout({
           <FilterProvider>
             <DeliveryProvider>
               <AuthGuard />
+              <SessionExpiredModal />
               <ThemeProvider />
               <Header />
               <DesktopSidebar />

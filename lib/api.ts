@@ -36,7 +36,7 @@ import { useInitData } from "@/store/InitData";
 const url = process.env.NEXT_PUBLIC_URL_API;
 axios.defaults.baseURL = url;
 
-// Global 401/403 Axios interceptor to handle token/session expiration
+// Global Axios interceptor to handle session expiration
 if (typeof window !== "undefined") {
   axios.interceptors.response.use(
     (response) => response,

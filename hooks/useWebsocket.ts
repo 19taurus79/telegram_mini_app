@@ -42,6 +42,10 @@ export const useWebsocket = () => {
             console.log(`🔄 Event ${data.type} received. Invalidating deliveries query...`);
             // Инвалидируем кеш для доставок, что вызовет автоматический рефетч
             queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+          } else if (data.type === 'EXCEL_DATA_UPLOADED') {
+            console.log('🔄 Excel data updated on backend. Invalidating all queries...');
+            // Инвалидируем абсолютно все запросы, так как обновились остатки, клиенты и заказы
+            queryClient.invalidateQueries();
           }
         } catch (error) {
           console.error('❌ Error parsing WS message:', error);

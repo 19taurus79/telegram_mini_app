@@ -13,13 +13,13 @@ export default function DetailsMovedProducts({
   const initData = useInitData((state) => state.initData);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["movedProducts", selectedProductId],
+    queryKey: ["movedProducts", selectedProductId, initData],
     queryFn: () =>
       getMovedDataByProduct({
         productId: selectedProductId!,
         initData: initData!,
       }),
-    enabled: !!selectedProductId,
+    enabled: !!selectedProductId && !!initData,
     placeholderData: keepPreviousData,
   });
 

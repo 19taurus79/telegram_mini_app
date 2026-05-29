@@ -65,12 +65,12 @@ export default function DetailsOrdersByProduct({
     if (sortDirection === null) return data;
 
     return [...data].sort((a, b) => {
-      const dateA = new Date(a.delivery_status).getTime();
-      const dateB = new Date(b.delivery_status).getTime();
-      if (dateA < dateB) {
+      const valA = a.delivery_status || "";
+      const valB = b.delivery_status || "";
+      if (valA < valB) {
         return sortDirection === "ascending" ? -1 : 1;
       }
-      if (dateA > dateB) {
+      if (valA > valB) {
         return sortDirection === "ascending" ? 1 : -1;
       }
       return 0;

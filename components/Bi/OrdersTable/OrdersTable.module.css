@@ -308,3 +308,33 @@
 :global([data-theme='light']) .cardFooter {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
+
+.cartSelectedRow td {
+  background: rgba(14, 241, 142, 0.08) !important;
+  border-color: rgba(14, 241, 142, 0.3) !important;
+}
+
+.cartSelectedRow td:first-child {
+  border-left: 4px solid var(--accent-green) !important;
+}
+
+.cartSelectedCard {
+  background: rgba(14, 241, 142, 0.08) !important;
+  border-color: var(--accent-green) !important;
+  border-left: 4px solid var(--accent-green) !important;
+}
+
+:global([data-theme='light']) .cartSelectedRow td {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+:global([data-theme='light']) .cartSelectedRow td:first-child {
+  border-left: 4px solid #10b981 !important;
+}
+
+:global([data-theme='light']) .cartSelectedCard {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: #10b981 !important;
+  border-left: 4px solid #10b981 !important;
+}

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { useCommentsContext } from "@/components/Orders/CommentsContext";
+import { useOrderCart } from "@/store/OrderCart";
 import {
   useReactTable,
   getCoreRowModel,
@@ -19,6 +20,7 @@ interface OrdersTableProps {
 }
 
 const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
+  const { selectedItems } = useOrderCart();
   const [isMobile, setIsMobile] = useState(false);
   const [commentModalData, setCommentModalData] = useState<{
     orderRef: string;
@@ -66,6 +68,20 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
       header: 'Доповнення',
       size: 150,
       minSize: 100,
+      cell: ({ row }) => {
+        const order = row.original;
+        const isSelectedInCart = selectedItems.some(
+          item => item.product === order.product && item.contract_supplement === order.contract_supplement
+        );
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {isSelectedInCart && (
+              <span style={{ color: 'var(--accent-green)', fontWeight: 'bold' }}>✓</span>
+            )}
+            <span>{order.contract_supplement}</span>
+          </div>
+        );
+      }
     },
     {
       accessorKey: 'period',
@@ -156,64 +172,72 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
         <>
           {isMobile ? (
             <div className={css.mobileList}>
-              {orders.map((order, index) => (
-                <div
-                  key={index}
-                  className={`${css.mobileCard} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''}`}
-                  onClick={() => handleCopy(order.contract_supplement, order.qty)}
-                >
-                  <div className={css.cardHeader}>
-                    <div className={css.clientName}>{order.client}</div>
-                    <div className={css.contractInfo}>{order.contract_supplement}</div>
-                    <div 
-                      className={css.commentBadgeWrapper}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCommentModalData({ 
-                          orderRef: order.contract_supplement,
-                          productId: productName,  // В BI використовуємо назву як ID
-                          productName: productName
-                        });
-                      }}
-                    >
-                      <OrderCommentBadge
-                        orderRef={order.contract_supplement}
-                        productName={productName}
-                        onClick={() => {}}
-                      />
+              {orders.map((order, index) => {
+                const isSelectedInCart = selectedItems.some(
+                  item => item.product === order.product && item.contract_supplement === order.contract_supplement
+                );
+                return (
+                  <div
+                    key={index}
+                    className={`${css.mobileCard} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''} ${isSelectedInCart ? css.cartSelectedCard : ''}`}
+                    onClick={() => handleCopy(order.contract_supplement, order.qty)}
+                  >
+                    <div className={css.cardHeader}>
+                      <div className={css.clientName}>{order.client}</div>
+                      <div className={css.contractInfo}>
+                        {isSelectedInCart && <span style={{ color: 'var(--accent-green)', fontWeight: 'bold', marginRight: '4px' }}>✓</span>}
+                        {order.contract_supplement}
+                      </div>
+                      <div 
+                        className={css.commentBadgeWrapper}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCommentModalData({ 
+                            orderRef: order.contract_supplement,
+                            productId: productName,  // В BI використовуємо назву як ID
+                            productName: productName
+                          });
+                        }}
+                      >
+                        <OrderCommentBadge
+                          orderRef={order.contract_supplement}
+                          productName={productName}
+                          onClick={() => {}}
+                        />
+                      </div>
                     </div>
+                    
+                    <div className={css.cardGrid}>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>Менеджер</span>
+                        <span className={css.value}>{order.manager}</span>
+                      </div>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>Період</span>
+                        <span className={css.value}>{order.period}</span>
+                      </div>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>Статус</span>
+                        <span className={css.value}>{order.document_status}</span>
+                      </div>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>До постачання</span>
+                        <span className={css.value}>{order.delivery_status}</span>
+                      </div>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>Кількість</span>
+                        <span className={`${css.value} ${css.qtyValue}`}>{order.qty}</span>
+                      </div>
+                      <div className={css.gridItem}>
+                        <span className={css.label}>Переміщено</span>
+                        <span className={css.value}>{order.moved_qty}</span>
+                      </div>
+                    </div>
+                    
+                    <div className={css.copyHint}>Натисніть для копіювання</div>
                   </div>
-                  
-                  <div className={css.cardGrid}>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>Менеджер</span>
-                      <span className={css.value}>{order.manager}</span>
-                    </div>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>Період</span>
-                      <span className={css.value}>{order.period}</span>
-                    </div>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>Статус</span>
-                      <span className={css.value}>{order.document_status}</span>
-                    </div>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>До постачання</span>
-                      <span className={css.value}>{order.delivery_status}</span>
-                    </div>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>Кількість</span>
-                      <span className={`${css.value} ${css.qtyValue}`}>{order.qty}</span>
-                    </div>
-                    <div className={css.gridItem}>
-                      <span className={css.label}>Переміщено</span>
-                      <span className={css.value}>{order.moved_qty}</span>
-                    </div>
-                  </div>
-                  
-                  <div className={css.copyHint}>Натисніть для копіювання</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <table className={css.table}>
@@ -247,10 +271,13 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
               <tbody>
                 {table.getRowModel().rows.map(row => {
                   const order = row.original;
+                  const isSelectedInCart = selectedItems.some(
+                    item => item.product === order.product && item.contract_supplement === order.contract_supplement
+                  );
                   return (
                     <tr
                       key={row.id}
-                      className={`${css.row} ${css.copyableRow} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''}`}
+                      className={`${css.row} ${css.copyableRow} ${getCommentCount(order.contract_supplement, productName) > 0 ? css.hasComments : ''} ${isSelectedInCart ? css.cartSelectedRow : ''}`}
                       onClick={() => handleCopy(order.contract_supplement, order.qty)}
                     >
                       {row.getVisibleCells().map(cell => (

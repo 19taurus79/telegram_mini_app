@@ -1,6 +1,8 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useDelivery } from "@/store/Delivery";
+import { useOrderCart } from "@/store/OrderCart";
+import { useUser } from "@/store/User";
 import css from "./Detail.module.css";
 import {
   getDeliveries,
@@ -18,6 +20,7 @@ import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatMod
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import Modal from "@/components/Modal/Modal";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
+import OrderCartBtn from "@/components/OrderCartBtn/OrderCartBtn";
 
 type OrderDetailItem = {
   orders_q: number;
@@ -40,6 +43,10 @@ type OrderDetailItem = {
   delivery_status?: string;
   document_status?: string;
   line_of_business?: string;
+  party_sign?: string;
+  buying_season?: string;
+  orders_q_total?: number;
+  orders_q_product_confirmed?: number;
 };
 
 type Detail = {
@@ -57,15 +64,18 @@ interface ValidationModalState {
 
 const getItemStatus = (item: OrderDetailItem) => {
   const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
-  const ordersQ = Number(item.orders_q) || 0;
+  const ordersQ = Number(item.orders_q_total ?? item.orders_q) || 0;
   const buhQ = Number(item.buh) || 0;
   const sklQ = Number(item.skl) || 0;
   const diffQ = Number(item.quantity) || 0;
 
-  let color: "red" | "green" | "yellow" = "yellow";
+  let color: "red" | "green" | "yellow" | "none" = "yellow";
   let validationType: ValidationType = "none";
 
-  if (sumMovedQ === 0 && (ordersQ > buhQ || (ordersQ === 0 && buhQ === 0))) {
+  if (buhQ === 0 && ordersQ === 0) {
+    color = "none";
+    validationType = "none";
+  } else if (sumMovedQ === 0 && ordersQ > buhQ) {
     color = "red";
     validationType = "outOfStock";
   } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ && buhQ > 0) || (ordersQ <= buhQ && buhQ > 0 && buhQ <= sklQ)) {
@@ -88,6 +98,14 @@ const getItemStatus = (item: OrderDetailItem) => {
 
 function TableOrderDetail({ details }: Detail) {
   const { delivery, setDelivery, updateQuantity, hasItem } = useDelivery();
+  const { selectedItems: cartItems, toggleItem: toggleCartItem, hasItem: hasCartItem, setItems: setCartItems } = useOrderCart();
+  const userData = useUser((state) => state.userData);
+  const isAdmin = userData?.is_admin;
+  
+  const getCartItemId = (item: OrderDetailItem) => {
+    return `${item.order}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
+  };
+
   const [addingToDeliveryId, setAddingToDeliveryId] = React.useState<string | null>(null);
   const [commentModalData, setCommentModalData] = React.useState<{
     orderRef: string;
@@ -178,7 +196,7 @@ function TableOrderDetail({ details }: Detail) {
     setAddingToDeliveryId(itemId);
     try {
         const weight = await getWeightForProduct({ item, initData });
-        const finalQty = customQty !== undefined ? customQty : (item.quantity > 0 ? item.quantity : item.orders_q);
+        const finalQty = customQty !== undefined ? customQty : (item.quantity > 0 ? item.quantity : (item.orders_q_total ?? item.orders_q));
         
         if (isAlreadyIn) {
             updateQuantity(itemId, finalQty);
@@ -222,6 +240,51 @@ function TableOrderDetail({ details }: Detail) {
     <div className={css.listContainer}>
       {/* Header */}
       <div className={css.listHeader}>
+        {isAdmin && (
+          <div className={css.headerCellCheckbox} style={{ marginRight: '12px', display: 'flex', alignItems: 'center' }}>
+            <label className={css.customCheckboxContainer}>
+              <input 
+                type="checkbox" 
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    const newItems = [...cartItems];
+                    details.forEach(item => {
+                      const id = getCartItemId(item);
+                      if (!newItems.some(ni => ni.id === id)) {
+                        newItems.push({
+                          id,
+                          product: item.product,
+                          nomenclature: item.nomenclature,
+                          party_sign: item.party_sign,
+                          buying_season: item.buying_season,
+                          different: item.quantity,
+                          orders_q: item.orders_q_total ?? item.orders_q,
+                          client: item.client,
+                          contract_supplement: item.order,
+                          manager: item.manager,
+                          buh: item.buh,
+                          skl: item.skl,
+                          qok: item.qok,
+                          line_of_business: item.line_of_business,
+                        });
+                      }
+                    });
+                    setCartItems(newItems);
+                  } else {
+                    const displayIds = new Set(details.map(getCartItemId));
+                    const filtered = cartItems.filter(ci => !displayIds.has(ci.id));
+                    setCartItems(filtered);
+                  }
+                }} 
+                checked={details.length > 0 && details.every(item => hasCartItem(getCartItemId(item)))}
+                className={css.customCheckboxInput}
+              />
+              <div className={css.customCheckboxControl}>
+                <Check size={12} strokeWidth={3} />
+              </div>
+            </label>
+          </div>
+        )}
         <div className={css.headerCellProduct}>Номенклатура</div>
         <div className={css.headerCellQuantity}>Кількість</div>
       </div>
@@ -279,6 +342,38 @@ function TableOrderDetail({ details }: Detail) {
         >
           {/* Main Product Row */}
           <div className={css.cardRow}>
+            {isAdmin && (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }} onClick={(e) => e.stopPropagation()}>
+                <label className={css.customCheckboxContainer}>
+                  <input 
+                    type="checkbox" 
+                    checked={hasCartItem(getCartItemId(item))} 
+                    onChange={() => {
+                      toggleCartItem({
+                        id: getCartItemId(item),
+                        product: item.product,
+                        nomenclature: item.nomenclature,
+                        party_sign: item.party_sign,
+                        buying_season: item.buying_season,
+                        different: item.quantity,
+                        orders_q: item.orders_q_total ?? item.orders_q,
+                        client: item.client,
+                        contract_supplement: item.order,
+                        manager: item.manager,
+                        buh: item.buh,
+                        skl: item.skl,
+                        qok: item.qok,
+                        line_of_business: item.line_of_business,
+                      });
+                    }}
+                    className={css.customCheckboxInput}
+                  />
+                  <div className={css.customCheckboxControl}>
+                    <Check size={12} strokeWidth={3} />
+                  </div>
+                </label>
+              </div>
+            )}
             <div className={css.cardCellProduct}>
               <div className={css.productNameWrapper}>
                 <span className={css.productName}>{item.product}</span>
@@ -305,7 +400,8 @@ function TableOrderDetail({ details }: Detail) {
                 const { color } = getItemStatus(item);
                 if (color === "red") return css.checkmarkRed;
                 if (color === "green") return css.checkmarkGreen;
-                return css.checkmarkYellow;
+                if (color === "yellow") return css.checkmarkYellow;
+                return "";
               })()}`}
             >
               {item.quantity}
@@ -499,6 +595,7 @@ function TableOrderDetail({ details }: Detail) {
       )}
 
       <div className={css.btnWrapper}>
+        {isAdmin && <OrderCartBtn />}
         <DeliveryBtn />
       </div>
     </div>

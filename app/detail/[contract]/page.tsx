@@ -45,6 +45,8 @@ export default async function filteredOrdersDetail({ params }: Props) {
       id: item.contract_supplement + item.nomenclature,
       product_id: item.product,
       orders_q: item.orders_q,
+      orders_q_total: item.orders_q_total,
+      orders_q_product_confirmed: item.orders_q_product_confirmed,
       parties: item.parties,
       // moved_q: item.moved_q,
       // party: item.party,
@@ -54,6 +56,8 @@ export default async function filteredOrdersDetail({ params }: Props) {
       delivery_status: item.delivery_status,
       document_status: item.document_status,
       line_of_business: item.line_of_business,
+      party_sign: item.party_sign,
+      buying_season: item.buying_season,
     };
   });
   console.log("details", details);

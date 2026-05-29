@@ -1,10 +1,9 @@
 // Вказує, що цей файл є Клієнтським Компонентом в Next.js.
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { dataForOrderByProduct } from "@/lib/api";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import styles from "./BiPage.module.css";
 import { BiOrders, BiOrdersItem, FiltersState, OrderComment } from "@/types/types";
 import ProductTable from "@/components/Bi/ProductTable/ProductTable";
@@ -14,11 +13,14 @@ import OrdersTable from "@/components/Bi/OrdersTable/OrdersTable";
 import FilterPanel from "@/components/Bi/FilterPanel/FilterPanel";
 import Loader from "@/components/Loader/Loader";
 import MobileDrawer from "@/components/Bi/MobileDrawer/MobileDrawer";
+import Modal from "@/components/Modal/Modal";
 import BiDashboard from "@/components/Bi/BiDashboard/BiDashboard";
 import { CommentsProvider } from "@/components/Orders/CommentsContext";
 import { getOrderComments } from "@/lib/api";
 import { useInitData } from "@/store/InitData";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import { useOrderCart } from "@/store/OrderCart";
 
 interface Recommendation {
   product: string;
@@ -36,13 +38,14 @@ const priorityDivisions = [
   "Запорізький підрозділ",
 ];
 
-export default function BiPage() {
+function BiPageContent() {
   const [selectedProduct, setSelectedProduct] = useState<BiOrdersItem | null>(
     null
   );
 
   const queryClient = useQueryClient();
   const initData = useInitData((state) => state.initData);
+  const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<FiltersState>({
     document_status: [],
@@ -51,6 +54,16 @@ export default function BiPage() {
 
   const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+
+  const { selectedItems: cartItems, clearCart } = useOrderCart();
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("showSelected") === "true") {
+      setShowSelectedOnly(true);
+    }
+  }, [searchParams]);
 
   const {
     data,
@@ -63,20 +76,112 @@ export default function BiPage() {
     placeholderData: (previousData) => previousData,
   });
 
-  const toastIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (isFetching && !isLoading) {
-      if (toastIdRef.current === null) {
-        toastIdRef.current = toast.loading("Оновлення даних...");
+  const processedData = useMemo(() => {
+    if (!data) return null;
+    if (!showSelectedOnly) return data;
+
+    const groupedCart: Record<string, typeof cartItems> = {};
+    cartItems.forEach(item => {
+      const name = item.product;
+      if (!groupedCart[name]) {
+        groupedCart[name] = [];
       }
-    } else {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
+      groupedCart[name].push(item);
+    });
+
+    const missingButAvailable: BiOrdersItem[] = [];
+    const missingAndUnavailable: BiOrdersItem[] = [];
+
+    Object.entries(groupedCart).forEach(([productName, items]) => {
+      const backendItem = 
+        data.missing_but_available?.find(i => i.product === productName) ||
+        data.missing_and_unavailable?.find(i => i.product === productName);
+
+      if (backendItem) {
+        const selectedSupplementSet = new Set(items.map(i => i.contract_supplement));
+        const filteredOrders = backendItem.orders.filter(o => selectedSupplementSet.has(o.contract_supplement));
+
+        const qtyNeededSelected = filteredOrders.reduce((sum, o) => sum + o.qty, 0);
+        const qtyNeededTotal = backendItem.qty_needed;
+
+        const qtyRemainBuh = backendItem.qty_remain;
+        const qtyRemainSkl = items[0]?.skl || 0;
+
+        const qtyMissingSelected = Math.max(0, qtyNeededSelected - qtyRemainBuh);
+        const qtyMissingTotal = backendItem.qty_missing;
+
+        const qtyMovedSelected = filteredOrders.reduce((sum, o) => sum + (Number(o.moved_qty) || 0), 0);
+
+        const biItem: BiOrdersItem = {
+          ...backendItem,
+          qty_needed: qtyNeededSelected,
+          qty_missing: qtyMissingSelected,
+          orders: backendItem.orders,
+          qty_needed_total: qtyNeededTotal,
+          qty_needed_selected: qtyNeededSelected,
+          qty_missing_total: qtyMissingTotal,
+          qty_missing_selected: qtyMissingSelected,
+          qty_moved_selected: qtyMovedSelected,
+          qty_remain_skl: qtyRemainSkl,
+        };
+
+        // Якщо дефіциту під вибране доповнення немає — товар вгору (немає потреби замовляти)
+        if (qtyMissingSelected <= 0) {
+          missingButAvailable.push(biItem);
+        } else if (biItem.available_stock && biItem.available_stock.length > 0) {
+          // Є дефіцит, але є залишки на складах — можна перемістити
+          missingButAvailable.push(biItem);
+        } else {
+          // Є дефіцит і нічого немає на складах
+          missingAndUnavailable.push(biItem);
+        }
+      } else {
+        const first = items[0];
+        const qtyNeededSelected = items.reduce((sum, i) => sum + i.different, 0);
+        const qtyRemainBuh = first.buh;
+        const qtyRemainSkl = first.skl;
+        const qtyMovedSelected = items.reduce((sum, i) => sum + (i.different - i.orders_q), 0);
+
+        const qtyMissingCalc = Math.max(0, qtyNeededSelected - qtyRemainBuh);
+        const biItem: BiOrdersItem = {
+          product: productName,
+          line_of_business: first.line_of_business || "ЗЗР",
+          qty_needed: qtyNeededSelected,
+          qty_remain: qtyRemainBuh,
+          qty_missing: qtyMissingCalc,
+          available_stock: [],
+          orders: items.map(i => ({
+            moved_qty: "0",
+            manager: i.manager,
+            client: i.client,
+            contract_supplement: i.contract_supplement,
+            period: "",
+            document_status: "затверджено",
+            delivery_status: i.qok || "",
+            product: i.product,
+            qty: i.different,
+          })),
+          qty_needed_total: qtyNeededSelected,
+          qty_needed_selected: qtyNeededSelected,
+          qty_missing_total: qtyMissingCalc,
+          qty_missing_selected: qtyMissingCalc,
+          qty_moved_selected: qtyMovedSelected > 0 ? qtyMovedSelected : 0,
+          qty_remain_skl: qtyRemainSkl,
+        };
+        if (qtyMissingCalc <= 0) {
+          missingButAvailable.push(biItem);
+        } else {
+          missingAndUnavailable.push(biItem);
+        }
       }
-    }
-  }, [isFetching, isLoading]);
+    });
+
+    return {
+      missing_but_available: missingButAvailable,
+      missing_and_unavailable: missingAndUnavailable,
+    } as BiOrders;
+  }, [data, showSelectedOnly, cartItems]);
 
   const filterOptions = useMemo(() => {
     if (!data) {
@@ -108,11 +213,11 @@ export default function BiPage() {
 
   const recommendations = useMemo(() => {
     const newRecommendations: Recommendation[] = [];
-    if (!data?.missing_but_available) {
+    if (!processedData?.missing_but_available) {
       return newRecommendations;
     }
 
-    for (const product of data.missing_but_available) {
+    for (const product of processedData.missing_but_available) {
       let needed = product.qty_missing;
       if (needed <= 0) continue;
 
@@ -177,27 +282,24 @@ export default function BiPage() {
       }
     }
     return newRecommendations;
-  }, [data]);
+  }, [processedData]);
 
-  // Збираємо всі ID доповнень (контрактів) для батч-запиту коментарів
   const contractsIds = useMemo(() => {
-    if (!data) return [];
+    if (!processedData) return [];
     const all = [
-      ...(data.missing_but_available || []),
-      ...(data.missing_and_unavailable || []),
+      ...(processedData.missing_but_available || []),
+      ...(processedData.missing_and_unavailable || []),
     ];
     const ids = new Set<string>();
     all.forEach(p => p.orders.forEach(o => ids.add(o.contract_supplement)));
     return Array.from(ids);
-  }, [data]);
+  }, [processedData]);
 
-  // Батч-запит на коментарі для всіх доповнень
   const { data: batchCommentsData, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched } = useQuery({
     queryKey: ["batchComments", contractsIds],
     queryFn: async () => {
       const allComments = await getOrderComments(contractsIds, undefined, initData ?? undefined);
       
-      // Наповнюємо індивідуальні кеші для OrderCommentBadge (щоб вони не робили запити самі)
       contractsIds.forEach(id => {
         const itemComments = allComments.filter(c => c.order_ref === id);
         queryClient.setQueryData(["comments", id], itemComments);
@@ -260,12 +362,12 @@ export default function BiPage() {
       return <p>Error: {error.message}</p>;
     }
 
-    if (data) {
+    if (processedData) {
       // Components for grid
       const productsAvailableComponent = (
         <ProductTable
           title="Потрібно замовити (є на складах)"
-          data={data.missing_but_available}
+          data={processedData.missing_but_available}
           onRowClick={!isMobile ? (product) => setSelectedProduct(product) : undefined}
           onSwipeRight={handleSwipeRight}
           onSwipeLeft={handleSwipeLeft}
@@ -276,8 +378,8 @@ export default function BiPage() {
 
       const productsUnavailableComponent = (
         <ProductTable
-          title="Не вистачає під заявки (немає на складах)"
-          data={data.missing_and_unavailable}
+          title="Не вистачає под заявки (немає на складах)"
+          data={processedData.missing_and_unavailable}
           onRowClick={!isMobile ? (product) => setSelectedProduct(product) : undefined}
           onSwipeRight={handleSwipeRight}
           selectedProduct={selectedProduct}
@@ -347,12 +449,46 @@ export default function BiPage() {
   return (
     <div className={styles.pageContainer}>
 
-      <button
-        onClick={() => setIsFilterPanelVisible(!isFilterPanelVisible)}
-        className={styles.toggleFilterButton}
-      >
-        {isFilterPanelVisible ? "Сховати фільтри" : "Показати фільтри"}
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button
+          onClick={() => setIsFilterPanelVisible(!isFilterPanelVisible)}
+          className={styles.toggleFilterButton}
+          style={{ margin: 0 }}
+        >
+          {isFilterPanelVisible ? "Сховати фільтри" : "Показати фільтри"}
+        </button>
+
+        <button
+          onClick={() => setShowSelectedOnly(!showSelectedOnly)}
+          className={styles.toggleFilterButton}
+          style={{ 
+            margin: 0,
+            background: showSelectedOnly ? 'var(--accent-green)' : 'rgba(255, 255, 255, 0.05)',
+            color: showSelectedOnly ? '#000' : '#fff',
+            border: showSelectedOnly ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+            fontWeight: 600
+          }}
+        >
+          {showSelectedOnly ? `✓ Обрані з заявок (${cartItems.length})` : `Показати обрані з заявок (${cartItems.length})`}
+        </button>
+        
+        {cartItems.length > 0 && (
+          <button
+            onClick={() => {
+              setIsClearConfirmOpen(true);
+            }}
+            className={styles.toggleFilterButton}
+            style={{ 
+              margin: 0, 
+              background: 'rgba(239, 68, 68, 0.2)', 
+              color: '#f87171', 
+              border: '1px solid rgba(239, 68, 68, 0.4)' 
+            }}
+          >
+            Очистити
+          </button>
+        )}
+      </div>
 
       {isFilterPanelVisible && (
         <FilterPanel
@@ -366,6 +502,42 @@ export default function BiPage() {
         />
       )}
       {renderContent()}
+
+      {isClearConfirmOpen && (
+        <Modal onClose={() => setIsClearConfirmOpen(false)}>
+          <div className={styles.confirmModalContent}>
+            <h3 className={styles.confirmModalTitle}>Очистити вибір?</h3>
+            <p className={styles.confirmModalText}>
+              Ви впевнені, що хочете видалити всі вибрані товари з кошика заявки?
+            </p>
+            <div className={styles.confirmModalActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setIsClearConfirmOpen(false)}
+              >
+                Скасувати
+              </button>
+              <button
+                className={styles.confirmBtn}
+                onClick={() => {
+                  clearCart();
+                  setIsClearConfirmOpen(false);
+                }}
+              >
+                Очистити
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
+  );
+}
+
+export default function BiPage() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <BiPageContent />
+    </Suspense>
   );
 }

@@ -33,10 +33,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  // modal,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
-  // modal: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -80,7 +80,7 @@ export default function RootLayout({
               <main className="main-content">
                 {children}
               </main>
-              {/* {modal} */}
+              {modal || null}
               <ScrollToTopButton />
               <div id="modal-root" />
             </DeliveryProvider>

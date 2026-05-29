@@ -1,7 +1,11 @@
 "use client";
 import css from "./StockDetails.module.css";
-import { BiOrdersItem, AvailableStock } from "@/types/types";
+import { BiOrdersItem, AvailableStock, Remains } from "@/types/types";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+import { getRemainsByProduct } from "@/lib/api";
+import { useInitData } from "@/store/InitData";
+import { useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -33,8 +37,31 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
     },
   ];
 
+  const initData = useInitData(state => state.initData);
+  const needsFetch = !!selectedProduct && (!selectedProduct.available_stock || selectedProduct.available_stock.length === 0);
+
+  const { data: fetchedStock, isLoading } = useQuery<Remains[]>({
+    queryKey: ["remainsByProduct", selectedProduct?.product, initData],
+    queryFn: () => getRemainsByProduct({ product: selectedProduct!.product, initData: initData! }),
+    enabled: needsFetch && !!initData,
+  });
+
+  const stockData = useMemo(() => {
+    if (!selectedProduct) return [];
+    if (selectedProduct.available_stock && selectedProduct.available_stock.length > 0) {
+      return selectedProduct.available_stock;
+    }
+    if (!fetchedStock) return [];
+
+    return fetchedStock.map(item => ({
+      division: "Склад",
+      warehouse: item.warehouse || "Склад",
+      available: item.buh,
+    }));
+  }, [selectedProduct, fetchedStock]);
+
   const table = useReactTable({
-    data: selectedProduct?.available_stock || [],
+    data: stockData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     defaultColumn: {
@@ -59,6 +86,9 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
       <h2 className={css.title}>Вільні залишки на складах</h2>
       {selectedProduct ? (
         <div className={css.tableContainer}>
+          {isLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center', opacity: 0.6 }}>Завантаження залишків...</div>
+          ) : (
             <table 
               className={css.table}
               style={{ width: '100%' }}
@@ -111,7 +141,8 @@ const StockDetails = ({ selectedProduct }: StockDetailsProps) => {
                 ))}
               </tbody>
             </table>
-            </div>
+          )}
+        </div>
       ) : (
         <div className={css.placeholder}>
           <p>Оберіть номенклатуру для відображення деталізації</p>

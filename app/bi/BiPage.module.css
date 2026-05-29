@@ -57,3 +57,71 @@
 :global([data-theme='light']) .toggleFilterButton:hover {
   color: #000;
 }
+
+.confirmModalContent {
+  padding: 16px 8px;
+  text-align: center;
+}
+
+.confirmModalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+:global([data-theme='light']) .confirmModalTitle {
+  color: var(--foreground);
+}
+
+.confirmModalText {
+  font-size: 15px;
+  opacity: 0.8;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.confirmModalActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.cancelBtn, .confirmBtn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+:global([data-theme='light']) .cancelBtn {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--foreground);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+:global([data-theme='light']) .cancelBtn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.confirmBtn {
+  background: rgba(239, 68, 68, 0.8);
+  color: #fff;
+}
+
+.confirmBtn:hover {
+  background: rgba(239, 68, 68, 1);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}

@@ -212,6 +212,8 @@ export type OrdersDetails = {
   planned_amount?: number;
   actual_payment_amount?: number;
   document_status?: string;
+  orders_q_total?: number;
+  orders_q_product_confirmed?: number;
 };
 export type TaskGoogle = {
   kind: string;
@@ -353,6 +355,12 @@ export type BiOrdersItem = {
     product: string;
     qty: number;
   }[];
+  qty_needed_total?: number;
+  qty_needed_selected?: number;
+  qty_missing_total?: number;
+  qty_missing_selected?: number;
+  qty_moved_selected?: number;
+  qty_remain_skl?: number;
 };
 
 export type BiOrders = {

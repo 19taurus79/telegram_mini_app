@@ -11,8 +11,10 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { Truck, Loader2 } from "lucide-react";
+import { Truck, Loader2, PlusCircle, Check } from "lucide-react";
 import { useDelivery, DeliveryItem } from "@/store/Delivery";
+import { useOrderCart } from "@/store/OrderCart";
+import { useUser } from "@/store/User";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { CommentsProvider } from "@/components/Orders/CommentsContext";
@@ -32,15 +34,18 @@ interface ValidationModalState {
 
 const getItemStatus = (item: OrdersDetails) => {
   const sumMovedQ = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
-  const ordersQ = Number(item.orders_q) || 0;
+  const ordersQ = Number(item.orders_q_total ?? item.orders_q) || 0;
   const buhQ = Number(item.buh) || 0;
   const sklQ = Number(item.skl) || 0;
   const diffQ = Number(item.different) || 0;
 
-  let color: "red" | "green" | "yellow" = "yellow";
+  let color: "red" | "green" | "yellow" | "none" = "yellow";
   let validationType: ValidationType = "none";
 
-  if (sumMovedQ === 0 && (ordersQ > buhQ || (ordersQ === 0 && buhQ === 0))) {
+  if (buhQ === 0 && ordersQ === 0) {
+    color = "none";
+    validationType = "none";
+  } else if (sumMovedQ === 0 && ordersQ > buhQ) {
     color = "red";
     validationType = "outOfStock";
   } else if ((sumMovedQ >= diffQ && buhQ <= sklQ && buhQ >= sumMovedQ && buhQ > 0) || (ordersQ <= buhQ && buhQ > 0 && buhQ <= sklQ)) {
@@ -61,6 +66,22 @@ const getItemStatus = (item: OrdersDetails) => {
 };
 
 
+const getItemId = (item: OrdersDetails) => {
+  return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
+};
+
+const getProductName = (item: OrdersDetails) => {
+  const parts = [];
+  parts.push(item.nomenclature);
+  if (item.party_sign && item.party_sign.trim() !== "") {
+    parts.push(item.party_sign.trim());
+  }
+  if (item.buying_season && item.buying_season.trim() !== "") {
+    parts.push(item.buying_season.trim());
+  }
+  return parts.join(" ").trim();
+};
+
 interface DetailsWidgetProps {
   initData: string;
   selectedClients: Client[];
@@ -75,9 +96,13 @@ export default function DetailsWidget({
   showAllContracts,
 }: DetailsWidgetProps) {
   const router = useRouter();
+  const userData = useUser((state) => state.userData);
+  const isAdmin = userData?.is_admin;
   const contractsIds = useMemo(() => {
      return selectedContracts.map(c => c.contract_supplement).sort().join(",");
   }, [selectedContracts]);
+
+  const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
 
   const [selectedProductForModal, setSelectedProductForModal] = useState<string | null>(null);
   const [commentModalData, setCommentModalData] = useState<{
@@ -100,6 +125,83 @@ export default function DetailsWidget({
   const { setDelivery, hasItem, updateQuantity } = useDelivery();
   const printableRef = React.useRef<HTMLDivElement>(null);
 
+  const { selectedItems: cartItems, toggleItem: toggleCartItem, setItems: setCartItems, hasItem: hasCartItem } = useOrderCart();
+
+  const { data: detailsList, isLoading } = useQuery<OrdersDetails[]>({
+    queryKey: ["ordersDetailsFull", clientIds, contractsIds],
+    queryFn: async () => {
+        if (selectedClients.length === 0) return [];
+        if (selectedContracts.length > 0) {
+            const contractIdsList = selectedContracts.map(c => c.contract_supplement);
+            return getOrdersDetailsById({ orderId: contractIdsList, initData });
+        }
+         return [];
+    },
+    enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
+  });
+
+  const handleCartItemToggle = (item: OrdersDetails) => {
+    toggleCartItem({
+      id: getItemId(item),
+      product: getProductName(item),
+      nomenclature: item.nomenclature,
+      party_sign: item.party_sign,
+      buying_season: item.buying_season,
+      different: item.different,
+      orders_q: item.orders_q_total ?? item.orders_q,
+      client: item.client,
+      contract_supplement: item.contract_supplement,
+      manager: item.manager,
+      buh: item.buh,
+      skl: item.skl,
+      qok: item.qok,
+      line_of_business: item.line_of_business,
+    });
+  };
+
+  const isAllSelected = useMemo(() => {
+    if (!detailsList || detailsList.length === 0) return false;
+    return detailsList.every(item => hasCartItem(getItemId(item)));
+  }, [detailsList, cartItems, hasCartItem]);
+
+  const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!detailsList) return;
+    if (e.target.checked) {
+      const newItems = [...cartItems];
+      detailsList.forEach(item => {
+        const id = getItemId(item);
+        if (!newItems.some(ni => ni.id === id)) {
+          newItems.push({
+            id,
+            product: getProductName(item),
+            nomenclature: item.nomenclature,
+            party_sign: item.party_sign,
+            buying_season: item.buying_season,
+            different: item.different,
+            orders_q: item.orders_q_total ?? item.orders_q,
+            client: item.client,
+            contract_supplement: item.contract_supplement,
+            manager: item.manager,
+            buh: item.buh,
+            skl: item.skl,
+            qok: item.qok,
+            line_of_business: item.line_of_business,
+          });
+        }
+      });
+      setCartItems(newItems);
+    } else {
+      const displayIds = new Set(detailsList.map(getItemId));
+      const filtered = cartItems.filter(ci => !displayIds.has(ci.id));
+      setCartItems(filtered);
+    }
+  };
+
+  const handleLoadToBi = () => {
+    toast.success(`Завантажено ${cartItems.length} товарів у вкладку Замовити!`);
+    router.push("/bi?showSelected=true");
+  };
+
   const handlePrint = useReactToPrint({
     contentRef: printableRef,
     documentTitle: `Деталі_замовлення_${new Date().toLocaleDateString()}`,
@@ -119,7 +221,7 @@ export default function DetailsWidget({
       "Переміщено": item.parties?.map(p => `${p.moved_q}${p.party ? ` (${p.party})` : ''}`).join(", ") || "-",
       "Бух. залишок": item.buh,
       "Скл. залишок": item.skl,
-      "Потреба": item.orders_q
+      "Потреба": item.orders_q_total ?? item.orders_q
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -129,21 +231,6 @@ export default function DetailsWidget({
     toast.success("Excel файл згенеровано");
   };
 
-  const getItemId = (item: OrdersDetails) => {
-    return `${item.contract_supplement}_${item.nomenclature}_${item.party_sign || ""}_${item.buying_season || ""}`.trim();
-  };
-
-  const getProductName = (item: OrdersDetails) => {
-    const parts = [];
-    parts.push(item.nomenclature);
-    if (item.party_sign && item.party_sign.trim() !== "") {
-      parts.push(item.party_sign.trim());
-    }
-    if (item.buying_season && item.buying_season.trim() !== "") {
-      parts.push(item.buying_season.trim());
-    }
-    return parts.join(" ").trim();
-  };
 
   const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
     queryKey: ["deliveries"],
@@ -227,7 +314,7 @@ export default function DetailsWidget({
           initData 
         });
 
-        const initialQty = customQty !== undefined ? customQty : (item.different > 0 ? item.different : item.orders_q);
+        const initialQty = customQty !== undefined ? customQty : (item.different > 0 ? item.different : (item.orders_q_total ?? item.orders_q));
 
         if (isAlreadyIn) {
             updateQuantity(itemId, initialQty);
@@ -240,7 +327,7 @@ export default function DetailsWidget({
               order: item.contract_supplement,
               client: item.client,
               id: itemId, 
-              orders_q: item.orders_q,
+              orders_q: item.orders_q_total ?? item.orders_q,
               parties: item.parties,
               buh: item.buh,
               skl: item.skl,
@@ -311,20 +398,7 @@ export default function DetailsWidget({
     await handleAddToDelivery(item);
   };
 
-  const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
 
-  const { data: detailsList, isLoading } = useQuery<OrdersDetails[]>({
-    queryKey: ["ordersDetailsFull", clientIds, contractsIds],
-    queryFn: async () => {
-        if (selectedClients.length === 0) return [];
-        if (selectedContracts.length > 0) {
-            const contractIdsList = selectedContracts.map(c => c.contract_supplement);
-            return getOrdersDetailsById({ orderId: contractIdsList, initData });
-        }
-         return [];
-    },
-    enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
-  });
 
   const queryClient = useQueryClient();
 
@@ -362,6 +436,12 @@ export default function DetailsWidget({
           </span>
         </div>
         <div className={styles.headerActions}>
+          {isAdmin && cartItems.length > 0 && (
+            <button className={`${styles.actionBtn} ${styles.biBtn}`} onClick={handleLoadToBi} style={{ background: 'var(--accent-green)', color: '#000' }}>
+              <PlusCircle size={16} />
+              <span>Замовити ({cartItems.length})</span>
+            </button>
+          )}
           <button className={`${styles.actionBtn} ${styles.excelBtn}`} onClick={handleExportExcel}>
             <FileDown size={16} />
             <span>Зберегти в Excel</span>
@@ -377,6 +457,21 @@ export default function DetailsWidget({
         <table className={styles.table}>
           <thead>
             <tr>
+              {isAdmin && (
+                <th className={styles.th} style={{ width: "40px", textAlign: "center" }}>
+                  <label className={styles.customCheckboxContainer}>
+                    <input 
+                      type="checkbox" 
+                      onChange={handleSelectAllChange} 
+                      checked={isAllSelected}
+                      className={styles.customCheckboxInput}
+                    />
+                    <div className={styles.customCheckboxControl}>
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  </label>
+                </th>
+              )}
               <th className={styles.th}>Доповнення</th>
               <th className={styles.th}>Товар</th>
               <th className={styles.th} style={{ width: "60px" }}>Кількість</th>
@@ -390,7 +485,7 @@ export default function DetailsWidget({
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
+                <td colSpan={isAdmin ? 9 : 8} style={{padding: '10px', textAlign: 'center'}}>Завантаження даних...</td>
               </tr>
             )}
             
@@ -398,7 +493,7 @@ export default function DetailsWidget({
               if (!detailsList || detailsList.length === 0) {
                 return !isLoading ? (
                   <tr>
-                    <td colSpan={8} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
+                    <td colSpan={isAdmin ? 9 : 8} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
                       {selectedContracts.length > 0 ? "Даних не знайдено" : "Оберіть доповнення"}
                     </td>
                   </tr>
@@ -419,7 +514,7 @@ export default function DetailsWidget({
               return grouped.map((group) => (
                 <React.Fragment key={group.client}>
                   <tr>
-                    <td colSpan={8} className={styles.clientGroupHeader}>👤 {group.client}</td>
+                    <td colSpan={isAdmin ? 9 : 8} className={styles.clientGroupHeader}>👤 {group.client}</td>
                   </tr>
                   {group.items.map((item: OrdersDetails) => {
                     const itemId = getItemId(item);
@@ -431,6 +526,21 @@ export default function DetailsWidget({
                         key={item.id} 
                         className={`${isSelected ? styles.selectedRow : ""} ${inDelivery ? styles.alreadyInDeliveryRow : ""} ${item.has_draft ? styles.draftRow : ""}`}
                       >
+                        {isAdmin && (
+                          <td className={styles.td} style={{ textAlign: "center" }}>
+                            <label className={styles.customCheckboxContainer} onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                type="checkbox" 
+                                checked={hasCartItem(itemId)} 
+                                onChange={() => handleCartItemToggle(item)} 
+                                className={styles.customCheckboxInput}
+                              />
+                              <div className={styles.customCheckboxControl}>
+                                <Check size={12} strokeWidth={3} />
+                              </div>
+                            </label>
+                          </td>
+                        )}
                         <td className={styles.td}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontWeight: 700 }}>{item.contract_supplement}</span>
@@ -450,7 +560,45 @@ export default function DetailsWidget({
                             </span>
                           )}
                         </td>
-                        <td className={styles.td}>{item.different}</td>
+                        <td className={styles.td} style={{ textAlign: 'center', fontWeight: 600 }}>
+                          {(() => {
+                            const need = Number(item.orders_q_total ?? item.orders_q) || 0;
+                            const buh = Number(item.buh) || 0;
+                            const skl = Number(item.skl) || 0;
+                            const sumMoved = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
+
+                            // Якщо бух = 0 і потреба = 0 — світлофора немає
+                            if (buh === 0 && need === 0) {
+                              return <span>{item.different}</span>;
+                            }
+
+                            let dotColor: string;
+                            if (buh >= need && skl >= need) {
+                              dotColor = '#4ade80'; // зелений — вистачає всього
+                            } else if (buh >= need) {
+                              dotColor = '#facc15'; // жовтий — бух ок, склад ні
+                            } else if (sumMoved > 0 && sumMoved <= buh) {
+                              dotColor = '#facc15'; // жовтий — бух менше потреби, але є переміщення в межах бух
+                            } else {
+                              dotColor = '#ef4444'; // червоний — бух не покриває потребу
+                            }
+
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                <span style={{
+                                  display: 'inline-block',
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  background: dotColor,
+                                  flexShrink: 0,
+                                  boxShadow: `0 0 6px ${dotColor}`,
+                                }} />
+                                <span>{item.different}</span>
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td className={styles.td} onClick={() => handlePartyClick(item)} style={{ cursor: item.parties?.length > 0 ? "pointer" : "default" }}>
                           {item.parties?.length > 0 ? (
                             <div style={{ fontSize: "11px" }}>
@@ -467,8 +615,8 @@ export default function DetailsWidget({
                           </div>
                         </td>
                         <td className={styles.td} onClick={() => handleDemandClick(item)} style={{ cursor: "pointer", textAlign: 'center', fontWeight: 600 }}>
-                          {item.orders_q}
-                        </td> 
+                          {item.orders_q_total ?? item.orders_q}
+                        </td>
                         <td className={styles.td} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => handleDeliveryClick(item)}>
                           {addingToDeliveryId === itemId ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 0 : 2} />}
                         </td>
@@ -619,7 +767,7 @@ export default function DetailsWidget({
                           ) : "—"}
                         </td>
                         <td>{item.buh} / {item.skl}</td>
-                        <td>{item.orders_q}</td>
+                        <td>{item.orders_q_total ?? item.orders_q}</td>
 
                         <td>
                           <div style={{ fontSize: '8pt' }}>

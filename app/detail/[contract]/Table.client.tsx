@@ -18,6 +18,7 @@ import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommen
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
+import { formatQuantity } from "@/lib/utils/productUtils";
 import Modal from "@/components/Modal/Modal";
 import DeliveryBtn from "@/components/DeliveryBtn/DeliveryBtn";
 import OrderCartBtn from "@/components/OrderCartBtn/OrderCartBtn";
@@ -404,7 +405,7 @@ function TableOrderDetail({ details }: Detail) {
                 return "";
               })()}`}
             >
-              {item.quantity}
+              {formatQuantity(item.quantity)}
             </div>
             <div className={css.commentBadgeCell} onClick={(e) => e.stopPropagation()}>
               <OrderCommentBadge
@@ -445,7 +446,7 @@ function TableOrderDetail({ details }: Detail) {
                         <div
                           className={`${css.cardCellQuantity} ${css.qParty}`}
                         >
-                          {party.moved_q}
+                          {formatQuantity(party.moved_q)}
                         </div>
                       </div>
                     )

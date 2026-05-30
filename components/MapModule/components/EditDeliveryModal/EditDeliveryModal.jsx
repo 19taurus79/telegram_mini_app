@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import { useUser } from "@/store/User";
+import { formatQuantity } from "@/lib/utils/productUtils";
 
 /**
  * Модальное окно для редактирования состава одной или нескольких доставок.
@@ -944,9 +945,9 @@ export default function EditDeliveryModal() {
                           <tr key={idx}>
                             <td>{item.orderRef || item.order}</td>
                             <td style={{ fontWeight: 500 }}>{item.product}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{formatQuantity(item.quantity)}</td>
                             <td style={{ fontSize: '0.85rem' }}>
-                              {item.parties?.map(p => `${p.party} (${p.moved_q})`).join(", ")}
+                              {item.parties?.map(p => `${p.party} (${formatQuantity(p.moved_q)})`).join(", ")}
                             </td>
                           </tr>
                         ))}
@@ -1120,7 +1121,7 @@ export default function EditDeliveryModal() {
                                             if (!st) return 'Немає в залишках';
                                             const realBuh = st.totalBuh;
                                             const realSkl = st.totalSkl - st.totalStorage;
-                                            return `Бух: ${realBuh.toFixed(0)} · Скл: ${realSkl.toFixed(0)}`;
+                                            return `Бух: ${formatQuantity(realBuh)} · Скл: ${formatQuantity(realSkl)}`;
                                           })()}
                                         </div>
                                       )}
@@ -1187,9 +1188,9 @@ export default function EditDeliveryModal() {
                           <div style={{ fontWeight: 500 }}>{remain.nomenclature_series || "Без серії"}</div>
                           <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{remain.warehouse}</div>
                         </td>
-                        <td>{remain.buh}</td>
-                        <td>{remain.skl}</td>
-                        <td>{remain.storage}</td>
+                        <td>{formatQuantity(remain.buh)}</td>
+                        <td>{formatQuantity(remain.skl)}</td>
+                        <td>{formatQuantity(remain.storage)}</td>
                         <td>{remain.weight}</td>
                       </tr>
                     ))}

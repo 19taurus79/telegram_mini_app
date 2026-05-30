@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useDelivery } from "@/context/DeliveryContext";
 import styles from "./DeliveryTable.module.css";
 import DeliveryDetailsForm from "@/components/DeliveryDetailsForm/DeliveryDetailsForm";
+import { formatQuantity } from "@/lib/utils/productUtils";
 
 export default function DeliveryList() {
   const [activeClientForDetails, setActiveClientForDetails] = useState<
@@ -83,7 +84,7 @@ export default function DeliveryList() {
                   {order.products.map((p) => (
                     <li key={p.product} className={styles.productItem}>
                       <span>{p.product}</span>
-                      <span>{p.quantity}</span>
+                      <span>{formatQuantity(p.quantity)}</span>
                     </li>
                   ))}
                 </ul>

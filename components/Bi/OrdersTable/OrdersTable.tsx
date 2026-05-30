@@ -7,6 +7,7 @@ import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommen
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { useCommentsContext } from "@/components/Orders/CommentsContext";
 import { useOrderCart } from "@/store/OrderCart";
+import { formatQuantity } from "@/lib/utils/productUtils";
 import {
   useReactTable,
   getCoreRowModel,
@@ -104,12 +105,14 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
     {
       accessorKey: 'qty',
       header: 'Кількість',
+      cell: ({ getValue }) => formatQuantity(getValue() as number),
       size: 100,
       minSize: 60,
     },
     {
       accessorKey: 'moved_qty',
       header: 'Переміщено',
+      cell: ({ getValue }) => formatQuantity(getValue() as number),
       size: 100,
       minSize: 60,
     },
@@ -226,11 +229,11 @@ const OrdersTable = ({ orders, productName }: OrdersTableProps) => {
                       </div>
                       <div className={css.gridItem}>
                         <span className={css.label}>Кількість</span>
-                        <span className={`${css.value} ${css.qtyValue}`}>{order.qty}</span>
+                        <span className={`${css.value} ${css.qtyValue}`}>{formatQuantity(order.qty)}</span>
                       </div>
                       <div className={css.gridItem}>
                         <span className={css.label}>Переміщено</span>
-                        <span className={css.value}>{order.moved_qty}</span>
+                        <span className={css.value}>{formatQuantity(order.moved_qty)}</span>
                       </div>
                     </div>
                     

@@ -11,6 +11,7 @@ import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageC
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import { formatQuantity } from "@/lib/utils/productUtils";
 
 export default function BottomData({ onEditClient }) {
   const [commentModalData, setCommentModalData] = useState(null);
@@ -312,7 +313,7 @@ export default function BottomData({ onEditClient }) {
                 'Клієнт': clientData.client,
                 'Номер заявки': order.contract_supplement,
                 'Товар': order.nomenclature,
-                'Кількість': order.different,
+                'Кількість': formatQuantity(order.different),
                 'Вага (кг)': order.total_weight || 0
             }))
         )
@@ -437,7 +438,7 @@ export default function BottomData({ onEditClient }) {
                                   <tr key={order.id}>
                                     <td>{order.contract_supplement}</td>
                                     <td>{order.nomenclature}</td>
-                                    <td>{order.different}</td>
+                                    <td>{formatQuantity(order.different)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -499,7 +500,7 @@ export default function BottomData({ onEditClient }) {
                               <tr key={order.id}>
                                 <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.contract_supplement}</td>
                                 <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.nomenclature}</td>
-                                <td style={{ padding: '4px', fontSize: '0.9em' }}>{order.different}</td>
+                                <td style={{ padding: '4px', fontSize: '0.9em' }}>{formatQuantity(order.different)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -913,7 +914,7 @@ export default function BottomData({ onEditClient }) {
                         })()}
                       </div>
                       <div className={css.orderDetails}>
-                        <span>Кількість: {order.different} | Вага: {order.total_weight?.toFixed(2) || 0} кг</span>
+                        <span>Кількість: {formatQuantity(order.different)} | Вага: {order.total_weight?.toFixed(2) || 0} кг</span>
                       </div>
                     </li>
                   ))}

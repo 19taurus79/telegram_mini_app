@@ -6,6 +6,7 @@ import {
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
+import { formatQuantity } from "@/lib/utils/productUtils";
 
 // Інтерфейс для об'єкта рекомендації
 interface Recommendation {
@@ -46,6 +47,7 @@ const RecommendationsTable = ({
     {
       accessorKey: 'qty_to_take',
       header: 'Кількість',
+      cell: ({ getValue }) => formatQuantity(getValue() as number),
       minSize: 80,
       size: 100,
     },

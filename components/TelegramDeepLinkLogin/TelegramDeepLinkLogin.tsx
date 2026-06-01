@@ -65,8 +65,8 @@ export default function TelegramDeepLinkLogin({ onSuccess }: TelegramDeepLinkLog
             stopPolling();
             setState("loading");
 
-            // Сохраняем токен на 30 дней (было 1 день)
-            const expires = Date.now() + 30 * 24 * 60 * 60 * 1000;
+            // Сохраняем токен на 7 дней (было 30 дней)
+            const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
             localStorage.setItem("tg_init_data", result.init_data);
             localStorage.setItem("tg_init_data_expires", expires.toString());
 

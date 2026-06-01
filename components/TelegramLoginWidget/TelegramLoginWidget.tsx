@@ -25,7 +25,7 @@ export default function TelegramLoginWidget() {
         const { init_data } = await loginWithTelegramWidget(user);
 
         // Зберігаємо в ті самі ключі що використовує getInitData.ts
-        const expires = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
         localStorage.setItem("tg_init_data", init_data);
         localStorage.setItem("tg_init_data_expires", expires.toString());
 

@@ -38,13 +38,13 @@ function saveInitDataToStorage(data: string) {
   if (typeof window === "undefined") return;
   
   // 1. Cookies
-  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
   document.cookie = `tg_init_data=${encodeURIComponent(data)}; path=/; expires=${expires}; SameSite=Lax`;
   
   // 2. LocalStorage (надійніше в деяких випадках)
   try {
     localStorage.setItem("tg_init_data", data);
-    localStorage.setItem("tg_init_data_expires", (Date.now() + 30 * 24 * 60 * 60 * 1000).toString());
+    localStorage.setItem("tg_init_data_expires", (Date.now() + 7 * 24 * 60 * 60 * 1000).toString());
   } catch {
     console.error("Storage error");
   }

@@ -46,11 +46,7 @@ export default function UploadPage() {
       formData.append('manual_matches_json', manualMatchesJson);
 
       if (remainingFileCount > 0) {
-        await axios.post("/upload-data", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await axios.post("/upload-data", formData);
       }
 
       toast.dismiss();
@@ -82,11 +78,7 @@ export default function UploadPage() {
       }
 
       if (fileCount > 0) {
-        await axios.post("/upload-data", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await axios.post("/upload-data", formData);
       }
 
       toast.dismiss(toastId);

@@ -101,11 +101,7 @@ export default function FileUploadForm({ onUploadSuccess, onSkipMatching }: File
     formData.append("moved_file", files.moved as File);
 
     try {
-      const response = await axios.post("/upload_ordered_moved", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post("/upload_ordered_moved", formData);
       toast.dismiss();
       toast.success("Файли завантажені! Починається співставлення.");
       onUploadSuccess(response.data, files);

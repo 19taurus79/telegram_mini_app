@@ -380,7 +380,7 @@ function RemainsContent() {
             )}
           </div>
           <button
-            className={`${css.filterBtn} ${selectedGroup ? css.active : ''}`}
+            className={`${css.filterBtn} ${(selectedGroup || dataSourceType === 'free') ? css.active : ''}`}
             onClick={() => setIsFilterOpen(true)}
             title="Фільтри"
           >

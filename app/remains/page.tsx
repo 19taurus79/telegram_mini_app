@@ -1,7 +1,7 @@
 "use client";
-
+ 
 import { useState, useEffect, useMemo, Suspense } from "react";
-import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct, getCategoryTree } from "@/lib/api";
+import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct, getCategoryTree, exportRemainsToExcel } from "@/lib/api";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
@@ -17,9 +17,9 @@ import RemainsDashboard from "@/components/Remains/RemainsDashboard/RemainsDashb
 import DataSourceSwitch from "@/components/DataSourceSwitch/DataSourceSwitch";
 import BottomSheet from "@/components/UI/BottomSheet/BottomSheet";
 import RemainsFiltersDesktop from "./RemainsFiltersDesktop";
-
+ 
 const DESKTOP_BREAKPOINT = 768;
-
+ 
 function RemainsContent() {
   const { 
     selectedGroup, setSelectedGroup, 
@@ -27,12 +27,12 @@ function RemainsContent() {
     searchValue, setSearchValue 
   } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all'>('warehouse');
+  const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all' | 'free'>('warehouse');
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const initData = useInitData((state: InitData) => state.initData);
-
+ 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["products", dataSourceType, selectedGroup, selectedSubGroup, searchValue, initData],
     queryFn: () => {
@@ -41,8 +41,9 @@ function RemainsContent() {
             parentGroup: selectedSubGroup || null,
             searchValue: searchValue || null,
             initData: initData || "",
+            freeOnly: dataSourceType === 'free',
         };
-        if (dataSourceType === 'warehouse') {
+        if (dataSourceType === 'warehouse' || dataSourceType === 'free') {
             return getProductOnWarehouse(params);
         } else {
             return getAllProductByGuide(params);
@@ -277,6 +278,18 @@ function RemainsContent() {
           title="Категорії товару"
         >
           <ul className={css.filterList}>
+            <li className={css.filterItemWrapper}>
+              <div
+                className={`${css.filterItem} ${dataSourceType === 'free' ? css.activeFilterItem : ''}`}
+                onClick={() => {
+                  setDataSourceType(dataSourceType === 'free' ? 'warehouse' : 'free');
+                  setIsFilterOpen(false);
+                }}
+              >
+                <span>Вільний товар</span>
+              </div>
+            </li>
+            <div className={css.divider} />
             {groupsWithParents.map((group) => {
               const isActive = (group.name === "Всі" && selectedGroup === "") || group.name === selectedGroup;
               const isExpanded = expandedGroup === group.name;
@@ -331,6 +344,18 @@ function RemainsContent() {
     );
   };
 
+  const handleExport = (columns: string[]) => {
+    if (!initData) return;
+    exportRemainsToExcel({
+      group: selectedGroup || null,
+      parentGroup: selectedSubGroup || null,
+      searchValue: searchValue || null,
+      initData,
+      freeOnly: dataSourceType === 'free',
+      columns,
+    });
+  };
+
   const renderSearchHeader = () => {
     if (isMobile) {
       return (
@@ -365,7 +390,7 @@ function RemainsContent() {
       );
     }
 
-    return <RemainsFiltersDesktop groups={groupsWithParents} />;
+    return <RemainsFiltersDesktop groups={groupsWithParents} onExport={handleExport} />;
   };
 
   return (

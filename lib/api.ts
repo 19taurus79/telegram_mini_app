@@ -142,11 +142,13 @@ export const getProductOnWarehouse = async ({
   parentGroup,
   searchValue,
   initData,
+  freeOnly,
 }: {
   group: string | null;
   parentGroup?: string | null;
   searchValue: string | null;
   initData: string;
+  freeOnly?: boolean;
 }) => {
   const { data } = await axios.get<Product[]>("/data/product_on_warehouse", {
     headers: {
@@ -157,9 +159,50 @@ export const getProductOnWarehouse = async ({
       category: group,
       parent_category: parentGroup,
       name_part: searchValue,
+      free_only: freeOnly || undefined,
     },
   });
   return data;
+};
+
+export const exportRemainsToExcel = async ({
+  group,
+  parentGroup,
+  searchValue,
+  initData,
+  freeOnly,
+  columns,
+}: {
+  group: string | null;
+  parentGroup?: string | null;
+  searchValue: string | null;
+  initData: string;
+  freeOnly?: boolean;
+  columns?: string[];
+}) => {
+  const response = await axios.get(`/data/product_on_warehouse/export`, {
+    headers: {
+      "X-Telegram-Init-Data": initData,
+    },
+    params: {
+      category: group,
+      parent_category: parentGroup,
+      name_part: searchValue,
+      free_only: freeOnly || undefined,
+      columns: columns && columns.length > 0 ? columns.join(",") : undefined,
+    },
+    responseType: 'blob',
+  });
+  
+  const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'remains.xlsx');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 export const getOrders = async ({

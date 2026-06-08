@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './DataSourceSwitch.module.css';
 import clsx from 'clsx';
 
-type DataSourceType = 'warehouse' | 'all';
+export type DataSourceType = 'warehouse' | 'all' | 'free';
 
 interface DataSourceSwitchProps {
   dataSource: DataSourceType;
@@ -17,6 +17,12 @@ const DataSourceSwitch: React.FC<DataSourceSwitchProps> = ({ dataSource, setData
         onClick={() => setDataSource('warehouse')}
       >
         Товар на складі
+      </button>
+      <button
+        className={clsx(styles.switchButton, { [styles.active]: dataSource === 'free' })}
+        onClick={() => setDataSource('free')}
+      >
+        Вільний товар
       </button>
       <button
         className={clsx(styles.switchButton, { [styles.active]: dataSource === 'all' })}

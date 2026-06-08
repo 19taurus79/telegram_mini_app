@@ -318,3 +318,91 @@
 :global([data-theme='light']) .popoverHeader {
   color: rgba(0, 0, 0, 0.3);
 }
+
+.exportBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: var(--accent-green);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.exportBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.exportBtn:active {
+  transform: scale(0.92);
+}
+
+:global([data-theme='light']) .exportBtn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: var(--accent-green);
+}
+
+.columnCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.columnCheckboxLabel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.columnCheckboxLabel input {
+  cursor: pointer;
+  accent-color: var(--accent-green);
+}
+
+.exportActionBtn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: var(--accent-green);
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exportActionBtn:hover {
+  background: var(--accent-green-hover, #0cd97e);
+  transform: translateY(-1px);
+}
+
+.exportActionBtn:active {
+  transform: scale(0.98);
+}
+
+:global([data-theme='light']) .columnCheckboxLabel {
+  color: #334155;
+}
+
+:global([data-theme='light']) .columnCheckboxLabel:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme='light']) .exportActionBtn {
+  color: #000;
+  background: var(--accent-green);
+}

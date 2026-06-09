@@ -15,6 +15,7 @@ interface TelegramWebApp {
   disableClosingConfirmation?: () => void;
   isVerticalSwipesEnabled?: boolean;
   isClosingConfirmationEnabled?: boolean;
+  openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
 }
 
 interface Window {

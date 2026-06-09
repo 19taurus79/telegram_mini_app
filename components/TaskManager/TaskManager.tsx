@@ -83,6 +83,16 @@ export default function TaskManager() {
     </Link>
   );
 
+  const handleCalendarClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const url = "https://calendar.google.com/calendar/u/0?cid=dca9aa4129540be8ec133f20092e7f0a500897595fc1736cd295a739d9dc9466@group.calendar.google.com";
+    if (typeof window !== "undefined" && window.Telegram?.WebApp?.openLink) {
+      window.Telegram.WebApp.openLink(url);
+    } else {
+      window.open(url, "_blank");
+    }
+  };
+
   return (
     <div className={css.container}>
       <div className={css.header}>
@@ -90,6 +100,7 @@ export default function TaskManager() {
         <a 
           href="https://calendar.google.com/calendar/u/0?cid=dca9aa4129540be8ec133f20092e7f0a500897595fc1736cd295a739d9dc9466@group.calendar.google.com" 
           className={css.calendarButton}
+          onClick={handleCalendarClick}
         >
           <span className={css.calendarIcon}>📅</span>
           <span className={css.calendarText}>Календар доставок</span>

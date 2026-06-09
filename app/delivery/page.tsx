@@ -150,6 +150,9 @@ function DeliveryDataContent() {
     driver: "",
   });
   const [npSelection, setNpSelection] = useState<NPSelection | null>(null);
+  const handleNpSelect = React.useCallback((selection: NPSelection) => {
+    setNpSelection(selection);
+  }, []);
   const [formError, setFormError] = useState<string | null>(null);
   const [isAddressChange, setIsAddressChange] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -433,7 +436,7 @@ function DeliveryDataContent() {
             </div>
 
             <div className={styles.modalBody}>
-              <div className={styles.deliveryTabs}>
+              <div className={`${styles.deliveryTabs} ${styles.threeOptions}`}>
                 <button 
                   className={`${styles.deliveryTab} ${!formData.isPickup && !formData.isNP ? styles.active : ""}`}
                   onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: false }))}
@@ -454,10 +457,10 @@ function DeliveryDataContent() {
                 </button>
               </div>
 
-              {formData.isNP && (
+               {formData.isNP && (
                 <div className={styles.npSection}>
                   <NovaPoshtaSelector 
-                    onSelect={(selection) => setNpSelection(selection)}
+                    onSelect={handleNpSelect}
                   />
                 </div>
               )}

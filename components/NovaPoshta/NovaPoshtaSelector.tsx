@@ -305,7 +305,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       {/* ── Delivery Type ── */}
       <div className={css.fieldGroup}>
         <label className={css.label}>Спосіб доставки</label>
-        <div className={css.segmentedControl}>
+        <div className={`${css.segmentedControl} ${css.threeOptions}`}>
           <button 
             className={`${css.segment} ${deliveryType === "branch" ? css.active : ""}`}
             onClick={() => setDeliveryType("branch")}

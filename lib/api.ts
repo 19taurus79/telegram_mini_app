@@ -974,6 +974,15 @@ export const createClientAddress = async ({
     address: string;
     latitude: number;
     longitude: number;
+    default_car_make?: string;
+    default_car_number?: string;
+    default_trailer_number?: string;
+    default_driver?: string;
+    default_car_max_weight?: number;
+    default_car_own_weight?: number;
+    default_car_length?: number;
+    default_car_width?: number;
+    default_car_height?: number;
   };
   initData: string;
 }) => {
@@ -1005,6 +1014,15 @@ export const updateClientAddress = async ({
     address: string;
     latitude: number;
     longitude: number;
+    default_car_make?: string;
+    default_car_number?: string;
+    default_trailer_number?: string;
+    default_driver?: string;
+    default_car_max_weight?: number;
+    default_car_own_weight?: number;
+    default_car_length?: number;
+    default_car_width?: number;
+    default_car_height?: number;
   };
   initData: string;
 }) => {
@@ -1018,6 +1036,21 @@ export const updateClientAddress = async ({
       },
     }
   );
+  return data;
+};
+
+export const fetchVehicleInfo = async (carNumber: string) => {
+  const { data } = await axios.get<{
+    status: string;
+    source: string;
+    make: string;
+    number: string;
+    max_weight: number | null;
+    own_weight: number | null;
+    length: number | null;
+    width: number | null;
+    height: number | null;
+  }>(`/api/vehicle-info/${encodeURIComponent(carNumber)}`);
   return data;
 };
 

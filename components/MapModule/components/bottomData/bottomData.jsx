@@ -935,6 +935,16 @@ export default function BottomData({ onEditClient }) {
         </div>
       );
     }
+    const maxWeight = selectedClient.default_car_max_weight && selectedClient.default_car_max_weight > 0 ? selectedClient.default_car_max_weight : null;
+    const ownWeight = selectedClient.default_car_own_weight && selectedClient.default_car_own_weight > 0 ? selectedClient.default_car_own_weight : null;
+    const payload = maxWeight && ownWeight && maxWeight > ownWeight ? maxWeight - ownWeight : null;
+    const length = selectedClient.default_car_length && selectedClient.default_car_length > 0 ? selectedClient.default_car_length : null;
+    const width = selectedClient.default_car_width && selectedClient.default_car_width > 0 ? selectedClient.default_car_width : null;
+    const height = selectedClient.default_car_height && selectedClient.default_car_height > 0 ? selectedClient.default_car_height : null;
+    const dimensionsStr = (length || width || height)
+      ? `${length || '?' } x ${width || '?' } x ${height || '?' } м`
+      : null;
+
     return (
       <div className={css.container}>
         <div className={css.infoCard}>
@@ -947,6 +957,55 @@ export default function BottomData({ onEditClient }) {
               {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`}>{selectedClient.phone2}</a></p>}
               {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
           </div>
+          {(selectedClient.default_car_make || selectedClient.default_car_number || selectedClient.default_driver || maxWeight || ownWeight || dimensionsStr) && (
+            <div className={css.vehicleInfoSection}>
+              <div className={css.vehicleInfoTitle}>🚗 Авто за замовчуванням</div>
+              <div className={css.vehicleInfoGrid}>
+                {selectedClient.default_car_make && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Марка</span>
+                    <span className={css.vehicleInfoValue}>{selectedClient.default_car_make}</span>
+                  </div>
+                )}
+                {selectedClient.default_car_number && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Номер</span>
+                    <span className={css.vehicleInfoValue}>{selectedClient.default_car_number}</span>
+                  </div>
+                )}
+                {selectedClient.default_trailer_number && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Причіп</span>
+                    <span className={css.vehicleInfoValue}>{selectedClient.default_trailer_number}</span>
+                  </div>
+                )}
+                {selectedClient.default_driver && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Водій</span>
+                    <span className={css.vehicleInfoValue}>{selectedClient.default_driver}</span>
+                  </div>
+                )}
+                {maxWeight && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Повна маса</span>
+                    <span className={css.vehicleInfoValue}>{maxWeight.toLocaleString()} кг</span>
+                  </div>
+                )}
+                {payload && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Вантажопідйомність</span>
+                    <span className={css.vehicleInfoValue} style={{ color: '#0ef18e', fontWeight: 'bold' }}>{(payload / 1000).toFixed(1)} т</span>
+                  </div>
+                )}
+                {dimensionsStr && (
+                  <div className={css.vehicleInfoItem} style={{ gridColumn: '1 / -1' }}>
+                    <span className={css.vehicleInfoLabel}>Габарити (Д х Ш х В)</span>
+                    <span className={css.vehicleInfoValue}>{dimensionsStr}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         {!isGuest && (
           <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>

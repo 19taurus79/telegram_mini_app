@@ -148,6 +148,11 @@ function DeliveryDataContent() {
     carNumber: "",
     trailerNumber: "",
     driver: "",
+    carMaxWeight: "",
+    carOwnWeight: "",
+    carLength: "",
+    carWidth: "",
+    carHeight: "",
   });
   const [npSelection, setNpSelection] = useState<NPSelection | null>(null);
   const handleNpSelect = React.useCallback((selection: NPSelection) => {
@@ -321,10 +326,16 @@ function DeliveryDataContent() {
                       isNP: false,
                       needTTN: false,
                       ttnType: "self",
-                      carMake: "",
-                      carNumber: "",
-                      trailerNumber: "",
-                      driver: "",
+                      // Auto-fill даних авто/водія з довідника (для "Забирає клієнт")
+                      carMake: address[0].default_car_make || "",
+                      carNumber: address[0].default_car_number || "",
+                      trailerNumber: address[0].default_trailer_number || "",
+                      driver: address[0].default_driver || "",
+                      carMaxWeight: address[0].default_car_max_weight !== undefined && address[0].default_car_max_weight !== null ? String(address[0].default_car_max_weight) : "",
+                      carOwnWeight: address[0].default_car_own_weight !== undefined && address[0].default_car_own_weight !== null ? String(address[0].default_car_own_weight) : "",
+                      carLength: address[0].default_car_length !== undefined && address[0].default_car_length !== null ? String(address[0].default_car_length) : "",
+                      carWidth: address[0].default_car_width !== undefined && address[0].default_car_width !== null ? String(address[0].default_car_width) : "",
+                      carHeight: address[0].default_car_height !== undefined && address[0].default_car_height !== null ? String(address[0].default_car_height) : "",
                     });
                   } else {
                     setFormData({
@@ -343,6 +354,11 @@ function DeliveryDataContent() {
                       carNumber: "",
                       trailerNumber: "",
                       driver: "",
+                      carMaxWeight: "",
+                      carOwnWeight: "",
+                      carLength: "",
+                      carWidth: "",
+                      carHeight: "",
                     });
                   }
                 } catch {
@@ -362,6 +378,11 @@ function DeliveryDataContent() {
                     carNumber: "",
                     trailerNumber: "",
                     driver: "",
+                    carMaxWeight: "",
+                    carOwnWeight: "",
+                    carLength: "",
+                    carWidth: "",
+                    carHeight: "",
                   });
                 } finally {
                   setIsLoading(false);
@@ -676,6 +697,75 @@ function DeliveryDataContent() {
                               }}
                             />
                           </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div>
+                              <label className={styles.fieldLabel}>
+                                <Truck size={16} /> Повна маса (кг)
+                              </label>
+                              <input
+                                type="number"
+                                className={styles.modalInput}
+                                value={formData.carMaxWeight}
+                                placeholder="Наприклад: 18000"
+                                onChange={(e) => setFormData({ ...formData, carMaxWeight: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className={styles.fieldLabel}>
+                                <Truck size={16} /> Маса без навт. (кг)
+                              </label>
+                              <input
+                                type="number"
+                                className={styles.modalInput}
+                                value={formData.carOwnWeight}
+                                placeholder="Наприклад: 8500"
+                                onChange={(e) => setFormData({ ...formData, carOwnWeight: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                            <div>
+                              <label className={styles.fieldLabel}>
+                                <Box size={16} /> Довжина (м)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                className={styles.modalInput}
+                                value={formData.carLength}
+                                placeholder="8.2"
+                                onChange={(e) => setFormData({ ...formData, carLength: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className={styles.fieldLabel}>
+                                <Box size={16} /> Ширина (м)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                className={styles.modalInput}
+                                value={formData.carWidth}
+                                placeholder="2.5"
+                                onChange={(e) => setFormData({ ...formData, carWidth: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className={styles.fieldLabel}>
+                                <Box size={16} /> Висота (м)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                className={styles.modalInput}
+                                value={formData.carHeight}
+                                placeholder="3.6"
+                                onChange={(e) => setFormData({ ...formData, carHeight: e.target.value })}
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -730,7 +820,7 @@ function DeliveryDataContent() {
                     try {
                       setIsLoading(true);
                       setFormError(null);
-                      const { address, contact, phone, date, comment, isPickup, isNP, needTTN, ttnType, carMake, carNumber, trailerNumber, driver } = formData;
+                      const { address, contact, phone, date, comment, isPickup, isNP, needTTN, ttnType, carMake, carNumber, trailerNumber, driver, carMaxWeight, carOwnWeight, carLength, carWidth, carHeight } = formData;
                       
                       if (isNP && (!npSelection || !npSelection.isValid)) {
                         setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
@@ -863,7 +953,25 @@ function DeliveryDataContent() {
                         if (needTTN) {
                           if (ttnType === "client") {
                             const trailerPart = trailerNumber ? `, Причіп: ${trailerNumber}` : "";
-                            finalComment = `САМОВИВІЗ (ТТН, Забирає клієнт). Авто: ${carMake}, Номер: ${carNumber}${trailerPart}, Водій: ${driver}. Адреса: ${finalAddress}\n\n${comment}`.trim();
+                            let vehicleDetails = "";
+                            const maxW = carMaxWeight ? parseInt(carMaxWeight, 10) : 0;
+                            const ownW = carOwnWeight ? parseInt(carOwnWeight, 10) : 0;
+                            const len = carLength ? parseFloat(carLength) : 0;
+                            const wid = carWidth ? parseFloat(carWidth) : 0;
+                            const hei = carHeight ? parseFloat(carHeight) : 0;
+
+                            if (maxW > 0) {
+                              vehicleDetails += `, Повна маса: ${maxW} кг`;
+                            }
+                            if (maxW > 0 && ownW > 0 && maxW > ownW) {
+                              const payloadKg = maxW - ownW;
+                              vehicleDetails += `, В/п: ${(payloadKg / 1000).toFixed(1)} т`;
+                            }
+                            if (len > 0 || wid > 0 || hei > 0) {
+                              vehicleDetails += `, Габарити: ${len || "?"}x${wid || "?"}x${hei || "?"} м`;
+                            }
+
+                            finalComment = `САМОВИВІЗ (ТТН, Забирає клієнт). Авто: ${carMake}, Номер: ${carNumber}${trailerPart}, Водій: ${driver}${vehicleDetails}. Адреса: ${finalAddress}\n\n${comment}`.trim();
                           } else {
                             finalComment = `САМОВИВІЗ (ТТН, Забираю сам). Адреса: ${finalAddress}\n\n${comment}`.trim();
                           }

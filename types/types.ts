@@ -437,7 +437,17 @@ export type ClientAddress={
   "longitude": number,
   "representative":string,
   "phone1": string,
-  "phone2": string
+  "phone2": string,
+  // Дані авто та водія за замовчуванням для самовивозу
+  "default_car_make"?: string | null,
+  "default_car_number"?: string | null,
+  "default_trailer_number"?: string | null,
+  "default_driver"?: string | null,
+  "default_car_max_weight"?: number | null,
+  "default_car_own_weight"?: number | null,
+  "default_car_length"?: number | null,
+  "default_car_width"?: number | null,
+  "default_car_height"?: number | null,
 }
 export type DeliveryItemParty = {
   party: string;

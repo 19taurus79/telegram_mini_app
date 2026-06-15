@@ -6,6 +6,7 @@ import css from "./EditClientModal.module.css";
 import InputAddress from "../inputAddress/InputAddress";
 import { customIcon } from "../../leaflet-icon";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Component to handle marker drag events
 function DraggableMarker({ position, setPosition }) {
@@ -52,8 +53,10 @@ import { getInitData } from "@/lib/getInitData";
 // ... (previous imports)
 
 export default function EditClientModal({ isOpen, onClose, onSave, client }) {
+  const queryClient = useQueryClient();
   const [managersList, setManagersList] = useState([]);
   const [clientsList, setClientsList] = useState([]);
+
   const [formData, setFormData] = useState({
     client: "",
     manager: "",
@@ -63,6 +66,16 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     address: "",
     latitude: 49.97306496577671, // Default to warehouse
     longitude: 35.984652686977824,
+    // Дані авто/водія за замовчуванням
+    default_car_make: "",
+    default_car_number: "",
+    default_trailer_number: "",
+    default_driver: "",
+    default_car_max_weight: "",
+    default_car_own_weight: "",
+    default_car_length: "",
+    default_car_width: "",
+    default_car_height: "",
   });
 
   useEffect(() => {
@@ -93,6 +106,16 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         address: addressText,
         latitude: parseFloat(client.latitude) || 49.97306496577671,
         longitude: parseFloat(client.longitude) || 35.984652686977824,
+        // Дані авто/водія за замовчуванням
+        default_car_make: client.default_car_make || "",
+        default_car_number: client.default_car_number || "",
+        default_trailer_number: client.default_trailer_number || "",
+        default_driver: client.default_driver || "",
+        default_car_max_weight: client.default_car_max_weight !== undefined && client.default_car_max_weight !== null ? client.default_car_max_weight : "",
+        default_car_own_weight: client.default_car_own_weight !== undefined && client.default_car_own_weight !== null ? client.default_car_own_weight : "",
+        default_car_length: client.default_car_length !== undefined && client.default_car_length !== null ? client.default_car_length : "",
+        default_car_width: client.default_car_width !== undefined && client.default_car_width !== null ? client.default_car_width : "",
+        default_car_height: client.default_car_height !== undefined && client.default_car_height !== null ? client.default_car_height : "",
       });
     } else if (!client && isOpen) {
       setFormData({
@@ -104,6 +127,15 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         address: "",
         latitude: 49.97306496577671,
         longitude: 35.984652686977824,
+        default_car_make: "",
+        default_car_number: "",
+        default_trailer_number: "",
+        default_driver: "",
+        default_car_max_weight: "",
+        default_car_own_weight: "",
+        default_car_length: "",
+        default_car_width: "",
+        default_car_height: "",
       });
     }
   }, [client, isOpen, clientsList]);
@@ -166,11 +198,21 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
             address: formData.address,
             latitude: formData.latitude,
             longitude: formData.longitude,
+            default_car_make: formData.default_car_make || undefined,
+            default_car_number: formData.default_car_number || undefined,
+            default_trailer_number: formData.default_trailer_number || undefined,
+            default_driver: formData.default_driver || undefined,
+            default_car_max_weight: formData.default_car_max_weight ? parseInt(formData.default_car_max_weight, 10) : undefined,
+            default_car_own_weight: formData.default_car_own_weight ? parseInt(formData.default_car_own_weight, 10) : undefined,
+            default_car_length: formData.default_car_length ? parseFloat(formData.default_car_length) : undefined,
+            default_car_width: formData.default_car_width ? parseFloat(formData.default_car_width) : undefined,
+            default_car_height: formData.default_car_height ? parseFloat(formData.default_car_height) : undefined,
           },
           initData,
         });
         
         toast.success("Адресу клієнта оновлено успішно");
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
         // Call onSave callback to update local state
         onSave(formData);
         onClose();
@@ -193,11 +235,21 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
             address: formData.address,
             latitude: formData.latitude,
             longitude: formData.longitude,
+            default_car_make: formData.default_car_make || undefined,
+            default_car_number: formData.default_car_number || undefined,
+            default_trailer_number: formData.default_trailer_number || undefined,
+            default_driver: formData.default_driver || undefined,
+            default_car_max_weight: formData.default_car_max_weight ? parseInt(formData.default_car_max_weight, 10) : undefined,
+            default_car_own_weight: formData.default_car_own_weight ? parseInt(formData.default_car_own_weight, 10) : undefined,
+            default_car_length: formData.default_car_length ? parseFloat(formData.default_car_length) : undefined,
+            default_car_width: formData.default_car_width ? parseFloat(formData.default_car_width) : undefined,
+            default_car_height: formData.default_car_height ? parseFloat(formData.default_car_height) : undefined,
           },
           initData,
         });
         
         toast.success("Адресу клієнта додано успішно");
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
         // Call onSave callback to update local state
         onSave(formData);
         onClose();
@@ -307,6 +359,114 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
               key={`address-search-${isOpen}-${client?.client || 'new'}`}
               onAddressSelect={handleAddressSelect} 
             />
+          </div>
+
+          {/* Секція авто та водія за замовчуванням */}
+          <div className={css.formGroup}>
+            <div className={css.sectionTitle}>
+              <span className={css.sectionIcon}>🚗</span>
+              <span>Авто за замовчуванням <span className={css.sectionHint}>(для самовивозу «Забирає клієнт»)</span></span>
+            </div>
+            <div className={css.vehicleGrid}>
+              <div className={`${css.vehicleField} ${css.fullWidth}`}>
+                <label>Номер авто</label>
+                <input
+                  className={css.input}
+                  name="default_car_number"
+                  value={formData.default_car_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, default_car_number: e.target.value.toUpperCase() }))}
+                  placeholder="AX1234HP"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Марка авто</label>
+                <input
+                  className={css.input}
+                  name="default_car_make"
+                  value={formData.default_car_make}
+                  onChange={handleChange}
+                  placeholder="MAN, DAF, Газель..."
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Номер причепа <span style={{ opacity: 0.6, fontSize: '0.8em' }}>(опціонально)</span></label>
+                <input
+                  className={css.input}
+                  name="default_trailer_number"
+                  value={formData.default_trailer_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, default_trailer_number: e.target.value.toUpperCase() }))}
+                  placeholder="AX5678XX"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Водій (ПІБ)</label>
+                <input
+                  className={css.input}
+                  name="default_driver"
+                  value={formData.default_driver}
+                  onChange={handleChange}
+                  placeholder="Прізвище Ім'я По батькові"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Повна маса (кг)</label>
+                <input
+                  className={css.input}
+                  type="number"
+                  name="default_car_max_weight"
+                  value={formData.default_car_max_weight}
+                  onChange={handleChange}
+                  placeholder="Наприклад: 18000"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Маса без навантаження (кг)</label>
+                <input
+                  className={css.input}
+                  type="number"
+                  name="default_car_own_weight"
+                  value={formData.default_car_own_weight}
+                  onChange={handleChange}
+                  placeholder="Наприклад: 8500"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Довжина (м)</label>
+                <input
+                  className={css.input}
+                  type="number"
+                  step="0.1"
+                  name="default_car_length"
+                  value={formData.default_car_length}
+                  onChange={handleChange}
+                  placeholder="Наприклад: 8.2"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Ширина (м)</label>
+                <input
+                  className={css.input}
+                  type="number"
+                  step="0.1"
+                  name="default_car_width"
+                  value={formData.default_car_width}
+                  onChange={handleChange}
+                  placeholder="Наприклад: 2.5"
+                />
+              </div>
+              <div className={css.vehicleField}>
+                <label>Висота (м)</label>
+                <input
+                  className={css.input}
+                  type="number"
+                  step="0.1"
+                  name="default_car_height"
+                  value={formData.default_car_height}
+                  onChange={handleChange}
+                  placeholder="Наприклад: 3.6"
+                />
+              </div>
+            </div>
           </div>
 
           <div className={css.mapContainer}>

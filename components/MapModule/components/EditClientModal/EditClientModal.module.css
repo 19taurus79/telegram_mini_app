@@ -132,3 +132,62 @@
   background-color: #45a049;
 }
 
+/* Секція авто/водія за замовчуванням */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--foreground);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 6px 6px 0 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.sectionIcon {
+  font-size: 1.1rem;
+}
+
+.sectionHint {
+  font-weight: 400;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.vehicleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 0 0 6px 6px;
+}
+
+.vehicleField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vehicleField label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+@media (max-width: 480px) {
+  .vehicleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+.fullWidth {
+  grid-column: 1 / -1;
+}

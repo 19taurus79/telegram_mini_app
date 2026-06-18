@@ -850,3 +850,39 @@
   opacity: 1;
   transform: scale(1) rotate(0deg);
 }
+
+/* --- Direct Quantity Edit Table Cells --- */
+.editableQuantityCell {
+  cursor: pointer !important;
+  transition: background-color 0.2s ease;
+}
+
+.editableQuantityCell:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:global([data-theme='light']) .editableQuantityCell:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.qtyContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editIconInline {
+  opacity: 0;
+  margin-left: 4px;
+  color: var(--accent-green);
+  transition: opacity 0.2s ease;
+}
+
+.editableQuantityCell:hover .editIconInline {
+  opacity: 0.8;
+}
+
+:global([data-theme='light']) .editIconInline {
+  color: #059669;
+}

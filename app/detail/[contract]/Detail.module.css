@@ -169,8 +169,12 @@
 }
 
 .qParty {
-  color: var(--accent-green);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 700;
+}
+
+:global([data-theme='light']) .qParty {
+  color: rgba(0, 0, 0, 0.8);
 }
 
 /* --- NEW: Selection Style --- */
@@ -428,6 +432,130 @@
     opacity 0.15s ease-out,
     transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* --- Redesigned Mobile Card Styles --- */
+.cardContent {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.checkboxWrapper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cardActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.badgesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.quantitySelectorBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  min-height: 36px;
+}
+
+:global([data-theme='light']) .quantitySelectorBtn {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.quantitySelectorBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-style: solid;
+}
+
+:global([data-theme='light']) .quantitySelectorBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.quantitySelectorBtn:active {
+  transform: scale(0.95);
+}
+
+.qtyLabel {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+:global([data-theme='light']) .qtyLabel {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.qtyValue {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--accent-green);
+}
+
+:global([data-theme='light']) .qtyValue {
+  color: #059669;
+}
+
+.editIcon {
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 2px;
+  transition: color 0.2s ease;
+}
+
+:global([data-theme='light']) .editIcon {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.quantitySelectorBtn:hover .editIcon {
+  color: var(--accent-green);
+}
+
+:global([data-theme='light']) .quantitySelectorBtn:hover .editIcon {
+  color: #059669;
+}
+
+/* Status specific borders */
+.borderRed, :global([data-theme]) .borderRed {
+  border-color: #ef4444 !important;
+  border-style: solid;
+}
+.borderGreen, :global([data-theme]) .borderGreen {
+  border-color: #10b981 !important;
+  border-style: solid;
+}
+.borderYellow, :global([data-theme]) .borderYellow {
+  border-color: #f59e0b !important;
+  border-style: solid;
+}
+
 
 .customCheckboxInput:checked ~ .customCheckboxControl svg {
   opacity: 1;

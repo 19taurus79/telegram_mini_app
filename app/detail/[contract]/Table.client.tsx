@@ -9,7 +9,7 @@ import {
   getIdRemainsByParty,
   getWeightForProduct,
 } from "@/lib/api";
-import { Loader2, Check, ExternalLink } from "lucide-react";
+import { Loader2, Check, ExternalLink, Pencil } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInitData } from "@/lib/useInitData";
 import React from "react";
@@ -342,83 +342,116 @@ function TableOrderDetail({ details }: Detail) {
          }}
         >
           {/* Main Product Row */}
-          <div className={css.cardRow}>
-            {isAdmin && (
-              <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }} onClick={(e) => e.stopPropagation()}>
-                <label className={css.customCheckboxContainer}>
-                  <input 
-                    type="checkbox" 
-                    checked={hasCartItem(getCartItemId(item))} 
-                    onChange={() => {
-                      toggleCartItem({
-                        id: getCartItemId(item),
-                        product: item.product,
-                        nomenclature: item.nomenclature,
-                        party_sign: item.party_sign,
-                        buying_season: item.buying_season,
-                        different: item.quantity,
-                        orders_q: item.orders_q_total ?? item.orders_q,
-                        client: item.client,
-                        contract_supplement: item.order,
-                        manager: item.manager,
-                        buh: item.buh,
-                        skl: item.skl,
-                        qok: item.qok,
-                        line_of_business: item.line_of_business,
-                      });
-                    }}
-                    className={css.customCheckboxInput}
-                  />
-                  <div className={css.customCheckboxControl}>
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                </label>
-              </div>
-            )}
-            <div className={css.cardCellProduct}>
+          <div className={css.cardContent}>
+            {/* Top row: Checkbox, Name, and Comments */}
+            <div className={css.cardHeaderRow}>
+              {isAdmin && (
+                <div className={css.checkboxWrapper} onClick={(e) => e.stopPropagation()}>
+                  <label className={css.customCheckboxContainer}>
+                    <input 
+                      type="checkbox" 
+                      checked={hasCartItem(getCartItemId(item))} 
+                      onChange={() => {
+                        toggleCartItem({
+                          id: getCartItemId(item),
+                          product: item.product,
+                          nomenclature: item.nomenclature,
+                          party_sign: item.party_sign,
+                          buying_season: item.buying_season,
+                          different: item.quantity,
+                          orders_q: item.orders_q_total ?? item.orders_q,
+                          client: item.client,
+                          contract_supplement: item.order,
+                          manager: item.manager,
+                          buh: item.buh,
+                          skl: item.skl,
+                          qok: item.qok,
+                          line_of_business: item.line_of_business,
+                        });
+                      }}
+                      className={css.customCheckboxInput}
+                    />
+                    <div className={css.customCheckboxControl}>
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  </label>
+                </div>
+              )}
+              
               <div className={css.productNameWrapper}>
                 <span className={css.productName}>{item.product}</span>
                 {isSelected(item.id) && (
-                    <div className={css.selectionIndicator}>
-                        <Check size={14} strokeWidth={3} />
-                    </div>
+                  <div className={css.selectionIndicator}>
+                    <Check size={12} strokeWidth={3} />
+                  </div>
+                )}
+                {addingToDeliveryId === item.id && (
+                  <Loader2 className="animate-spin h-4 w-4 inline text-accent-green" />
                 )}
               </div>
-              {getDeliveryForItem(item) && (
+
+              <div className={css.commentBadgeCell} onClick={(e) => e.stopPropagation()}>
+                <OrderCommentBadge
+                  orderRef={item.order}
+                  productName={item.product}
+                  onClick={() =>
+                    setCommentModalData({
+                      orderRef: item.order,
+                      productId: item.product_id,
+                      productName: item.product,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Bottom row: Status badges and Quantity Selector button */}
+            <div className={css.cardActionsRow}>
+              <div className={css.badgesContainer}>
+                {getDeliveryForItem(item) && (
                   <span className={`${css.deliveryBadge} ${getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") ? css.badgeCO : ""}`}>
                     <ExternalLink size={10} className="mr-1" />
                     {getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") 
-                      ? "ДОСТАВКА З ЦО" 
+                      ? "ЦО" 
                       : `В доставці ${getDeliveryForItem(item)?.delivery_date ? `(${getDeliveryForItem(item)?.delivery_date})` : ""}`}
                   </span>
-              )}
-              {addingToDeliveryId === item.id && (
-                  <Loader2 className="animate-spin ml-2 h-4 w-4 inline text-accent-green" />
-              )}
-            </div>
-            <div
-              className={`${css.cardCellQuantity} ${css.centr} ${(() => {
-                const { color } = getItemStatus(item);
-                if (color === "red") return css.checkmarkRed;
-                if (color === "green") return css.checkmarkGreen;
-                if (color === "yellow") return css.checkmarkYellow;
-                return "";
-              })()}`}
-            >
-              {formatQuantity(item.quantity)}
-            </div>
-            <div className={css.commentBadgeCell} onClick={(e) => e.stopPropagation()}>
-              <OrderCommentBadge
-                orderRef={item.order}
-                productName={item.product}
-                onClick={() =>
-                  setCommentModalData({
-                    orderRef: item.order,
-                    productId: item.product_id,
-                    productName: item.product,
-                  })
-                }
-              />
+                )}
+              </div>
+
+              {/* Editable Quantity Button */}
+              <div 
+                className={`${css.quantitySelectorBtn} ${(() => {
+                  const { color } = getItemStatus(item);
+                  if (color === "red") return css.borderRed;
+                  if (color === "green") return css.borderGreen;
+                  if (color === "yellow") return css.borderYellow;
+                  return "";
+                })()}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const deliveryItem = delivery.find(d => d.id === item.id);
+                  const currentQty = deliveryItem ? deliveryItem.quantity : item.quantity;
+                  
+                  setEditQuantityValue(String(currentQty));
+                  setValidationModal({
+                    isOpen: true,
+                    item,
+                    type: "editingQuantity"
+                  });
+                }}
+              >
+                <span className={css.qtyLabel}>Кіл-ть:</span>
+                <span className={`${css.qtyValue} ${(() => {
+                  const { color } = getItemStatus(item);
+                  if (color === "red") return css.checkmarkRed;
+                  if (color === "green") return css.checkmarkGreen;
+                  if (color === "yellow") return css.checkmarkYellow;
+                  return "";
+                })()}`}>
+                  {formatQuantity(isSelected(item.id) ? (delivery.find(d => d.id === item.id)?.quantity ?? item.quantity) : item.quantity)}
+                </span>
+                <Pencil size={12} className={css.editIcon} />
+              </div>
             </div>
           </div>
 

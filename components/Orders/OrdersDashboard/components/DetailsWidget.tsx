@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
-import { Truck, Loader2, PlusCircle, Check } from "lucide-react";
+import { Truck, Loader2, PlusCircle, Check, Pencil } from "lucide-react";
 import { useDelivery, DeliveryItem } from "@/store/Delivery";
 import { useOrderCart } from "@/store/OrderCart";
 import { useUser } from "@/store/User";
@@ -560,16 +560,43 @@ export default function DetailsWidget({
                             </span>
                           )}
                         </td>
-                        <td className={styles.td} style={{ textAlign: 'center', fontWeight: 600 }}>
+                        <td 
+                          className={`${styles.td} ${styles.editableQuantityCell}`}
+                          onClick={() => {
+                            const currentQty = isSelected
+                              ? (delivery.find(d => d.id === itemId)?.quantity ?? item.different)
+                              : item.different;
+                            setEditQuantityValue(String(currentQty));
+                            setValidationModal({
+                              isOpen: true,
+                              item,
+                              type: "editingQuantity"
+                            });
+                          }}
+                        >
                           {(() => {
                             const need = Number(item.orders_q_total ?? item.orders_q) || 0;
                             const buh = Number(item.buh) || 0;
                             const skl = Number(item.skl) || 0;
                             const sumMoved = item.parties?.reduce((acc, p) => acc + (p.moved_q || 0), 0) || 0;
 
+                            const displayedQty = isSelected
+                              ? (delivery.find(d => d.id === itemId)?.quantity ?? item.different)
+                              : item.different;
+
+                            const formatQtyVal = (val: number) => {
+                              if (Number.isInteger(val)) return val.toString();
+                              return val.toFixed(2);
+                            };
+
                             // Якщо бух = 0 і потреба = 0 — світлофора немає
                             if (buh === 0 && need === 0) {
-                              return <span>{item.different}</span>;
+                              return (
+                                <div className={styles.qtyContainer}>
+                                  <span>{formatQtyVal(displayedQty)}</span>
+                                  <Pencil size={12} className={styles.editIconInline} />
+                                </div>
+                              );
                             }
 
                             let dotColor: string;
@@ -584,7 +611,7 @@ export default function DetailsWidget({
                             }
 
                             return (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} className={styles.qtyContainer}>
                                 <span style={{
                                   display: 'inline-block',
                                   width: '10px',
@@ -594,7 +621,8 @@ export default function DetailsWidget({
                                   flexShrink: 0,
                                   boxShadow: `0 0 6px ${dotColor}`,
                                 }} />
-                                <span>{item.different}</span>
+                                <span>{formatQtyVal(displayedQty)}</span>
+                                <Pencil size={12} className={styles.editIconInline} />
                               </div>
                             );
                           })()}

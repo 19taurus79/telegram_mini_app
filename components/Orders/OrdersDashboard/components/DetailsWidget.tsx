@@ -122,7 +122,7 @@ export default function DetailsWidget({
   const [editQuantityValue, setEditQuantityValue] = useState<string>("");
 
   const effectiveInitData = useInitData();
-  const { setDelivery, hasItem, updateQuantity } = useDelivery();
+  const { delivery, setDelivery, hasItem, updateQuantity } = useDelivery();
   const printableRef = React.useRef<HTMLDivElement>(null);
 
   const { selectedItems: cartItems, toggleItem: toggleCartItem, setItems: setCartItems, hasItem: hasCartItem } = useOrderCart();

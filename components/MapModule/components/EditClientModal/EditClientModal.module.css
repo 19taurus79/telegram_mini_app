@@ -191,3 +191,46 @@
 .fullWidth {
   grid-column: 1 / -1;
 }
+
+/* Tabs */
+.tabsContainer {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.tabButton {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--foreground);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tabButton:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabButton.active {
+  opacity: 1;
+  border-bottom: 2px solid var(--primary-color, #4caf50);
+  color: var(--primary-color, #4caf50);
+}
+
+.tabContent {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

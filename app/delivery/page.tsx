@@ -3,7 +3,7 @@
 import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
-import { getAddressByClient, sendDeliveryData } from "@/lib/api";
+import { getAddressByClient, sendDeliveryData, createClientAddress, updateClientAddress } from "@/lib/api";
 import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
@@ -163,6 +163,9 @@ function DeliveryDataContent() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [initialClientData, setInitialClientData] = useState<any>(null);
+  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  const [updatePromptData, setUpdatePromptData] = useState<any>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -314,6 +317,7 @@ function DeliveryDataContent() {
                 try {
                   const address = await getAddressByClient(client.client);
                   if (address && address.length > 0) {
+                    setInitialClientData(address[0]);
                     setFormData({
                       address: `${address[0].region} обл., ${address[0].area} р-н, ${address[0].commune} громада, ${address[0].city}`,
                       contact: address[0].representative || "",
@@ -338,6 +342,7 @@ function DeliveryDataContent() {
                       carHeight: address[0].default_car_height !== undefined && address[0].default_car_height !== null ? String(address[0].default_car_height) : "",
                     });
                   } else {
+                    setInitialClientData(null);
                     setFormData({
                       address: "",
                       contact: "",
@@ -482,6 +487,7 @@ function DeliveryDataContent() {
                 <div className={styles.npSection}>
                   <NovaPoshtaSelector 
                     onSelect={handleNpSelect}
+                    initialSelection={initialClientData?.default_np_data || undefined}
                   />
                 </div>
               )}
@@ -520,7 +526,7 @@ function DeliveryDataContent() {
                 </div>
               )}
 
-              {!formData.isPickup && (
+              {!formData.isPickup && !formData.isNP && (
                 <div>
                   <label className={styles.fieldLabel}>
                     <User size={16} /> Отримувач
@@ -536,7 +542,7 @@ function DeliveryDataContent() {
                 </div>
               )}
 
-              {!formData.isPickup && (
+              {!formData.isPickup && !formData.isNP && (
                 <div>
                   <label className={styles.fieldLabel}>
                     <Phone size={16} /> Телефон
@@ -831,8 +837,8 @@ function DeliveryDataContent() {
                       const newErrors: Record<string, boolean> = {};
                       if (!address && !isPickup && !isNP) newErrors.address = true;
                       if (isPickup && needTTN && !address) newErrors.address = true;
-                      if (!isPickup && !contact) newErrors.contact = true;
-                      if (!isPickup && (!phone || phone.length < 19)) newErrors.phone = true;
+                      if (!isPickup && !isNP && !contact) newErrors.contact = true;
+                      if (!isPickup && !isNP && (!phone || phone.length < 19)) newErrors.phone = true;
                       if (!date) newErrors.date = true;
 
                       if (isPickup && needTTN && ttnType === "client") {
@@ -862,6 +868,7 @@ function DeliveryDataContent() {
                       let longitude = formData.longitude;
                       let finalAddress = address;
                       let finalContact = contact;
+                      let finalPhone = phone;
 
                       if (isNP && npSelection) {
                         const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
@@ -874,10 +881,11 @@ function DeliveryDataContent() {
                         const warehouse = npSelection.warehouse?.description || npSelection.address;
                         
                         if (npSelection.recipientType === "company") {
-                          finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou}), представник: ${contact}`;
+                          finalContact = `${npSelection.companyName} (ЄДРПОУ: ${npSelection.companyEdrpou}), представник: ${npSelection.recipientName}`;
                         } else {
-                          finalContact = contact;
+                          finalContact = npSelection.recipientName;
                         }
+                        finalPhone = npSelection.recipientPhone;
                         
                         const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
                         const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготковковий";
@@ -1009,13 +1017,87 @@ function DeliveryDataContent() {
                         }
 
                         if (result.status === "ok") {
-                          setIsAnimatingSuccess(true);
-                          setTimeout(() => {
-                            setIsAnimatingSuccess(false);
-                            removeClientDelivery(formClient as string);
-                            setFormClient(null);
-                            toast.success("Доставку оформлено!");
-                          }, 3000);
+                          let hasModifications = false;
+                          let updateMessage = "";
+                          
+                          const clientDataForUpdate = {
+                            client: formClient as string,
+                            manager: manager,
+                            representative: initialClientData?.representative || "",
+                            phone1: initialClientData?.phone1 || "",
+                            phone2: initialClientData?.phone2 || "",
+                            address: initialClientData?.address || "",
+                            latitude: initialClientData?.latitude || 0,
+                            longitude: initialClientData?.longitude || 0,
+                            default_car_make: initialClientData?.default_car_make || undefined,
+                            default_car_number: initialClientData?.default_car_number || undefined,
+                            default_trailer_number: initialClientData?.default_trailer_number || undefined,
+                            default_driver: initialClientData?.default_driver || undefined,
+                            default_car_max_weight: initialClientData?.default_car_max_weight,
+                            default_car_own_weight: initialClientData?.default_car_own_weight,
+                            default_car_length: initialClientData?.default_car_length,
+                            default_car_width: initialClientData?.default_car_width,
+                            default_car_height: initialClientData?.default_car_height,
+                            default_np_data: initialClientData?.default_np_data || null,
+                          };
+
+                          if (isPickup && needTTN && ttnType === "client") {
+                             if (formData.carMake && formData.carMake !== initialClientData?.default_car_make) { clientDataForUpdate.default_car_make = formData.carMake; hasModifications = true; }
+                             if (formData.carNumber && formData.carNumber !== initialClientData?.default_car_number) { clientDataForUpdate.default_car_number = formData.carNumber; hasModifications = true; }
+                             if (formData.trailerNumber && formData.trailerNumber !== initialClientData?.default_trailer_number) { clientDataForUpdate.default_trailer_number = formData.trailerNumber; hasModifications = true; }
+                             if (formData.driver && formData.driver !== initialClientData?.default_driver) { clientDataForUpdate.default_driver = formData.driver; hasModifications = true; }
+                             if (formData.carMaxWeight && parseInt(formData.carMaxWeight, 10) !== initialClientData?.default_car_max_weight) { clientDataForUpdate.default_car_max_weight = parseInt(formData.carMaxWeight, 10); hasModifications = true; }
+                             if (formData.carOwnWeight && parseInt(formData.carOwnWeight, 10) !== initialClientData?.default_car_own_weight) { clientDataForUpdate.default_car_own_weight = parseInt(formData.carOwnWeight, 10); hasModifications = true; }
+                             if (formData.carLength && parseFloat(formData.carLength) !== initialClientData?.default_car_length) { clientDataForUpdate.default_car_length = parseFloat(formData.carLength); hasModifications = true; }
+                             if (formData.carWidth && parseFloat(formData.carWidth) !== initialClientData?.default_car_width) { clientDataForUpdate.default_car_width = parseFloat(formData.carWidth); hasModifications = true; }
+                             if (formData.carHeight && parseFloat(formData.carHeight) !== initialClientData?.default_car_height) { clientDataForUpdate.default_car_height = parseFloat(formData.carHeight); hasModifications = true; }
+                             if (hasModifications) updateMessage = "дані авто/водія";
+                          } else if (isNP) {
+                             if (!initialClientData?.default_np_data || initialClientData.default_np_data.city?.ref !== npSelection?.city?.ref || initialClientData.default_np_data.warehouse?.ref !== npSelection?.warehouse?.ref) {
+                               clientDataForUpdate.default_np_data = npSelection;
+                               hasModifications = true;
+                               updateMessage = "дані Нової Пошти";
+                             }
+                          } else if (!isPickup) {
+                             if (finalAddress && finalAddress !== initialClientData?.address) {
+                               clientDataForUpdate.address = finalAddress;
+                               clientDataForUpdate.latitude = latitude || 0;
+                               clientDataForUpdate.longitude = longitude || 0;
+                               hasModifications = true;
+                               updateMessage = "адресу доставки";
+                             }
+                          }
+
+                          if (finalContact && finalContact !== initialClientData?.representative) {
+                             clientDataForUpdate.representative = finalContact;
+                             hasModifications = true;
+                             if (!updateMessage) updateMessage = "контактну особу";
+                             else updateMessage += " та контактну особу";
+                          }
+
+                          if (finalPhone && finalPhone !== initialClientData?.phone1) {
+                             clientDataForUpdate.phone1 = finalPhone;
+                             hasModifications = true;
+                             if (!updateMessage) updateMessage = "телефон";
+                             else updateMessage += " та телефон";
+                          }
+
+                          if (hasModifications) {
+                            setUpdatePromptData({
+                              id: initialClientData?.id,
+                              clientData: clientDataForUpdate,
+                              message: updateMessage
+                            });
+                            setShowUpdatePrompt(true);
+                          } else {
+                            setIsAnimatingSuccess(true);
+                            setTimeout(() => {
+                              setIsAnimatingSuccess(false);
+                              removeClientDelivery(formClient as string);
+                              setFormClient(null);
+                              toast.success("Доставку оформлено!");
+                            }, 3000);
+                          }
                         } else {
                           setFormError("Помилка сервера");
                         }
@@ -1032,6 +1114,64 @@ function DeliveryDataContent() {
                   {isLoading ? "Відправка..." : "Підтвердити та відправити"}
                 </button>
                 <button className={styles.buttonCancel} onClick={() => setFormClient(null)}>Скасувати</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpdatePrompt && updatePromptData && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} style={{ maxWidth: '400px' }}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Оновити довідник?</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>Ви змінили <strong>{updatePromptData.message}</strong> для доставки.</p>
+              <p>Бажаєте зберегти ці зміни у довідник клієнтів за замовчуванням?</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.buttonSave}
+                  onClick={async () => {
+                    try {
+                      if (updatePromptData.id) {
+                        await updateClientAddress({ id: updatePromptData.id, clientData: updatePromptData.clientData, initData: getInitData() });
+                      } else {
+                        await createClientAddress({ clientData: updatePromptData.clientData, initData: getInitData() });
+                      }
+                      toast.success("Довідник оновлено");
+                    } catch (e) {
+                      toast.error("Помилка оновлення довідника");
+                    }
+                    setShowUpdatePrompt(false);
+                    setIsAnimatingSuccess(true);
+                    setTimeout(() => {
+                      setIsAnimatingSuccess(false);
+                      removeClientDelivery(formClient as string);
+                      setFormClient(null);
+                      toast.success("Доставку оформлено!");
+                    }, 3000);
+                  }}
+                >
+                  Так, зберегти
+                </button>
+                <button
+                  className={styles.buttonCancel}
+                  onClick={() => {
+                    setShowUpdatePrompt(false);
+                    setIsAnimatingSuccess(true);
+                    setTimeout(() => {
+                      setIsAnimatingSuccess(false);
+                      removeClientDelivery(formClient as string);
+                      setFormClient(null);
+                      toast.success("Доставку оформлено!");
+                    }, 3000);
+                  }}
+                >
+                  Ні, дякую
+                </button>
               </div>
             </div>
           </div>

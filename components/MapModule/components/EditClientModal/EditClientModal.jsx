@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -49,6 +49,7 @@ import { fetchManagers } from "../../fetchManagers";
 import { fetchClientsList } from "../../services/fetchFormData";
 import { createClientAddress, updateClientAddress } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
+import NovaPoshtaSelector from "@/components/NovaPoshta/NovaPoshtaSelector";
 
 // ... (previous imports)
 
@@ -56,6 +57,17 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   const queryClient = useQueryClient();
   const [managersList, setManagersList] = useState([]);
   const [clientsList, setClientsList] = useState([]);
+  const [activeTab, setActiveTab] = useState("general");
+
+  // Parse NP data from client prop once — stable per client.id
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialNpData = useMemo(() => {
+    if (!client?.default_np_data) return undefined;
+    if (typeof client.default_np_data === 'string') {
+      try { return JSON.parse(client.default_np_data); } catch { return undefined; }
+    }
+    return client.default_np_data;
+  }, [client?.id]); // only recompute when client changes
 
   const [formData, setFormData] = useState({
     client: "",
@@ -76,6 +88,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     default_car_length: "",
     default_car_width: "",
     default_car_height: "",
+    default_np_data: null,
   });
 
   useEffect(() => {
@@ -97,6 +110,19 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         ? `${client.region} обл., ${client.area || ''} район, ${client.commune || ''} громада, ${client.city || ''}`
         : (client.address?.display_name || client.address || "");
       
+      let parsedNpData = null;
+      if (client.default_np_data) {
+        if (typeof client.default_np_data === 'string') {
+          try {
+            parsedNpData = JSON.parse(client.default_np_data);
+          } catch (e) {
+            console.error("Error parsing default_np_data:", e);
+          }
+        } else {
+          parsedNpData = client.default_np_data;
+        }
+      }
+      
       setFormData({
         client: client.client || "",
         manager: client.manager || "",
@@ -116,6 +142,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         default_car_length: client.default_car_length !== undefined && client.default_car_length !== null ? client.default_car_length : "",
         default_car_width: client.default_car_width !== undefined && client.default_car_width !== null ? client.default_car_width : "",
         default_car_height: client.default_car_height !== undefined && client.default_car_height !== null ? client.default_car_height : "",
+        default_np_data: parsedNpData,
       });
     } else if (!client && isOpen) {
       setFormData({
@@ -136,6 +163,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         default_car_length: "",
         default_car_width: "",
         default_car_height: "",
+        default_np_data: null,
       });
     }
   }, [client, isOpen, clientsList]);
@@ -146,6 +174,10 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleNpSelect = useCallback((selection) => {
+    setFormData(prev => ({ ...prev, default_np_data: selection }));
+  }, []);
 
   const handlePhoneChange = (e) => {
     let value = e.target.value;
@@ -183,6 +215,16 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    const npData = formData.default_np_data;
+    const isNpPartiallyFilled = npData && (npData.city || npData.warehouse || npData.street || npData.companyEdrpou);
+    
+    if (isNpPartiallyFilled && !npData.isValid) {
+      toast.error("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
+      return;
+    }
+    
+    const finalNpData = (npData && npData.isValid) ? npData : null;
+    
     if (client && client.id) {
       // Editing existing client - call API
       try {
@@ -207,6 +249,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
             default_car_length: formData.default_car_length ? parseFloat(formData.default_car_length) : undefined,
             default_car_width: formData.default_car_width ? parseFloat(formData.default_car_width) : undefined,
             default_car_height: formData.default_car_height ? parseFloat(formData.default_car_height) : undefined,
+            default_np_data: finalNpData,
           },
           initData,
         });
@@ -244,6 +287,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
             default_car_length: formData.default_car_length ? parseFloat(formData.default_car_length) : undefined,
             default_car_width: formData.default_car_width ? parseFloat(formData.default_car_width) : undefined,
             default_car_height: formData.default_car_height ? parseFloat(formData.default_car_height) : undefined,
+            default_np_data: finalNpData,
           },
           initData,
         });
@@ -275,222 +319,254 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className={css.formGroup}>
-            <label>Назва клієнта</label>
-            {client ? (
-              // When editing - show disabled input
-              <input
-                className={css.input}
-                name="client"
-                value={formData.client}
-                disabled
-              />
-            ) : (
-              // When adding new - show select dropdown
-              <select
-                className={css.input}
-                name="client"
-                value={formData.client}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Оберіть клієнта</option>
-                {clientsList.map((c, index) => {
-                  const clientName = typeof c === 'string' ? c : (c.client || c.name || '');
-                  return (
-                    <option key={index} value={clientName}>{clientName}</option>
-                  );
-                })}
-              </select>
-            )}
+          <div className={css.tabsContainer}>
+            <button type="button" className={`${css.tabButton} ${activeTab === 'general' ? css.active : ''}`} onClick={() => setActiveTab('general')}>Основні дані</button>
+            <button type="button" className={`${css.tabButton} ${activeTab === 'address' ? css.active : ''}`} onClick={() => setActiveTab('address')}>Адреса та Карта</button>
+            <button type="button" className={`${css.tabButton} ${activeTab === 'car' ? css.active : ''}`} onClick={() => setActiveTab('car')}>Автомобіль</button>
+            <button type="button" className={`${css.tabButton} ${activeTab === 'np' ? css.active : ''}`} onClick={() => setActiveTab('np')}>Нова Пошта</button>
           </div>
 
-          <div className={css.formGroup}>
-            <label>Менеджер</label>
-            <select
-              className={css.input}
-              name="manager"
-              value={formData.manager}
-              onChange={handleChange}
-            >
-                <option value="">Оберіть менеджера</option>
-                {managersList.map((m) => (
-                    <option key={m.id} value={m.manager}>{m.manager}</option>
-                ))}
-            </select>
-          </div>
+          {activeTab === 'general' && (
+            <div className={css.tabContent}>
+              <div className={css.formGroup}>
+                <label>Назва клієнта</label>
+                {client ? (
+                  <input
+                    className={css.input}
+                    name="client"
+                    value={formData.client}
+                    disabled
+                  />
+                ) : (
+                  <select
+                    className={css.input}
+                    name="client"
+                    value={formData.client}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Оберіть клієнта</option>
+                    {clientsList.map((c, index) => {
+                      const clientName = typeof c === 'string' ? c : (c.client || c.name || '');
+                      return (
+                        <option key={index} value={clientName}>{clientName}</option>
+                      );
+                    })}
+                  </select>
+                )}
+              </div>
 
-          <div className={css.formGroup}>
-            <label>Представник</label>
-            <input
-              className={css.input}
-              name="representative"
-              value={formData.representative}
-              onChange={handleChange}
-            />
-          </div>
-          {/* ... (rest of the form) */}
+              <div className={css.formGroup}>
+                <label>Менеджер</label>
+                <select
+                  className={css.input}
+                  name="manager"
+                  value={formData.manager}
+                  onChange={handleChange}
+                >
+                    <option value="">Оберіть менеджера</option>
+                    {managersList.map((m) => (
+                        <option key={m.id} value={m.manager}>{m.manager}</option>
+                    ))}
+                </select>
+              </div>
 
-          <div className={css.formGroup}>
-            <label>Телефон</label>
-            <input
-              className={css.input}
-              name="phone1"
-              value={formData.phone1}
-              onChange={handlePhoneChange}
-              placeholder="+380XXXXXXXXX"
-            />
-          </div>
+              <div className={css.formGroup}>
+                <label>Представник</label>
+                <input
+                  className={css.input}
+                  name="representative"
+                  value={formData.representative}
+                  onChange={handleChange}
+                />
+              </div>
 
-          <div className={css.formGroup}>
-            <label>Поточна адреса</label>
-            <input
-              className={css.input}
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Адреса буде заповнена після пошуку"
-            />
-          </div>
-
-          <div className={css.formGroup}>
-            <label>Пошук нової адреси (опціонально)</label>
-            <InputAddress 
-              key={`address-search-${isOpen}-${client?.client || 'new'}`}
-              onAddressSelect={handleAddressSelect} 
-            />
-          </div>
-
-          {/* Секція авто та водія за замовчуванням */}
-          <div className={css.formGroup}>
-            <div className={css.sectionTitle}>
-              <span className={css.sectionIcon}>🚗</span>
-              <span>Авто за замовчуванням <span className={css.sectionHint}>(для самовивозу «Забирає клієнт»)</span></span>
-            </div>
-            <div className={css.vehicleGrid}>
-              <div className={`${css.vehicleField} ${css.fullWidth}`}>
-                <label>Номер авто</label>
+              <div className={css.formGroup}>
+                <label>Телефон</label>
                 <input
                   className={css.input}
-                  name="default_car_number"
-                  value={formData.default_car_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, default_car_number: e.target.value.toUpperCase() }))}
-                  placeholder="AX1234HP"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Марка авто</label>
-                <input
-                  className={css.input}
-                  name="default_car_make"
-                  value={formData.default_car_make}
-                  onChange={handleChange}
-                  placeholder="MAN, DAF, Газель..."
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Номер причепа <span style={{ opacity: 0.6, fontSize: '0.8em' }}>(опціонально)</span></label>
-                <input
-                  className={css.input}
-                  name="default_trailer_number"
-                  value={formData.default_trailer_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, default_trailer_number: e.target.value.toUpperCase() }))}
-                  placeholder="AX5678XX"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Водій (ПІБ)</label>
-                <input
-                  className={css.input}
-                  name="default_driver"
-                  value={formData.default_driver}
-                  onChange={handleChange}
-                  placeholder="Прізвище Ім'я По батькові"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Повна маса (кг)</label>
-                <input
-                  className={css.input}
-                  type="number"
-                  name="default_car_max_weight"
-                  value={formData.default_car_max_weight}
-                  onChange={handleChange}
-                  placeholder="Наприклад: 18000"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Маса без навантаження (кг)</label>
-                <input
-                  className={css.input}
-                  type="number"
-                  name="default_car_own_weight"
-                  value={formData.default_car_own_weight}
-                  onChange={handleChange}
-                  placeholder="Наприклад: 8500"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Довжина (м)</label>
-                <input
-                  className={css.input}
-                  type="number"
-                  step="0.1"
-                  name="default_car_length"
-                  value={formData.default_car_length}
-                  onChange={handleChange}
-                  placeholder="Наприклад: 8.2"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Ширина (м)</label>
-                <input
-                  className={css.input}
-                  type="number"
-                  step="0.1"
-                  name="default_car_width"
-                  value={formData.default_car_width}
-                  onChange={handleChange}
-                  placeholder="Наприклад: 2.5"
-                />
-              </div>
-              <div className={css.vehicleField}>
-                <label>Висота (м)</label>
-                <input
-                  className={css.input}
-                  type="number"
-                  step="0.1"
-                  name="default_car_height"
-                  value={formData.default_car_height}
-                  onChange={handleChange}
-                  placeholder="Наприклад: 3.6"
+                  name="phone1"
+                  value={formData.phone1}
+                  onChange={handlePhoneChange}
+                  placeholder="+380XXXXXXXXX"
                 />
               </div>
             </div>
-          </div>
+          )}
 
-          <div className={css.mapContainer}>
-             {/* Key forces remount when position changes significantly to avoid map issues */}
-            <MapContainer
-              key={`${formData.latitude}-${formData.longitude}`} 
-              center={[formData.latitude, formData.longitude]}
-              zoom={13}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              <DraggableMarker
-                position={[formData.latitude, formData.longitude]}
-                setPosition={handleMarkerPositionChange}
-              />
-              <MapUpdater position={[formData.latitude, formData.longitude]} />
-            </MapContainer>
-          </div>
-          <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '5px' }}>
-            * Перетягніть маркер для уточнення координат: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-          </div>
+          {activeTab === 'address' && (
+            <div className={css.tabContent}>
+              <div className={css.formGroup}>
+                <label>Поточна адреса</label>
+                <input
+                  className={css.input}
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Адреса буде заповнена після пошуку"
+                />
+              </div>
+
+              <div className={css.formGroup}>
+                <label>Пошук нової адреси (опціонально)</label>
+                <InputAddress 
+                  key={`address-search-${isOpen}-${client?.client || 'new'}`}
+                  onAddressSelect={handleAddressSelect} 
+                />
+              </div>
+
+              <div className={css.mapContainer}>
+                <MapContainer
+                  key={`${formData.latitude}-${formData.longitude}`} 
+                  center={[formData.latitude, formData.longitude]}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <DraggableMarker
+                    position={[formData.latitude, formData.longitude]}
+                    setPosition={handleMarkerPositionChange}
+                  />
+                  <MapUpdater position={[formData.latitude, formData.longitude]} />
+                </MapContainer>
+              </div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '5px' }}>
+                * Перетягніть маркер для уточнення координат: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'car' && (
+            <div className={css.tabContent}>
+              <div className={css.formGroup}>
+                <div className={css.sectionTitle}>
+                  <span className={css.sectionIcon}>🚗</span>
+                  <span>Авто за замовчуванням <span className={css.sectionHint}>(для самовивозу)</span></span>
+                </div>
+                <div className={css.vehicleGrid}>
+                  <div className={`${css.vehicleField} ${css.fullWidth}`}>
+                    <label>Номер авто</label>
+                    <input
+                      className={css.input}
+                      name="default_car_number"
+                      value={formData.default_car_number}
+                      onChange={(e) => setFormData(prev => ({ ...prev, default_car_number: e.target.value.toUpperCase() }))}
+                      placeholder="AX1234HP"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Марка авто</label>
+                    <input
+                      className={css.input}
+                      name="default_car_make"
+                      value={formData.default_car_make}
+                      onChange={handleChange}
+                      placeholder="MAN, DAF, Газель..."
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Номер причепа <span style={{ opacity: 0.6, fontSize: '0.8em' }}>(опціонально)</span></label>
+                    <input
+                      className={css.input}
+                      name="default_trailer_number"
+                      value={formData.default_trailer_number}
+                      onChange={(e) => setFormData(prev => ({ ...prev, default_trailer_number: e.target.value.toUpperCase() }))}
+                      placeholder="AX5678XX"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Водій (ПІБ)</label>
+                    <input
+                      className={css.input}
+                      name="default_driver"
+                      value={formData.default_driver}
+                      onChange={handleChange}
+                      placeholder="Прізвище Ім'я По батькові"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Повна маса (кг)</label>
+                    <input
+                      className={css.input}
+                      type="number"
+                      name="default_car_max_weight"
+                      value={formData.default_car_max_weight}
+                      onChange={handleChange}
+                      placeholder="Наприклад: 18000"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Маса без навантаження (кг)</label>
+                    <input
+                      className={css.input}
+                      type="number"
+                      name="default_car_own_weight"
+                      value={formData.default_car_own_weight}
+                      onChange={handleChange}
+                      placeholder="Наприклад: 8500"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Довжина (м)</label>
+                    <input
+                      className={css.input}
+                      type="number"
+                      step="0.1"
+                      name="default_car_length"
+                      value={formData.default_car_length}
+                      onChange={handleChange}
+                      placeholder="Наприклад: 8.2"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Ширина (м)</label>
+                    <input
+                      className={css.input}
+                      type="number"
+                      step="0.1"
+                      name="default_car_width"
+                      value={formData.default_car_width}
+                      onChange={handleChange}
+                      placeholder="Наприклад: 2.5"
+                    />
+                  </div>
+                  <div className={css.vehicleField}>
+                    <label>Висота (м)</label>
+                    <input
+                      className={css.input}
+                      type="number"
+                      step="0.1"
+                      name="default_car_height"
+                      value={formData.default_car_height}
+                      onChange={handleChange}
+                      placeholder="Наприклад: 3.6"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'np' && (
+            <div className={css.tabContent}>
+              <div className={css.formGroup}>
+                <div className={css.sectionTitle}>
+                  <span className={css.sectionIcon}>📦</span>
+                  <span>Нова Пошта за замовчуванням</span>
+                </div>
+                <div style={{ marginTop: '15px' }}>
+                  <NovaPoshtaSelector 
+                    key={client?.id || 'new'}
+                    onSelect={handleNpSelect}
+                    initialSelection={initialNpData}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className={css.actions}>
             <button type="button" className={`${css.button} ${css.cancelButton}`} onClick={onClose}>

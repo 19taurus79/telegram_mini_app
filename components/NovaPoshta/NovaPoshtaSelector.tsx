@@ -13,7 +13,8 @@ import {
   User, 
   Building, 
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Phone
 } from "lucide-react";
 
 export type NPDeliveryType = "branch" | "postomat" | "address";
@@ -27,6 +28,8 @@ export interface NPSelection {
   warehouse: NPWarehouse | null;
   address: string;
   recipientType: NPRecipientType;
+  recipientName: string;
+  recipientPhone: string;
   companyName: string;
   companyEdrpou: string;
   payer: NPPayerType;
@@ -41,50 +44,68 @@ interface Props {
   initialSelection?: Partial<NPSelection>;
 }
 
+const formatPhoneNumber = (value: string): string => {
+  if (!value) return "+380";
+  let digits = value.replace(/\D/g, "");
+  if (!digits.startsWith("380")) {
+    if (digits.length > 0 && digits.length <= 9) digits = "380" + digits;
+    else if (digits.length === 0) return "+380";
+  }
+  digits = digits.slice(0, 12);
+  let formatted = "+380";
+  if (digits.length > 3) formatted += " (" + digits.substring(3, 5);
+  if (digits.length >= 6) formatted += ") " + digits.substring(5, 8);
+  if (digits.length >= 9) formatted += "-" + digits.substring(8, 10);
+  if (digits.length >= 11) formatted += "-" + digits.substring(10, 12);
+  return formatted;
+};
+
 export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props) {
   const initData = getInitData();
-  
-  // State
-  const [citySearch, setCitySearch] = useState("");
+
+  // ── State (initialized from props on mount — stable thanks to key prop in parent) ──
+  const [citySearch, setCitySearch] = useState(initialSelection?.city?.main_description || "");
   const [cities, setCities] = useState<NPCity[]>([]);
   const [selectedCity, setSelectedCity] = useState<NPCity | null>(initialSelection?.city || null);
   const [isCityLoading, setIsCityLoading] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
-  
+
   const [deliveryType, setDeliveryType] = useState<NPDeliveryType>(initialSelection?.deliveryType || "branch");
-  
+
   const [warehouseSearch, setWarehouseSearch] = useState("");
   const [warehouses, setWarehouses] = useState<NPWarehouse[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<NPWarehouse | null>(initialSelection?.warehouse || null);
   const [isWarehouseLoading, setIsWarehouseLoading] = useState(false);
   const [showWarehouseDropdown, setShowWarehouseDropdown] = useState(false);
-  
+
   const [recipientType, setRecipientType] = useState<NPRecipientType>(initialSelection?.recipientType || "person");
+  const [recipientName, setRecipientName] = useState(initialSelection?.recipientName || "");
+  const [recipientPhone, setRecipientPhone] = useState(initialSelection?.recipientPhone || "");
+
   const [companySearch, setCompanySearch] = useState(initialSelection?.companyEdrpou || "");
   const [companyName, setCompanyName] = useState(initialSelection?.companyName || "");
   const [isCompanyLoading, setIsCompanyLoading] = useState(false);
-  
+
   const [payer, setPayer] = useState<NPPayerType>(initialSelection?.payer || "recipient");
   const [paymentMethod, setPaymentMethod] = useState<NPPaymentMethod>(initialSelection?.paymentMethod || "cash");
-  
-  const [streetSearch, setStreetSearch] = useState("");
+
+  const [streetSearch, setStreetSearch] = useState(initialSelection?.street?.description || "");
   const [streets, setStreets] = useState<NPStreet[]>([]);
   const [selectedStreet, setSelectedStreet] = useState<NPStreet | null>(initialSelection?.street || null);
   const [house, setHouse] = useState(initialSelection?.house || "");
   const [isStreetLoading, setIsStreetLoading] = useState(false);
   const [showStreetDropdown, setShowStreetDropdown] = useState(false);
-  
+
   const cityRef = useRef<HTMLDivElement>(null);
   const warehouseRef = useRef<HTMLDivElement>(null);
   const streetRef = useRef<HTMLDivElement>(null);
 
-  // Debounced City Search
+  // ── Debounced City Search ──
   useEffect(() => {
     if (citySearch.length < 2 || selectedCity?.main_description === citySearch) {
       setCities([]);
       return;
     }
-    
     const timer = setTimeout(async () => {
       setIsCityLoading(true);
       try {
@@ -99,17 +120,15 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         setIsCityLoading(false);
       }
     }, 400);
-    
     return () => clearTimeout(timer);
   }, [citySearch, initData, selectedCity]);
 
-  // Street Search
+  // ── Street Search ──
   useEffect(() => {
     if (!selectedCity || streetSearch.length < 2 || selectedStreet?.description === streetSearch) {
       setStreets([]);
       return;
     }
-    
     const timer = setTimeout(async () => {
       setIsStreetLoading(true);
       try {
@@ -124,29 +143,21 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         setIsStreetLoading(false);
       }
     }, 400);
-    
     return () => clearTimeout(timer);
   }, [streetSearch, selectedCity, initData, selectedStreet]);
 
-  // Load Warehouses when city or delivery type changes
+  // ── Load Warehouses when city or delivery type changes ──
   useEffect(() => {
     if (!selectedCity?.ref || deliveryType === "address") {
       setWarehouses([]);
       return;
     }
-    
     const fetchWarehouses = async () => {
       setIsWarehouseLoading(true);
-      setWarehouses([]); // Clear old results to avoid "mixing" while loading
-      setSelectedWarehouse(null);
-      
+      setWarehouses([]);
       try {
-        // NP API types: 
-        // branch: "f9315480-1a13-11e5-8d7d-00505688561d"
-        // postomat: "95dc2124-ed45-11e3-b44e-0050568002cf"
         const res = await getNPWarehouses(selectedCity.settlement_ref, initData, undefined, undefined);
         if (res.success) {
-          // Strict filtering based on the backend's post_machine flag
           const filtered = res.data.filter((w: NPWarehouse) => {
             if (deliveryType === "postomat") return w.post_machine === true;
             if (deliveryType === "branch") return w.post_machine === false;
@@ -160,14 +171,12 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         setIsWarehouseLoading(false);
       }
     };
-    
     fetchWarehouses();
-  }, [selectedCity?.settlement_ref, selectedCity?.ref, deliveryType, initData]); // Corrected deps to fix ESLint warning
+  }, [selectedCity?.settlement_ref, selectedCity?.ref, deliveryType, initData]);
 
-  // Company Search by EDRPOU/IPN
+  // ── Company Search by EDRPOU/IPN ──
   useEffect(() => {
     if (recipientType === "person" || companySearch.length < 8) return;
-    
     const timer = setTimeout(async () => {
       setIsCompanyLoading(true);
       try {
@@ -183,19 +192,20 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         setIsCompanyLoading(false);
       }
     }, 600);
-    
     return () => clearTimeout(timer);
   }, [companySearch, recipientType, initData]);
 
-  // Validate and Notify Parent
+  // ── Validate and Notify Parent ──
   useEffect(() => {
     const isValid = !!(
-      selectedCity && 
+      selectedCity &&
       (
-        (deliveryType === "address" && selectedStreet && house) || 
+        (deliveryType === "address" && selectedStreet && house) ||
         (deliveryType !== "address" && selectedWarehouse)
       ) &&
-      (recipientType === "person" || (recipientType === "company" && companySearch.length >= 8 && companyName))
+      (recipientType === "person" || (recipientType === "company" && companySearch.length >= 8 && companyName)) &&
+      recipientName.trim().length >= 3 &&
+      recipientPhone.length === 13
     );
 
     onSelect({
@@ -204,31 +214,34 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       warehouse: selectedWarehouse,
       street: selectedStreet,
       house,
-      address: deliveryType === "address" 
-        ? `${selectedStreet?.description || ""}, буд. ${house}` 
+      address: deliveryType === "address"
+        ? `${selectedStreet?.description || ""}, буд. ${house}`
         : "",
       recipientType,
+      recipientName,
+      recipientPhone,
       companyEdrpou: companySearch,
       companyName,
       payer,
       paymentMethod,
-      isValid
+      isValid,
     });
   }, [
-    selectedCity, 
-    deliveryType, 
-    selectedWarehouse, 
-    selectedStreet, 
-    house, 
-    recipientType, 
-    companySearch, 
+    selectedCity,
+    deliveryType,
+    selectedWarehouse,
+    selectedStreet,
+    house,
+    recipientType,
+    recipientName,
+    recipientPhone,
+    companySearch,
     companyName,
-    payer, 
+    payer,
     paymentMethod,
-    onSelect
   ]);
 
-  // Handle outside clicks
+  // ── Handle outside clicks ──
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (cityRef.current && !cityRef.current.contains(event.target as Node)) {
@@ -279,12 +292,12 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
           ) : (
             <Search size={18} className={css.icon} />
           )}
-          
+
           {showCityDropdown && cities.length > 0 && (
             <div className={css.dropdown}>
               {cities.map((city) => (
-                <div 
-                  key={city.ref} 
+                <div
+                  key={city.ref}
                   className={css.dropdownItem}
                   onClick={() => {
                     setSelectedCity(city);
@@ -306,21 +319,24 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       <div className={css.fieldGroup}>
         <label className={css.label}>Спосіб доставки</label>
         <div className={`${css.segmentedControl} ${css.threeOptions}`}>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${deliveryType === "branch" ? css.active : ""}`}
-            onClick={() => setDeliveryType("branch")}
+            onClick={() => { if (deliveryType !== "branch") setSelectedWarehouse(null); setDeliveryType("branch"); }}
           >
             <Building2 size={16} /> Відділення
           </button>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${deliveryType === "postomat" ? css.active : ""}`}
-            onClick={() => setDeliveryType("postomat")}
+            onClick={() => { if (deliveryType !== "postomat") setSelectedWarehouse(null); setDeliveryType("postomat"); }}
           >
             <Box size={16} /> Поштомат
           </button>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${deliveryType === "address" ? css.active : ""}`}
-            onClick={() => setDeliveryType("address")}
+            onClick={() => { setSelectedWarehouse(null); setDeliveryType("address"); }}
           >
             <Truck size={16} /> Адреса
           </button>
@@ -347,13 +363,13 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
                   ) : (
                     <Search size={18} className={css.icon} />
                   )}
-                  
+
                   {showStreetDropdown && streets.length > 0 && (
                     <div className={css.dropdown}>
                       <div className={css.dropdownList}>
                         {streets.map((s) => (
-                          <div 
-                            key={s.ref} 
+                          <div
+                            key={s.ref}
                             className={css.dropdownItem}
                             onClick={() => {
                               setSelectedStreet(s);
@@ -385,21 +401,21 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
                 {deliveryType === "branch" ? "Відділення" : "Поштомат"}
               </label>
               <div className={css.inputWrapper}>
-                <div 
+                <div
                   className={`${css.select} ${!selectedWarehouse ? css.placeholder : ""}`}
                   onClick={() => setShowWarehouseDropdown(!showWarehouseDropdown)}
                 >
                   {selectedWarehouse ? selectedWarehouse.description : `Оберіть ${deliveryType === "branch" ? "відділення" : "поштомат"}...`}
                   <ChevronDown size={18} className={css.selectIcon} />
                 </div>
-                
+
                 {showWarehouseDropdown && (
                   <div className={css.dropdown}>
                     <div className={css.dropdownSearch}>
                       <Search size={14} />
-                      <input 
-                        type="text" 
-                        placeholder="Пошук за номером або назвою..." 
+                      <input
+                        type="text"
+                        placeholder="Пошук за номером або назвою..."
                         value={warehouseSearch}
                         onChange={(e) => setWarehouseSearch(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -410,8 +426,8 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
                       {warehouses
                         .filter(w => w.description.toLowerCase().includes(warehouseSearch.toLowerCase()))
                         .map((w) => (
-                          <div 
-                            key={w.ref} 
+                          <div
+                            key={w.ref}
                             className={css.dropdownItem}
                             onClick={() => {
                               setSelectedWarehouse(w);
@@ -437,20 +453,22 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       <div className={css.fieldGroup}>
         <label className={css.label}>Отримувач</label>
         <div className={css.segmentedControl}>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${recipientType === "person" ? css.active : ""}`}
             onClick={() => setRecipientType("person")}
           >
             <User size={16} /> Фізособа
           </button>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${recipientType === "company" ? css.active : ""}`}
             onClick={() => setRecipientType("company")}
           >
             <Building size={16} /> Організація
           </button>
         </div>
-        
+
         {recipientType === "company" && (
           <div className={css.companyBlock}>
             <div className={css.inputWrapper}>
@@ -476,17 +494,55 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
         )}
       </div>
 
+      {/* ── Recipient Name ── */}
+      <div className={css.fieldGroup}>
+        <label className={css.label}>
+          <User size={16} /> ПІБ отримувача
+        </label>
+        <div className={css.inputWrapper}>
+          <input
+            type="text"
+            className={css.input}
+            placeholder="Прізвище Ім'я По-батькові..."
+            value={recipientName}
+            onChange={(e) => setRecipientName(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* ── Recipient Phone ── */}
+      <div className={css.fieldGroup}>
+        <label className={css.label}>
+          <Phone size={16} /> Телефон отримувача
+        </label>
+        <div className={css.inputWrapper}>
+          <input
+            type="text"
+            className={css.input}
+            placeholder="+380 (XX) XXX-XX-XX"
+            value={formatPhoneNumber(recipientPhone)}
+            onChange={(e) => {
+              const formatted = formatPhoneNumber(e.target.value);
+              setRecipientPhone(formatted);
+            }}
+          />
+          <Phone size={18} className={css.icon} />
+        </div>
+      </div>
+
       {/* ── Payer ── */}
       <div className={css.fieldGroup}>
         <label className={css.label}>Хто оплачує доставку?</label>
         <div className={css.segmentedControl}>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${payer === "recipient" ? css.active : ""}`}
             onClick={() => setPayer("recipient")}
           >
             Отримувач
           </button>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${payer === "sender" ? css.active : ""}`}
             onClick={() => setPayer("sender")}
           >
@@ -499,13 +555,15 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       <div className={css.fieldGroup}>
         <label className={css.label}>Вид оплати</label>
         <div className={css.segmentedControl}>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${paymentMethod === "cash" ? css.active : ""}`}
             onClick={() => setPaymentMethod("cash")}
           >
             Готівковий
           </button>
-          <button 
+          <button
+            type="button"
             className={`${css.segment} ${paymentMethod === "bank" ? css.active : ""}`}
             onClick={() => setPaymentMethod("bank")}
           >

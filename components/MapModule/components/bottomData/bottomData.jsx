@@ -1006,6 +1006,43 @@ export default function BottomData({ onEditClient }) {
               </div>
             </div>
           )}
+          {selectedClient.default_np_data?.city && (
+            <div className={css.vehicleInfoSection} style={{ marginTop: '10px' }}>
+              <div className={css.vehicleInfoTitle}>📦 Нова Пошта за замовчуванням</div>
+              <div className={css.vehicleInfoGrid}>
+                <div className={css.vehicleInfoItem}>
+                  <span className={css.vehicleInfoLabel}>Місто</span>
+                  <span className={css.vehicleInfoValue}>{selectedClient.default_np_data.city?.main_description || ""}</span>
+                </div>
+                <div className={css.vehicleInfoItem} style={{ gridColumn: '1 / -1' }}>
+                  <span className={css.vehicleInfoLabel}>{selectedClient.default_np_data.deliveryType === "address" ? "Адреса" : "Відділення/Поштомат"}</span>
+                  <span className={css.vehicleInfoValue}>{selectedClient.default_np_data.deliveryType === "address" ? selectedClient.default_np_data.address : selectedClient.default_np_data.warehouse?.description || "Не обрано"}</span>
+                </div>
+                <div className={css.vehicleInfoItem}>
+                  <span className={css.vehicleInfoLabel}>Отримувач</span>
+                  <span className={css.vehicleInfoValue}>
+                    {selectedClient.default_np_data.recipientType === "company"
+                      ? `${selectedClient.default_np_data.companyName || "Не вказано"} (${selectedClient.default_np_data.companyEdrpou || ""})`
+                      : selectedClient.default_np_data.recipientName || "Фізособа"}
+                  </span>
+                </div>
+                {selectedClient.default_np_data.recipientPhone && (
+                  <div className={css.vehicleInfoItem}>
+                    <span className={css.vehicleInfoLabel}>Тел. отримувача</span>
+                    <span className={css.vehicleInfoValue}>
+                      <a href={`tel:${selectedClient.default_np_data.recipientPhone}`} style={{ color: 'inherit' }}>
+                        {selectedClient.default_np_data.recipientPhone}
+                      </a>
+                    </span>
+                  </div>
+                )}
+                <div className={css.vehicleInfoItem}>
+                  <span className={css.vehicleInfoLabel}>Оплата</span>
+                  <span className={css.vehicleInfoValue}>{selectedClient.default_np_data.payer === "sender" ? "Відправник" : "Отримувач"} ({selectedClient.default_np_data.paymentMethod === "cash" ? "Готівка" : "Безготівка"})</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         {!isGuest && (
           <button className={css.editButton} onClick={() => setEditClientRequest(selectedClient)}>Редагувати</button>

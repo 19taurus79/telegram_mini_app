@@ -15,6 +15,28 @@ import toast from "react-hot-toast";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useUser } from "@/store/User";
 
+interface ClientAddressData {
+  id?: number;
+  client?: string;
+  manager?: string;
+  representative?: string;
+  phone1?: string;
+  phone2?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  default_car_make?: string;
+  default_car_number?: string;
+  default_trailer_number?: string;
+  default_driver?: string;
+  default_car_max_weight?: number;
+  default_car_own_weight?: number;
+  default_car_length?: number;
+  default_car_width?: number;
+  default_car_height?: number;
+  default_np_data?: NPSelection | null;
+}
+
 // Тип для вибраного елемента для редагування в модальному вікні.
 type SelectedItem = {
   id: string;
@@ -163,9 +185,9 @@ function DeliveryDataContent() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const [initialClientData, setInitialClientData] = useState<any>(null);
+  const [initialClientData, setInitialClientData] = useState<ClientAddressData | null>(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  const [updatePromptData, setUpdatePromptData] = useState<any>(null);
+  const [updatePromptData, setUpdatePromptData] = useState<{ id?: number; clientData: ClientAddressData; message?: string } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -1142,7 +1164,7 @@ function DeliveryDataContent() {
                         await createClientAddress({ clientData: updatePromptData.clientData, initData: getInitData() });
                       }
                       toast.success("Довідник оновлено");
-                    } catch (e) {
+                    } catch {
                       toast.error("Помилка оновлення довідника");
                     }
                     setShowUpdatePrompt(false);

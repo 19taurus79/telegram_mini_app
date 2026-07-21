@@ -1159,9 +1159,9 @@ function DeliveryDataContent() {
                   onClick={async () => {
                     try {
                       if (updatePromptData.id) {
-                        await updateClientAddress({ id: updatePromptData.id, clientData: updatePromptData.clientData, initData: getInitData() });
+                        await updateClientAddress({ id: updatePromptData.id, clientData: updatePromptData.clientData as any, initData: getInitData() });
                       } else {
-                        await createClientAddress({ clientData: updatePromptData.clientData, initData: getInitData() });
+                        await createClientAddress({ clientData: updatePromptData.clientData as any, initData: getInitData() });
                       }
                       toast.success("Довідник оновлено");
                     } catch {

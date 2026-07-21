@@ -19,21 +19,21 @@ interface ClientAddressData {
   id?: number;
   client?: string;
   manager?: string;
-  representative?: string;
-  phone1?: string;
-  phone2?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  default_car_make?: string;
-  default_car_number?: string;
-  default_trailer_number?: string;
-  default_driver?: string;
-  default_car_max_weight?: number;
-  default_car_own_weight?: number;
-  default_car_length?: number;
-  default_car_width?: number;
-  default_car_height?: number;
+  representative?: string | null;
+  phone1?: string | null;
+  phone2?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  default_car_make?: string | null;
+  default_car_number?: string | null;
+  default_trailer_number?: string | null;
+  default_driver?: string | null;
+  default_car_max_weight?: number | null;
+  default_car_own_weight?: number | null;
+  default_car_length?: number | null;
+  default_car_width?: number | null;
+  default_car_height?: number | null;
   default_np_data?: NPSelection | null;
 }
 

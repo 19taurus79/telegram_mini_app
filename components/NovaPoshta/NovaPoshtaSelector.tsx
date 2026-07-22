@@ -197,6 +197,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
 
   // ── Validate and Notify Parent ──
   useEffect(() => {
+    const rawPhoneDigits = recipientPhone.replace(/\D/g, "");
     const isValid = !!(
       selectedCity &&
       (
@@ -205,7 +206,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       ) &&
       (recipientType === "person" || (recipientType === "company" && companySearch.length >= 8 && companyName)) &&
       recipientName.trim().length >= 3 &&
-      recipientPhone.length === 13
+      rawPhoneDigits.length === 12
     );
 
     onSelect({

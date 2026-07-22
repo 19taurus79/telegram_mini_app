@@ -508,6 +508,7 @@ function DeliveryDataContent() {
                {formData.isNP && (
                 <div className={styles.npSection}>
                   <NovaPoshtaSelector 
+                    key={formClient || "np"}
                     onSelect={handleNpSelect}
                     initialSelection={initialClientData?.default_np_data || undefined}
                   />

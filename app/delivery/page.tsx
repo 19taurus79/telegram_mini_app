@@ -1165,9 +1165,10 @@ function DeliveryDataContent() {
                         await createClientAddress({ clientData: updatePromptData.clientData as unknown as Parameters<typeof createClientAddress>[0]["clientData"], initData: getInitData() });
                       }
                       toast.success("Довідник оновлено");
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       console.error("Error updating client address directory:", err);
-                      const detailMsg = err?.response?.data?.detail;
+                      const errorObj = err as { response?: { data?: { detail?: unknown } } };
+                      const detailMsg = errorObj?.response?.data?.detail;
                       const msg = detailMsg 
                         ? (typeof detailMsg === "string" ? detailMsg : JSON.stringify(detailMsg)) 
                         : "Помилка оновлення довідника";

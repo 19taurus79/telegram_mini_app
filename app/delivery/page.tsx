@@ -1165,8 +1165,13 @@ function DeliveryDataContent() {
                         await createClientAddress({ clientData: updatePromptData.clientData as unknown as Parameters<typeof createClientAddress>[0]["clientData"], initData: getInitData() });
                       }
                       toast.success("Довідник оновлено");
-                    } catch {
-                      toast.error("Помилка оновлення довідника");
+                    } catch (err: any) {
+                      console.error("Error updating client address directory:", err);
+                      const detailMsg = err?.response?.data?.detail;
+                      const msg = detailMsg 
+                        ? (typeof detailMsg === "string" ? detailMsg : JSON.stringify(detailMsg)) 
+                        : "Помилка оновлення довідника";
+                      toast.error(msg);
                     }
                     setShowUpdatePrompt(false);
                     setIsAnimatingSuccess(true);

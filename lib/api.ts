@@ -1023,6 +1023,7 @@ export const updateClientAddress = async ({
     default_car_length?: number;
     default_car_width?: number;
     default_car_height?: number;
+    default_np_data?: Record<string, unknown> | null;
   };
   initData: string;
 }) => {

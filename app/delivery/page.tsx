@@ -911,7 +911,7 @@ function DeliveryDataContent() {
                         finalPhone = npSelection.recipientPhone;
                         
                         const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
-                        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготковковий";
+                        const paymentNote = npSelection.paymentMethod === "cash" ? "Готівка" : "Безготівковий";
                         
                         finalAddress = `Нова Пошта: ${fullCity}, ${deliveryType}: ${warehouse} | ${payerNote} | ${paymentNote}`;
                         

@@ -3,8 +3,9 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 import { useRef, useEffect, useState, useMemo } from "react";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download, Printer } from "lucide-react";
 import { filterApplicationsList } from "../../utils/filterUtils";
+import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
 
 export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobile = false }) {
   const { 
@@ -19,6 +20,7 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
     toggleMultiSelectedItem
   } = useApplicationsStore();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const letterRefs = useRef({});
 
   const cleanClient = (c) => (c || "").trim().toLowerCase();
@@ -166,8 +168,17 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
           </div>
         </div>
       )}
-      <div className={css.header}>
-        <h3>Список заявок ({filteredApplications.length}) | Без адреси: {filteredUnmappedApplications.length}</h3>
+      <div className={css.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>
+          Заявки ({filteredApplications.length}) | Без адреси: {filteredUnmappedApplications.length}
+        </h3>
+        <button 
+          className={css.actionBtn}
+          onClick={() => setIsExportModalOpen(true)}
+          title="Експорт в Excel або Друк відфільтрованих заявок"
+        >
+          <Download size={14} /> / <Printer size={14} />
+        </button>
       </div>
       
       {/* Алфавитный указатель */}
@@ -264,6 +275,17 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
           </div>
         )}
       </div>
+
+      <ExportPrintModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        dataType="applications"
+        applicationsData={filteredApplications}
+        filtersInfo={{
+          managers: selectedManagers,
+          lobs: selectedLoBs
+        }}
+      />
     </div>
   );
 }

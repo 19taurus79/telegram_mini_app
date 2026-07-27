@@ -10,6 +10,8 @@ import { getStatusColor } from "../../statusUtils";
 import { getInitData } from "@/lib/getInitData";
 import { batchUpdateDeliveries } from "@/lib/api";
 import toast from "react-hot-toast";
+import { Download, Printer } from "lucide-react";
+import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
@@ -25,6 +27,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   const [expandedDates, setExpandedDates] = useState(new Set());
   const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
   const [isBatchDateModalOpen, setIsBatchDateModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [newBatchDate, setNewBatchDate] = useState("");
 
   const toggleDateExpansion = (date) => {
@@ -177,30 +180,40 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
           )}
         </>
       )}
-      <div className={css.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3>Доставки ({filteredDeliveries.length})</h3>
-        {selectedDeliveries.length > 1 && (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-              className={`${css.batchBtn} ${css.batchBtnGreen}`}
-              onClick={() => setIsBatchStatusModalOpen(true)}
-            >
-              🔄 Статус (масово)
-            </button>
-            <button 
-              className={`${css.batchBtn} ${css.batchBtnBlue}`}
-              onClick={() => { setIsBatchDateModalOpen(true); setNewBatchDate(""); }}
-            >
-              📅 Дата (масово)
-            </button>
-            <button 
-              className={`${css.batchBtn} ${css.batchBtnPurple}`}
-              onClick={() => clearSelectedDeliveries()}
-            >
-              Скинути
-            </button>
-          </div>
-        )}
+      <div className={css.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>Доставки ({filteredDeliveries.length})</h3>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            className={css.actionBtn}
+            onClick={() => setIsExportModalOpen(true)}
+            title="Експорт в Excel або Друк відфільтрованих доставок"
+          >
+            <Download size={14} /> / <Printer size={14} />
+          </button>
+
+          {selectedDeliveries.length > 1 && (
+            <>
+              <button 
+                className={`${css.batchBtn} ${css.batchBtnGreen}`}
+                onClick={() => setIsBatchStatusModalOpen(true)}
+              >
+                🔄 Статус
+              </button>
+              <button 
+                className={`${css.batchBtn} ${css.batchBtnBlue}`}
+                onClick={() => { setIsBatchDateModalOpen(true); setNewBatchDate(""); }}
+              >
+                📅 Дата
+              </button>
+              <button 
+                className={`${css.batchBtn} ${css.batchBtnPurple}`}
+                onClick={() => clearSelectedDeliveries()}
+              >
+                Скинути
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {isBatchStatusModalOpen && (
@@ -377,6 +390,19 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
           <div className={css.empty}>Немає доставок за обраними фільтрами</div>
         )}
       </div>
+
+      <ExportPrintModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        dataType="deliveries"
+        deliveriesData={filteredDeliveries}
+        filtersInfo={{
+          managers: selectedManagers,
+          lobs: selectedLoBs,
+          statuses: selectedStatuses,
+          dates: selectedDates
+        }}
+      />
     </div>
   );
 }

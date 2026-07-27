@@ -366,3 +366,25 @@
 .batchBtnPurple {
   background: linear-gradient(135deg, #8b5cf6, #6d28d9);
 }
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+  background: var(--glass-bg, rgba(255, 255, 255, 0.08));
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+  background: var(--accent-green, #10b981);
+  color: #ffffff;
+  border-color: var(--accent-green, #10b981);
+}
+

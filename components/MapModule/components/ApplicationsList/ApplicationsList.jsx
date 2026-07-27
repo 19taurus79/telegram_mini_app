@@ -1,9 +1,10 @@
 import css from "./ApplicationsList.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { ChevronDown } from "lucide-react";
+import { filterApplicationsList } from "../../utils/filterUtils";
 
 export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobile = false }) {
   const { 
@@ -87,19 +88,14 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
     );
   };
 
-  const filterItem = (item) => {
-    const matchesManager = selectedManagers.length === 0 || 
-      selectedManagers.includes(item.address?.manager) || 
-      selectedManagers.includes(item.orders?.[0]?.manager);
-    
-    const matchesLoB = selectedLoBs.length === 0 || 
-      item.orders?.some(order => selectedLoBs.includes(order.line_of_business));
-    
-    return matchesManager && matchesLoB;
-  };
+  const filteredApplications = useMemo(() => {
+    return filterApplicationsList(applications, selectedManagers, selectedLoBs);
+  }, [applications, selectedManagers, selectedLoBs]);
 
-  const filteredApplications = applications.filter(filterItem);
-  const filteredUnmappedApplications = unmappedApplications.filter(filterItem).sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  const filteredUnmappedApplications = useMemo(() => {
+    return filterApplicationsList(unmappedApplications, selectedManagers, selectedLoBs)
+      .sort((a, b) => a.client.localeCompare(b.client, 'uk'));
+  }, [unmappedApplications, selectedManagers, selectedLoBs]);
 
   // Украинский алфавит
   const alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.split('');

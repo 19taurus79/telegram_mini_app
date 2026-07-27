@@ -23,6 +23,7 @@ import { customIcon, clientIcon, warehouseIcon, deliveryIcon } from "./leaflet-i
 import { getStatusColor } from "./statusUtils"; // Утилита для получения цвета статуса доставки
 import { warehouses } from "./warehouses"; // Статические данные о складах
 import { useMapControlStore } from "./store/mapControlStore"; // Хранилище для управления видимостью слоев
+import { filterApplicationsList, filterDelivery, matchesManager } from "./utils/filterUtils";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
 import DeliveriesList from "./components/DeliveriesList/DeliveriesList";
@@ -286,25 +287,23 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
 
-  // Фильтрация заявок по выбранным менеджерам и направлениям бизнеса
-  const filteredApplications = applications.filter(app => {
-    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(app.address?.manager);
-    const lobMatch = selectedLoBs.length === 0 || app.orders?.some(order => selectedLoBs.includes(order.line_of_business));
-    return managerMatch && lobMatch;
-  });
+  // Глубокая фильтрация заявок по выбранным менеджерам и направлениям бизнеса
+  const filteredApplications = useMemo(() => {
+    return filterApplicationsList(applications, selectedManagers, selectedLoBs);
+  }, [applications, selectedManagers, selectedLoBs]);
 
   // Фильтрация клиентов по выбранным менеджерам
-  const filteredClients = selectedManagers.length > 0
-    ? clients.filter(client => selectedManagers.includes(client.manager))
-    : clients;
+  const filteredClients = useMemo(() => {
+    if (!selectedManagers || selectedManagers.length === 0) return clients;
+    return clients.filter(client => matchesManager([client.manager], selectedManagers));
+  }, [clients, selectedManagers]);
 
-  // Фильтрация доставок по статусу, менеджеру и дате
-  const filteredDeliveries = deliveries.filter(d => {
-    const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
-    const dateMatch = selectedDates.length === 0 || selectedDates.includes(d.delivery_date || "Без дати");
-    return statusMatch && managerMatch && dateMatch;
-  });
+  // Фильтрация доставок по статусу, менеджеру, дате и виду деятельности
+  const filteredDeliveries = useMemo(() => {
+    return deliveries.filter(d => 
+      filterDelivery(d, selectedStatuses, selectedManagers, selectedDates, selectedLoBs, applications)
+    );
+  }, [deliveries, selectedStatuses, selectedManagers, selectedDates, selectedLoBs, applications]);
 
   // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
 

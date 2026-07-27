@@ -3,33 +3,29 @@
 import { useMemo } from "react"
 import css from "./LineOfBusinessFilter.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
-import { Order } from "../../../../types/types";
-
-interface Application {
-    orders?: Order[];
-    [key: string]: unknown;
-}
+import { getAvailableLoBs, cleanString, ApplicationItem } from "../../utils/filterUtils";
 
 export default function LineOfBusinessFilter() {
-    const { applications, unmappedApplications, selectedLoBs, toggleLoB } = useApplicationsStore();
+    const { 
+        applications, 
+        unmappedApplications, 
+        selectedLoBs, 
+        selectedManagers,
+        toggleLoB 
+    } = useApplicationsStore();
 
     const uniqueLoBs = useMemo(() => {
-        const lobs = new Set<string>();
-        
-        (applications as Application[]).forEach(app => {
-            app.orders?.forEach(order => {
-                if (order.line_of_business) lobs.add(order.line_of_business);
-            });
-        });
+        return getAvailableLoBs(
+            applications as ApplicationItem[], 
+            unmappedApplications as ApplicationItem[], 
+            selectedManagers
+        );
+    }, [applications, unmappedApplications, selectedManagers]);
 
-        (unmappedApplications as Application[]).forEach(app => {
-            app.orders?.forEach(order => {
-                if (order.line_of_business) lobs.add(order.line_of_business);
-            });
-        });
-
-        return Array.from(lobs).sort();
-    }, [applications, unmappedApplications]);
+    const isLobSelected = (lob: string) => {
+        const cleanLob = cleanString(lob).toLowerCase();
+        return (selectedLoBs as string[]).some(s => cleanString(s).toLowerCase() === cleanLob);
+    };
 
     const handleButtonClick = (lob: string) => {
         toggleLoB(lob);
@@ -41,7 +37,7 @@ export default function LineOfBusinessFilter() {
         <div className={css.container}>
             {uniqueLoBs.map((lob, index) => (
                 <button 
-                    className={`${css.button} ${selectedLoBs.includes(lob) ? css.buttonActive : ''}`} 
+                    className={`${css.button} ${isLobSelected(lob) ? css.buttonActive : ''}`} 
                     key={`${lob}-${index}`} 
                     onClick={() => handleButtonClick(lob)}
                     data-text={lob}

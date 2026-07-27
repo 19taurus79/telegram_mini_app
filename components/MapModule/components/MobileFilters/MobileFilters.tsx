@@ -51,7 +51,7 @@ export default function MobileFilters() {
         </div>
       )}
 
-      {areApplicationsVisible && (
+      {(areApplicationsVisible || areDeliveriesVisible) && (
         <div>
           <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "8px", color: "var(--foreground)" }}>Вид діяльності</div>
           <LineOfBusinessFilter />

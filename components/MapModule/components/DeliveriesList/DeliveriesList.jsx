@@ -4,6 +4,8 @@ import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import StatusFilter from "../StatusFilter/StatusFilter";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
+import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
+import { filterDelivery } from "../../utils/filterUtils";
 import { getStatusColor } from "../../statusUtils";
 import { getInitData } from "@/lib/getInitData";
 import { batchUpdateDeliveries } from "@/lib/api";
@@ -11,6 +13,8 @@ import toast from "react-hot-toast";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
+    applications,
+    selectedLoBs,
     selectedManagers,
     selectedDeliveries,
     toggleSelectedDelivery,
@@ -43,20 +47,15 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   };
 
   // 1. Фильтрация
-  const filteredDeliveries = deliveries.filter(d => {
-    const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
-    const dateMatch = selectedDates.length === 0 || selectedDates.includes(d.delivery_date || "Без дати");
-    return statusMatch && managerMatch && dateMatch;
-  });
+  const filteredDeliveries = deliveries.filter(d => 
+    filterDelivery(d, selectedStatuses, selectedManagers, selectedDates, selectedLoBs, applications)
+  );
 
-  // Для списка (аккордеонов) мы фильтруем по статусу и менеджеру, но НЕ по дате, 
+  // Для списка (аккордеонов) мы фильтруем по статусу, менеджеру и видам деятельности, но НЕ по дате, 
   // чтобы все даты оставались видимыми в интерфейсе
-  const listDeliveries = deliveries.filter(d => {
-    const statusMatch = Array.isArray(selectedStatuses) && selectedStatuses.includes(d.status);
-    const managerMatch = selectedManagers.length === 0 || selectedManagers.includes(d.manager);
-    return statusMatch && managerMatch;
-  });
+  const listDeliveries = deliveries.filter(d => 
+    filterDelivery(d, selectedStatuses, selectedManagers, [], selectedLoBs, applications)
+  );
 
   // 2. Новая группировка и сортировка (используем listDeliveries)
   const grouping = {};
@@ -173,6 +172,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
             <div className={css.filtersContainer}>
               <ManagerFilter />
               <StatusFilter />
+              <LineOfBusinessFilter />
             </div>
           )}
         </>

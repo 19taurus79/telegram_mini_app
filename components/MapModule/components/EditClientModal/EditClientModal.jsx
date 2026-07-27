@@ -256,6 +256,8 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         
         toast.success("Адресу клієнта оновлено успішно");
         queryClient.invalidateQueries({ queryKey: ["clients"] });
+        queryClient.invalidateQueries({ queryKey: ["ordersAndAddresses"] });
+        queryClient.invalidateQueries({ queryKey: ["clientsList"] });
         // Call onSave callback to update local state
         onSave(formData);
         onClose();
@@ -294,6 +296,8 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
         
         toast.success("Адресу клієнта додано успішно");
         queryClient.invalidateQueries({ queryKey: ["clients"] });
+        queryClient.invalidateQueries({ queryKey: ["ordersAndAddresses"] });
+        queryClient.invalidateQueries({ queryKey: ["clientsList"] });
         // Call onSave callback to update local state
         onSave(formData);
         onClose();
@@ -316,6 +320,10 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
           <button className={css.closeButton} onClick={onClose}>
             &times;
           </button>
+        </div>
+
+        <div className={css.warningBanner}>
+          ℹ️ <strong>Увага:</strong> Внесені данные будут записаны в справочник контрагента и будут автоматически использоваться по умолчанию для всех текущих и будущих заявок этого клиента.
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -365,9 +373,13 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
                   onChange={handleChange}
                 >
                     <option value="">Оберіть менеджера</option>
-                    {managersList.map((m) => (
-                        <option key={m.id} value={m.manager}>{m.manager}</option>
-                    ))}
+                    {managersList.map((m, index) => {
+                      const managerName = typeof m === 'string' ? m : (m.manager || m.name || '');
+                      const keyVal = (m && typeof m === 'object' && m.id) ? m.id : `${managerName}-${index}`;
+                      return (
+                        <option key={keyVal} value={managerName}>{managerName}</option>
+                      );
+                    })}
                 </select>
               </div>
 

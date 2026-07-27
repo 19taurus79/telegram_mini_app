@@ -36,6 +36,17 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.warningBanner {
+  background-color: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: var(--foreground);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
 .header h2 {
   margin: 0;
   font-size: 1.3rem;

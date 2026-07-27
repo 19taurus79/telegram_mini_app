@@ -7,6 +7,7 @@ import {
   Package, 
   Truck, 
   Map as MapIcon, 
+  MapPin,
   ClipboardList, 
   Calendar, 
   CheckSquare, 
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
+import { useUnmappedCount } from "@/hooks/useUnmappedCount";
 import css from "./DesktopSidebar.module.css";
 import { useState, useEffect } from "react";
 
@@ -24,6 +26,7 @@ export default function DesktopSidebar() {
   const pathname = usePathname();
   const userData = useUser((state) => state.userData);
   const { delivery } = useDelivery();
+  const unmappedCount = useUnmappedCount();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function DesktopSidebar() {
   }, []);
 
   const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
+  const addressFixCount = isMounted ? unmappedCount : 0;
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
@@ -44,6 +48,12 @@ export default function DesktopSidebar() {
     { href: "/remains", label: "Наш склад", icon: <Package size={22} /> },
     { href: "/av_stock", label: "Інші склади", icon: <Warehouse size={22} /> },
     { href: "/orders", label: "Заявки", icon: <ClipboardList size={22} /> },
+    { 
+      href: "/address_fix", 
+      label: "Уточнення адреси", 
+      icon: <MapPin size={22} />,
+      badge: addressFixCount > 0 ? addressFixCount : null
+    },
     { 
       href: "/delivery", 
       label: "Доставка", 
@@ -72,7 +82,11 @@ export default function DesktopSidebar() {
             >
               <div className={css.iconWrapper}>
                 {item.icon}
-                {item.badge && <span className={css.badge}>{item.badge}</span>}
+                {item.badge && (
+                  <span className={item.href === '/address_fix' ? css.badgeDanger : css.badge}>
+                    {item.badge}
+                  </span>
+                )}
               </div>
               <span className={css.label}>{item.label}</span>
               {isActive(item.href) && <ChevronRight className={css.activeIndicator} size={14} />}

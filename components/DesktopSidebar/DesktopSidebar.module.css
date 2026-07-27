@@ -136,7 +136,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(14, 241, 142, 0.5);
+  padding: 0 4px;
+  box-shadow: 0 2px 8px rgba(14, 241, 142, 0.4);
+  border: 2px solid #0f172a;
+}
+
+.badgeDanger {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  font-size: 10px;
+  font-weight: 900;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5) !important;
   border: 2px solid #0f172a;
 }
 

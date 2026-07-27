@@ -23,15 +23,22 @@ export function mergeOrdersWithAddresses(orders, addresses) {
   
   const addressMap = new Map();
   addresses.forEach(addr => {
-    addressMap.set(addr.client, addr);
+    if (addr && addr.client) {
+      const cleanKey = addr.client.trim().toLowerCase();
+      addressMap.set(cleanKey, addr);
+      // Также сохраняем точный ключ для надежности
+      addressMap.set(addr.client, addr);
+    }
   });
 
   const clientOrdersMap = new Map();
   const clientsWithoutAddress = new Map();
   
   orders.forEach(order => {
+    if (!order || !order.client) return;
     const clientName = order.client;
-    const address = addressMap.get(clientName);
+    const cleanKey = clientName.trim().toLowerCase();
+    const address = addressMap.get(cleanKey) || addressMap.get(clientName);
     
     // Используем total_weight, который приходит напрямую от бэкенда, и гарантируем, что это число
     const weight = parseFloat(order.total_weight) || 0;

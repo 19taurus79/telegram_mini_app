@@ -226,52 +226,57 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
         {/* Секция для заявок без адреса */}
         {filteredUnmappedApplications.length > 0 && (
           <div className={css.unmappedSection}>
-            <div className={css.letterHeader}>
-              Без адреси ({filteredUnmappedApplications.length})
+            <div className={css.letterHeader} style={{ color: '#e53e3e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>⚠️ Потрібне уточнення адреси ({filteredUnmappedApplications.length})</span>
             </div>
-            {filteredUnmappedApplications.map((item) => (
-              <div 
-                key={item.client} 
-                className={`${css.item} ${css.unmappedItem} ${isMultiSelected(item) ? css.itemSelected : ''}`}
-                onClick={(e) => {
-                  const isMultiClick = e && (e.ctrlKey || e.metaKey);
-                  if (isMultiClick) {
-                    toggleMultiSelectedItem(item, 'applications');
-                    return;
-                  }
-                  setSelectedClient(item);
-                  if (onClose) onClose();
-                }}
-                title="Натисніть, щоб переглянути деталі заявки"
-              >
-                {renderClientName(item)}
-                <div className={css.clientName}>{item.orders?.[0]?.manager}</div>
-                <div className={css.address} style={{ fontStyle: 'italic', color: '#888' }}>
-                  Адреса не знайдена в довіднику
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <div className={css.count}>
-                    Заявок: {item.count}
+            {filteredUnmappedApplications.map((item) => {
+              const managerName = item.orders?.[0]?.manager || "Не вказано";
+              return (
+                <div 
+                  key={item.client} 
+                  className={`${css.item} ${css.unmappedItem} ${isMultiSelected(item) ? css.itemSelected : ''}`}
+                  onClick={(e) => {
+                    const isMultiClick = e && (e.ctrlKey || e.metaKey);
+                    if (isMultiClick) {
+                      toggleMultiSelectedItem(item, 'applications');
+                      return;
+                    }
+                    setSelectedClient(item);
+                    if (onClose) onClose();
+                  }}
+                  title="Натисніть, щоб переглянути деталі заявки"
+                >
+                  {renderClientName(item)}
+                  <div className={css.managerInfo}>
+                    Менеджер: <strong>{managerName}</strong>
                   </div>
-                  <button
-                    className={css.addAddressBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onAddClient) {
-                        onAddClient({
-                          client: item.client,
-                          manager: item.orders?.[0]?.manager || ""
-                        });
-                        if (onClose) onClose();
-                      }
-                    }}
-                    title="Внести дату/адресу для этого клиента"
-                  >
-                    📍 Внести адресу
-                  </button>
+                  <div className={css.address} style={{ fontStyle: 'italic', color: '#e53e3e', marginTop: '2px' }}>
+                    Адреса відсутня в довіднику
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                    <div className={css.count}>
+                      Заявок: {item.count}
+                    </div>
+                    <button
+                      className={css.addAddressBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onAddClient) {
+                          onAddClient({
+                            client: item.client,
+                            manager: managerName
+                          });
+                          if (onClose) onClose();
+                        }
+                      }}
+                      title="Внести адресу в довідник для цього контрагента"
+                    >
+                      📍 Внести адресу
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

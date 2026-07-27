@@ -14,6 +14,7 @@ const homeRoutes = [
   "/map",
   "/delivery",
   "/av_stock",
+  "/address_fix",
 ];
 
 export default function TelegramNavigation() {

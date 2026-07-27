@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useInitData } from "@/store/InitData";
 import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
+import { useUnmappedCount } from "@/hooks/useUnmappedCount";
 import { useTheme } from "@/store/Theme";
 import { Sun, Moon } from "lucide-react";
 
@@ -26,6 +27,7 @@ function Header() {
   const [isMounted, setIsMounted] = useState(false);
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('dark');
   const { toggleTheme } = useTheme();
+  const unmappedCount = useUnmappedCount();
 
   useEffect(() => {
     setIsMounted(true);
@@ -44,6 +46,7 @@ function Header() {
   
   const { delivery } = useDelivery();
   const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
+  const addressFixCount = isMounted ? unmappedCount : 0;
   const [isVibrating, setIsVibrating] = useState(false);
 
   useEffect(() => {
@@ -202,6 +205,14 @@ function Header() {
           <li>
             <Link href="/orders" onClick={handleNavClick} className={isActive('/orders') ? css.activeLink : ''}>
               Заявки
+            </Link>
+          </li>
+          <li>
+            <Link href="/address_fix" onClick={handleNavClick} className={`${css.deliveryLinkWrapper} ${isActive('/address_fix') ? css.activeLink : ''}`}>
+              📍 Уточнення адреси
+              {addressFixCount > 0 && (
+                <div className={css.badgeDanger}>{addressFixCount}</div>
+              )}
             </Link>
           </li>
           <li>

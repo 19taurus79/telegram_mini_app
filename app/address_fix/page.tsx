@@ -8,7 +8,6 @@ import { useApplicationsStore } from "@/components/MapModule/store/applicationsS
 import { filterApplicationsList } from "@/components/MapModule/utils/filterUtils";
 import ManagerFilter from "@/components/MapModule/components/ManagerFilter/ManagerFilter";
 import EditClientModal from "@/components/MapModule/components/EditClientModal/EditClientModal";
-import { getInitData } from "@/lib/getInitData";
 import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export default function AddressFixPage() {
@@ -23,8 +22,7 @@ export default function AddressFixPage() {
   const { data: applicationsData, isLoading, refetch } = useQuery({
     queryKey: ["ordersAndAddresses"],
     queryFn: async () => {
-      const initData = getInitData();
-      return await fetchOrdersHeatmapData(initData);
+      return await fetchOrdersHeatmapData();
     },
     staleTime: 60 * 1000,
   });

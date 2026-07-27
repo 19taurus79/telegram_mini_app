@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchOrdersHeatmapData } from "@/components/MapModule/fetchOrdersWithAddresses";
 import { useApplicationsStore } from "@/components/MapModule/store/applicationsStore";
 import { filterApplicationsList } from "@/components/MapModule/utils/filterUtils";
-import { getInitData } from "@/lib/getInitData";
 import { useMemo } from "react";
 
 export function useUnmappedCount() {
@@ -11,8 +10,7 @@ export function useUnmappedCount() {
   const { data: applicationsData } = useQuery({
     queryKey: ["ordersAndAddresses"],
     queryFn: async () => {
-      const initData = getInitData();
-      return await fetchOrdersHeatmapData(initData);
+      return await fetchOrdersHeatmapData();
     },
     staleTime: 60 * 1000,
   });

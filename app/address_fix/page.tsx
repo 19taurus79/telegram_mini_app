@@ -1,9 +1,11 @@
-import dynamic from "next/dynamic";
+"use client";
+
+import nextDynamic from "next/dynamic";
 import Loader from "@/components/Loader/Loader";
 
 export const dynamic = "force-dynamic";
 
-const AddressFixClient = dynamic(
+const AddressFixClient = nextDynamic(
   () => import("./AddressFixClient"),
   {
     ssr: false,

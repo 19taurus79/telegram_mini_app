@@ -871,8 +871,36 @@ export default function BottomData({ onEditClient }) {
         <div className={css.container}>
           <div className={css.infoCard}>
             <h2 className={css.title}>{selectedClient.client}</h2>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '400', opacity: 0.8 }}>{selectedClient.orders[0].manager}</h3>
-            <p className={css.subtitle}>{`${selectedClient.address.region} обл., ${selectedClient.address.area} район, ${selectedClient.address.commune} громада, ${selectedClient.address.city}`}</p>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '400', opacity: 0.8 }}>
+              {selectedClient.address?.manager || selectedClient.orders?.[0]?.manager || ''}
+            </h3>
+            <p className={css.subtitle}>
+              {selectedClient.address ? (
+                `${selectedClient.address.region || ''} обл., ${selectedClient.address.area || ''} район, ${selectedClient.address.commune || ''} громада, ${selectedClient.address.city || ''}`
+              ) : (
+                <span style={{ fontStyle: 'italic', color: '#ffa726', display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  Адреса не вказана в довіднику
+                  {onEditClient && (
+                    <button
+                      onClick={() => onEditClient({ client: selectedClient.client, manager: selectedClient.orders?.[0]?.manager || "" })}
+                      style={{
+                        padding: '3px 10px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(37,99,235,0.4)'
+                      }}
+                    >
+                      📍 Додати адресу
+                    </button>
+                  )}
+                </span>
+              )}
+            </p>
             <p className={css.orderCount}>Всього заявок: {selectedClient.count}</p>
             <p className={css.totalWeight}>Загальна вага: {selectedClient.totalWeight?.toFixed(2) || 0} кг</p>
           </div>

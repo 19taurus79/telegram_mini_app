@@ -228,23 +228,36 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
                     toggleMultiSelectedItem(item, 'applications');
                     return;
                   }
-                  if (onAddClient) {
-                    onAddClient({
-                      client: item.client,
-                      manager: item.orders?.[0]?.manager || ""
-                    });
-                    if (onClose) onClose();
-                  }
+                  setSelectedClient(item);
+                  if (onClose) onClose();
                 }}
-                title="Натисніть, щоб додати адресу клієнта"
+                title="Натисніть, щоб переглянути деталі заявки"
               >
                 {renderClientName(item)}
-                <div className={css.clientName}>{item.orders[0]?.manager}</div>
-                <div className={css.address} style={{ fontStyle: 'italic', color: '#666' }}>
+                <div className={css.clientName}>{item.orders?.[0]?.manager}</div>
+                <div className={css.address} style={{ fontStyle: 'italic', color: '#888' }}>
                   Адреса не знайдена в довіднику
                 </div>
-                <div className={css.count}>
-                  Заявок: {item.count}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <div className={css.count}>
+                    Заявок: {item.count}
+                  </div>
+                  <button
+                    className={css.addAddressBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onAddClient) {
+                        onAddClient({
+                          client: item.client,
+                          manager: item.orders?.[0]?.manager || ""
+                        });
+                        if (onClose) onClose();
+                      }
+                    }}
+                    title="Внести дату/адресу для этого клиента"
+                  >
+                    📍 Внести адресу
+                  </button>
                 </div>
               </div>
             ))}

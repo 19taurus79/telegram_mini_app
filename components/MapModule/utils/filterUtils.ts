@@ -53,6 +53,18 @@ export interface ApplicationItem {
   [key: string]: unknown;
 }
 
+export interface DeliveryItem {
+  id?: string | number;
+  status?: string;
+  manager?: string;
+  delivery_date?: string;
+  client?: string;
+  line_of_business?: string;
+  items?: Array<{ line_of_business?: string; [key: string]: unknown }>;
+  orders?: Array<{ line_of_business?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
 /**
  * Глубокая фильтрация объекта клиента (Application):
  * Возвращает новый объект Application только с теми заказами (orders), 
@@ -169,7 +181,7 @@ export function getAvailableLoBs(
  * Фильтрация доставок по статусу, менеджеру, дате и виду деятельности
  */
 export function filterDelivery(
-  delivery: any,
+  delivery: DeliveryItem | null | undefined,
   selectedStatuses: string[] = [],
   selectedManagers: string[] = [],
   selectedDates: string[] = [],
@@ -206,10 +218,10 @@ export function filterDelivery(
     if (delivery.line_of_business && matchesLoB(delivery.line_of_business, selectedLoBs)) {
       return true;
     }
-    if (Array.isArray(delivery.items) && delivery.items.some((i: any) => matchesLoB(i.line_of_business, selectedLoBs))) {
+    if (Array.isArray(delivery.items) && delivery.items.some(i => matchesLoB(i.line_of_business, selectedLoBs))) {
       return true;
     }
-    if (Array.isArray(delivery.orders) && delivery.orders.some((o: any) => matchesLoB(o.line_of_business, selectedLoBs))) {
+    if (Array.isArray(delivery.orders) && delivery.orders.some(o => matchesLoB(o.line_of_business, selectedLoBs))) {
       return true;
     }
 

@@ -30,8 +30,6 @@ export default function ExportPrintModal({
   deliveriesData = [],
   filtersInfo,
 }: ExportPrintModalProps) {
-  if (!isOpen) return null;
-
   const isApps = dataType === "applications";
 
   const stats = useMemo(() => {
@@ -70,6 +68,8 @@ export default function ExportPrintModal({
       weightTons: (weight / 1000).toFixed(2),
     };
   }, [isApps, applicationsData, deliveriesData]);
+
+  if (!isOpen) return null;
 
   const handleExportExcel = () => {
     if (isApps) {

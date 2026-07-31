@@ -4,10 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import css from "./AddressFix.module.css";
 import { fetchOrdersHeatmapData } from "@/components/MapModule/fetchOrdersWithAddresses";
-import { useApplicationsStore } from "@/components/MapModule/store/applicationsStore";
-import { filterApplicationsList } from "@/components/MapModule/utils/filterUtils";
 import dynamic from "next/dynamic";
-import ManagerFilter from "@/components/MapModule/components/ManagerFilter/ManagerFilter";
 import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const EditClientModal = dynamic(
@@ -16,7 +13,6 @@ const EditClientModal = dynamic(
 );
 
 export default function AddressFixClient() {
-  const { selectedManagers, selectedLoBs } = useApplicationsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientForEdit, setSelectedClientForEdit] = useState<{
     client: string;
@@ -37,9 +33,9 @@ export default function AddressFixClient() {
     return applicationsData?.unmappedData || [];
   }, [applicationsData]);
 
-  // Фильтрация по менеджерам, видам деятельности и поисковой строке
+  // Фильтрация по поисковой строке (без урезания глобальными фильтрами менеджеров/видов деятельности)
   const filteredUnmapped = useMemo(() => {
-    let result = filterApplicationsList(unmappedApps, selectedManagers, selectedLoBs);
+    let result = unmappedApps;
 
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
@@ -51,7 +47,7 @@ export default function AddressFixClient() {
     }
 
     return result.sort((a, b) => a.client.localeCompare(b.client, "uk"));
-  }, [unmappedApps, selectedManagers, selectedLoBs, searchQuery]);
+  }, [unmappedApps, searchQuery]);
 
   const handleOpenEditModal = (clientName: string, managerName: string) => {
     setSelectedClientForEdit({
@@ -86,7 +82,6 @@ export default function AddressFixClient() {
         </p>
 
         <div className={css.controls}>
-          <ManagerFilter />
           <div style={{ position: "relative", flex: 1, minWidth: "240px" }}>
             <input
               type="text"

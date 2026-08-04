@@ -309,19 +309,27 @@ const ProductTable = ({
       if (warehouses.size === 0) warehouses.add("Інше");
 
       if (groupBy === 'line_of_business') {
-        if (!acc[lineGroup]) acc[lineGroup] = {};
+        if (!acc[lineGroup]) {
+          acc[lineGroup] = { "Всі склади": [] };
+        }
         
         warehouses.forEach(wh => {
           const whName = wh as string;
           if (!acc[lineGroup][whName]) acc[lineGroup][whName] = [];
           acc[lineGroup][whName].push(order);
         });
+        
+        acc[lineGroup]["Всі склади"].push(order);
       } else {
         warehouses.forEach(wh => {
           const whName = wh as string;
-          if (!acc[whName]) acc[whName] = {};
+          if (!acc[whName]) {
+            acc[whName] = { "Всі види діяльності": [] };
+          }
           if (!acc[whName][lineGroup]) acc[whName][lineGroup] = [];
           acc[whName][lineGroup].push(order);
+          
+          acc[whName]["Всі види діяльності"].push(order);
         });
       }
       return acc;
@@ -354,7 +362,12 @@ const ProductTable = ({
       {sortedData && sortedData.length > 0 ? (
         Object.entries(groupedData).map(([topGroup, subGroups]) => {
           const isTopExpanded = expandedGroups.has(topGroup);
-          const topLevelCount = Object.values(subGroups).reduce((sum, orders) => sum + orders.length, 0);
+          
+          const allKey = groupBy === 'line_of_business' ? 'Всі склади' : 'Всі види діяльності';
+          const topLevelCount = subGroups[allKey] 
+            ? subGroups[allKey].length 
+            : Object.values(subGroups).reduce((sum, orders) => sum + orders.length, 0);
+
           return (
             <div key={topGroup} className={css.groupContainer}>
               <h3 

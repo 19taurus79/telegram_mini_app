@@ -11,25 +11,28 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 // Default layouts for different breakpoints
 const defaultLayouts: Layouts = {
   lg: [
-    { i: "products-available", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 4 },
+    { i: "internal-transfers", x: 0, y: 0, w: 6, h: 4, minW: 4, minH: 3 },
+    { i: "products-available", x: 0, y: 4, w: 6, h: 8, minW: 4, minH: 4 },
     { i: "stock-details", x: 6, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
     { i: "orders", x: 6, y: 4, w: 6, h: 4, minW: 3, minH: 3 },
-    { i: "products-unavailable", x: 0, y: 8, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: "products-unavailable", x: 0, y: 12, w: 6, h: 6, minW: 4, minH: 4 },
     { i: "recommendations", x: 6, y: 8, w: 6, h: 6, minW: 4, minH: 4 },
   ],
   md: [
-    { i: "products-available", x: 0, y: 0, w: 5, h: 8, minW: 3, minH: 4 },
+    { i: "internal-transfers", x: 0, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
+    { i: "products-available", x: 0, y: 4, w: 5, h: 8, minW: 3, minH: 4 },
     { i: "stock-details", x: 5, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
     { i: "orders", x: 5, y: 4, w: 5, h: 4, minW: 3, minH: 3 },
-    { i: "products-unavailable", x: 0, y: 8, w: 5, h: 6, minW: 3, minH: 4 },
-    { i: "recommendations", x: 5, y: 8, w: 5, h: 6, minW: 3, minH: 4 },
+    { i: "products-unavailable", x: 0, y: 12, w: 5, h: 6, minW: 3, minH: 4 },
+    { i: "recommendations", x: 5, y: 12, w: 5, h: 6, minW: 3, minH: 4 },
   ],
   sm: [
-    { i: "products-available", x: 0, y: 0, w: 6, h: 6, minW: 6, minH: 4 },
-    { i: "stock-details", x: 0, y: 6, w: 6, h: 4, minW: 6, minH: 3 },
-    { i: "orders", x: 0, y: 10, w: 6, h: 4, minW: 6, minH: 3 },
-    { i: "products-unavailable", x: 0, y: 14, w: 6, h: 6, minW: 6, minH: 4 },
-    { i: "recommendations", x: 0, y: 20, w: 6, h: 6, minW: 6, minH: 4 },
+    { i: "internal-transfers", x: 0, y: 0, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: "products-available", x: 0, y: 4, w: 6, h: 6, minW: 6, minH: 4 },
+    { i: "stock-details", x: 0, y: 10, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: "orders", x: 0, y: 14, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: "products-unavailable", x: 0, y: 18, w: 6, h: 6, minW: 6, minH: 4 },
+    { i: "recommendations", x: 0, y: 24, w: 6, h: 6, minW: 6, minH: 4 },
   ],
 };
 
@@ -53,6 +56,7 @@ const GridItem: React.FC<GridItemProps> = ({ title, children }) => {
 };
 
 interface BiDashboardProps {
+  internalTransfers: React.ReactNode;
   productsAvailable: React.ReactNode;
   productsUnavailable: React.ReactNode;
   stockDetails: React.ReactNode;
@@ -64,6 +68,7 @@ interface BiDashboardProps {
 }
 
 export default function BiDashboard({
+  internalTransfers,
   productsAvailable,
   productsUnavailable,
   stockDetails,
@@ -102,6 +107,9 @@ export default function BiDashboard({
   if (isMobile || !isClient) {
     return (
       <div className={styles.mobileLayout}>
+        <h2 className={styles.mobileSectionTitle}>🔄 Внутрішнє переміщення</h2>
+        <div className={styles.mobileSection}>{internalTransfers}</div>
+
         <h2 className={styles.mobileSectionTitle}>🟢 Необхідно замовити (є на складах)</h2>
         <div className={styles.mobileSection}>{productsAvailable}</div>
         
@@ -133,6 +141,12 @@ export default function BiDashboard({
         margin={[16, 16]}
         containerPadding={[0, 0]}
       >
+        <div key="internal-transfers">
+          <GridItem title="Внутрішнє переміщення">
+            {internalTransfers}
+          </GridItem>
+        </div>
+
         <div key="products-available">
           <GridItem title="Потрібно замовити (є на складах)">
             {productsAvailable}

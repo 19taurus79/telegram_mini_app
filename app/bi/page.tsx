@@ -79,7 +79,38 @@ function BiPageContent() {
 
   const processedData = useMemo(() => {
     if (!data) return null;
-    if (!showSelectedOnly) return data;
+    const missingButAvailable: BiOrdersItem[] = [];
+    const missingAndUnavailable: BiOrdersItem[] = [];
+    const internalTransfers: BiOrdersItem[] = [];
+
+    const checkInternalTransfer = (item: BiOrdersItem) => {
+      if (!item.available_stock || item.available_stock.length === 0) return false;
+      return item.orders.some(order => 
+        item.available_stock.some(stock => 
+          order.division && stock.division && order.division === stock.division
+        )
+      );
+    };
+
+    if (!showSelectedOnly) {
+      if (data.missing_but_available) {
+        data.missing_but_available.forEach(item => {
+          if (checkInternalTransfer(item)) {
+            internalTransfers.push(item);
+          } else {
+            missingButAvailable.push(item);
+          }
+        });
+      }
+      if (data.missing_and_unavailable) {
+        missingAndUnavailable.push(...data.missing_and_unavailable);
+      }
+      return {
+        missing_but_available: missingButAvailable,
+        missing_and_unavailable: missingAndUnavailable,
+        internal_transfers: internalTransfers,
+      } as BiOrders;
+    }
 
     const groupedCart: Record<string, typeof cartItems> = {};
     cartItems.forEach(item => {
@@ -89,9 +120,6 @@ function BiPageContent() {
       }
       groupedCart[name].push(item);
     });
-
-    const missingButAvailable: BiOrdersItem[] = [];
-    const missingAndUnavailable: BiOrdersItem[] = [];
 
     Object.entries(groupedCart).forEach(([productName, items]) => {
       const backendItem = 
@@ -131,7 +159,11 @@ function BiPageContent() {
           missingButAvailable.push(biItem);
         } else if (biItem.available_stock && biItem.available_stock.length > 0) {
           // Є дефіцит, але є залишки на складах — можна перемістити
-          missingButAvailable.push(biItem);
+          if (checkInternalTransfer(biItem)) {
+            internalTransfers.push(biItem);
+          } else {
+            missingButAvailable.push(biItem);
+          }
         } else {
           // Є дефіцит і нічого немає на складах
           missingAndUnavailable.push(biItem);
@@ -180,6 +212,7 @@ function BiPageContent() {
     return {
       missing_but_available: missingButAvailable,
       missing_and_unavailable: missingAndUnavailable,
+      internal_transfers: internalTransfers,
     } as BiOrders;
   }, [data, showSelectedOnly, cartItems]);
 
@@ -367,6 +400,18 @@ function BiPageContent() {
 
     if (processedData) {
       // Components for grid
+      const internalTransfersComponent = (
+        <ProductTable
+          title="Внутрішнє переміщення (залишки на складах підрозділу)"
+          data={processedData.internal_transfers || []}
+          onRowClick={!isMobile ? (product) => setSelectedProduct(product) : undefined}
+          onSwipeRight={handleSwipeRight}
+          onSwipeLeft={handleSwipeLeft}
+          selectedProduct={selectedProduct}
+          hideTitle
+        />
+      );
+
       const productsAvailableComponent = (
         <ProductTable
           title="Потрібно замовити (є на складах)"
@@ -408,6 +453,7 @@ function BiPageContent() {
       return (
         <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
           <BiDashboard
+            internalTransfers={internalTransfersComponent}
             productsAvailable={productsAvailableComponent}
             productsUnavailable={productsUnavailableComponent}
             stockDetails={stockDetailsComponent}

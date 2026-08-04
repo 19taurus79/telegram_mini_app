@@ -358,6 +358,7 @@ export type BiOrdersItem = {
     product: string;
     qty: number;
     shipping_warehouse?: string;
+    division?: string;
   }[];
   qty_needed_total?: number;
   qty_needed_selected?: number;
@@ -370,6 +371,7 @@ export type BiOrdersItem = {
 export type BiOrders = {
   missing_but_available: BiOrdersItem[];
   missing_and_unavailable: BiOrdersItem[];
+  internal_transfers?: BiOrdersItem[];
 };
 
 export interface MovedItem {

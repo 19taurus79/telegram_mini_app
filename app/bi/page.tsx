@@ -185,11 +185,12 @@ function BiPageContent() {
 
   const filterOptions = useMemo(() => {
     if (!data) {
-      return { document_status: [], delivery_status: [] };
+      return { document_status: [], delivery_status: [], warehouse: [] };
     }
 
     const docStatuses = new Set<string>();
     const deliveryStatuses = new Set<string>();
+    const warehouses = new Set<string>();
 
     const allProducts = [
       ...(data.missing_but_available || []),
@@ -198,9 +199,10 @@ function BiPageContent() {
 
     allProducts.forEach((product) => {
       product.orders.forEach(
-        (order: { document_status: string; delivery_status: string }) => {
-          docStatuses.add(order.document_status);
-          deliveryStatuses.add(order.delivery_status);
+        (order: { document_status: string; delivery_status: string; shipping_warehouse?: string }) => {
+          if (order.document_status) docStatuses.add(order.document_status);
+          if (order.delivery_status) deliveryStatuses.add(order.delivery_status);
+          if (order.shipping_warehouse) warehouses.add(order.shipping_warehouse);
         }
       );
     });
@@ -208,6 +210,7 @@ function BiPageContent() {
     return {
       document_status: Array.from(docStatuses).sort(),
       delivery_status: Array.from(deliveryStatuses).sort(),
+      warehouse: Array.from(warehouses).sort(),
     };
   }, [data]);
 

@@ -8,6 +8,7 @@ import { FiltersState } from "@/types/types"; // Імпортуємо FiltersSta
 interface FilterOptions {
   document_status: string[];
   delivery_status: string[];
+  warehouse: string[];
 }
 
 interface FilterPanelProps {
@@ -33,11 +34,13 @@ const FilterPanel = ({
   const [selectedDeliveryStatuses, setSelectedDeliveryStatuses] = useState<
     string[]
   >([]);
+  const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
 
   // Цей useEffect синхронізує внутрішній стан панелі з глобальним станом фільтрів
   useEffect(() => {
-    setSelectedDocStatuses(appliedFilters.document_status);
-    setSelectedDeliveryStatuses(appliedFilters.delivery_status);
+    setSelectedDocStatuses(appliedFilters.document_status || []);
+    setSelectedDeliveryStatuses(appliedFilters.delivery_status || []);
+    setSelectedWarehouses(appliedFilters.warehouse || []);
   }, [appliedFilters]); // Запускається щоразу, коли змінюються застосовані фільтри
 
   const handleCheckboxChange = (
@@ -57,21 +60,24 @@ const FilterPanel = ({
     onApply({
       document_status: selectedDocStatuses,
       delivery_status: selectedDeliveryStatuses,
+      warehouse: selectedWarehouses,
     });
   };
 
   const handleClearClick = () => {
     setSelectedDocStatuses([]);
     setSelectedDeliveryStatuses([]);
+    setSelectedWarehouses([]);
     onApply({
       document_status: [],
       delivery_status: [],
+      warehouse: [],
     });
   };
 
   // Тепер ця логіка буде працювати коректно, оскільки стан синхронізовано
   const hasActiveFilters =
-    selectedDocStatuses.length > 0 || selectedDeliveryStatuses.length > 0;
+    selectedDocStatuses.length > 0 || selectedDeliveryStatuses.length > 0 || selectedWarehouses.length > 0;
 
   return (
     <div className={css.filterPanel}>
@@ -116,6 +122,28 @@ const FilterPanel = ({
                 disabled={isSubmitting}
               />
               {status}
+            </label>
+          ))}
+        </div>
+
+        <div className={css.filterGroup}>
+          <h4>Склад відвантаження</h4>
+          {options.warehouse && options.warehouse.map((warehouse) => (
+            <label key={warehouse} className={css.checkboxLabel}>
+              <input
+                type="checkbox"
+                value={warehouse}
+                checked={selectedWarehouses.includes(warehouse)}
+                onChange={() =>
+                  handleCheckboxChange(
+                    warehouse,
+                    setSelectedWarehouses,
+                    selectedWarehouses
+                  )
+                }
+                disabled={isSubmitting}
+              />
+              {warehouse}
             </label>
           ))}
         </div>

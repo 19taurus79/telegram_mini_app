@@ -116,6 +116,8 @@ export type Contract = {
   line_of_business: string;
   document_status: string;
   delivery_status: string;
+  shipping_warehouse?: string;
+  manager?: string;
   contract_type?: string;
   loan_percentage?: number;
   planned_amount?: number;
@@ -214,6 +216,7 @@ export type OrdersDetails = {
   document_status?: string;
   orders_q_total?: number;
   orders_q_product_confirmed?: number;
+  shipping_warehouse?: string;
 };
 export type TaskGoogle = {
   kind: string;
@@ -354,6 +357,7 @@ export type BiOrdersItem = {
     delivery_status: string;
     product: string;
     qty: number;
+    shipping_warehouse?: string;
   }[];
   qty_needed_total?: number;
   qty_needed_selected?: number;
@@ -407,6 +411,7 @@ export interface MatchingData {
 export interface FiltersState {
   document_status: string[];
   delivery_status: string[];
+  warehouse?: string[];
 }
 
 export type GeocodedAddress = {

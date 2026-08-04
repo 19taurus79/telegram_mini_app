@@ -7,7 +7,7 @@ import styles from "../OrdersDashboard.module.css";
 import { useState } from "react";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
-import { Truck, CircleDollarSign, Coins, Wallet } from "lucide-react";
+import { Truck, CircleDollarSign, Coins, Wallet, Building2 } from "lucide-react";
 import clsx from "clsx";
 
 interface ContractsWidgetProps {
@@ -16,6 +16,8 @@ interface ContractsWidgetProps {
   contracts: Contract[];
   selectedContracts: Contract[];
   onSelectContract: (contract: Contract) => void;
+  selectedWarehouse?: string;
+  selectedManager?: string;
 }
 
 export default function ContractsWidget({
@@ -24,10 +26,18 @@ export default function ContractsWidget({
   contracts,
   selectedContracts,
   onSelectContract,
+  selectedWarehouse,
+  selectedManager,
 }: ContractsWidgetProps) {
   const [commentModalData, setCommentModalData] = useState<{
     orderRef: string;
   } | null>(null);
+
+  const filteredContracts = contracts.filter((c) => {
+    if (selectedWarehouse && c.shipping_warehouse?.trim() !== selectedWarehouse) return false;
+    if (selectedManager && c.manager?.trim() !== selectedManager) return false;
+    return true;
+  });
 
   const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
     queryKey: ["deliveries"],
@@ -109,7 +119,7 @@ export default function ContractsWidget({
   return (
     <div className={styles.tableContainer}>
       <div className={styles.list}>
-        {contracts?.map((contract) => {
+        {filteredContracts?.map((contract) => {
           const { isCO, isInDelivery, date } = getContractDeliveryInfo(contract.contract_supplement);
           return (
             <div
@@ -244,6 +254,25 @@ export default function ContractsWidget({
                         {contract.actual_payment_amount?.toLocaleString() || '0'}
                       </span>
                     </div>
+                  </div>
+                )}
+
+                {contract.shipping_warehouse && (
+                  <div style={{
+                    marginTop: '8px',
+                    paddingTop: '6px',
+                    borderTop: '1px solid var(--glass-border, rgba(255,255,255,0.06))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.78rem',
+                    color: '#38bdf8',
+                    fontWeight: 600
+                  }}>
+                    <Building2 size={13} style={{ flexShrink: 0, color: '#38bdf8' }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={contract.shipping_warehouse}>
+                      {contract.shipping_warehouse}
+                    </span>
                   </div>
                 )}
               </div>

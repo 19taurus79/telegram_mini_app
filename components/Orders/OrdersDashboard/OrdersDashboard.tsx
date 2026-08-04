@@ -9,9 +9,9 @@ import ClientsWidget from "./components/ClientsWidget";
 import ContractsWidget from "./components/ContractsWidget";
 import DetailsWidget from "./components/DetailsWidget";
 import { useQuery } from "@tanstack/react-query";
-import { getContracts } from "@/lib/api";
+import { getContracts, getClients, getAllContracts } from "@/lib/api";
 import { Client, Contract } from "@/types/types";
-import { Layers, RotateCcw } from "lucide-react";
+import { Layers, RotateCcw, Users } from "lucide-react";
 import ChatFABButton from "@/components/Orders/ChatFABButton/ChatFABButton";
 import DraggableChatModal from "@/components/DraggableChatModal/DraggableChatModal";
 import { useInitData } from "@/lib/useInitData";
@@ -46,12 +46,29 @@ interface OrdersDashboardProps {
 export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [selectedClients, setSelectedClients] = useState<Client[]>([]);
+  const [showAllClients, setShowAllClients] = useState(false);
   const [selectedContracts, setSelectedContracts] = useState<Contract[]>([]);
   const [showAllContracts, setShowAllContracts] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
+  const [selectedManager, setSelectedManager] = useState<string>("");
   
   const effectiveInitData = useInitData() || initData;
+
+  // Запит на отримання списку всіх клієнтів
+  const { data: allClients } = useQuery({
+    queryKey: ["clients", "all_clients_dashboard", effectiveInitData],
+    queryFn: () => getClients({ searchValue: null, initData: effectiveInitData || "" }),
+    enabled: true,
+  });
+
+  // Запит на отримання всіх доповнень (для глобальних фільтрів складав/менеджерів на старті)
+  const { data: allContracts } = useQuery({
+    queryKey: ["all_contracts_dashboard", effectiveInitData],
+    queryFn: () => getAllContracts(effectiveInitData || ""),
+    enabled: true,
+  });
 
   const chatOrderRef = useMemo(() => {
     return selectedContracts.length > 0 ? selectedContracts[0].contract_supplement : null;
@@ -60,18 +77,65 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
   // Запит на отримання контрактів обраних клієнтів
   const clientIds = useMemo(() => selectedClients.map(c => c.id).sort().join(','), [selectedClients]);
   const { data: contracts } = useQuery({
-    queryKey: ["contracts", clientIds],
+    queryKey: ["contracts", clientIds, effectiveInitData],
     queryFn: async () => {
       if (selectedClients.length === 0) return [];
       const results = await Promise.all(
         selectedClients.map(client =>
-          getContracts({ client: client.id, initData })
+          getContracts({ client: client.id, initData: effectiveInitData })
         )
       );
       return results.flat();
     },
-    enabled: selectedClients.length > 0 && !!initData,
+    enabled: selectedClients.length > 0 && !!effectiveInitData,
   });
+
+  // Список доступних контрактів для відображення
+  const effectiveContracts = useMemo(() => {
+    if (selectedClients.length > 0) return contracts || [];
+    return [];
+  }, [selectedClients, contracts]);
+
+  const availableWarehouses = useMemo(() => {
+    const source = (allContracts && allContracts.length > 0) ? allContracts : (contracts || []);
+    const set = new Set<string>();
+    source.forEach((c) => {
+      if (c.shipping_warehouse && c.shipping_warehouse.trim()) {
+        set.add(c.shipping_warehouse.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [allContracts, contracts]);
+
+  const availableManagers = useMemo(() => {
+    const source = (allContracts && allContracts.length > 0) ? allContracts : (contracts || []);
+    const set = new Set<string>();
+    source.forEach((c) => {
+      if (c.manager && c.manager.trim()) {
+        set.add(c.manager.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [allContracts, contracts]);
+
+  // Фільтрація списку клієнтів за обраним складом та/або менеджером
+  const filteredClients = useMemo(() => {
+    if (!allClients) return [];
+    if (!selectedWarehouse && !selectedManager) return allClients;
+
+    const matchingClientNames = new Set<string>();
+    (allContracts || []).forEach((c) => {
+      if (selectedWarehouse && c.shipping_warehouse?.trim() !== selectedWarehouse) return;
+      if (selectedManager && c.manager?.trim() !== selectedManager) return;
+      if (c.client && c.client.trim()) {
+        matchingClientNames.add(c.client.trim().toLowerCase());
+      }
+    });
+
+    return allClients.filter((c) =>
+      c.client ? matchingClientNames.has(c.client.trim().toLowerCase()) : false
+    );
+  }, [allClients, allContracts, selectedWarehouse, selectedManager]);
 
   // Завантаження збереженого макету та стану з localStorage
   useEffect(() => {
@@ -158,6 +222,19 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
     setShowAllContracts(false); // Вимикаємо прапорець "Всі", бо це ручний вибір. Хоча логіка може бути іншою.
   };
 
+  const toggleShowAllClients = () => {
+    setShowAllClients((prev) => !prev);
+    if (!showAllClients) {
+      if (filteredClients) {
+        setSelectedClients(filteredClients);
+      }
+    } else {
+      setSelectedClients([]);
+    }
+    setSelectedContracts([]);
+    setShowAllContracts(false);
+  };
+
   const toggleShowAll = () => {
     setShowAllContracts((prev) => !prev);
     if (!showAllContracts) {
@@ -180,13 +257,55 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
 
   return (
     <div className={styles.dashboardContainer}>
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px" }}>
+      <div className={styles.topToolbar}>
+        <div className={styles.filterGroup}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span className={styles.filterLabel}>🏢 Склад:</span>
+            <select
+              value={selectedWarehouse}
+              onChange={(e) => setSelectedWarehouse(e.target.value)}
+              className={styles.luxurySelect}
+            >
+              <option value="">
+                {availableWarehouses.length > 0
+                  ? `Усі склади (${availableWarehouses.length})`
+                  : "Усі склади"}
+              </option>
+              {availableWarehouses.map((wh) => (
+                <option key={wh} value={wh}>
+                  🏬 {wh}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span className={styles.filterLabel}>👤 Менеджер:</span>
+            <select
+              value={selectedManager}
+              onChange={(e) => setSelectedManager(e.target.value)}
+              className={styles.luxurySelect}
+            >
+              <option value="">
+                {availableManagers.length > 0
+                  ? `Усі менеджери (${availableManagers.length})`
+                  : "Усі менеджери"}
+              </option>
+              {availableManagers.map((mgr) => (
+                <option key={mgr} value={mgr}>
+                  👤 {mgr}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <button
           onClick={handleResetLayout}
           className={styles.toggleButton}
           title="Скинути макет"
         >
-            <RotateCcw size={14} /> Скинути макет
+          <RotateCcw size={14} /> Скинути макет
         </button>
       </div>
       
@@ -209,11 +328,23 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                 <span className={styles.dragHandle}>⋮⋮</span>
                 <span className={styles.gridItemTitle}>Клієнти</span>
               </div>
+              <div>
+                <button
+                  className={`${styles.toggleButton} ${
+                    showAllClients ? styles.toggleButtonActive : ""
+                  }`}
+                  onClick={toggleShowAllClients}
+                  title="Вибрати всіх клієнтів"
+                >
+                  <Users size={14} /> Всі
+                </button>
+              </div>
             </div>
             <div className={styles.gridItemContent}>
               <ClientsWidget
                 initData={initData}
                 selectedClients={selectedClients}
+                clientsList={filteredClients}
                 onSelectClient={handleSelectClient}
               />
             </div>
@@ -243,9 +374,11 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
               <ContractsWidget
                 initData={initData}
                 selectedClients={selectedClients}
-                contracts={contracts || []}
+                contracts={effectiveContracts}
                 selectedContracts={selectedContracts}
                 onSelectContract={handleSelectContract}
+                selectedWarehouse={selectedWarehouse}
+                selectedManager={selectedManager}
               />
             </div>
           </div>
@@ -270,6 +403,8 @@ export default function OrdersDashboard({ initData }: OrdersDashboardProps) {
                 selectedClients={selectedClients}
                 selectedContracts={selectedContracts}
                 showAllContracts={showAllContracts}
+                selectedWarehouse={selectedWarehouse}
+                selectedManager={selectedManager}
               />
             </div>
           </div>

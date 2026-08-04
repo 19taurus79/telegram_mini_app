@@ -886,3 +886,97 @@
 :global([data-theme='light']) .editIconInline {
   color: #059669;
 }
+
+/* --- Luxury Top Global Toolbar Styles --- */
+.topToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  margin-bottom: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filterLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.luxurySelect {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 8px 38px 8px 16px;
+  background-color: rgba(15, 23, 42, 0.9);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230ef18e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  border: 1.5px solid rgba(14, 241, 142, 0.4);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 4px 14px 0 rgba(14, 241, 142, 0.15);
+  transition: all 0.25s ease;
+}
+
+.luxurySelect:hover {
+  border-color: #0ef18e;
+  background-color: rgba(15, 23, 42, 1);
+  box-shadow: 0 6px 20px 0 rgba(14, 241, 142, 0.25);
+  transform: translateY(-1px);
+}
+
+.luxurySelect:focus {
+  border-color: #0ef18e;
+  box-shadow: 0 0 0 3px rgba(14, 241, 142, 0.25);
+}
+
+.luxurySelect option {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px;
+  font-weight: 600;
+}
+
+:global([data-theme='light']) .topToolbar {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+:global([data-theme='light']) .filterLabel {
+  color: #1e293b;
+}
+
+:global([data-theme='light']) .luxurySelect {
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #0f172a;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.1);
+}
+
+:global([data-theme='light']) .luxurySelect option {
+  background: #ffffff;
+  color: #0f172a;
+}

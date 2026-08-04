@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClients } from "@/lib/api";
 import { Client } from "@/types/types";
@@ -10,29 +10,40 @@ import { Search } from "lucide-react";
 interface ClientsWidgetProps {
   initData: string;
   selectedClients: Client[];
+  clientsList?: Client[];
   onSelectClient: (client: Client, isMulti: boolean) => void;
 }
 
 export default function ClientsWidget({
   initData,
   selectedClients,
+  clientsList,
   onSelectClient,
 }: ClientsWidgetProps) {
   const [searchValue, setSearchValue] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const STORAGE_SCROLL_KEY = "clients-widget-scroll-top";
 
-  // Запит на отримання списку клієнтів
-  // Використовує React Query для кешування та управління станом завантаження
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ["clients", searchValue], // Ключ запиту залежить від пошукового рядка
-    queryFn: () => getClients({ searchValue, initData }),
-    enabled: !!initData, // Запит активний тільки якщо є initData
+  // Запит на отримання списку клієнтів (якщо не передано готовий відфільтрований список clientsList)
+  const { data: fetchedClients, isLoading } = useQuery({
+    queryKey: ["clients", searchValue, initData],
+    queryFn: () => getClients({ searchValue: null, initData }),
+    enabled: !clientsList,
   });
+
+  const baseClients = clientsList || fetchedClients || [];
+
+  const displayedClients = useMemo(() => {
+    if (!searchValue.trim()) return baseClients;
+    const lowerSearch = searchValue.toLowerCase();
+    return baseClients.filter((c: Client) =>
+      c.client?.toLowerCase().includes(lowerSearch)
+    );
+  }, [baseClients, searchValue]);
 
   // Відновлення позиції скролу
   useEffect(() => {
-    if (clients && listRef.current) {
+    if (displayedClients.length > 0 && listRef.current) {
         requestAnimationFrame(() => {
             setTimeout(() => {
                 const savedScroll = localStorage.getItem(STORAGE_SCROLL_KEY);
@@ -42,7 +53,7 @@ export default function ClientsWidget({
             }, 100);
         });
     }
-  }, [clients]);
+  }, [displayedClients]);
 
   const handleScroll = () => {
       if (listRef.current) {
@@ -81,14 +92,14 @@ export default function ClientsWidget({
         ref={listRef}
         onScroll={handleScroll}
       >
-        {isLoading ? (
+        {isLoading && !clientsList ? (
           <p style={{ padding: "10px", color: "var(--foreground)" }}>
             Завантаження...
           </p>
         ) : (
           <div className={styles.list}>
             {/* Відображення списку клієнтів */}
-            {clients?.map((client) => (
+            {displayedClients.map((client: Client) => (
               <div
                 key={client.id}
                 className={`${styles.listItem} ${
@@ -99,7 +110,7 @@ export default function ClientsWidget({
                 <span>{client.client}</span>
               </div>
             ))}
-            {!clients?.length && (
+            {!displayedClients.length && (
               <p style={{ padding: "10px", opacity: 0.6 }}>Клієнтів не знайдено</p>
             )}
           </div>

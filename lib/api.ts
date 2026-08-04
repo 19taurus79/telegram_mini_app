@@ -262,6 +262,16 @@ export const getContracts = async ({
   return data;
 };
 
+export const getAllContracts = async (initData: string): Promise<Contract[]> => {
+  const { data } = await axios.get<Contract[]>("/data/all_contracts", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
 export const getContractDetails = async ({
   contract,
   initData,
@@ -951,6 +961,12 @@ export const dataForOrderByProduct = async (filters?: FiltersState) => {
   if (filters?.delivery_status && filters.delivery_status.length > 0) {
     filters.delivery_status.forEach((status: string) => {
       params.append("order_status", status);
+    });
+  }
+
+  if (filters?.warehouse && filters.warehouse.length > 0) {
+    filters.warehouse.forEach((status: string) => {
+      params.append("shipping_warehouse", status);
     });
   }
 

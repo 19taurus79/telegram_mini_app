@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import { useQuery } from "@tanstack/react-query";
-import { CircleDollarSign, Coins, Wallet, ChevronRight, Truck, FileText } from "lucide-react";
+import { CircleDollarSign, Coins, Wallet, ChevronRight, Truck, FileText, Building2 } from "lucide-react";
 
 type Props = {
   params: Promise<{ client: number }>;
@@ -174,6 +174,33 @@ export default function FilteredOrders({ params }: Props) {
                         </span>
                       </div>
                     </div>
+
+                    {item.shipping_warehouse && (
+                      <div style={{
+                        marginTop: '10px',
+                        paddingTop: '10px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.8px', fontWeight: 700 }}>
+                          Склад відвантаження
+                        </span>
+                        <div style={{
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          color: '#38bdf8',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '6px',
+                          lineHeight: '1.35'
+                        }}>
+                          <Building2 size={15} style={{ flexShrink: 0, marginTop: '2px', color: '#38bdf8' }} />
+                          <span>{item.shipping_warehouse}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Link>
 

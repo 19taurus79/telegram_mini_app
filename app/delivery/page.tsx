@@ -63,6 +63,7 @@ type DeliveryItem = {
   manager: string;
   weight: number;
   parties: Party[];
+  shipping_warehouse?: string;
 };
 
 // Тип для згрупованого за номером замовлення.
@@ -234,8 +235,25 @@ function DeliveryDataContent() {
     setError(null);
   };
 
+  const [selectedWarehouseFilter, setSelectedWarehouseFilter] = useState<string>("");
+
+  const availableWarehouses = React.useMemo(() => {
+    const set = new Set<string>();
+    (delivery as DeliveryItem[]).forEach((item) => {
+      if (item.shipping_warehouse && item.shipping_warehouse.trim()) {
+        set.add(item.shipping_warehouse.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [delivery]);
+
+  const filteredDelivery = React.useMemo(() => {
+    if (!selectedWarehouseFilter) return delivery as DeliveryItem[];
+    return (delivery as DeliveryItem[]).filter(item => item.shipping_warehouse?.trim() === selectedWarehouseFilter);
+  }, [delivery, selectedWarehouseFilter]);
+
   const grouped: GroupedClient[] = Object.values(
-    (delivery as DeliveryItem[]).reduce((acc: ReducerAccumulator, item) => {
+    filteredDelivery.reduce((acc: ReducerAccumulator, item) => {
       const clientName = item.client || "Невідомий клієнт";
       const orderRef = item.order || "Без доповнення";
       if (!acc[clientName]) acc[clientName] = { client: clientName, orders: {} };
@@ -280,6 +298,32 @@ function DeliveryDataContent() {
 
   return (
     <div className={styles.wrapper}>
+      {availableWarehouses.length > 0 && (
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 4px' }}>
+          <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>Фільтр по складу:</span>
+          <select
+            value={selectedWarehouseFilter}
+            onChange={(e) => setSelectedWarehouseFilter(e.target.value)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color, #444)',
+              background: 'var(--bg-secondary, #2a2a2a)',
+              color: 'inherit',
+              fontSize: '0.85rem',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">🏢 Усі склади ({availableWarehouses.length})</option>
+            {availableWarehouses.map((wh) => (
+              <option key={wh} value={wh}>
+                🏬 {wh}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {grouped.length === 0 && (
         <div className={styles.emptyState}>
           <Package size={64} className={styles.emptyIcon} />
@@ -311,6 +355,11 @@ function DeliveryDataContent() {
                   <div className={styles.row} key={item.id}>
                     <div className={styles.cell}>
                       <div className={styles.productName}>{item.product}</div>
+                      {item.shipping_warehouse && (
+                        <div style={{ fontSize: '0.75rem', color: '#60a5fa', marginTop: '2px' }}>
+                          🏬 Склад: {item.shipping_warehouse}
+                        </div>
+                      )}
                       {item.parties && item.parties.length > 0 && (
                         <div className={styles.partiesList}>
                           {item.parties.map((p, idx) => p.moved_q > 0 && (
@@ -1010,7 +1059,7 @@ function DeliveryDataContent() {
                           finalComment = `САМОВИВІЗ. ${comment}`.trim();
                         }
                       } else if (isNP) {
-                        const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${phone}`;
+                        const fullNPInfo = `${finalAddress} | Отримувач: ${finalContact} | Тел: ${finalPhone}`;
                         finalComment = `${fullNPInfo}\n\n${comment}`.trim();
                       }
 
@@ -1021,7 +1070,7 @@ function DeliveryDataContent() {
                         latitude: isPickup ? 0 : latitude, 
                         longitude: isPickup ? 0 : longitude, 
                         contact: finalContact, 
-                        phone, 
+                        phone: finalPhone, 
                         date, 
                         comment: finalComment, 
                         total_weight, 

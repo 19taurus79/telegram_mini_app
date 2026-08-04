@@ -49,6 +49,8 @@ export type DeliveryItem = {
   qok: string;
   /** Вес одной единицы товара (может быть средним). */
   weight?: number;
+  /** Склад отгрузки заявки. */
+  shipping_warehouse?: string;
 };
 
 /**

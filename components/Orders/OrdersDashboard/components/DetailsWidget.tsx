@@ -87,6 +87,8 @@ interface DetailsWidgetProps {
   selectedClients: Client[];
   selectedContracts: Contract[];
   showAllContracts: boolean;
+  selectedWarehouse?: string;
+  selectedManager?: string;
 }
 
 export default function DetailsWidget({
@@ -94,6 +96,8 @@ export default function DetailsWidget({
   selectedClients,
   selectedContracts,
   showAllContracts,
+  selectedWarehouse: globalWarehouse,
+  selectedManager,
 }: DetailsWidgetProps) {
   const router = useRouter();
   const userData = useUser((state) => state.userData);
@@ -120,6 +124,8 @@ export default function DetailsWidget({
     type: "none",
   });
   const [editQuantityValue, setEditQuantityValue] = useState<string>("");
+  const [internalWarehouse, setInternalWarehouse] = useState<string>("");
+  const selectedWarehouse = globalWarehouse !== undefined ? globalWarehouse : internalWarehouse;
 
   const effectiveInitData = useInitData();
   const { delivery, setDelivery, hasItem, updateQuantity } = useDelivery();
@@ -127,18 +133,39 @@ export default function DetailsWidget({
 
   const { selectedItems: cartItems, toggleItem: toggleCartItem, setItems: setCartItems, hasItem: hasCartItem } = useOrderCart();
 
+  const queryInitData = effectiveInitData || initData;
+
   const { data: detailsList, isLoading } = useQuery<OrdersDetails[]>({
-    queryKey: ["ordersDetailsFull", clientIds, contractsIds],
+    queryKey: ["ordersDetailsFull", clientIds, contractsIds, queryInitData],
     queryFn: async () => {
-        if (selectedClients.length === 0) return [];
         if (selectedContracts.length > 0) {
             const contractIdsList = selectedContracts.map(c => c.contract_supplement);
-            return getOrdersDetailsById({ orderId: contractIdsList, initData });
+            return getOrdersDetailsById({ orderId: contractIdsList, initData: queryInitData });
         }
-         return [];
+        return [];
     },
-    enabled: selectedClients.length > 0 && !!initData && (selectedContracts.length > 0 || showAllContracts)
+    enabled: selectedContracts.length > 0 && !!queryInitData
   });
+
+  const availableWarehouses = useMemo(() => {
+    if (!detailsList) return [];
+    const set = new Set<string>();
+    detailsList.forEach((item) => {
+      if (item.shipping_warehouse && item.shipping_warehouse.trim()) {
+        set.add(item.shipping_warehouse.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [detailsList]);
+
+  const filteredDetailsList = useMemo(() => {
+    if (!detailsList) return [];
+    return detailsList.filter((item) => {
+      if (selectedWarehouse && item.shipping_warehouse?.trim() !== selectedWarehouse) return false;
+      if (selectedManager && item.manager?.trim() !== selectedManager) return false;
+      return true;
+    });
+  }, [detailsList, selectedWarehouse, selectedManager]);
 
   const handleCartItemToggle = (item: OrdersDetails) => {
     toggleCartItem({
@@ -333,6 +360,7 @@ export default function DetailsWidget({
               skl: item.skl,
               qok: item.qok,
               weight: weight,
+              shipping_warehouse: item.shipping_warehouse,
             };
             setDelivery(deliveryItem);
         }
@@ -430,9 +458,9 @@ export default function DetailsWidget({
   return (
     <CommentsProvider value={{ commentsMap, isLoading: isCommentsBatchLoading, isFetched: isCommentsFetched }}>
       <div className={styles.widgetHeader}>
-        <div className={styles.headerLeft}>
+        <div className={styles.headerLeft} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>
-            {detailsList ? `Знайдено рядків: ${detailsList.length}` : 'Виберіть доповнення'}
+            {detailsList ? `Знайдено рядків: ${filteredDetailsList.length}` : 'Виберіть доповнення'}
           </span>
         </div>
         <div className={styles.headerActions}>
@@ -490,7 +518,7 @@ export default function DetailsWidget({
             )}
             
             {(() => {
-              if (!detailsList || detailsList.length === 0) {
+              if (!filteredDetailsList || filteredDetailsList.length === 0) {
                 return !isLoading ? (
                   <tr>
                     <td colSpan={isAdmin ? 9 : 8} style={{ padding: "20px", textAlign: "center", opacity: 0.6 }}>
@@ -502,7 +530,7 @@ export default function DetailsWidget({
 
               const grouped: { client: string; items: OrdersDetails[] }[] = [];
               const clientMap = new Map<string, OrdersDetails[]>();
-              detailsList.forEach((item: OrdersDetails) => {
+              filteredDetailsList.forEach((item: OrdersDetails) => {
                 const key = item.client || "—";
                 if (!clientMap.has(key)) {
                   clientMap.set(key, []);
@@ -542,10 +570,7 @@ export default function DetailsWidget({
                           </td>
                         )}
                         <td className={styles.td}>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 700 }}>{item.contract_supplement}</span>
-
-                          </div>
+                          <span style={{ fontWeight: 700 }}>{item.contract_supplement}</span>
                         </td>
                         <td className={styles.td}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>

@@ -264,6 +264,7 @@ const ProductTable = ({
 }: ProductTableProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [groupBy, setGroupBy] = useState<'line_of_business' | 'warehouse'>('line_of_business');
 
   const showSelectedDetails = useMemo(() => {
     return data ? data.some(item => item.qty_needed_selected !== undefined) : false;
@@ -300,11 +301,29 @@ const ProductTable = ({
       })
     : [];
 
-  const groupedData = sortedData.reduce<Record<string, BiOrdersItem[]>>(
+  const groupedData = sortedData.reduce<Record<string, Record<string, BiOrdersItem[]>>>(
     (acc, order) => {
-      const group = order.line_of_business || "Інше";
-      if (!acc[group]) acc[group] = [];
-      acc[group].push(order);
+      const lineGroup = order.line_of_business || "Інше";
+      
+      const warehouses = new Set(order.orders.map(o => o.shipping_warehouse).filter(Boolean));
+      if (warehouses.size === 0) warehouses.add("Інше");
+
+      if (groupBy === 'line_of_business') {
+        if (!acc[lineGroup]) acc[lineGroup] = {};
+        
+        warehouses.forEach(wh => {
+          const whName = wh as string;
+          if (!acc[lineGroup][whName]) acc[lineGroup][whName] = [];
+          acc[lineGroup][whName].push(order);
+        });
+      } else {
+        warehouses.forEach(wh => {
+          const whName = wh as string;
+          if (!acc[whName]) acc[whName] = {};
+          if (!acc[whName][lineGroup]) acc[whName][lineGroup] = [];
+          acc[whName][lineGroup].push(order);
+        });
+      }
       return acc;
     },
     {}
@@ -312,25 +331,60 @@ const ProductTable = ({
 
   return (
     <div className={css.tableWrapper}>
-      {!hideTitle && <h2 className={css.title}>{title}</h2>}
+      <div className={css.headerActions}>
+        {!hideTitle && <h2 className={css.title}>{title}</h2>}
+        {data && data.length > 0 && (
+          <div className={css.groupByToggle}>
+            <span className={css.groupByLabel}>Групувати за:</span>
+            <button 
+              className={`${css.groupByBtn} ${groupBy === 'line_of_business' ? css.active : ''}`}
+              onClick={() => setGroupBy('line_of_business')}
+            >
+              Видом діяльності
+            </button>
+            <button 
+              className={`${css.groupByBtn} ${groupBy === 'warehouse' ? css.active : ''}`}
+              onClick={() => setGroupBy('warehouse')}
+            >
+              Складом
+            </button>
+          </div>
+        )}
+      </div>
       {sortedData && sortedData.length > 0 ? (
-        Object.entries(groupedData).map(([group, orders]) => {
-          const isExpanded = expandedGroups.has(group);
+        Object.entries(groupedData).map(([topGroup, subGroups]) => {
+          const isTopExpanded = expandedGroups.has(topGroup);
+          const topLevelCount = Object.values(subGroups).reduce((sum, orders) => sum + orders.length, 0);
           return (
-            <div key={group} className={css.groupContainer}>
+            <div key={topGroup} className={css.groupContainer}>
               <h3 
                 className={css.groupTitle} 
-                onClick={() => toggleGroup(group)}
+                onClick={() => toggleGroup(topGroup)}
               >
-                <span className={css.groupToggle}>{isExpanded ? '▼' : '▶'}</span>
-                {group}
-                <span className={css.groupCount}>({orders.length})</span>
+                <span className={css.groupToggle}>{isTopExpanded ? '▼' : '▶'}</span>
+                {topGroup}
+                <span className={css.groupCount}>({topLevelCount})</span>
               </h3>
-              {isExpanded && (
-                <>
-                  {isMobile ? (
-                    <div className={css.mobileList}>
-                      {orders.map((order) => {
+              {isTopExpanded && (
+                <div className={css.subGroupsContainer}>
+                  {Object.entries(subGroups).map(([subGroup, orders]) => {
+                    const subKey = `${topGroup}-${subGroup}`;
+                    const isSubExpanded = expandedGroups.has(subKey);
+                    return (
+                      <div key={subKey} className={css.subGroupContainer}>
+                        <h4 
+                          className={css.subGroupTitle} 
+                          onClick={() => toggleGroup(subKey)}
+                        >
+                          <span className={css.groupToggle}>{isSubExpanded ? '▼' : '▶'}</span>
+                          {subGroup}
+                          <span className={css.groupCount}>({orders.length})</span>
+                        </h4>
+                        {isSubExpanded && (
+                          <>
+                            {isMobile ? (
+                              <div className={css.mobileList}>
+                                {orders.map((order) => {
                         const isGreen = showSelectedDetails
                           ? (order.qty_missing_selected !== undefined ? order.qty_missing_selected <= 0 : order.qty_missing <= 0)
                           : order.qty_missing <= 0;
@@ -402,16 +456,21 @@ const ProductTable = ({
                           </SwipeableRow>
                         );
                       })}
-                    </div>
-                  ) : (
-                    <ProductDesktopTableGroup 
-                      orders={orders} 
-                      onRowClick={onRowClick} 
-                      selectedProduct={selectedProduct} 
-                      showSelectedDetails={showSelectedDetails}
-                    />
-                  )}
-                </>
+                              </div>
+                            ) : (
+                              <ProductDesktopTableGroup 
+                                orders={orders} 
+                                onRowClick={onRowClick} 
+                                selectedProduct={selectedProduct} 
+                                showSelectedDetails={showSelectedDetails}
+                              />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           );

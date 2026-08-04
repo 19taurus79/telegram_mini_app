@@ -95,7 +95,6 @@ export default function DetailsWidget({
   initData,
   selectedClients,
   selectedContracts,
-  showAllContracts,
   selectedWarehouse: globalWarehouse,
   selectedManager,
 }: DetailsWidgetProps) {
@@ -124,7 +123,7 @@ export default function DetailsWidget({
     type: "none",
   });
   const [editQuantityValue, setEditQuantityValue] = useState<string>("");
-  const [internalWarehouse, setInternalWarehouse] = useState<string>("");
+  const [internalWarehouse] = useState<string>("");
   const selectedWarehouse = globalWarehouse !== undefined ? globalWarehouse : internalWarehouse;
 
   const effectiveInitData = useInitData();
@@ -146,17 +145,6 @@ export default function DetailsWidget({
     },
     enabled: selectedContracts.length > 0 && !!queryInitData
   });
-
-  const availableWarehouses = useMemo(() => {
-    if (!detailsList) return [];
-    const set = new Set<string>();
-    detailsList.forEach((item) => {
-      if (item.shipping_warehouse && item.shipping_warehouse.trim()) {
-        set.add(item.shipping_warehouse.trim());
-      }
-    });
-    return Array.from(set).sort();
-  }, [detailsList]);
 
   const filteredDetailsList = useMemo(() => {
     if (!detailsList) return [];
@@ -189,7 +177,7 @@ export default function DetailsWidget({
   const isAllSelected = useMemo(() => {
     if (!detailsList || detailsList.length === 0) return false;
     return detailsList.every(item => hasCartItem(getItemId(item)));
-  }, [detailsList, cartItems, hasCartItem]);
+  }, [detailsList, hasCartItem]);
 
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!detailsList) return;

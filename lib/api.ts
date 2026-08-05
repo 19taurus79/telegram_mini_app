@@ -143,12 +143,14 @@ export const getProductOnWarehouse = async ({
   searchValue,
   initData,
   freeOnly,
+  warehouses,
 }: {
   group: string | null;
   parentGroup?: string | null;
   searchValue: string | null;
   initData: string;
   freeOnly?: boolean;
+  warehouses?: string[];
 }) => {
   const { data } = await axios.get<Product[]>("/data/product_on_warehouse", {
     headers: {
@@ -160,6 +162,17 @@ export const getProductOnWarehouse = async ({
       parent_category: parentGroup,
       name_part: searchValue,
       free_only: freeOnly || undefined,
+      warehouses: warehouses && warehouses.length > 0 ? warehouses.join(",") : undefined,
+    },
+  });
+  return data;
+};
+
+export const getWarehouses = async (initData: string) => {
+  const { data } = await axios.get<string[]>("/data/remains/warehouses", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
     },
   });
   return data;
@@ -172,6 +185,7 @@ export const exportRemainsToExcel = async ({
   initData,
   freeOnly,
   columns,
+  warehouses,
 }: {
   group: string | null;
   parentGroup?: string | null;
@@ -179,6 +193,7 @@ export const exportRemainsToExcel = async ({
   initData: string;
   freeOnly?: boolean;
   columns?: string[];
+  warehouses?: string[];
 }) => {
   const response = await axios.get(`/data/product_on_warehouse/export`, {
     headers: {
@@ -190,6 +205,7 @@ export const exportRemainsToExcel = async ({
       name_part: searchValue,
       free_only: freeOnly || undefined,
       columns: columns && columns.length > 0 ? columns.join(",") : undefined,
+      warehouses: warehouses && warehouses.length > 0 ? warehouses.join(",") : undefined,
     },
     responseType: 'blob',
   });

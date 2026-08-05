@@ -16,6 +16,7 @@ interface Group {
 
 interface RemainsFiltersDesktopProps {
   groups: Group[];
+  warehouses: string[];
   onExport?: (columns: string[]) => void;
 }
 
@@ -46,11 +47,12 @@ const EXCEL_COLUMNS = [
   "Сертифікат"
 ];
 
-export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFiltersDesktopProps) {
+export default function RemainsFiltersDesktop({ groups, warehouses, onExport }: RemainsFiltersDesktopProps) {
   const { 
     selectedGroup, setSelectedGroup, 
     selectedSubGroup, setSelectedSubGroup,
-    searchValue, setSearchValue 
+    searchValue, setSearchValue,
+    selectedWarehouses, setSelectedWarehouses
   } = useFilter();
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -69,6 +71,13 @@ export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFilte
   const exportPopoverRef = useRef<HTMLDivElement>(null);
   const exportButtonRef = useRef<HTMLButtonElement>(null);
   const [exportPopoverCoords, setExportPopoverCoords] = useState({ top: 0, left: 0 });
+
+  // Warehouse filter popover state & refs
+  const [isWhPopoverOpen, setIsWhPopoverOpen] = useState(false);
+  const [whSearch, setWhSearch] = useState("");
+  const whPopoverRef = useRef<HTMLDivElement>(null);
+  const whButtonRef = useRef<HTMLButtonElement>(null);
+  const [whPopoverCoords, setWhPopoverCoords] = useState({ top: 0, left: 0 });
 
   // Load excel columns configuration on mount
   useEffect(() => {
@@ -115,6 +124,17 @@ export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFilte
     }
   }, [isExportPopoverOpen]);
 
+  // Update warehouse popover position when opened
+  useEffect(() => {
+    if (isWhPopoverOpen && whButtonRef.current) {
+      const rect = whButtonRef.current.getBoundingClientRect();
+      setWhPopoverCoords({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX, // align left with button
+      });
+    }
+  }, [isWhPopoverOpen]);
+
   // Close popover on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -126,14 +146,18 @@ export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFilte
           exportButtonRef.current && !exportButtonRef.current.contains(event.target as Node)) {
         setIsExportPopoverOpen(false);
       }
+      if (whPopoverRef.current && !whPopoverRef.current.contains(event.target as Node) && 
+          whButtonRef.current && !whButtonRef.current.contains(event.target as Node)) {
+        setIsWhPopoverOpen(false);
+      }
     };
-    if (isPopoverOpen || isExportPopoverOpen) {
+    if (isPopoverOpen || isExportPopoverOpen || isWhPopoverOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isPopoverOpen, isExportPopoverOpen]);
+  }, [isPopoverOpen, isExportPopoverOpen, isWhPopoverOpen]);
 
   // All categories for quick access (capsules), sorted to keep "Всі" first
   const quickCategories = [...groups].sort((a, b) => {
@@ -160,6 +184,17 @@ export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFilte
   };
 
   const activeFiltersCount = (selectedGroup ? 1 : 0) + (selectedSubGroup ? 1 : 0);
+  const activeWhCount = selectedWarehouses.length;
+
+  const filteredWarehouses = warehouses.filter(w => w.toLowerCase().includes(whSearch.toLowerCase()));
+
+  const handleWhToggle = (wh: string) => {
+    if (selectedWarehouses.includes(wh)) {
+      setSelectedWarehouses(selectedWarehouses.filter(w => w !== wh));
+    } else {
+      setSelectedWarehouses([...selectedWarehouses, wh]);
+    }
+  };
 
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -288,6 +323,111 @@ export default function RemainsFiltersDesktop({ groups, onExport }: RemainsFilte
                       </li>
                     );
                   })}
+                </ul>
+              </div>
+            </Portal>
+          )}
+        </div>
+
+        <div style={{ position: "relative" }}>
+          <button
+            ref={whButtonRef}
+            className={`${styles.filterToggleBtn} ${activeWhCount > 0 ? styles.active : ""}`}
+            onClick={() => setIsWhPopoverOpen(!isWhPopoverOpen)}
+            title="Склади"
+            style={{ width: 'auto', padding: '0 16px', gap: '8px' }}
+          >
+            <Factory size={20} />
+            <span>Склади</span>
+            {activeWhCount > 0 && (
+              <span className={styles.badge}>{activeWhCount}</span>
+            )}
+          </button>
+
+          {isWhPopoverOpen && (
+            <Portal>
+              <div 
+                className={styles.popoverContent} 
+                ref={whPopoverRef}
+                style={{
+                  top: whPopoverCoords.top,
+                  left: whPopoverCoords.left,
+                  position: "absolute",
+                  width: "320px",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                <div className={styles.popoverHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Фільтр складів</span>
+                  {activeWhCount > 0 && (
+                    <button 
+                      onClick={() => setSelectedWarehouses([])}
+                      style={{ background: 'none', border: 'none', color: '#ff3b30', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+                    >
+                      Очистити
+                    </button>
+                  )}
+                </div>
+                
+                <div style={{ padding: "8px 12px" }}>
+                  <div className={styles.searchWrapper}>
+                    <Search size={14} className={styles.searchIcon} style={{ left: 10 }} />
+                    <input
+                      type="text"
+                      placeholder="Пошук складу..."
+                      className={styles.searchInput}
+                      style={{ padding: "8px 30px 8px 32px", fontSize: "0.85rem", borderRadius: "10px" }}
+                      value={whSearch}
+                      onChange={(e) => setWhSearch(e.target.value)}
+                    />
+                    {whSearch && (
+                      <button
+                        className={styles.clearSearchBtn}
+                        style={{ right: 8, width: 16, height: 16 }}
+                        onClick={() => setWhSearch("")}
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", padding: "4px 12px 10px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <button 
+                    onClick={() => setSelectedWarehouses(warehouses)}
+                    style={{ background: "none", border: "none", color: "var(--accent-green)", fontSize: "0.75rem", cursor: "pointer", padding: 0 }}
+                  >
+                    Вибрати всі
+                  </button>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}>|</span>
+                  <button 
+                    onClick={() => setSelectedWarehouses([])}
+                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", cursor: "pointer", padding: 0 }}
+                  >
+                    Зняти всі
+                  </button>
+                </div>
+
+                <ul className={styles.popoverList} style={{ maxHeight: "300px", overflowY: "auto", padding: "8px 0" }}>
+                  {filteredWarehouses.length === 0 ? (
+                    <div style={{ padding: "12px", textAlign: "center", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem" }}>
+                      Склади не знайдено
+                    </div>
+                  ) : (
+                    filteredWarehouses.map((wh) => (
+                      <li key={wh}>
+                        <label className={styles.columnCheckboxLabel}>
+                          <input 
+                            type="checkbox"
+                            checked={selectedWarehouses.includes(wh)}
+                            onChange={() => handleWhToggle(wh)}
+                          />
+                          <span>{wh}</span>
+                        </label>
+                      </li>
+                    ))
+                  )}
                 </ul>
               </div>
             </Portal>

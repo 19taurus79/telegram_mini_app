@@ -11,6 +11,8 @@ interface FilterContextType {
   setSelectedSubGroup: (subGroup: string | "") => void;
   searchValue: string | "";
   setSearchValue: (value: string | "") => void;
+  selectedWarehouses: string[];
+  setSelectedWarehouses: (warehouses: string[]) => void;
 }
 
 // Создаем контекст с дефолтными значениями (или undefined, если он всегда будет инициализирован)
@@ -21,13 +23,15 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedGroup, setSelectedGroup] = useState<string | "">("");
   const [selectedSubGroup, setSelectedSubGroup] = useState<string | "">("");
   const [searchValue, setSearchValue] = useState<string | "">("");
+  const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
 
   return (
     <FilterContext.Provider
       value={{ 
         selectedGroup, setSelectedGroup, 
         selectedSubGroup, setSelectedSubGroup, 
-        searchValue, setSearchValue 
+        searchValue, setSearchValue,
+        selectedWarehouses, setSelectedWarehouses
       }}
     >
       {children}

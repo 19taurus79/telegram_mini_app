@@ -1,12 +1,12 @@
 "use client";
  
 import { useState, useEffect, useMemo, Suspense } from "react";
-import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct, getCategoryTree, exportRemainsToExcel } from "@/lib/api";
+import { getProductOnWarehouse, getAllProductByGuide, getRemainsById, getTotalSumOrderByProduct, getCategoryTree, exportRemainsToExcel, getWarehouses } from "@/lib/api";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFilter } from "@/context/FilterContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Search, X, SlidersHorizontal, ChevronRight, Layers, FolderOpen } from "lucide-react";
+import { ArrowLeft, Search, X, SlidersHorizontal, ChevronRight, Layers, FolderOpen, Factory } from "lucide-react";
 import css from "./Remains.module.css";
 import DetailsRemains from "@/components/DetailsRemains/DetailsRemains";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -24,7 +24,8 @@ function RemainsContent() {
   const { 
     selectedGroup, setSelectedGroup, 
     selectedSubGroup, setSelectedSubGroup,
-    searchValue, setSearchValue 
+    searchValue, setSearchValue,
+    selectedWarehouses, setSelectedWarehouses
   } = useFilter();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [dataSourceType, setDataSourceType] = useState<'warehouse' | 'all' | 'free'>('warehouse');
@@ -34,7 +35,7 @@ function RemainsContent() {
   const initData = useInitData((state: InitData) => state.initData);
  
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["products", dataSourceType, selectedGroup, selectedSubGroup, searchValue, initData],
+    queryKey: ["products", dataSourceType, selectedGroup, selectedSubGroup, searchValue, selectedWarehouses, initData],
     queryFn: () => {
         const params = {
             group: selectedGroup || null,
@@ -42,6 +43,7 @@ function RemainsContent() {
             searchValue: searchValue || null,
             initData: initData || "",
             freeOnly: dataSourceType === 'free',
+            warehouses: selectedWarehouses.length > 0 ? selectedWarehouses : undefined,
         };
         if (dataSourceType === 'warehouse' || dataSourceType === 'free') {
             return getProductOnWarehouse(params);
@@ -61,9 +63,18 @@ function RemainsContent() {
     staleTime: 1000 * 60 * 10,
   });
 
+  // Запит для отримання списку складів
+  const { data: warehousesData } = useQuery({
+    queryKey: ["remains_warehouses", initData],
+    queryFn: () => getWarehouses(initData || ""),
+    enabled: !!initData,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [isWhExpanded, setIsWhExpanded] = useState(false);
 
 
 
@@ -338,6 +349,70 @@ function RemainsContent() {
                 </li>
               );
             })}
+
+            {/* Мобільний фільтр складів */}
+            {warehousesData && warehousesData.length > 0 && (
+              <>
+                <div className={css.divider} />
+                <li className={css.filterItemWrapper}>
+                  <div
+                    className={`${css.filterItem} ${selectedWarehouses.length > 0 ? css.activeFilterItem : ''}`}
+                    onClick={() => setIsWhExpanded(!isWhExpanded)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Factory size={16} />
+                      <span>Склади</span>
+                      {selectedWarehouses.length > 0 && (
+                        <span style={{ 
+                          background: '#0ef18e', color: '#000', borderRadius: '10px', 
+                          padding: '2px 6px', fontSize: '10px', fontWeight: 'bold' 
+                        }}>
+                          {selectedWarehouses.length}
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      className={`${css.expandBtn} ${isWhExpanded ? css.expanded : ''}`}
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          setIsWhExpanded(!isWhExpanded);
+                      }}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                  {isWhExpanded && (
+                    <div className={css.subGroupsList} style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      {warehousesData.map(wh => {
+                        const isSelected = selectedWarehouses.includes(wh);
+                        return (
+                          <div 
+                            key={wh} 
+                            className={`${css.subGroupItem} ${isSelected ? css.activeSubGroup : ''}`}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedWarehouses(selectedWarehouses.filter(w => w !== wh));
+                              } else {
+                                setSelectedWarehouses([...selectedWarehouses, wh]);
+                              }
+                            }}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          >
+                            <span>{wh}</span>
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected}
+                              readOnly
+                              style={{ accentColor: '#0ef18e' }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </li>
+              </>
+            )}
           </ul>
         </BottomSheet>
       </div>
@@ -353,6 +428,7 @@ function RemainsContent() {
       initData,
       freeOnly: dataSourceType === 'free',
       columns,
+      warehouses: selectedWarehouses.length > 0 ? selectedWarehouses : undefined,
     });
   };
 
@@ -390,7 +466,7 @@ function RemainsContent() {
       );
     }
 
-    return <RemainsFiltersDesktop groups={groupsWithParents} onExport={handleExport} />;
+    return <RemainsFiltersDesktop groups={groupsWithParents} warehouses={warehousesData || []} onExport={handleExport} />;
   };
 
   return (

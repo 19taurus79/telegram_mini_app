@@ -251,6 +251,11 @@ function Header() {
                       Завантажити дані
                     </Link>
                   </li>
+                  <li>
+                    <Link href={`${process.env.NEXT_PUBLIC_URL_API}/admin/`} target="_blank" onClick={handleNavClick}>
+                      База даних
+                    </Link>
+                  </li>
                 </>
               )}
               <li>

@@ -14,7 +14,8 @@ import {
   PlusCircle, 
   Upload,
   Warehouse,
-  ChevronRight
+  ChevronRight,
+  Database
 } from "lucide-react";
 import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
@@ -68,6 +69,7 @@ export default function DesktopSidebar() {
     { href: "/bi", label: "Замовити", icon: <PlusCircle size={22} />, condition: !userData?.is_guest },
     { href: "/admin/upload", label: "Завантажити", icon: <Upload size={22} />, condition: !userData?.is_guest },
     { href: "/map", label: "Мапа", icon: <MapIcon size={22} /> },
+    { href: `${process.env.NEXT_PUBLIC_URL_API}/admin/`, label: "База даних", icon: <Database size={22} />, external: true, condition: !userData?.is_guest },
   ];
 
   return (
@@ -101,6 +103,7 @@ export default function DesktopSidebar() {
               <Link 
                 key={item.href} 
                 href={item.href} 
+                target={item.external ? "_blank" : undefined}
                 className={`${css.navLink} ${isActive(item.href) ? css.active : ""}`}
               >
                 <div className={css.iconWrapper}>

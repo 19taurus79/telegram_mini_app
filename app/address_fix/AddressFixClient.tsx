@@ -13,7 +13,7 @@ const EditClientModal = dynamic(
 );
 
 export default function AddressFixClient() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
   const [selectedClientForEdit, setSelectedClientForEdit] = useState<{
     client: string;
     manager: string;

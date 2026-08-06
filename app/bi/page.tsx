@@ -529,9 +529,9 @@ function BiPageContent() {
             className={styles.toggleFilterButton}
             style={{ 
               margin: 0, 
-              background: 'rgba(239, 68, 68, 0.2)', 
-              color: '#f87171', 
-              border: '1px solid rgba(239, 68, 68, 0.4)' 
+              background: 'rgba(var(--alert-color-rgb), 0.2)', 
+              color: 'var(--alert-color)', 
+              border: '1px solid rgba(var(--alert-color-rgb), 0.4)' 
             }}
           >
             Очистити

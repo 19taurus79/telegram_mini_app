@@ -360,7 +360,7 @@
 }
 
 .batchBtnBlue {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, var(--action-color), #1d4ed8);
 }
 
 .batchBtnPurple {
@@ -383,8 +383,8 @@
 }
 
 .actionBtn:hover {
-  background: var(--accent-green, #10b981);
+  background: var(--accent-green, var(--success-color));
   color: #ffffff;
-  border-color: var(--accent-green, #10b981);
+  border-color: var(--accent-green, var(--success-color));
 }
 

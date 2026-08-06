@@ -102,7 +102,7 @@
 
 .optimizeOption:hover {
   background-color: var(--hover-bg-color);
-  border-color: #3b82f6;
+  border-color: var(--info-color);
 }
 
 .optionTitle {
@@ -234,13 +234,13 @@
 
 .actionBtn:hover {
   background-color: var(--hover-bg-color);
-  border-color: #3b82f6;
+  border-color: var(--info-color);
 }
 
 .deleteBtn:hover {
   background-color: #fee;
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--alert-color);
+  color: var(--alert-color);
 }
 
 .info {

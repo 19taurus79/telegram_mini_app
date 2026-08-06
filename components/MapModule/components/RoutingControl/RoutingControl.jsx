@@ -37,7 +37,7 @@ export default function RoutingControl({ waypoints, onRouteFound, onRoutingError
         const markerIcon = L.divIcon({
           className: 'routing-marker',
           html: `<div style="
-            background-color: ${isStart ? '#22c55e' : isEnd ? '#ef4444' : '#3b82f6'};
+            background-color: ${isStart ? '#22c55e' : isEnd ? 'var(--alert-color)' : 'var(--info-color)'};
             width: 30px;
             height: 30px;
             border-radius: 50%;

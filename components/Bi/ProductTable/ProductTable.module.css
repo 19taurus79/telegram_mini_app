@@ -323,7 +323,7 @@
   }
 
   .noStockCard {
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid var(--alert-color);
   }
 
   .selectedCard.hasStockCard {

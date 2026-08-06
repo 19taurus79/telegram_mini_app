@@ -41,7 +41,7 @@ export const deliveryIcon = (color = "#ff5722", count = 1) => L.divIcon({
         position: absolute;
         top: -8px;
         right: -8px;
-        background: #ef4444;
+        background: var(--alert-color);
         color: white;
         border-radius: 10px;
         padding: 2px 6px;

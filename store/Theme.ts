@@ -15,11 +15,7 @@ export const useTheme = create<ThemeState>()(
       theme: 'dark',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((state) => {
-        if (state.theme === 'light') return { theme: 'dark' };
-        if (state.theme === 'dark') return { theme: 'system' };
-        // If system, switch to the opposite of current OS preference
-        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return { theme: isSystemDark ? 'light' : 'dark' };
+        return { theme: state.theme === 'dark' ? 'light' : 'dark' };
       }),
     }),
     {

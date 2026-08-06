@@ -1,247 +1,396 @@
+/* Общие стили оверлея и модального окна */
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 10000;
+  animation: fadeInOverlay 0.2s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal {
+  /* Neumorphism base */
   background-color: var(--background);
   color: var(--foreground);
-  padding: 20px;
-  border-radius: 8px;
   width: 90%;
-  max-width: 600px;
+  max-width: 650px;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border-radius: 24px;
+  /* Stronger outset shadow for the modal */
+  box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.4), -5px -5px 20px rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  border: 1px solid var(--border-color);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleInModal {
+  from { transform: scale(0.95) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* На мобильных делаем модалку на весь экран */
+@media (max-width: 768px) {
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUpModal {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.warningBanner {
-  background-color: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  color: var(--foreground);
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.88rem;
-  line-height: 1.45;
-  margin-bottom: 8px;
+  padding: 20px 24px;
+  background-color: var(--background);
+  border-bottom: 1px solid rgba(128,128,128,0.1);
+  z-index: 10;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--foreground);
 }
 
 .closeButton {
-  background: none;
+  background: var(--background);
   border: none;
-  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
   cursor: pointer;
   color: var(--foreground);
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  /* Neumorphic button */
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3), -4px -4px 10px rgba(255, 255, 255, 0.06);
+  transition: all 0.2s;
 }
 
-.closeButton:hover {
-  opacity: 1;
+.closeButton:active {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.05);
 }
 
-.formGroup {
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 20px;
 }
 
-.formGroup label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--foreground);
-  opacity: 0.9;
-}
-
-.input {
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 1rem;
-  background-color: var(--background);
-  color: var(--foreground);
-  transition: border-color 0.2s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--primary-color, #4caf50);
-}
-
-.mapContainer {
-  height: 300px;
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 10px;
-  border: 1px solid var(--border-color);
-}
-
-.actions {
+.form {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid var(--border-color);
+  flex-direction: column;
+  gap: 16px;
 }
 
-.button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
+.warningBanner {
+  background-color: rgba(59, 130, 246, 0.08);
+  color: var(--foreground);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  /* Neumorphic inset banner */
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.05), inset -3px -3px 6px rgba(255, 255, 255, 0.05);
+}
+
+/* Аккордеоны с Neumorphism (Стиль Б) */
+.accordionItem {
+  background: var(--background);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  /* Outset shadow for "bulging" look, enhanced for dark theme */
+  box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.3), -6px -6px 16px rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.accordionItem.expanded {
+  /* При открытии можно добавить мягкую внутреннюю тень, чтобы казалось утопленным */
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.2), inset -3px -3px 8px rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
+  user-select: none;
+  background: transparent;
   transition: background-color 0.2s;
 }
 
-.cancelButton {
-  background-color: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-}
-
-.cancelButton:hover {
-  background-color: rgba(128, 128, 128, 0.1);
-}
-
-.saveButton {
-  background-color: #4caf50;
-  color: white;
-}
-
-.saveButton:hover {
-  background-color: #45a049;
-}
-
-/* Секція авто/водія за замовчуванням */
-.sectionTitle {
+.accordionTitle {
   display: flex;
   align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--foreground);
+}
+
+.iconBubble {
+  background: var(--background);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3), -3px -3px 8px rgba(255, 255, 255, 0.06);
+}
+
+.accordionIcon {
+  color: var(--primary-color, var(--info-color));
+}
+
+.chevronWrapper {
+  background: var(--background);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3), -2px -2px 6px rgba(255, 255, 255, 0.06);
+}
+
+.chevron {
+  color: var(--foreground);
+  opacity: 0.5;
+  transition: transform 0.3s;
+}
+
+.expanded .chevron {
+  color: var(--primary-color, var(--info-color));
+  opacity: 1;
+}
+
+.accordionContent {
+  padding: 0 20px 20px 20px;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Neumorphic Inputs */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+.inputGroup label {
+  font-size: 0.88rem;
   font-weight: 600;
+  color: var(--foreground);
+  opacity: 0.85;
+}
+
+.neumorphicInput, .neumorphicCardInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Slightly darker background for inputs to make inset pop */
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 14px;
+  /* Stronger Inset shadow for the "recessed" look on dark themes */
+  box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.5), inset -3px -3px 8px rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.neumorphicCardInner {
+  padding: 12px;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  color: var(--foreground);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  background: transparent;
+  border: none;
   font-size: 0.95rem;
   color: var(--foreground);
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: 6px 6px 0 0;
-  border-bottom: none;
-  margin-bottom: 0;
+  outline: none;
+  transition: all 0.2s;
 }
 
-.sectionIcon {
-  font-size: 1.1rem;
+select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23888%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px top 50%;
+  background-size: 10px auto;
+  padding-right: 36px;
 }
 
-.sectionHint {
-  font-weight: 400;
+.input:focus {
+  background: rgba(59, 130, 246, 0.03);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Map */
+.neumorphicMapWrapper {
+  height: 280px;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  /* Inset shadow around the map to look sunken */
+  box-shadow: inset 4px 4px 12px rgba(0, 0, 0, 0.5), inset -4px -4px 12px rgba(255, 255, 255, 0.04);
+  padding: 4px; /* gap for the inset shadow to show */
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.neumorphicMapWrapper > div {
+  border-radius: 16px; /* inner map border radius */
+}
+
+@media (min-width: 768px) {
+  .neumorphicMapWrapper { height: 340px; }
+}
+
+.mapHint {
   font-size: 0.8rem;
+  color: var(--foreground);
   opacity: 0.6;
+  text-align: center;
+  margin-top: 8px;
 }
 
+/* Vehicle Grid */
 .vehicleGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  border-radius: 0 0 6px 6px;
+  gap: 16px;
 }
-
-.vehicleField {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.vehicleField label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  opacity: 0.75;
-}
-
-@media (max-width: 480px) {
-  .vehicleGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
 
 .fullWidth {
   grid-column: 1 / -1;
 }
 
-/* Tabs */
-.tabsContainer {
+.divider {
+  grid-column: 1 / -1;
+  height: 2px;
+  background: rgba(128,128,128,0.1);
+  margin: 8px 0;
+  border-radius: 2px;
+  /* subtle inset for divider */
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 480px) {
+  .vehicleGrid { grid-template-columns: 1fr; }
+}
+
+/* Required marks */
+.requiredStar { color: var(--alert-color); font-weight: bold; }
+.requiredBadge { color: var(--alert-color); font-weight: bold; font-size: 1.1rem; margin-left: 2px; }
+.requiredStarIfFilled { color: var(--warning-color); font-weight: bold; }
+
+/* Sticky Footer */
+.stickyFooter {
   display: flex;
-  gap: 2px;
-  margin-bottom: 15px;
-  border-bottom: 1px solid var(--border-color);
-  overflow-x: auto;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--background);
+  border-top: 1px solid rgba(128,128,128,0.05);
+  z-index: 10;
+  /* Neumorphic top shadow */
+  box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.03);
 }
 
-.tabButton {
-  padding: 10px 16px;
-  background: transparent;
+@media (max-width: 768px) {
+  .stickyFooter { padding: 16px 20px 24px; }
+  .stickyFooter .button { flex: 1; justify-content: center; }
+}
+
+.button {
+  padding: 14px 24px;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--foreground);
-  font-weight: 500;
-  font-size: 0.95rem;
+  border-radius: 14px;
   cursor: pointer;
-  opacity: 0.6;
-  transition: all 0.2s;
-  white-space: nowrap;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.tabButton:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.05);
+.cancelButton {
+  background: var(--background);
+  color: var(--foreground);
+  /* Outset shadow */
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3), -4px -4px 12px rgba(255, 255, 255, 0.06);
 }
 
-.tabButton.active {
-  opacity: 1;
-  border-bottom: 2px solid var(--primary-color, #4caf50);
-  color: var(--primary-color, #4caf50);
+.cancelButton:active {
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.04);
 }
 
-.tabContent {
-  animation: fadeIn 0.3s ease;
+.saveButton {
+  background: var(--success-color); /* Emerald green */
+  color: white;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+.saveButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }

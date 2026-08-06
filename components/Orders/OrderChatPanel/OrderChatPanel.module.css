@@ -173,16 +173,16 @@
 }
 
 .cancelButton {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: rgba(var(--alert-color-rgb), 0.15);
+  border: 1px solid rgba(var(--alert-color-rgb), 0.3);
+  color: var(--alert-color);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .cancelButton:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: rgba(var(--alert-color-rgb), 0.25);
 }
 
 .bottomSection {
@@ -397,9 +397,9 @@
 }
 
 .deleteConfirmButton {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: rgba(var(--alert-color-rgb), 0.15);
+  border: 1px solid rgba(var(--alert-color-rgb), 0.3);
+  color: var(--alert-color);
   flex: 1;
   padding: 10px;
   border-radius: 10px;
@@ -409,7 +409,7 @@
 }
 
 .deleteConfirmButton:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: rgba(var(--alert-color-rgb), 0.25);
 }
 
 .deleteCancelButton {

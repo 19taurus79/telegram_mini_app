@@ -44,6 +44,6 @@
   display: block;
 }
 
-.event { color: #ef4444; }
-.inproccess { color: #fbbf24; }
+.event { color: var(--alert-color); }
+.inproccess { color: var(--warning-light); }
 .done { color: var(--accent-green); }

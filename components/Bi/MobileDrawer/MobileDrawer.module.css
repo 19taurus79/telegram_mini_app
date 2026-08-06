@@ -81,7 +81,7 @@
 }
 
 :global([data-theme='light']) .title {
-  color: #10b981;
+  color: var(--success-color);
 }
 
 .closeBtn {
@@ -99,9 +99,9 @@
 }
 
 .closeBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: #ef4444;
+  background: rgba(var(--alert-color-rgb), 0.1);
+  color: var(--alert-color);
+  border-color: var(--alert-color);
 }
 
 .content {

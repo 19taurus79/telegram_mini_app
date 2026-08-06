@@ -364,7 +364,7 @@ function RemainsContent() {
                       <span>Склади</span>
                       {selectedWarehouses.length > 0 && (
                         <span style={{ 
-                          background: '#0ef18e', color: '#000', borderRadius: '10px', 
+                          background: 'var(--accent-primary)', color: '#000', borderRadius: '10px', 
                           padding: '2px 6px', fontSize: '10px', fontWeight: 'bold' 
                         }}>
                           {selectedWarehouses.length}
@@ -403,7 +403,7 @@ function RemainsContent() {
                               type="checkbox" 
                               checked={isSelected}
                               readOnly
-                              style={{ accentColor: '#0ef18e' }}
+                              style={{ accentColor: 'var(--accent-primary)' }}
                             />
                           </div>
                         );

@@ -109,7 +109,7 @@ export default function TaskManager() {
       
       {(eventsLoading || tasksLoading) ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-          <FadeLoader color="#0ef18e" />
+          <FadeLoader color="var(--accent-primary)" />
         </div>
       ) : (
         <div className={css.grid}>

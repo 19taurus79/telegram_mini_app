@@ -23,7 +23,7 @@ export default function AddressFixWidget() {
       <div className={css.mainContent}>
         <div className={css.headerRow}>
           <div className={css.iconWrapper}>
-            <AlertTriangle size={22} color="#ef4444" />
+            <AlertTriangle size={22} color="var(--alert-color)" />
           </div>
           <div className={css.titleGroup}>
             <h3 className={css.title}>Потрібне уточнення адрес для</h3>

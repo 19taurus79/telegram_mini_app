@@ -193,7 +193,7 @@
 
 :global([data-theme='light']) .selected {
   background: rgba(16, 185, 129, 0.08) !important;
-  border-color: #10b981 !important;
+  border-color: var(--success-color) !important;
 }
 
 .alreadyInDelivery {
@@ -223,9 +223,9 @@
 
 /* Status Colors (Traffic Light) */
 /* Increased specificity to ensure theme overrides don't break them */
-.checkmarkGreen, :global([data-theme]) .checkmarkGreen { color: #10b981 !important; }
-.checkmarkYellow, :global([data-theme]) .checkmarkYellow { color: #f59e0b !important; }
-.checkmarkRed, :global([data-theme]) .checkmarkRed { color: #ef4444 !important; }
+.checkmarkGreen, :global([data-theme]) .checkmarkGreen { color: var(--success-color) !important; }
+.checkmarkYellow, :global([data-theme]) .checkmarkYellow { color: var(--warning-color) !important; }
+.checkmarkRed, :global([data-theme]) .checkmarkRed { color: var(--alert-color) !important; }
 
 /* --- Validation Modal Content --- */
 .validationModalContent {
@@ -286,7 +286,7 @@
 }
 
 .changeQtyBtn {
-  background: #3b82f6;
+  background: var(--info-color);
   color: #fff;
 }
 
@@ -544,15 +544,15 @@
 
 /* Status specific borders */
 .borderRed, :global([data-theme]) .borderRed {
-  border-color: #ef4444 !important;
+  border-color: var(--alert-color) !important;
   border-style: solid;
 }
 .borderGreen, :global([data-theme]) .borderGreen {
-  border-color: #10b981 !important;
+  border-color: var(--success-color) !important;
   border-style: solid;
 }
 .borderYellow, :global([data-theme]) .borderYellow {
-  border-color: #f59e0b !important;
+  border-color: var(--warning-color) !important;
   border-style: solid;
 }
 

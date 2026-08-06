@@ -44,7 +44,7 @@ export default function DetailEvent({ id }: { id: string }) {
 
   // Если данные загружаются, покажем сообщение
   if (isLoading) {
-    return <FadeLoader color="#0ef18e" cssOverride={override} />;
+    return <FadeLoader color="var(--accent-primary)" cssOverride={override} />;
   }
 
   // Если данных нет, покажем сообщение об ошибке

@@ -71,8 +71,8 @@
 }
 
 .closeButton:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(var(--alert-color-rgb), 0.15);
+  border-color: rgba(var(--alert-color-rgb), 0.35);
   color: #fca5a5;
 }
 
@@ -169,16 +169,16 @@
 }
 
 .tableContainer tr.selectedRow td:first-child {
-  border-left: 3px solid #0ef18e;
+  border-left: 3px solid var(--accent-primary);
 }
 
 /* --- Error row --- */
 .tableContainer tr.rowError td {
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(var(--alert-color-rgb), 0.05);
 }
 
 .tableContainer tr.rowError td:first-child {
-  border-left: 3px solid #f87171;
+  border-left: 3px solid var(--alert-color);
 }
 
 /* ---------- NESTED PARTY TABLE ---------- */
@@ -234,9 +234,9 @@
 }
 
 .inputError {
-  border-color: rgba(248, 113, 113, 0.6) !important;
-  background: rgba(239, 68, 68, 0.06) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(var(--alert-color-rgb), 0.6) !important;
+  background: rgba(var(--alert-color-rgb), 0.06) !important;
+  box-shadow: 0 0 0 3px rgba(var(--alert-color-rgb), 0.08) !important;
 }
 
 /* ---------- REMAIN ROW ---------- */
@@ -305,7 +305,7 @@
 
 /* Save / Ready — solid green gradient */
 .saveButton {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #059669, var(--success-color));
   border: none;
   color: #fff;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
@@ -318,7 +318,7 @@
 
 /* Ready — identical to save */
 .readyButton {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #059669, var(--success-color));
   border: none;
   color: #fff;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
@@ -355,22 +355,22 @@
 
 /* Delete delivery — red ghost */
 .deleteDeliveryBtn {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(var(--alert-color-rgb), 0.1);
+  border: 1px solid rgba(var(--alert-color-rgb), 0.25);
   color: #fca5a5;
   margin-right: auto;
 }
 
 .deleteDeliveryBtn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.15);
+  background: rgba(var(--alert-color-rgb), 0.2);
+  box-shadow: 0 0 14px rgba(var(--alert-color-rgb), 0.15);
 }
 
 /* ---------- INLINE ICON BUTTONS ---------- */
 .deletePartyBtn {
   background: none;
   border: none;
-  color: #f87171;
+  color: var(--alert-color);
   cursor: pointer;
   padding: 4px;
   opacity: 0.6;
@@ -387,7 +387,7 @@
 .deleteButton {
   background: none;
   border: none;
-  color: #f87171;
+  color: var(--alert-color);
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.6;
@@ -539,7 +539,7 @@
 
 .confirmDeleteBtn {
   padding: 8px 20px;
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: linear-gradient(135deg, var(--alert-color), var(--alert-color));
   color: white;
   border: none;
   border-radius: 20px;
@@ -548,13 +548,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.7px;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 4px 14px rgba(var(--alert-color-rgb), 0.35);
   transition: all 0.25s;
 }
 
 .confirmDeleteBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+  box-shadow: 0 6px 20px rgba(var(--alert-color-rgb), 0.5);
 }
 
 /* ---------- EMPTY STATE ---------- */
@@ -657,7 +657,7 @@
   width: 44px;
   height: 44px;
   border: 3.5px solid rgba(14, 241, 142, 0.1);
-  border-top-color: #0ef18e;
+  border-top-color: var(--accent-primary);
   border-radius: 50%;
   animation: spinLoader 0.85s linear infinite;
   margin-bottom: 16px;

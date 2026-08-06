@@ -223,14 +223,14 @@ export default function RoutePanel({ routeInfo, waypoints, onClear, onDeleteWayp
           {waypoints.map((waypoint, index) => {
             const isStart = index === 0;
             const isEnd = index === waypoints.length - 1;
-            let markerColor = '#3b82f6'; // blue for intermediate
+            let markerColor = 'var(--info-color)'; // blue for intermediate
             let markerLabel = index + 1;
             
             if (isStart) {
               markerColor = '#22c55e'; // green
               markerLabel = 'A';
             } else if (isEnd) {
-              markerColor = '#ef4444'; // red
+              markerColor = 'var(--alert-color)'; // red
               markerLabel = 'B';
             }
             

@@ -301,7 +301,7 @@
 }
 
 :global([data-theme='light']) .statusBadge {
-  background-color: #10b981;
+  background-color: var(--success-color);
   color: #ffffff;
 }
 
@@ -330,11 +330,11 @@
 }
 
 :global([data-theme='light']) .cartSelectedRow td:first-child {
-  border-left: 4px solid #10b981 !important;
+  border-left: 4px solid var(--success-color) !important;
 }
 
 :global([data-theme='light']) .cartSelectedCard {
   background: rgba(16, 185, 129, 0.08) !important;
-  border-color: #10b981 !important;
-  border-left: 4px solid #10b981 !important;
+  border-color: var(--success-color) !important;
+  border-left: 4px solid var(--success-color) !important;
 }

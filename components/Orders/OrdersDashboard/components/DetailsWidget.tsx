@@ -614,13 +614,13 @@ export default function DetailsWidget({
 
                             let dotColor: string;
                             if (buh >= need && skl >= need) {
-                              dotColor = '#4ade80'; // зелений — вистачає всього
+                              dotColor = 'var(--success-light)'; // зелений — вистачає всього
                             } else if (buh >= need) {
                               dotColor = '#facc15'; // жовтий — бух ок, склад ні
                             } else if (sumMoved > 0 && sumMoved <= buh) {
                               dotColor = '#facc15'; // жовтий — бух менше потреби, але є переміщення в межах бух
                             } else {
-                              dotColor = '#ef4444'; // червоний — бух не покриває потребу
+                              dotColor = 'var(--alert-color)'; // червоний — бух не покриває потребу
                             }
 
                             return (

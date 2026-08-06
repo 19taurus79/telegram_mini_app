@@ -23,7 +23,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #0ef18e, #00d2ff);
+  background: linear-gradient(90deg, var(--accent-primary), #00d2ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -42,7 +42,7 @@
   background: rgba(14, 241, 142, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: #0ef18e;
+  color: var(--accent-primary);
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
@@ -104,7 +104,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 12px;
-  color: #0ef18e;
+  color: var(--accent-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -112,7 +112,7 @@
 
 .count {
   background: rgba(14, 241, 142, 0.2);
-  color: #0ef18e;
+  color: var(--accent-primary);
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -172,9 +172,9 @@
   margin-right: 6px;
 }
 
-.status_0 { background: #ef4444; box-shadow: 0 0 8px #ef4444; } /* Світлофор: Червоний (Створено) */
-.status_1 { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; } /* Світлофор: Жовтий (В роботі) */
-.status_2 { background: #0ef18e; box-shadow: 0 0 8px #0ef18e; } /* Світлофор: Зелений (Виконано) */
+.status_0 { background: var(--alert-color); box-shadow: 0 0 8px var(--alert-color); } /* Світлофор: Червоний (Створено) */
+.status_1 { background: var(--warning-light); box-shadow: 0 0 8px var(--warning-light); } /* Світлофор: Жовтий (В роботі) */
+.status_2 { background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); } /* Світлофор: Зелений (Виконано) */
 
 .noData {
   font-size: 0.9rem;

@@ -247,12 +247,12 @@
 }
 
 .modalInput.invalid {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+  border-color: var(--alert-color) !important;
+  box-shadow: 0 0 0 4px rgba(var(--alert-color-rgb), 0.1) !important;
 }
 
 :global([data-theme='light']) .modalInput.invalid {
-  border-color: #dc2626 !important;
+  border-color: var(--alert-color) !important;
 }
 
 .modalInput[type="date"] {
@@ -284,7 +284,7 @@
 }
 
 :global([data-theme='light']) .inputIcon {
-  color: #10b981;
+  color: var(--success-color);
 }
 
 .inputWithIcon {
@@ -318,7 +318,7 @@ textarea.modalInput {
 }
 
 :global([data-theme='light']) .fieldLabel {
-  color: #10b981;
+  color: var(--success-color);
 }
 
 .modalActions {
@@ -360,7 +360,7 @@ textarea.modalInput {
 }
 
 .error {
-  color: #ef4444;
+  color: var(--alert-color);
   font-size: 0.85rem;
   margin-top: 12px;
   text-align: center;
@@ -391,9 +391,9 @@ textarea.modalInput {
 
 .deleteButton {
   flex: 0 0 50px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(var(--alert-color-rgb), 0.1);
+  color: var(--alert-color);
+  border: 1px solid rgba(var(--alert-color-rgb), 0.2);
   padding: 14px;
   border-radius: 12px;
   display: flex;
@@ -404,7 +404,7 @@ textarea.modalInput {
 }
 
 .deleteButton:hover {
-  background: #ef4444;
+  background: var(--alert-color);
   color: #fff;
 }
 
@@ -459,8 +459,8 @@ textarea.modalInput {
   }
   :global([data-theme='light']) .deliveryTabs.threeOptions .deliveryTab.active {
     background: #ecfdf5;
-    border-color: #10b981;
-    color: #10b981;
+    border-color: var(--success-color);
+    color: var(--success-color);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
   }
 }
@@ -635,7 +635,7 @@ textarea.modalInput {
 }
 :global([data-theme='light']) .pickupToggleContainer.active {
   background: #ecfdf5;
-  border-color: #10b981;
+  border-color: var(--success-color);
 }
 :global([data-theme='light']) .slider {
   background-color: rgba(0,0,0,0.1);
@@ -729,7 +729,7 @@ textarea.modalInput {
 
 :global([data-theme='light']) .addressToggleButton:hover {
   background: rgba(0, 0, 0, 0.1);
-  border-color: #10b981;
+  border-color: var(--success-color);
 }
 
 .addressToggleButton.active {
@@ -879,5 +879,5 @@ textarea.modalInput {
 
 :global([data-theme='light']) .deliveryTab.active {
   background: #fff;
-  color: #10b981;
+  color: var(--success-color);
 }

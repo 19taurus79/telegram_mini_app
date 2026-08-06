@@ -762,9 +762,9 @@ export default function BottomData({ onEditClient }) {
               <p><strong>Контакт:</strong> {delivery.contact} (<a href={`tel:${delivery.phone}`}>{delivery.phone}</a>)</p>
               {delivery.comment && (
                 <div className={css.comment}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: '#f59e0b', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px' }}>
                     <div className={css.flashingIcon}>
-                      <AlertTriangle size={18} fill="#ef444466" />
+                      <AlertTriangle size={18} fill="var(--alert-color)66" />
                     </div>
                     <MessageCircle size={16} />
                     <span>Коментар:</span>
@@ -889,7 +889,7 @@ export default function BottomData({ onEditClient }) {
                         fontWeight: 600,
                         borderRadius: '8px',
                         border: 'none',
-                        background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                        background: 'linear-gradient(135deg, var(--action-color), var(--info-color))',
                         color: '#fff',
                         cursor: 'pointer',
                         boxShadow: '0 2px 6px rgba(37,99,235,0.4)'
@@ -1022,7 +1022,7 @@ export default function BottomData({ onEditClient }) {
                 {payload && (
                   <div className={css.vehicleInfoItem}>
                     <span className={css.vehicleInfoLabel}>Вантажопідйомність</span>
-                    <span className={css.vehicleInfoValue} style={{ color: '#0ef18e', fontWeight: 'bold' }}>{(payload / 1000).toFixed(1)} т</span>
+                    <span className={css.vehicleInfoValue} style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{(payload / 1000).toFixed(1)} т</span>
                   </div>
                 )}
                 {dimensionsStr && (

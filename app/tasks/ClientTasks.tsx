@@ -62,7 +62,7 @@ export default function ClientTasks() {
     <div className={css.listContainer}>
       {isLoading && (
         <div style={{ height: '50vh', display: 'flex', alignItems: 'center' }}>
-          <FadeLoader color="#0ef18e" cssOverride={override} />
+          <FadeLoader color="var(--accent-primary)" cssOverride={override} />
         </div>
       )}
       

@@ -3,7 +3,7 @@
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-blur: blur(16px);
-  --accent-green: #0ef18e;
+  --accent-green: var(--accent-primary);
   --accent-green-hover: rgba(14, 241, 142, 0.2);
   --header-height: 70px;
   
@@ -11,6 +11,17 @@
   --background: #0f172a;
   --foreground: #f8fafc;
   --card-bg: rgba(255, 255, 255, 0.03);
+  
+  /* Semantic Colors (Dark Theme Defaults) */
+  --alert-color: #f87171;
+  --alert-color-rgb: 248, 113, 113;
+  --success-color: var(--success-color);
+  --success-light: var(--success-light);
+  --accent-primary: var(--accent-primary);
+  --info-color: var(--info-color);
+  --action-color: var(--action-color);
+  --warning-color: var(--warning-color);
+  --warning-light: var(--warning-light);
   
   /* Premium Aesthetics */
   --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
@@ -32,6 +43,18 @@
   --glass-border: rgba(0, 0, 0, 0.1); /* Visible border in light mode */
   --card-bg: rgba(255, 255, 255, 0.9);
   --shadow-premium: 0 20px 40px -10px rgba(15, 23, 42, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+  
+  /* Semantic Colors (Light Theme Adjustments for Contrast) */
+  --alert-color: #ef4444; /* Darker red */
+  --alert-color-rgb: 239, 68, 68;
+  --success-color: #059669; /* Emerald 600 */
+  --success-light: #16a34a; /* Green 600 */
+  --accent-primary: #059669; /* Darker green for text readability */
+  --info-color: var(--action-color); /* Blue 600 */
+  --action-color: #1d4ed8; /* Blue 700 */
+  --warning-color: #d97706; /* Amber 600 */
+  --warning-light: var(--warning-color); /* Amber 500 */
+  
   /* Additional light mode tokens */
   --border-color: rgba(0, 0, 0, 0.1);
   --foreground-muted: rgba(0, 0, 0, 0.5);

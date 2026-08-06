@@ -59,8 +59,8 @@
 }
 
 .done { color: var(--accent-green); }
-.inproccess { color: #fbbf24; }
-.event { color: #ef4444; }
+.inproccess { color: var(--warning-light); }
+.event { color: var(--alert-color); }
 
 .chevron {
   opacity: 0.4;

@@ -36,7 +36,7 @@
 
 .pending {
   background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
+  color: var(--warning-light);
   border-bottom-color: rgba(251, 191, 36, 0.15);
 }
 
@@ -341,12 +341,12 @@
 .itemQty {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--info-color);
   white-space: nowrap;
 }
 
 :global([data-theme='light']) .itemQty {
-  color: #2563eb;
+  color: var(--action-color);
 }
 
 .batchList {

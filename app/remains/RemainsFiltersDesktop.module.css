@@ -43,12 +43,12 @@
 
 .searchInput:focus {
   background: rgba(255, 255, 255, 0.07);
-  border-color: #0ef18e;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 4px rgba(14, 241, 142, 0.15), inset 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .searchInput:focus + .searchIcon {
-  color: #0ef18e;
+  color: var(--accent-primary);
 }
 
 .clearSearchBtn {
@@ -94,9 +94,9 @@
 }
 
 .filterToggleBtn.active {
-  background: #0ef18e;
+  background: var(--accent-primary);
   color: #000;
-  border-color: #0ef18e;
+  border-color: var(--accent-primary);
   box-shadow: 0 4px 15px rgba(14, 241, 142, 0.4);
 }
 
@@ -162,7 +162,7 @@
 .activeCapsule {
   background: rgba(14, 241, 142, 0.1) !important;
   border-color: rgba(14, 241, 142, 0.3) !important;
-  color: #0ef18e !important;
+  color: var(--accent-primary) !important;
   box-shadow: 0 4px 12px rgba(14, 241, 142, 0.1);
 }
 
@@ -234,7 +234,7 @@
 
 .popoverItemActive {
   background: rgba(14, 241, 142, 0.1);
-  color: #0ef18e;
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .subGroupActive {
-  color: #0ef18e !important;
+  color: var(--accent-primary) !important;
   background: rgba(14, 241, 142, 0.05);
 }
 

@@ -69,7 +69,7 @@ export default function AddressFixClient() {
       <div className={css.headerSection}>
         <div className={css.headerTitle}>
           <h1>
-            <MapPin size={26} color="#e53e3e" />
+            <MapPin size={26} color="var(--alert-color)" />
             Уточнення адрес контрагентів
           </h1>
           <span className={css.countBadge}>
@@ -80,18 +80,6 @@ export default function AddressFixClient() {
           Нижче наведено список контрагентів із заявок, для яких в довіднику відсутні дані про адресу вигрузки. 
           Натисніть <strong>«Внести адресу»</strong>, щоб зберегти адресу в довідник контрагента по замовчуванню.
         </p>
-
-        <div className={css.controls}>
-          <div style={{ position: "relative", flex: 1, minWidth: "240px" }}>
-            <input
-              type="text"
-              className={css.searchInput}
-              placeholder="Пошук контрагента або менеджера..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
       </div>
 
       {isLoading ? (
@@ -101,7 +89,7 @@ export default function AddressFixClient() {
         </div>
       ) : filteredUnmapped.length === 0 ? (
         <div className={css.emptyState}>
-          <CheckCircle2 size={48} color="#0ef18e" />
+          <CheckCircle2 size={48} color="var(--accent-primary)" />
           <div className={css.emptyTitle}>Усі адреси уточнені!</div>
           <div className={css.emptyDesc}>
             Для всіх відфільтрованих контрагентів в довіднику вже вказано адреси вигрузки.
@@ -118,7 +106,7 @@ export default function AddressFixClient() {
                   Менеджер: <strong>{managerName}</strong>
                 </div>
                 <div className={css.statusText}>
-                  <AlertTriangle size={15} color="#e53e3e" />
+                  <AlertTriangle size={15} color="var(--alert-color)" />
                   Адреса відсутня в довіднику
                 </div>
 

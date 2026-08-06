@@ -29,14 +29,14 @@
 .header h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: #0ef18e;
+  color: var(--accent-primary);
   text-align: left;
 }
 
 .settingsButton {
   background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #0ef18e;
+  color: var(--accent-primary);
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -80,7 +80,7 @@
 .value {
   font-size: 1.8rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--foreground), #0ef18e);
+  background: linear-gradient(90deg, var(--foreground), var(--accent-primary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

@@ -243,7 +243,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                 ✓ Виконано
               </button>
               <button 
-                style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                style={{ background: 'var(--warning-color)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
                 onClick={() => handleBatchUpdate("В роботі", null)}
               >
                 ⚡ В роботі
@@ -298,7 +298,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
             />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button 
-                style={{ flex: 1, padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                style={{ flex: 1, padding: '10px', background: 'var(--action-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
                 onClick={() => handleBatchUpdate(null, newBatchDate)}
               >
                 Оновити

@@ -74,7 +74,7 @@
 }
 
 :global([data-theme='light']) .contractSupplement {
-  color: #10b981;
+  color: var(--success-color);
 }
 
 .detailRow {
@@ -106,9 +106,9 @@
   color: var(--foreground);
 }
 
-.statusOk { color: #10b981; }
-.statusFailed { color: #ef4444; }
-.statusWaiting { color: #f59e0b; }
+.statusOk { color: var(--success-color); }
+.statusFailed { color: var(--alert-color); }
+.statusWaiting { color: var(--warning-color); }
 
 .commentBadgeWrapper {
   position: relative;

@@ -169,11 +169,11 @@ export default function OrderCommentModal({
             <h3 className={styles.title}>
               {commentType === 'product' ? (
                 <>
-                  Коментарі до товару: <span style={{ color: '#3b82f6' }}>{productName}</span>
+                  Коментарі до товару: <span style={{ color: 'var(--info-color)' }}>{productName}</span>
                 </>
               ) : (
                 <>
-                  Коментарі до заявки: <span style={{ color: '#3b82f6' }}>{orderRef}</span>
+                  Коментарі до заявки: <span style={{ color: 'var(--info-color)' }}>{orderRef}</span>
                 </>
               )}
             </h3>
@@ -231,7 +231,7 @@ export default function OrderCommentModal({
                             fontSize: '10px',
                             padding: '2px 6px',
                             borderRadius: '4px',
-                            backgroundColor: '#3b82f6',
+                            backgroundColor: 'var(--info-color)',
                             color: 'white',
                             fontWeight: '600'
                           }}>
@@ -243,7 +243,7 @@ export default function OrderCommentModal({
                             fontSize: '10px',
                             padding: '2px 6px',
                             borderRadius: '4px',
-                            backgroundColor: '#10b981',
+                            backgroundColor: 'var(--success-color)',
                             color: 'white',
                             fontWeight: '600'
                           }}>

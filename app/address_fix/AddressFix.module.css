@@ -42,7 +42,7 @@
 
 .countBadge {
   background: rgba(229, 62, 62, 0.15);
-  color: #e53e3e;
+  color: var(--alert-color);
   border: 1px solid rgba(229, 62, 62, 0.3);
   padding: 4px 12px;
   border-radius: 20px;
@@ -79,13 +79,19 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--accent-green, #0ef18e);
+  border-color: var(--accent-green, var(--accent-primary));
 }
 
 .listGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .listGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card {
@@ -124,7 +130,7 @@
 .statusText {
   font-size: 0.85rem;
   font-style: italic;
-  color: #e53e3e;
+  color: var(--alert-color);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -147,7 +153,7 @@
 }
 
 .addBtn {
-  background: #3b82f6;
+  background: var(--info-color);
   color: #ffffff;
   border: none;
   padding: 8px 16px;
@@ -162,7 +168,7 @@
 }
 
 .addBtn:hover {
-  background: #2563eb;
+  background: var(--action-color);
   transform: scale(1.02);
 }
 

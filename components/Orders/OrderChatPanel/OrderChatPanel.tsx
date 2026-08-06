@@ -237,7 +237,7 @@ export default function OrderChatPanel({ orderRef }: OrderChatPanelProps) {
             marginTop: '12px', 
             padding: '4px 12px', 
             borderRadius: '4px', 
-            backgroundColor: '#3b82f6', 
+            backgroundColor: 'var(--info-color)', 
             color: 'white',
             border: 'none',
             fontSize: '12px',

@@ -87,23 +87,23 @@ export default function ContractsWidget({
     if (isPaid) return { 
       label: "Оплачено", 
       icon: <CircleDollarSign size={14} />, 
-      color: "#4ade80", 
+      color: "var(--success-light)", 
       bgColor: "rgba(34, 197, 94, 0.15)", 
       border: "1px solid rgba(34, 197, 94, 0.4)" 
     };
     if (isPartial) return { 
       label: "Частково", 
       icon: <Wallet size={14} />, 
-      color: "#fbbf24", 
+      color: "var(--warning-light)", 
       bgColor: "rgba(251, 191, 36, 0.15)", 
       border: "1px solid rgba(251, 191, 36, 0.4)" 
     };
     return { 
       label: "Не оплачено", 
       icon: <Coins size={14} />, 
-      color: "#ef4444", 
-      bgColor: "rgba(239, 68, 68, 0.15)", 
-      border: "1px solid rgba(239, 68, 68, 0.4)" 
+      color: "var(--alert-color)", 
+      bgColor: "rgba(var(--alert-color-rgb), 0.15)", 
+      border: "1px solid rgba(var(--alert-color-rgb), 0.4)" 
     };
   };
 
@@ -249,7 +249,7 @@ export default function ContractsWidget({
                       <span style={{ opacity: 0.5 }}>Оплачено:</span>
                       <span style={{ 
                         fontWeight: 700, 
-                        color: (contract.actual_payment_amount || 0) >= (contract.planned_amount || 0) * 0.9 ? '#4ade80' : 'var(--foreground)' 
+                        color: (contract.actual_payment_amount || 0) >= (contract.planned_amount || 0) * 0.9 ? 'var(--success-light)' : 'var(--foreground)' 
                       }}>
                         {contract.actual_payment_amount?.toLocaleString() || '0'}
                       </span>

@@ -226,7 +226,7 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
         {/* Секция для заявок без адреса */}
         {filteredUnmappedApplications.length > 0 && (
           <div className={css.unmappedSection}>
-            <div className={css.letterHeader} style={{ color: '#e53e3e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className={css.letterHeader} style={{ color: 'var(--alert-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>⚠️ Потрібне уточнення адреси ({filteredUnmappedApplications.length})</span>
             </div>
             {filteredUnmappedApplications.map((item) => {
@@ -250,7 +250,7 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
                   <div className={css.managerInfo}>
                     Менеджер: <strong>{managerName}</strong>
                   </div>
-                  <div className={css.address} style={{ fontStyle: 'italic', color: '#e53e3e', marginTop: '2px' }}>
+                  <div className={css.address} style={{ fontStyle: 'italic', color: 'var(--alert-color)', marginTop: '2px' }}>
                     Адреса відсутня в довіднику
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: '6px' }}>

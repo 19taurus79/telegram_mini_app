@@ -1100,9 +1100,9 @@ export default function EditDeliveryModal() {
                                     ? getPartyStockStatus(p.party, partyQty)
                                     : 'unknown';
                                   const partyRowStyle = stockStatus === 'ok'
-                                    ? { background: 'rgba(16, 185, 129, 0.12)', borderLeft: '3px solid #10b981' }
+                                    ? { background: 'rgba(16, 185, 129, 0.12)', borderLeft: '3px solid var(--success-color)' }
                                     : (stockStatus === 'low' || stockStatus === 'missing')
-                                    ? { background: 'rgba(239, 68, 68, 0.10)', borderLeft: '3px solid #f87171' }
+                                    ? { background: 'rgba(var(--alert-color-rgb), 0.10)', borderLeft: '3px solid var(--alert-color)' }
                                     : {};
                                   return (
                                   <tr key={pIdx} style={partyRowStyle}>

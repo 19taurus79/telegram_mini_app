@@ -117,11 +117,11 @@
 }
 
 .confirmBtn {
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(var(--alert-color-rgb), 0.8);
   color: #fff;
 }
 
 .confirmBtn:hover {
-  background: rgba(239, 68, 68, 1);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  background: rgba(var(--alert-color-rgb), 1);
+  box-shadow: 0 0 12px rgba(var(--alert-color-rgb), 0.4);
 }

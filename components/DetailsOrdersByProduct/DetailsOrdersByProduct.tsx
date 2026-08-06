@@ -111,23 +111,23 @@ export default function DetailsOrdersByProduct({
     if (isPaid) return { 
       label: "Оплачено", 
       icon: <CircleDollarSign size={14} />, 
-      color: "#4ade80", 
+      color: "var(--success-light)", 
       bgColor: "rgba(34, 197, 94, 0.15)", 
       border: "1px solid rgba(34, 197, 94, 0.4)" 
     };
     if (isPartial) return { 
       label: "Частково", 
       icon: <Wallet size={14} />, 
-      color: "#fbbf24", 
+      color: "var(--warning-light)", 
       bgColor: "rgba(251, 191, 36, 0.15)", 
       border: "1px solid rgba(251, 191, 36, 0.4)" 
     };
     return { 
       label: "Не оплачено", 
       icon: <Coins size={14} />, 
-      color: "#ef4444", 
-      bgColor: "rgba(239, 68, 68, 0.15)", 
-      border: "1px solid rgba(239, 68, 68, 0.4)" 
+      color: "var(--alert-color)", 
+      bgColor: "rgba(var(--alert-color-rgb), 0.15)", 
+      border: "1px solid rgba(var(--alert-color-rgb), 0.4)" 
     };
   };
 
@@ -264,10 +264,10 @@ export default function DetailsOrdersByProduct({
                       🏢 Склад: <strong style={{ opacity: 0.9 }}>{partyTotals.warehouses.join(', ')}</strong>
                     </span>
                   )}
-                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: '#4ade80', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
+                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: 'var(--success-light)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
                     Загальний Бух: <strong>{partyTotals.buh.toFixed(2)}</strong>
                   </span>
-                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: '#4ade80', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
+                  <span style={{ fontSize: '13px', background: 'rgba(14,241,142,0.1)', color: 'var(--success-light)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(14,241,142,0.2)' }}>
                     Загальний Скл: <strong>{partyTotals.skl.toFixed(2)}</strong>
                   </span>
                 </div>
@@ -412,7 +412,7 @@ export default function DetailsOrdersByProduct({
                 <span style={{
                   background: 'rgba(34, 197, 94, 0.15)',
                   border: '1px solid rgba(34, 197, 94, 0.4)',
-                  color: '#4ade80',
+                  color: 'var(--success-light)',
                   borderRadius: '6px',
                   padding: '2px 8px',
                   fontSize: '0.78rem',
@@ -426,7 +426,7 @@ export default function DetailsOrdersByProduct({
                 <span style={{
                   background: 'rgba(251, 191, 36, 0.15)',
                   border: '1px solid rgba(251, 191, 36, 0.4)',
-                  color: '#fbbf24',
+                  color: 'var(--warning-light)',
                   borderRadius: '6px',
                   padding: '2px 8px',
                   fontSize: '0.78rem',
@@ -499,7 +499,7 @@ export default function DetailsOrdersByProduct({
                         <span style={{ 
                           fontSize: '0.75rem', 
                           fontWeight: 700,
-                          color: order.document_status === "затверджено" ? "#4ade80" : "#fbbf24",
+                          color: order.document_status === "затверджено" ? "var(--success-light)" : "var(--warning-light)",
                           background: order.document_status === "затверджено" ? "rgba(74, 222, 128, 0.1)" : "rgba(251, 191, 36, 0.1)",
                           padding: '2px 6px',
                           borderRadius: '4px'
@@ -513,7 +513,7 @@ export default function DetailsOrdersByProduct({
                           <span style={{ 
                             fontSize: '0.8rem', 
                             fontWeight: 700,
-                            color: order.delivery_status?.includes("Так") ? "#4ade80" : "#ef4444"
+                            color: order.delivery_status?.includes("Так") ? "var(--success-light)" : "var(--alert-color)"
                           }}>
                             {order.delivery_status?.includes("Так") ? "Так" : "Ні"}
                           </span>
@@ -601,7 +601,7 @@ export default function DetailsOrdersByProduct({
                          <div className={css.cardRow}>
                            <span className={css.cardLabel}>Статус документа:</span>
                            <span className={css.cardValue} style={{ 
-                             color: order.document_status === "затверджено" ? "#4ade80" : "#fbbf24",
+                             color: order.document_status === "затверджено" ? "var(--success-light)" : "var(--warning-light)",
                              fontWeight: 700
                            }}>{order.document_status}</span>
                          </div>
@@ -636,7 +636,7 @@ export default function DetailsOrdersByProduct({
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <span style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 500 }}>До постачання:</span>
                             <span className={css.cardValue} style={{ 
-                              color: order.delivery_status?.includes("Так") ? "#4ade80" : "#ef4444",
+                              color: order.delivery_status?.includes("Так") ? "var(--success-light)" : "var(--alert-color)",
                               fontWeight: 700
                             }}>
                               {order.delivery_status?.includes("Так") ? "Так" : "Ні"}

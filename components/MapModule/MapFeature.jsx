@@ -135,7 +135,7 @@ const getGroupedIcon = (baseIconUrl, count, size = 32) => {
           position: absolute;
           top: -8px;
           right: -8px;
-          background: #ef4444;
+          background: var(--alert-color);
           color: white;
           border-radius: 10px;
           padding: 2px 6px;
@@ -189,7 +189,7 @@ const getDynamicGroupedIcon = (baseIconUrl, count, weight) => {
           position: absolute;
           top: -8px;
           right: -8px;
-          background: #ef4444;
+          background: var(--alert-color);
           color: white;
           border-radius: 10px;
           padding: 2px 6px;
@@ -781,7 +781,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          {isGroup && <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '10px' }}>Група ({iIndex + 1}/{group.length})</div>}
+                          {isGroup && <div style={{ color: 'var(--alert-color)', fontWeight: 'bold', fontSize: '10px' }}>Група ({iIndex + 1}/{group.length})</div>}
                           <strong>{item.client}</strong><br />
                           {item.address.city}, {item.address.area}<br />
                           <strong>Кількість заявок: {item.count}</strong><br />
@@ -842,7 +842,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          {isGroup && <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '10px' }}>Група ({iIndex + 1}/{group.length})</div>}
+                          {isGroup && <div style={{ color: 'var(--alert-color)', fontWeight: 'bold', fontSize: '10px' }}>Група ({iIndex + 1}/{group.length})</div>}
                           <strong>{client.client}</strong><br />
                           {`${client.region} обл., ${client.area} район, ${client.commune} громада, ${client.city}`} <br />
                           {`Менеджер: ${client.manager}`}<br />

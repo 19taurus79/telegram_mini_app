@@ -30,7 +30,7 @@
 }
 
 :global([data-theme='light']) .cartButton {
-  background: #10b981;
+  background: var(--success-color);
   color: #fff;
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
 }
@@ -49,7 +49,7 @@
   position: absolute;
   top: -8px;
   right: -8px;
-  background: #ef4444;
+  background: var(--alert-color);
   color: #fff;
   font-size: 10px;
   min-width: 18px;

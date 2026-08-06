@@ -13,7 +13,7 @@
   top: 2px;
   bottom: 2px;
   left: 2px;
-  background: var(--accent-green, #0ef18e);
+  background: var(--accent-green, var(--accent-primary));
   border-radius: 10px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;

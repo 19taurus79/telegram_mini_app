@@ -269,7 +269,7 @@ function DeliveryDataContent() {
   if (isLoading && !formClient) {
     return (
       <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <FadeLoader color="#0ef18e" cssOverride={override} />
+        <FadeLoader color="var(--accent-primary)" cssOverride={override} />
       </div>
     );
   }

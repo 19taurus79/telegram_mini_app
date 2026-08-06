@@ -43,7 +43,7 @@ const SwipeableRow = ({ children, onSwipeLeft, onSwipeRight, onClick, isSelected
       onClick={onClick}
       className={`${css.mobileCard} ${isSelected ? css.selectedCard : ''} ${hasStock ? css.hasStockCard : css.noStockCard}`}
       style={isGreen ? { 
-        borderLeft: '4px solid #4ade80', 
+        borderLeft: '4px solid var(--success-light)', 
         background: isSelected ? 'rgba(74, 222, 128, 0.15)' : 'rgba(74, 222, 128, 0.05)' 
       } : {}}
     >
@@ -131,7 +131,7 @@ const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct, showSel
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ 
                     fontWeight: 600, 
-                    color: isSelZero ? '#4ade80' : '#ef4444' 
+                    color: isSelZero ? 'var(--success-light)' : 'var(--alert-color)' 
                   }}>
                     {sel.toFixed(2)}
                   </span>
@@ -224,7 +224,7 @@ const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct, showSel
           const rowStyle: React.CSSProperties = isGreen 
             ? { 
                 background: isSelected ? 'rgba(74, 222, 128, 0.25)' : 'rgba(74, 222, 128, 0.1)',
-                color: '#4ade80',
+                color: 'var(--success-light)',
                 fontWeight: 600
               }
             : {};
@@ -416,7 +416,7 @@ const ProductTable = ({
                               {isGreen && (
                                 <span style={{ 
                                   fontSize: '10px', 
-                                  color: '#4ade80', 
+                                  color: 'var(--success-light)', 
                                   background: 'rgba(74,222,128,0.15)', 
                                   padding: '2px 6px', 
                                   borderRadius: '4px',
@@ -444,7 +444,7 @@ const ProductTable = ({
                                 <div className={css.statItem} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%', padding: '8px 12px' }}>
                                   <span className={css.statLabel} style={{ margin: 0 }}>Дефіцит (Доп / Все)</span>
                                   <span className={css.statValue}>
-                                    <span style={{ color: (order.qty_missing_selected || 0) <= 0 ? '#4ade80' : '#ef4444', fontWeight: 'bold' }}>{(order.qty_missing_selected || 0).toFixed(2)}</span> <span style={{ opacity: 0.3 }}>/</span> {(order.qty_missing_total || 0).toFixed(2)}
+                                    <span style={{ color: (order.qty_missing_selected || 0) <= 0 ? 'var(--success-light)' : 'var(--alert-color)', fontWeight: 'bold' }}>{(order.qty_missing_selected || 0).toFixed(2)}</span> <span style={{ opacity: 0.3 }}>/</span> {(order.qty_missing_total || 0).toFixed(2)}
                                   </span>
                                 </div>
                               </div>
@@ -452,7 +452,7 @@ const ProductTable = ({
                               <div className={css.cardStats}>
                                 <div className={css.statItem}>
                                   <span className={css.statLabel}>Залишки</span>
-                                  <span className={css.statValue} style={isGreen ? { color: '#4ade80' } : {}}>{order.qty_remain.toFixed(2)}</span>
+                                  <span className={css.statValue} style={isGreen ? { color: 'var(--success-light)' } : {}}>{order.qty_remain.toFixed(2)}</span>
                                 </div>
                                 <div className={css.statItem}>
                                   <span className={css.statLabel}>Потрібно</span>
@@ -460,7 +460,7 @@ const ProductTable = ({
                                 </div>
                                 <div className={css.statItem}>
                                   <span className={css.statLabel}>Не вистачає</span>
-                                  <span className={`${css.statValue} ${css.missingValue}`} style={isGreen ? { color: '#4ade80', opacity: 0.8 } : {}}>
+                                  <span className={`${css.statValue} ${css.missingValue}`} style={isGreen ? { color: 'var(--success-light)', opacity: 0.8 } : {}}>
                                     {order.qty_missing.toFixed(2)}
                                   </span>
                                 </div>

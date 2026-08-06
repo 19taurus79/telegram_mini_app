@@ -65,7 +65,7 @@
 
 .guestBadge {
   font-size: 0.65rem;
-  background-color: #f59e0b;
+  background-color: var(--warning-color);
   color: white;
   padding: 2px 8px;
   border-radius: 8px;
@@ -130,7 +130,7 @@
 }
 
 .activeLink {
-  color: #0ef18e !important;
+  color: var(--accent-primary) !important;
   background: rgba(14, 241, 142, 0.1) !important;
   font-weight: 700 !important;
 }
@@ -366,13 +366,13 @@
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  background: #ef4444 !important;
+  background: var(--alert-color) !important;
   color: #ffffff !important;
   border-radius: 11px;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 12px rgba(var(--alert-color-rgb), 0.6) !important;
 }
 
 @keyframes badgePulse {

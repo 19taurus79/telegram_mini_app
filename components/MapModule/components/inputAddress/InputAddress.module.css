@@ -25,7 +25,7 @@
 }
 
 .clearButton:hover {
-  color: #ef4444;
+  color: var(--alert-color);
 }
 
 .button {
@@ -52,7 +52,7 @@
 }
 
 :global([data-theme='light']) .clearButton:hover {
-  color: #ef4444;
+  color: var(--alert-color);
 }
 
 :global([data-theme='light']) .inputWrapper :global(.MuiOutlinedInput-root) {

@@ -6,6 +6,7 @@ import css from "./AddressFix.module.css";
 import { fetchOrdersHeatmapData } from "@/components/MapModule/fetchOrdersWithAddresses";
 import dynamic from "next/dynamic";
 import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useUser } from "@/store/User";
 
 const EditClientModal = dynamic(
   () => import("@/components/MapModule/components/EditClientModal/EditClientModal"),
@@ -14,6 +15,10 @@ const EditClientModal = dynamic(
 
 export default function AddressFixClient() {
   const [searchQuery] = useState("");
+  const userData = useUser((s) => s.userData);
+  const isAdmin = userData?.is_admin ?? false;
+  const myManagerName = userData?.full_name_for_orders?.trim().toLowerCase() ?? "";
+
   const [selectedClientForEdit, setSelectedClientForEdit] = useState<{
     client: string;
     manager: string;
@@ -33,9 +38,17 @@ export default function AddressFixClient() {
     return applicationsData?.unmappedData || [];
   }, [applicationsData]);
 
-  // Фильтрация по поисковой строке (без урезания глобальными фильтрами менеджеров/видов деятельности)
+  // Фильтрация по ролям и поисковой строке
   const filteredUnmapped = useMemo(() => {
     let result = unmappedApps;
+
+    // Менеджер видит только своих клиентов
+    if (!isAdmin && myManagerName) {
+      result = result.filter((item) => {
+        const manager = (item.orders?.[0]?.manager ?? "").trim().toLowerCase();
+        return manager === myManagerName;
+      });
+    }
 
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
@@ -47,7 +60,8 @@ export default function AddressFixClient() {
     }
 
     return result.sort((a, b) => a.client.localeCompare(b.client, "uk"));
-  }, [unmappedApps, searchQuery]);
+  }, [unmappedApps, searchQuery, isAdmin, myManagerName]);
+
 
   const handleOpenEditModal = (clientName: string, managerName: string) => {
     setSelectedClientForEdit({

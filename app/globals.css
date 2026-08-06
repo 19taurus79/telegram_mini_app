@@ -13,15 +13,15 @@
   --card-bg: rgba(255, 255, 255, 0.03);
   
   /* Semantic Colors (Dark Theme Defaults) */
-  --alert-color: #f87171;
+  --alert-color: #f87171;         /* Red 400  — хорошо видим на тёмном */
   --alert-color-rgb: 248, 113, 113;
-  --success-color: var(--success-color);
-  --success-light: var(--success-light);
-  --accent-primary: var(--accent-primary);
-  --info-color: var(--info-color);
-  --action-color: var(--action-color);
-  --warning-color: var(--warning-color);
-  --warning-light: var(--warning-light);
+  --success-color: #34d399;       /* Emerald 400 — яркий зелёный на тёмном */
+  --success-light: #6ee7b7;       /* Emerald 300 — светлый акцент */
+  --accent-primary: #0ef18e;      /* Фирменный зелёный, яркий на тёмном */
+  --info-color: #60a5fa;          /* Blue 400 — хорошо читается на тёмном */
+  --action-color: #818cf8;        /* Indigo 400 — заметный акцент */
+  --warning-color: #fbbf24;       /* Amber 400 — яркий на тёмном */
+  --warning-light: #fde68a;       /* Amber 200 — светлый вариант */
   
   /* Premium Aesthetics */
   --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
@@ -50,10 +50,10 @@
   --success-color: #059669; /* Emerald 600 */
   --success-light: #16a34a; /* Green 600 */
   --accent-primary: #059669; /* Darker green for text readability */
-  --info-color: var(--action-color); /* Blue 600 */
-  --action-color: #1d4ed8; /* Blue 700 */
-  --warning-color: #d97706; /* Amber 600 */
-  --warning-light: var(--warning-color); /* Amber 500 */
+  --action-color: #1d4ed8;   /* Blue 700 */
+  --info-color: #1d4ed8;     /* Blue 700 — same as action */
+  --warning-color: #d97706;  /* Amber 600 */
+  --warning-light: #d97706;  /* Amber 600 */
   
   /* Additional light mode tokens */
   --border-color: rgba(0, 0, 0, 0.1);

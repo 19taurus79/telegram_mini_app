@@ -11,6 +11,7 @@ import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageC
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
+import TTNInputModal from "../TTNInputModal/TTNInputModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
 
 export default function BottomData({ onEditClient }) {
@@ -34,6 +35,8 @@ export default function BottomData({ onEditClient }) {
 
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
+  const [ttnModalData, setTtnModalData] = useState(null);
+
   const toggleClientExpand = (clientId) => {
     setExpandedClientIds(prev => {
       const next = new Set(prev);
@@ -46,7 +49,12 @@ export default function BottomData({ onEditClient }) {
     });
   };
 
-  const handleUpdateStatus = async (d, newStatus) => {
+  const handleUpdateStatus = async (d, newStatus, ttn = undefined) => {
+    if (newStatus === "Виконано" && d.address && d.address.toLowerCase().includes("нова пошт") && ttn === undefined) {
+      setTtnModalData({ delivery: d, newStatus });
+      return;
+    }
+
     try {
         const initData = getInitData();
         const deliveryId = parseInt(d.id, 10);
@@ -73,7 +81,7 @@ export default function BottomData({ onEditClient }) {
 
         const totalWeight = sanitizedItems.reduce((sum, item) => sum + item.weight, 0);
         const actorName = userData?.full_name_for_orders || "";
-        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData, actorName);
+        const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData, actorName, ttn);
         
         // Відображаємо попередження, якщо вони є
         if (res && res.warnings && res.warnings.length > 0) {
@@ -810,6 +818,16 @@ export default function BottomData({ onEditClient }) {
             </div>
           </div>
         )}
+        <TTNInputModal 
+          isOpen={!!ttnModalData} 
+          onClose={() => setTtnModalData(null)} 
+          onSubmit={(ttn) => {
+            if (ttnModalData) {
+              handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
+              setTtnModalData(null);
+            }
+          }} 
+        />
       </div>
     );
   }
@@ -1105,6 +1123,16 @@ export default function BottomData({ onEditClient }) {
           readOnly={true}
         />
       )}
+      <TTNInputModal 
+        isOpen={!!ttnModalData} 
+        onClose={() => setTtnModalData(null)} 
+        onSubmit={(ttn) => {
+          if (ttnModalData) {
+            handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
+            setTtnModalData(null);
+          }
+        }} 
+      />
     </div>
   );
 }

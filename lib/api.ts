@@ -334,7 +334,8 @@ export const updateDeliveryData = async (
   items: DeliveryUpdateItem[],
   totalWeight: number,
   initData: string,
-  actorName: string = ""
+  actorName: string = "",
+  ttn?: string
 ) => {
   const { data } = await axios.post<ApiResponse>(
     "/delivery/update",
@@ -343,7 +344,8 @@ export const updateDeliveryData = async (
        status: status,
        total_weight: totalWeight, 
        items: items,
-       actor_name: actorName
+       actor_name: actorName,
+       ttn: ttn
     },
     {
       headers: {
@@ -353,6 +355,18 @@ export const updateDeliveryData = async (
     }
   );
 
+  return data;
+};
+
+export const validateTTN = async (ttn: string, initData: string) => {
+  const { data } = await axios.get<ApiResponse>(
+    `/nova-poshta/validate_ttn?ttn=${ttn}`,
+    {
+      headers: {
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
   return data;
 };
 

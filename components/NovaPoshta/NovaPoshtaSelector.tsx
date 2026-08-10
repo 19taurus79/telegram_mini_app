@@ -132,7 +132,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
     const timer = setTimeout(async () => {
       setIsStreetLoading(true);
       try {
-        const res = await getNPStreets(selectedCity.settlement_ref, streetSearch, initData);
+        const res = await getNPStreets(selectedCity.ref, streetSearch, initData);
         if (res.success) {
           setStreets(res.data);
           setShowStreetDropdown(true);

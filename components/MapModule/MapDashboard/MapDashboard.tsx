@@ -17,7 +17,8 @@ import { useApplicationsStore } from "../store/applicationsStore";
 import { useDisplayAddressStore } from "../store/displayAddress";
 import { ClientAddress, GeocodedAddress } from "@/types/types";
 import MobileFilters from "../components/MobileFilters/MobileFilters";
-import { SlidersHorizontal, Database } from "lucide-react";
+import { SlidersHorizontal, Database, Map as MapIcon, BarChart3 } from "lucide-react";
+import AnalyticsDashboard from "../components/AnalyticsDashboard/AnalyticsDashboard";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -50,6 +51,7 @@ const MapFeature = dynamic(() => import("../MapFeature"), {
 export default function MapDashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [isClient, setIsClient] = useState(false);
+  const [isAnalyticsMode, setIsAnalyticsMode] = useState(false);
 
   // Глобальное состояние для управления модальным окном клиента
   const setClients = useApplicationsStore(state => state.setClients);
@@ -217,57 +219,82 @@ export default function MapDashboard() {
 
   return (
     <div className={styles.dashboardContainer}>
+      {/* ─── Toolbar ─── */}
+      <div className={styles.toolbarRow}>
+        <div className={styles.modeToggleGroup}>
+          <button 
+            className={`${styles.modeToggleBtn} ${!isAnalyticsMode ? styles.activeMode : ''}`}
+            onClick={() => setIsAnalyticsMode(false)}
+          >
+            <MapIcon size={16} />
+            <span>Оперативний</span>
+          </button>
+          <button 
+            className={`${styles.modeToggleBtn} ${isAnalyticsMode ? styles.activeMode : ''}`}
+            onClick={() => setIsAnalyticsMode(true)}
+          >
+            <BarChart3 size={16} />
+            <span>Аналітика</span>
+          </button>
+        </div>
+      </div>
 
-      <ResponsiveGridLayout
-        className={styles.gridLayout}
-        layouts={layouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768 }}
-        cols={{ lg: 12, md: 10, sm: 6 }}
-        rowHeight={30}
-        onLayoutChange={handleLayoutChange}
-        draggableHandle={`.${styles.dragHandle}`}
-        isResizable={true}
-        isDraggable={true}
-        margin={[8, 8]}
-      >
-        <div key="top">
-          <div className={styles.gridItem}>
-            <div className={styles.gridItemHeader}>
-              <span className={styles.dragHandle}>⋮⋮</span>
-              <h3 className={styles.gridItemTitle}>Список / Пошук</h3>
-            </div>
-            <div className={styles.gridItemContent}>
-              <MapSidePanel />
+      {isAnalyticsMode ? (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <AnalyticsDashboard />
+        </div>
+      ) : (
+        <ResponsiveGridLayout
+          className={styles.gridLayout}
+          layouts={layouts}
+          breakpoints={{ lg: 1200, md: 996, sm: 768 }}
+          cols={{ lg: 12, md: 10, sm: 6 }}
+          rowHeight={30}
+          onLayoutChange={handleLayoutChange}
+          draggableHandle={`.${styles.dragHandle}`}
+          isResizable={true}
+          isDraggable={true}
+          margin={[8, 8]}
+        >
+          <div key="top">
+            <div className={styles.gridItem}>
+              <div className={styles.gridItemHeader}>
+                <span className={styles.dragHandle}>⋮⋮</span>
+                <h3 className={styles.gridItemTitle}>Список / Пошук</h3>
+              </div>
+              <div className={styles.gridItemContent}>
+                <MapSidePanel />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ─── Карта ─── */}
-        <div key="map">
-          <div className={`${styles.gridItem} ${styles.mapGridItem}`}>
-            <div className={styles.gridItemHeader}>
-              <span className={styles.dragHandle}>⋮⋮</span>
-              <h3 className={styles.gridItemTitle}>Карта</h3>
-            </div>
-            <div className={styles.mapContent}>
-              <MapFeature onAddressSelect={() => {}} setIsSheetOpen={() => {}} />
+          {/* ─── Карта ─── */}
+          <div key="map">
+            <div className={`${styles.gridItem} ${styles.mapGridItem}`}>
+              <div className={styles.gridItemHeader}>
+                <span className={styles.dragHandle}>⋮⋮</span>
+                <h3 className={styles.gridItemTitle}>Карта</h3>
+              </div>
+              <div className={styles.mapContent}>
+                <MapFeature onAddressSelect={() => {}} setIsSheetOpen={() => {}} />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ─── Нижній блок ─── */}
-        <div key="bottom">
-          <div className={styles.gridItem}>
-            <div className={styles.gridItemHeader}>
-              <span className={styles.dragHandle}>⋮⋮</span>
-              <h3 className={styles.gridItemTitle}>Деталі</h3>
-            </div>
-            <div className={styles.gridItemContent}>
-              <BottomData onEditClient={() => {}} />
+          {/* ─── Нижній блок ─── */}
+          <div key="bottom">
+            <div className={styles.gridItem}>
+              <div className={styles.gridItemHeader}>
+                <span className={styles.dragHandle}>⋮⋮</span>
+                <h3 className={styles.gridItemTitle}>Деталі</h3>
+              </div>
+              <div className={styles.gridItemContent}>
+                <BottomData onEditClient={() => {}} />
+              </div>
             </div>
           </div>
-        </div>
-      </ResponsiveGridLayout>
+        </ResponsiveGridLayout>
+      )}
 
       {/* Модальные окна, которые отображаются поверх всего */}
       <Portal>

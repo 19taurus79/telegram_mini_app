@@ -110,6 +110,26 @@ body[data-theme='light'] {
   box-shadow: var(--shadow-premium);
 }
 
+/* Analytics Map Overlay Stats */
+.analytics-stats-overlay {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: var(--modal-bg-dark, rgba(15, 23, 42, 0.95)); /* Opaque dark for contrast against light map */
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-premium);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: #fff; /* Force white text since background is dark */
+}
+
+:root[data-theme='light'] .analytics-stats-overlay {
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
+  color: var(--foreground);
+}
+
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);

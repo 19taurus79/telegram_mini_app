@@ -1,0 +1,446 @@
+/* ═══════════════════════════════════════════════════════
+   ANALYTICS BENTO GRID — CSS Module
+   Draggable + Resizable cards via react-grid-layout
+═══════════════════════════════════════════════════════ */
+
+.analyticsContainer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--background);
+  box-sizing: border-box;
+}
+
+/* ─── Toolbar ─── */
+.layoutToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.layoutHint {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.helpBtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.helpBtn:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.resetBtn {
+  font-size: 12px;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetBtn:hover {
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ─── Grid Container ─── */
+.bentoGrid {
+  padding: 12px;
+}
+
+/* ─── Drag Handle ─── */
+.dragHandle {
+  font-size: 14px;
+  color: #334155;
+  cursor: grab;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dragHandle:hover {
+  color: #64748b;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* ─── Base Bento Card ─── */
+.bentoCard {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(16, 18, 27, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.bentoCard:hover {
+  border-color: rgba(255, 255, 255, 0.13);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── Card Header ─── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.cardSubtitle {
+  font-size: 11px;
+  color: #334155;
+  margin-left: auto;
+}
+
+/* ─── Card Content (scrollable) ─── */
+.cardContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardContent::-webkit-scrollbar { width: 4px; }
+.cardContent::-webkit-scrollbar-track { background: transparent; }
+.cardContent::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* ─── KPI Row Card ─── */
+.kpiRow {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.kpiItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kpiDivider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.kpiValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.kpiAccent .kpiValue {
+  color: #34d399;
+}
+
+/* ─── Map Card ─── */
+.mapBentoCard {
+  /* Map needs full height minus header */
+}
+
+.mapWrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* ─── Date Input ─── */
+.dateInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #f8fafc;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.dateInput:focus { border-color: #3b82f6; }
+.dateInput::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; cursor: pointer; }
+
+/* ─── Origin Warehouse Selector ─── */
+.originChipsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.originChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.originChip:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+.originChipActive {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: #3b82f6 !important;
+  color: #93c5fd !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+.originBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.originChipActive .originBadge {
+  background: #3b82f6;
+  color: white;
+}
+
+.pickMapBtn {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.pickMapBtn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+}
+
+.pickMapBtnActive {
+  background: #f59e0b !important;
+  color: #111827 !important;
+  border-style: solid !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+/* ─── Tariff Simulator ─── */
+.tariffGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tariffGroup label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tariffInput {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tariffInput:focus {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.06);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* ─── Results Grid ─── */
+.resultsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.resultBox {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.resultBox.highlight {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.resultBox.warning {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.resultLabel {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 6px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.resultValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.highlight .resultValue { color: #34d399; font-size: 20px; }
+.warning .resultValue { color: #f87171; font-size: 20px; }
+
+/* ─── Zone Details Card ─── */
+.detailsBentoCard {
+  /* inherits from bentoCard */
+}
+
+.detailsWrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Empty State ─── */
+.emptyState {
+  color: #475569;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* ─── Loading ─── */
+.loadingMap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #475569;
+  font-size: 14px;
+}
+
+/* ─── react-grid-layout resize handle styling ─── */
+/* NOTE: :global() must be nested inside a local class in CSS Modules */
+.bentoGrid :global(.react-resizable-handle) {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.bentoGrid :global(.react-grid-item:hover .react-resizable-handle) {
+  opacity: 1;
+}
+
+.bentoGrid :global(.react-resizable-handle::after) {
+  border-color: #3b82f6 !important;
+}
+
+.bentoGrid :global(.react-grid-item.react-grid-placeholder) {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 2px dashed rgba(59, 130, 246, 0.4) !important;
+  border-radius: 18px !important;
+  opacity: 1 !important;
+}
+
+.bentoGrid :global(.react-grid-item.react-draggable-dragging) {
+  opacity: 0.85;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+  z-index: 999;
+}

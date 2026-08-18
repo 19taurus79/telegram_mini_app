@@ -11,6 +11,49 @@
   justify-content: flex-end;
   padding: 8px 8px 0;
   flex-shrink: 0;
+  gap: 12px;
+}
+
+.modeToggleGroup {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+:global([data-theme='light']) .modeToggleGroup {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.modeToggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeToggleBtn:hover {
+  color: var(--foreground);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme='light']) .modeToggleBtn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.activeMode {
+  color: white;
+  background-color: var(--primary-color) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .resetButton {
@@ -401,3 +444,4 @@
   padding: 0 16px 16px;
   background: transparent;
 }
+

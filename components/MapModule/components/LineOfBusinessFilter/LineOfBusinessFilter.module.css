@@ -1,56 +1,51 @@
 .container {
-    padding: 12px 4px;
+    padding: 8px 4px;
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: flex-start;
-    gap: 10px;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
-
-    @media (min-width: 768px) {
-        flex-wrap: wrap;
-        overflow-x: visible;
-    }
+    gap: 8px;
 }
 
 .button {
-    padding: 8px 16px;
-    border: 1px solid var(--glass-border);
-    border-radius: 10px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.8rem;
-    font-weight: 500;
+    transition: all 0.2s ease;
     white-space: nowrap;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.button::after {
-    content: attr(data-text);
-    height: 0;
-    visibility: hidden;
-    overflow: hidden;
-    user-select: none;
-    pointer-events: none;
-    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .buttonActive {
-    border-color: var(--accent-green) !important;
-    background: var(--accent-green) !important;
-    color: #000 !important;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(14, 241, 142, 0.3);
+    background: rgba(59, 130, 246, 0.15) !important; /* Blue tint */
+    color: #60a5fa !important; /* Blue text */
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+}
+
+:global([data-theme='light']) .button {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+:global([data-theme='light']) .button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
+
+:global([data-theme='light']) .buttonActive {
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: #2563eb !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
 }

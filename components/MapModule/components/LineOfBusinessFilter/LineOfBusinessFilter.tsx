@@ -31,7 +31,15 @@ export default function LineOfBusinessFilter() {
         toggleLoB(lob);
     };
 
-    if (uniqueLoBs.length === 0) return null;
+    if (uniqueLoBs.length === 0) {
+        return (
+            <div className={css.container}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px' }}>
+                    Немає даних про види діяльності
+                </span>
+            </div>
+        );
+    }
 
     return (
         <div className={css.container}>

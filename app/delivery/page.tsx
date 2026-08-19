@@ -386,15 +386,27 @@ function DeliveryDataContent() {
                 setFormClient(client.client);
                 setIsLoading(true);
                 try {
-                  const address = await getAddressByClient(client.client);
-                  if (address && address.length > 0) {
-                    setInitialClientData(address[0]);
+                  const addressData = await getAddressByClient(client.client);
+                  if (addressData && addressData.length > 0) {
+                    const fetchedAddress = addressData[0];
+                    const composedAddress = `${fetchedAddress.region} обл., ${fetchedAddress.area} р-н, ${fetchedAddress.commune} громада, ${fetchedAddress.city}`;
+                    const formattedPhone = formatPhoneNumber(fetchedAddress.phone1 || "");
+                    const cleanRepresentative = fetchedAddress.representative ? fetchedAddress.representative.trim() : "";
+
+                    // Зберігаємо еталонні значення для коректного порівняння змін (dirty state)
+                    setInitialClientData({
+                      ...fetchedAddress,
+                      address: composedAddress,
+                      phone1: formattedPhone,
+                      representative: cleanRepresentative
+                    });
+
                     setFormData({
-                      address: `${address[0].region} обл., ${address[0].area} р-н, ${address[0].commune} громада, ${address[0].city}`,
-                      contact: address[0].representative || "",
-                      phone: formatPhoneNumber(address[0].phone1 || ""),
-                      latitude: address[0].latitude,
-                      longitude: address[0].longitude,
+                      address: composedAddress,
+                      contact: cleanRepresentative,
+                      phone: formattedPhone,
+                      latitude: fetchedAddress.latitude,
+                      longitude: fetchedAddress.longitude,
                       date: "",
                       comment: "",
                       isPickup: false,
@@ -402,15 +414,15 @@ function DeliveryDataContent() {
                       needTTN: false,
                       ttnType: "self",
                       // Auto-fill даних авто/водія з довідника (для "Забирає клієнт")
-                      carMake: address[0].default_car_make || "",
-                      carNumber: address[0].default_car_number || "",
-                      trailerNumber: address[0].default_trailer_number || "",
-                      driver: address[0].default_driver || "",
-                      carMaxWeight: address[0].default_car_max_weight !== undefined && address[0].default_car_max_weight !== null ? String(address[0].default_car_max_weight) : "",
-                      carOwnWeight: address[0].default_car_own_weight !== undefined && address[0].default_car_own_weight !== null ? String(address[0].default_car_own_weight) : "",
-                      carLength: address[0].default_car_length !== undefined && address[0].default_car_length !== null ? String(address[0].default_car_length) : "",
-                      carWidth: address[0].default_car_width !== undefined && address[0].default_car_width !== null ? String(address[0].default_car_width) : "",
-                      carHeight: address[0].default_car_height !== undefined && address[0].default_car_height !== null ? String(address[0].default_car_height) : "",
+                      carMake: fetchedAddress.default_car_make || "",
+                      carNumber: fetchedAddress.default_car_number || "",
+                      trailerNumber: fetchedAddress.default_trailer_number || "",
+                      driver: fetchedAddress.default_driver || "",
+                      carMaxWeight: fetchedAddress.default_car_max_weight !== undefined && fetchedAddress.default_car_max_weight !== null ? String(fetchedAddress.default_car_max_weight) : "",
+                      carOwnWeight: fetchedAddress.default_car_own_weight !== undefined && fetchedAddress.default_car_own_weight !== null ? String(fetchedAddress.default_car_own_weight) : "",
+                      carLength: fetchedAddress.default_car_length !== undefined && fetchedAddress.default_car_length !== null ? String(fetchedAddress.default_car_length) : "",
+                      carWidth: fetchedAddress.default_car_width !== undefined && fetchedAddress.default_car_width !== null ? String(fetchedAddress.default_car_width) : "",
+                      carHeight: fetchedAddress.default_car_height !== undefined && fetchedAddress.default_car_height !== null ? String(fetchedAddress.default_car_height) : "",
                     });
                   } else {
                     setInitialClientData(null);
@@ -1131,8 +1143,8 @@ function DeliveryDataContent() {
                                updateMessage = "дані Нової Пошти";
                              }
                           } else if (!isPickup) {
-                             if (finalAddress && finalAddress !== initialClientData?.address) {
-                               clientDataForUpdate.address = finalAddress;
+                             if (finalAddress && finalAddress.trim() !== (initialClientData?.address || "").trim()) {
+                               clientDataForUpdate.address = finalAddress.trim();
                                clientDataForUpdate.latitude = latitude || 0;
                                clientDataForUpdate.longitude = longitude || 0;
                                hasModifications = true;
@@ -1140,14 +1152,15 @@ function DeliveryDataContent() {
                              }
                           }
 
-                          if (finalContact && finalContact !== initialClientData?.representative) {
-                             clientDataForUpdate.representative = finalContact;
+                          if (finalContact && finalContact.trim() !== (initialClientData?.representative || "").trim()) {
+                             clientDataForUpdate.representative = finalContact.trim();
                              hasModifications = true;
                              if (!updateMessage) updateMessage = "контактну особу";
                              else updateMessage += " та контактну особу";
                           }
 
-                          if (finalPhone && finalPhone !== initialClientData?.phone1) {
+                          const normalizePhone = (p?: string | null) => (p || "").replace(/[^\d+]/g, "");
+                          if (finalPhone && normalizePhone(finalPhone) !== normalizePhone(initialClientData?.phone1)) {
                              clientDataForUpdate.phone1 = finalPhone;
                              hasModifications = true;
                              if (!updateMessage) updateMessage = "телефон";

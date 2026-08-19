@@ -9,7 +9,8 @@ import { useApplicationsStore } from '../../store/applicationsStore';
 import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData } from './HubCalculator';
 import { warehouses } from '../../warehouses';
 import { filterDelivery } from '../../utils/filterUtils';
-import { DeliveryRequest } from '@/types/types';
+import { DeliveryRequest, DeliveryRequestItem } from '@/types/types';
+import { DataSourceType, DataAuditMetrics } from '../AnalyticsDashboard/DataAuditWidget';
 
 /**
  * Leaflet calculates container size on initialization.
@@ -192,67 +193,233 @@ const customPinIcon = L.divIcon({
   iconAnchor: [18, 18]
 });
 
+interface AppOrderAddress {
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  area?: string;
+  manager?: string;
+}
+
+interface AppOrderItem {
+  line_of_business?: string;
+  different?: number | string;
+  delivery_date?: string;
+  date?: string;
+  manager?: string;
+  [key: string]: unknown;
+}
+
+interface ApplicationRecord {
+  client: string;
+  address?: AppOrderAddress;
+  orders?: AppOrderItem[];
+  count?: number;
+  totalQuantity?: number;
+  totalWeight?: number;
+}
+
+interface UnmappedAppRecord {
+  client: string;
+  totalWeight?: number;
+  count?: number;
+  orders?: unknown[];
+}
+
 type Props = {
   dateRange: { start: string; end: string };
   onClusterClick: (cluster: ClusterData) => void;
   onMapMetricsUpdate?: (clusters: ClusterData[], globalCog: { lat: number; lng: number } | null) => void;
+  onAuditMetricsUpdate?: (metrics: DataAuditMetrics) => void;
   selectedOriginId?: string;
   onSelectOriginId?: (id: string) => void;
   customOriginLocation?: { lat: number; lng: number } | null;
   onCustomOriginChange?: (loc: { lat: number; lng: number }) => void;
   isPickingLocation?: boolean;
+  dataSource?: DataSourceType;
+  includeZeroWeight?: boolean;
+  fallbackWeightKg?: number;
 };
 
 export default function AnalyticsMap({ 
   dateRange, 
   onClusterClick, 
   onMapMetricsUpdate,
+  onAuditMetricsUpdate,
   selectedOriginId = 'wh-1',
   onSelectOriginId,
   customOriginLocation,
   onCustomOriginChange,
-  isPickingLocation = false
+  isPickingLocation = false,
+  dataSource = 'applications',
+  includeZeroWeight = true,
+  fallbackWeightKg = 100
 }: Props) {
-  const deliveries = useApplicationsStore(state => state.deliveries);
-  const applications = useApplicationsStore(state => state.applications);
-  const selectedManagers = useApplicationsStore(state => state.selectedManagers);
-  const selectedLoBs = useApplicationsStore(state => state.selectedLoBs);
+  const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
   const [clusters, setClusters] = useState<ClusterData[]>([]);
   const [optimalHub, setOptimalHub] = useState<{ lat: number; lng: number } | null>(null);
   const [avgDistance, setAvgDistance] = useState<number>(0);
 
-  // Apply filters
-  const filteredDeliveries = useMemo(() => {
-    return deliveries.filter((d: DeliveryRequest) => {
-      const dDate = d.delivery_date || ((d as Record<string, unknown>).date as string | undefined);
-      if (dateRange.start && dDate && new Date(dDate) < new Date(dateRange.start)) return false;
-      if (dateRange.end && dDate && new Date(dDate) > new Date(dateRange.end)) return false;
-      
-      if (!filterDelivery(d, [], selectedManagers, [], selectedLoBs, applications)) {
-         return false;
-      }
-      
-      return Boolean(d.latitude && d.longitude && d.total_weight > 0);
+  // Normalize raw data from selected source
+  const rawDeliveries = useMemo((): DeliveryRequest[] => {
+    if (dataSource === 'deliveries') {
+      return deliveries;
+    }
+
+    const appsList = (applications || []) as ApplicationRecord[];
+    const fromApps: DeliveryRequest[] = appsList.map((app: ApplicationRecord, index: number): DeliveryRequest => {
+      const firstOrder = app.orders?.[0];
+      return {
+        id: -(index + 1),
+        client: app.client || '',
+        manager: app.address?.manager || (firstOrder?.manager as string) || '',
+        address: app.address ? `${app.address.city || ''}, ${app.address.area || ''}`.trim() : '',
+        contact: '',
+        phone: '',
+        delivery_date: (firstOrder?.delivery_date as string) || (firstOrder?.date as string) || '',
+        comment: '',
+        total_weight: app.totalWeight || 0,
+        is_custom_address: false,
+        latitude: (app.address?.latitude !== undefined ? app.address.latitude : (NaN as number)),
+        longitude: (app.address?.longitude !== undefined ? app.address.longitude : (NaN as number)),
+        created_by: 0,
+        status: 'crm_order',
+        created_at: new Date().toISOString(),
+        items: (app.orders || []).map((o: AppOrderItem, oIdx: number): DeliveryRequestItem => ({
+          id: oIdx,
+          product: o.line_of_business || 'Товар',
+          quantity: typeof o.different === 'number' ? o.different : parseFloat(String(o.different)) || 1,
+          parties: []
+        }))
+      };
     });
-  }, [deliveries, dateRange, selectedManagers, selectedLoBs, applications]);
+
+    if (dataSource === 'applications') {
+      return fromApps;
+    }
+
+    // 'combined'
+    const combinedMap = new Map<string, DeliveryRequest>();
+    fromApps.forEach((d: DeliveryRequest) => combinedMap.set(d.client.toLowerCase(), d));
+    ((deliveries || []) as DeliveryRequest[]).forEach((d: DeliveryRequest) => {
+      if (d.client) combinedMap.set(d.client.toLowerCase(), d);
+      else combinedMap.set(String(d.id), d);
+    });
+    return Array.from(combinedMap.values());
+  }, [dataSource, deliveries, applications]);
+
+  // List of clients missing coordinates
+  const unmappedClientsList = useMemo(() => {
+    const list: { client: string; totalWeight?: number; ordersCount?: number }[] = [];
+    const seen = new Set<string>();
+
+    const unmappedList = (unmappedApplications || []) as UnmappedAppRecord[];
+    unmappedList.forEach((u: UnmappedAppRecord) => {
+      if (u.client && !seen.has(u.client.toLowerCase())) {
+        seen.add(u.client.toLowerCase());
+        list.push({
+          client: u.client,
+          totalWeight: u.totalWeight,
+          ordersCount: u.orders?.length || u.count || 1
+        });
+      }
+    });
+
+    rawDeliveries.forEach((d: DeliveryRequest) => {
+      if ((!d.latitude || !d.longitude) && d.client && !seen.has(d.client.toLowerCase())) {
+        seen.add(d.client.toLowerCase());
+        list.push({
+          client: d.client,
+          totalWeight: d.total_weight,
+          ordersCount: d.items?.length || 1
+        });
+      }
+    });
+
+    return list;
+  }, [unmappedApplications, rawDeliveries]);
+
+  // Filter deliveries and compute Data Quality Audit metrics
+  const { filteredDeliveries, auditMetrics } = useMemo(() => {
+    let zeroWeightCount = 0;
+    let filteredOutCount = 0;
+
+    const filtered = rawDeliveries.filter((d: DeliveryRequest) => {
+      const hasCoords = typeof d.latitude === 'number' && typeof d.longitude === 'number';
+      if (!hasCoords) {
+        return false;
+      }
+
+      const hasWeight = typeof d.total_weight === 'number' && d.total_weight > 0;
+      if (!hasWeight) {
+        zeroWeightCount++;
+        if (!includeZeroWeight) return false;
+      }
+
+      const dDate = d.delivery_date || ((d as Record<string, unknown>).date as string | undefined);
+      if (dateRange.start && dDate && new Date(dDate) < new Date(dateRange.start)) {
+        filteredOutCount++;
+        return false;
+      }
+      if (dateRange.end && dDate && new Date(dDate) > new Date(dateRange.end)) {
+        filteredOutCount++;
+        return false;
+      }
+
+      if (!filterDelivery(d, [], selectedManagers, [], selectedLoBs, applications)) {
+        filteredOutCount++;
+        return false;
+      }
+
+      return true;
+    });
+
+    const includedWeightKg = filtered.reduce((sum, d) => {
+      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : (includeZeroWeight ? fallbackWeightKg : 0);
+      return sum + w;
+    }, 0);
+
+    const metrics: DataAuditMetrics = {
+      totalRaw: rawDeliveries.length + (unmappedApplications?.length || 0),
+      includedCount: filtered.length,
+      includedWeightTons: includedWeightKg / 1000,
+      zeroWeightCount,
+      unmappedCount: unmappedClientsList.length,
+      filteredOutCount,
+      unmappedClients: unmappedClientsList
+    };
+
+    return { filteredDeliveries: filtered, auditMetrics: metrics };
+  }, [rawDeliveries, unmappedApplications, unmappedClientsList, includeZeroWeight, fallbackWeightKg, dateRange, selectedManagers, selectedLoBs, applications]);
+
+  // Send audit metrics to parent
+  useEffect(() => {
+    if (onAuditMetricsUpdate) {
+      onAuditMetricsUpdate(auditMetrics);
+    }
+  }, [auditMetrics, onAuditMetricsUpdate]);
 
   // Points for heatmap [lat, lng, weight]
   const heatPoints = useMemo((): [number, number, number][] => {
     return filteredDeliveries
-      .filter((d: DeliveryRequest): d is DeliveryRequest & { latitude: number; longitude: number; total_weight: number } => 
-        typeof d.latitude === 'number' && typeof d.longitude === 'number' && typeof d.total_weight === 'number'
+      .filter((d: DeliveryRequest): d is DeliveryRequest & { latitude: number; longitude: number } => 
+        typeof d.latitude === 'number' && typeof d.longitude === 'number'
       )
-      .map((d: DeliveryRequest & { latitude: number; longitude: number; total_weight: number }): [number, number, number] => [d.latitude, d.longitude, d.total_weight]);
-  }, [filteredDeliveries]);
+      .map((d): [number, number, number] => {
+        const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : (includeZeroWeight ? fallbackWeightKg : 0);
+        return [d.latitude, d.longitude, w];
+      });
+  }, [filteredDeliveries, includeZeroWeight, fallbackWeightKg]);
 
   // Calculate Hub and Clusters
   useEffect(() => {
+    const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
     if (filteredDeliveries.length > 0) {
-      const hub = calculateCenterOfGravity(filteredDeliveries);
+      const hub = calculateCenterOfGravity(filteredDeliveries, effFallback);
       setOptimalHub(hub);
       
-      const newClusters = clusterDeliveries(filteredDeliveries, 15); // 15km cluster radius
+      const newClusters = clusterDeliveries(filteredDeliveries, 15, effFallback); // 15km cluster radius
       setClusters(newClusters);
       if (onMapMetricsUpdate) onMapMetricsUpdate(newClusters, hub);
       
@@ -265,7 +432,7 @@ export default function AnalyticsMap({
       if (onMapMetricsUpdate) onMapMetricsUpdate([], null);
       setAvgDistance(0);
     }
-  }, [filteredDeliveries, onMapMetricsUpdate]);
+  }, [filteredDeliveries, onMapMetricsUpdate, includeZeroWeight, fallbackWeightKg]);
 
   // Determine active origin coordinates
   const activeOriginCoords = useMemo(() => {

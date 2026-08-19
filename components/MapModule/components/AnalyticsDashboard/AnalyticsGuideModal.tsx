@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<'calculator' | 'map' | 'details'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'map' | 'details' | 'audit'>('calculator');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,6 +58,12 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
             onClick={() => setActiveTab('details')}
           >
             📋 Деталізація та Експорт
+          </button>
+          <button 
+            className={`${styles.tabBtn} ${activeTab === 'audit' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('audit')}
+          >
+            🔍 Якість та Аудит даних
           </button>
         </div>
 
@@ -200,6 +206,47 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                 <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
                   Кнопка «Excel» у картці фільтрів формує зведений звіт по всіх зонах, координатах хабів та клієнтах для захисту рішень перед керівництвом.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'audit' && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>🔍 Якість даних, виключені замовлення та Авто-вага</h3>
+              <p className={styles.text}>
+                Для коректного розрахунку витрат і тонно-кілометрів системі потрібні координати та вага кожного замовлення. У віджеті <strong>«Аудит Даних»</strong> ви можете контролювати повноту вибірки:
+              </p>
+
+              <div className={styles.featureGrid}>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🟡</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Замовлення без ваги (0 кг)</h4>
+                    <p className={styles.text}>
+                      Якщо в 1С для частини номенклатури не заповнено вагу, увімкніть чекбокс <strong>«Авто-вага для замовлень без ваги»</strong> і вкажіть номінальну вагу (наприклад, 100 кг). Усі замовлення без ваги миттєво підключаться до аналітики.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🔴</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Клієнти без координат</h4>
+                    <p className={styles.text}>
+                      Господарства, які не геокодовані на карті. Клікніть кнопку <strong>«Переглянути негеокодованих»</strong>, щоб відкрити список та перейти в модуль швидкої прив&apos;язки адрес.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🔄</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Вибір джерела даних</h4>
+                    <p className={styles.text}>
+                      Перемикайтеся між <strong>«Заявки 1С»</strong> (усі CRM-замовлення клієнтів), <strong>«Доставки»</strong> (сформовані рейси) або <strong>«Усі разом»</strong>.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

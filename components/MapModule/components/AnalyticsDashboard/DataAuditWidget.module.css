@@ -1,0 +1,201 @@
+.auditContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.sourceSelector {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sourceBtn {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sourceBtn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sourceBtnActive {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.3);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCardIncluded {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.statCardWarning {
+  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.03);
+}
+
+.statCardDanger {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.statCardInfo {
+  border-color: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.statVal {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+  font-family: monospace;
+}
+
+.statValIncluded {
+  color: #34d399;
+}
+
+.statValWarning {
+  color: #fbbf24;
+}
+
+.statValDanger {
+  color: #f87171;
+}
+
+.statSub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Quick Actions & Fixes */
+.fixSection {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fixRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fixToggleLabel {
+  font-size: 11px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fixToggleInput {
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.weightInputGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weightInput {
+  width: 55px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  text-align: center;
+  outline: none;
+  font-family: monospace;
+}
+
+.weightInput:focus {
+  border-color: #38bdf8;
+}
+
+.weightUnit {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.unmappedBtn {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.unmappedBtn:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fecaca;
+}

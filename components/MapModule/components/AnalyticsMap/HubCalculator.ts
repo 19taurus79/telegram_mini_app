@@ -26,19 +26,21 @@ export const calculateDistanceKm = (p1: {lat: number, lng: number}, p2: {lat: nu
 /**
  * Calculates the Center of Gravity (Optimal Hub Location) based on delivery weights and coordinates.
  */
-export const calculateCenterOfGravity = (deliveries: DeliveryRequest[]): { lat: number, lng: number } | null => {
+export const calculateCenterOfGravity = (deliveries: DeliveryRequest[], fallbackWeightKg: number = 0): { lat: number, lng: number } | null => {
   if (!deliveries || deliveries.length === 0) return null;
 
   let totalWeight = 0;
   let sumLatWeight = 0;
   let sumLngWeight = 0;
 
-  deliveries.forEach(d => {
-    if (d.latitude && d.longitude && d.total_weight) {
-      const w = d.total_weight;
-      totalWeight += w;
-      sumLatWeight += d.latitude * w;
-      sumLngWeight += d.longitude * w;
+  deliveries.forEach((d: DeliveryRequest) => {
+    if (d.latitude && d.longitude) {
+      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+      if (w > 0) {
+        totalWeight += w;
+        sumLatWeight += d.latitude * w;
+        sumLngWeight += d.longitude * w;
+      }
     }
   });
 
@@ -66,7 +68,11 @@ export type ClusterData = {
 /**
  * Clusters delivery points using DBSCAN algorithm from Turf.js
  */
-export const clusterDeliveries = (deliveries: DeliveryRequest[], maxDistanceKm: number = 20): ClusterData[] => {
+export const clusterDeliveries = (
+  deliveries: DeliveryRequest[], 
+  maxDistanceKm: number = 20, 
+  fallbackWeightKg: number = 0
+): ClusterData[] => {
   const validDeliveries = deliveries.filter((d: DeliveryRequest) => Boolean(d.latitude && d.longitude));
   
   if (validDeliveries.length === 0) {
@@ -113,7 +119,7 @@ export const clusterDeliveries = (deliveries: DeliveryRequest[], maxDistanceKm: 
     }
 
     // Local Center of Gravity
-    const localCog = calculateCenterOfGravity(groupDeliveries);
+    const localCog = calculateCenterOfGravity(groupDeliveries, fallbackWeightKg);
 
     // Calculate cluster center (geometric average) and total weight
     let cLat = 0, cLng = 0;
@@ -126,7 +132,7 @@ export const clusterDeliveries = (deliveries: DeliveryRequest[], maxDistanceKm: 
     groupDeliveries.forEach((d: DeliveryRequest) => {
       cLat += d.latitude!;
       cLng += d.longitude!;
-      const weight = d.total_weight || 0;
+      const weight = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
       tWeight += weight;
 
       // Aggregating clients
@@ -208,7 +214,8 @@ export const calculateLogisticsCosts = (
   origin: { lat: number; lng: number } | null,
   globalCog: { lat: number; lng: number } | null,
   clusters: ClusterData[],
-  tariffs: { direct: number; linehaul: number; lastMile: number }
+  tariffs: { direct: number; linehaul: number; lastMile: number },
+  fallbackWeightKg: number = 0
 ): CostSimulationResult => {
   
   if (!origin || clusters.length === 0) {
@@ -239,7 +246,8 @@ export const calculateLogisticsCosts = (
     linehaulTkm += linehaulDist * clusterWeightTon;
 
     cluster.deliveries.forEach(d => {
-      const weightTon = (d.total_weight || 0) / 1000;
+      const effWeight = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+      const weightTon = effWeight / 1000;
       if (weightTon > 0 && d.latitude && d.longitude) {
         const clientLoc = { lat: d.latitude, lng: d.longitude };
 

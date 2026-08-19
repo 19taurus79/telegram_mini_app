@@ -9,11 +9,14 @@ import dynamic from 'next/dynamic';
 import ManagerFilter from '../ManagerFilter/ManagerFilter';
 import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
+import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
 import { ClusterData, calculateLogisticsCosts, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
 import { useAnalyticsStore } from '../../store/analyticsStore';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOrdersHeatmapData } from '../../fetchOrdersWithAddresses';
+import { getDeliveries } from '@/lib/api';
+import { getInitData } from '@/lib/getInitData';
 import AnalyticsExport from './AnalyticsExport';
 import AnalyticsGuideModal from './AnalyticsGuideModal';
 import Portal from '@/components/Portal';
@@ -26,18 +29,39 @@ const AnalyticsMap = dynamic(() => import('../AnalyticsMap/AnalyticsMap'), {
   loading: () => <div className={styles.loadingMap}>Завантаження карти...</div>,
 });
 
-const STORAGE_KEY = 'analytics-bento-layout-v2';
+const STORAGE_KEY = 'analytics-bento-layout-v3';
 
 const defaultLayouts: Layouts = {
   lg: [
     { i: 'kpis',    x: 0,  y: 0,  w: 12, h: 2,  minH: 2,  maxH: 3,  minW: 6 },
-    { i: 'origin',  x: 8,  y: 2,  w: 4,  h: 5,  minH: 3,  minW: 2 },
     { i: 'map',     x: 0,  y: 2,  w: 8,  h: 18, minH: 6,  minW: 4 },
-    { i: 'filters', x: 8,  y: 7,  w: 4,  h: 5,  minH: 3,  minW: 2 },
-    { i: 'tariffs', x: 8,  y: 12, w: 4,  h: 5,  minH: 4,  minW: 2 },
-    { i: 'results', x: 8,  y: 17, w: 4,  h: 6,  minH: 4,  minW: 2 },
-    { i: 'details', x: 0,  y: 20, w: 12, h: 6,  minH: 4,  minW: 4 },
+    { i: 'origin',  x: 8,  y: 2,  w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'audit',   x: 8,  y: 7,  w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'filters', x: 8,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'tariffs', x: 8,  y: 18, w: 4,  h: 5,  minH: 4,  minW: 2 },
+    { i: 'results', x: 8,  y: 23, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'details', x: 0,  y: 20, w: 8,  h: 9,  minH: 4,  minW: 4 },
   ],
+  md: [
+    { i: 'kpis',    x: 0,  y: 0,  w: 10, h: 2,  minH: 2,  minW: 4 },
+    { i: 'map',     x: 0,  y: 2,  w: 6,  h: 16, minH: 6,  minW: 4 },
+    { i: 'origin',  x: 6,  y: 2,  w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'audit',   x: 6,  y: 7,  w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'filters', x: 6,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'tariffs', x: 6,  y: 18, w: 4,  h: 5,  minH: 4,  minW: 2 },
+    { i: 'results', x: 6,  y: 23, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'details', x: 0,  y: 18, w: 6,  h: 9,  minH: 4,  minW: 4 },
+  ],
+  sm: [
+    { i: 'kpis',    x: 0,  y: 0,  w: 6,  h: 3,  minH: 2,  minW: 6 },
+    { i: 'map',     x: 0,  y: 3,  w: 6,  h: 14, minH: 6,  minW: 6 },
+    { i: 'origin',  x: 0,  y: 17, w: 6,  h: 5,  minH: 3,  minW: 6 },
+    { i: 'audit',   x: 0,  y: 22, w: 6,  h: 6,  minH: 4,  minW: 6 },
+    { i: 'filters', x: 0,  y: 28, w: 6,  h: 5,  minH: 3,  minW: 6 },
+    { i: 'tariffs', x: 0,  y: 33, w: 6,  h: 5,  minH: 4,  minW: 6 },
+    { i: 'results', x: 0,  y: 38, w: 6,  h: 6,  minH: 4,  minW: 6 },
+    { i: 'details', x: 0,  y: 44, w: 6,  h: 9,  minH: 4,  minW: 6 },
+  ]
 };
 
 function loadLayouts(): Layouts {
@@ -56,16 +80,28 @@ export default function AnalyticsDashboard() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   
-  // Warehouse & Origin Selection
-  const [selectedOriginId, setSelectedOriginId] = useState<string>('wh-1'); // 'wh-1' | 'wh-2' | 'custom' | 'cog'
+  const [selectedOriginId, setSelectedOriginId] = useState<string>('wh-1');
   const [customOriginLocation, setCustomOriginLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isPickingLocation, setIsPickingLocation] = useState<boolean>(false);
+
+  const [dataSource, setDataSource] = useState<DataSourceType>('applications');
+  const [includeZeroWeight, setIncludeZeroWeight] = useState<boolean>(true);
+  const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(100);
+  const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
+    totalRaw: 0,
+    includedCount: 0,
+    includedWeightTons: 0,
+    zeroWeightCount: 0,
+    unmappedCount: 0,
+    filteredOutCount: 0,
+    unmappedClients: []
+  });
 
   const setSelectedCluster = useAnalyticsStore(state => state.setSelectedCluster);
   const [clusters, setClusters] = useState<ClusterData[]>([]);
   const [globalCog, setGlobalCog] = useState<{ lat: number; lng: number } | null>(null);
 
-  const { applications, setApplications, setUnmappedApplications } = useApplicationsStore();
+  const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries } = useApplicationsStore();
 
   const { data: applicationsData } = useQuery({
     queryKey: ['applications'],
@@ -84,6 +120,23 @@ export default function AnalyticsDashboard() {
     }
   }, [applicationsData, setApplications, setUnmappedApplications]);
 
+  const { data: deliveriesData } = useQuery({
+    queryKey: ['deliveries'],
+    queryFn: async () => {
+      const initData = getInitData();
+      return await getDeliveries(initData);
+    },
+    enabled: (!deliveries || deliveries.length === 0),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (deliveriesData && Array.isArray(deliveriesData)) {
+      setDeliveries(deliveriesData);
+    }
+  }, [deliveriesData, setDeliveries]);
+
   useEffect(() => {
     setIsClient(true);
     setLayouts(loadLayouts());
@@ -92,13 +145,15 @@ export default function AnalyticsDashboard() {
   const [tariffs, setTariffs] = useState({ direct: 12, linehaul: 5, lastMile: 18 });
   const [costResult, setCostResult] = useState<CostSimulationResult | null>(null);
 
-  // CRITICAL: useCallback prevents infinite loop when map calls this on each update
   const handleMapMetricsUpdate = useCallback((calculatedClusters: ClusterData[], cog: { lat: number; lng: number } | null) => {
     setClusters(calculatedClusters);
     setGlobalCog(cog);
   }, []);
 
-  // Compute active origin coords
+  const handleAuditMetricsUpdate = useCallback((metrics: DataAuditMetrics) => {
+    setAuditMetrics(metrics);
+  }, []);
+
   const activeOriginCoords = useMemo(() => {
     if (selectedOriginId === 'cog' && globalCog) {
       return globalCog;
@@ -113,11 +168,11 @@ export default function AnalyticsDashboard() {
     return warehouses[0] ? { lat: warehouses[0].lat, lng: warehouses[0].lng } : globalCog;
   }, [selectedOriginId, globalCog, customOriginLocation]);
 
-  // Recalculate costs whenever origin, clusters, cog, or tariffs change
   useEffect(() => {
-    const result = calculateLogisticsCosts(activeOriginCoords, globalCog, clusters, tariffs);
+    const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
+    const result = calculateLogisticsCosts(activeOriginCoords, globalCog, clusters, tariffs, effFallback);
     setCostResult(result);
-  }, [activeOriginCoords, globalCog, clusters, tariffs]);
+  }, [activeOriginCoords, globalCog, clusters, tariffs, includeZeroWeight, fallbackWeightKg]);
 
   const handleLayoutChange = useCallback((_: unknown, allLayouts: Layouts) => {
     setLayouts(allLayouts);
@@ -310,6 +365,7 @@ export default function AnalyticsDashboard() {
                 dateRange={dateRange}
                 onClusterClick={(cluster) => setSelectedCluster(cluster)}
                 onMapMetricsUpdate={handleMapMetricsUpdate}
+                onAuditMetricsUpdate={handleAuditMetricsUpdate}
                 selectedOriginId={selectedOriginId}
                 onSelectOriginId={(id) => {
                   setSelectedOriginId(id);
@@ -318,12 +374,36 @@ export default function AnalyticsDashboard() {
                 customOriginLocation={customOriginLocation}
                 onCustomOriginChange={handleCustomLocationPick}
                 isPickingLocation={isPickingLocation}
+                dataSource={dataSource}
+                includeZeroWeight={includeZeroWeight}
+                fallbackWeightKg={fallbackWeightKg}
               />
             </div>
           </div>
         </div>
 
-        {/* ─── 4. Filters & Export ─── */}
+        {/* ─── 4. Data Quality & Audit Widget ─── */}
+        <div key="audit">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Аудит Даних та Авто-вага</h3>
+            </div>
+            <div className={styles.cardContent}>
+              <DataAuditWidget
+                dataSource={dataSource}
+                onDataSourceChange={setDataSource}
+                metrics={auditMetrics}
+                includeZeroWeight={includeZeroWeight}
+                onToggleIncludeZeroWeight={setIncludeZeroWeight}
+                fallbackWeightKg={fallbackWeightKg}
+                onChangeFallbackWeightKg={setFallbackWeightKg}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ─── 5. Filters & Export ─── */}
         <div key="filters">
           <div className={styles.bentoCard}>
             <div className={styles.cardHeader}>

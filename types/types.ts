@@ -502,6 +502,7 @@ export type DeliveryUpdateItem = {
 
 export type WeightCalculationItem = {
   product_id: string;
+  nomenclature?: string;
   parties: {
     party: string;
     moved_q: number;

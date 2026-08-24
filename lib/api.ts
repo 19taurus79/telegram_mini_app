@@ -1125,9 +1125,9 @@ export const getWeightForProduct = async ({
   initData: string;
 }) => {
   let calculatedWeight = 0;
+  let lineOfBusiness = "";
 
   try {
-    let lineOfBusiness = "";
     
     try {
         if (item.product_id && item.product_id !== 'undefined') {
@@ -1184,6 +1184,27 @@ export const getWeightForProduct = async ({
     }
   } catch (error) {
     console.error("Error calculating weight:", error);
+  }
+
+  if (calculatedWeight === 0) {
+    const lobWeightMap: Record<string, number> = {
+      "Власне виробництво насіння": 1.0,
+      "ЗЗР": 1.2,
+      "Міндобрива (основні)": 1000.0,
+    };
+
+    if (lineOfBusiness in lobWeightMap) {
+      calculatedWeight = lobWeightMap[lineOfBusiness];
+    } else if (lineOfBusiness === "Насіння") {
+      const nom = item.nomenclature || "";
+      if (nom.includes("(1500К)")) calculatedWeight = 8.0;
+      else if (nom.includes("(150К)")) calculatedWeight = 10.0;
+      else if (nom.includes("(50К)")) calculatedWeight = 15.0;
+      else if (nom.includes("(80К)")) calculatedWeight = 20.0;
+      else calculatedWeight = 1.0;
+    } else {
+      calculatedWeight = 1.0;
+    }
   }
 
   return calculatedWeight;

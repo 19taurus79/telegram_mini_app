@@ -324,6 +324,7 @@ export default function DetailsWidget({
         const weight = await getWeightForProduct({ 
           item: {
             product_id: item.product,
+            nomenclature: item.nomenclature,
             parties: item.parties
           }, 
           initData 

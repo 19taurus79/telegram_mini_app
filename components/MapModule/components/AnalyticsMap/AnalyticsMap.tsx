@@ -239,6 +239,8 @@ type Props = {
   dataSource?: DataSourceType;
   includeZeroWeight?: boolean;
   fallbackWeightKg?: number;
+  hubCount?: number;
+  customHubs?: { lat: number; lng: number }[];
 };
 
 export default function AnalyticsMap({ 
@@ -253,7 +255,9 @@ export default function AnalyticsMap({
   isPickingLocation = false,
   dataSource = 'applications',
   includeZeroWeight = true,
-  fallbackWeightKg = 100
+  fallbackWeightKg = 100,
+  hubCount = 1,
+  customHubs = []
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -419,7 +423,7 @@ export default function AnalyticsMap({
       const hub = calculateCenterOfGravity(filteredDeliveries, effFallback);
       setOptimalHub(hub);
       
-      const newClusters = clusterDeliveries(filteredDeliveries, 15, effFallback); // 15km cluster radius
+      const newClusters = clusterDeliveries(filteredDeliveries, hubCount, customHubs, effFallback);
       setClusters(newClusters);
       if (onMapMetricsUpdate) onMapMetricsUpdate(newClusters, hub);
       
@@ -432,7 +436,7 @@ export default function AnalyticsMap({
       if (onMapMetricsUpdate) onMapMetricsUpdate([], null);
       setAvgDistance(0);
     }
-  }, [filteredDeliveries, onMapMetricsUpdate, includeZeroWeight, fallbackWeightKg]);
+  }, [filteredDeliveries, onMapMetricsUpdate, includeZeroWeight, fallbackWeightKg, hubCount, customHubs]);
 
   // Determine active origin coordinates
   const activeOriginCoords = useMemo(() => {
@@ -471,7 +475,7 @@ export default function AnalyticsMap({
           alignItems: 'center',
           gap: '8px'
         }}>
-          <span>📍 Клікніть на карті, щоб встановити нову точку складу</span>
+          <span>📍 Клікніть на карті, щоб встановити маркер (Склад або Хаб)</span>
         </div>
       )}
 

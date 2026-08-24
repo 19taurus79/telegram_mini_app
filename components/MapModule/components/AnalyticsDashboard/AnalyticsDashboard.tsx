@@ -10,7 +10,7 @@ import ManagerFilter from '../ManagerFilter/ManagerFilter';
 import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
-import { ClusterData, calculateLogisticsCosts, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
+import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
 import { useAnalyticsStore } from '../../store/analyticsStore';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { useQuery } from '@tanstack/react-query';
@@ -84,6 +84,10 @@ export default function AnalyticsDashboard() {
   const [customOriginLocation, setCustomOriginLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isPickingLocation, setIsPickingLocation] = useState<boolean>(false);
 
+  const [hubCount, setHubCount] = useState<number>(1);
+  const [customHubs, setCustomHubs] = useState<{ lat: number; lng: number }[]>([]);
+  const [isPickingCustomHub, setIsPickingCustomHub] = useState<boolean>(false);
+
   const [dataSource, setDataSource] = useState<DataSourceType>('applications');
   const [includeZeroWeight, setIncludeZeroWeight] = useState<boolean>(true);
   const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(100);
@@ -144,6 +148,8 @@ export default function AnalyticsDashboard() {
 
   const [tariffs, setTariffs] = useState({ direct: 12, linehaul: 5, lastMile: 18 });
   const [costResult, setCostResult] = useState<CostSimulationResult | null>(null);
+  const [useRealRoads, setUseRealRoads] = useState<boolean>(false);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState<boolean>(false);
 
   const handleMapMetricsUpdate = useCallback((calculatedClusters: ClusterData[], cog: { lat: number; lng: number } | null) => {
     setClusters(calculatedClusters);
@@ -170,9 +176,18 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
-    const result = calculateLogisticsCosts(activeOriginCoords, globalCog, clusters, tariffs, effFallback);
-    setCostResult(result);
-  }, [activeOriginCoords, globalCog, clusters, tariffs, includeZeroWeight, fallbackWeightKg]);
+    if (useRealRoads) {
+      setIsCalculatingRoute(true);
+      calculateLogisticsCostsAsync(activeOriginCoords, globalCog, clusters, tariffs, effFallback)
+        .then(result => {
+          if (result) setCostResult(result);
+          setIsCalculatingRoute(false);
+        });
+    } else {
+      const result = calculateLogisticsCosts(activeOriginCoords, globalCog, clusters, tariffs, effFallback);
+      setCostResult(result);
+    }
+  }, [activeOriginCoords, globalCog, clusters, tariffs, includeZeroWeight, fallbackWeightKg, useRealRoads]);
 
   const handleLayoutChange = useCallback((_: unknown, allLayouts: Layouts) => {
     setLayouts(allLayouts);
@@ -185,9 +200,13 @@ export default function AnalyticsDashboard() {
   };
 
   const handleCustomLocationPick = (loc: { lat: number; lng: number }) => {
-    setCustomOriginLocation(loc);
-    setSelectedOriginId('custom');
-    setIsPickingLocation(false);
+    if (isPickingCustomHub) {
+      setCustomHubs(prev => [...prev, loc]);
+    } else {
+      setCustomOriginLocation(loc);
+      setSelectedOriginId('custom');
+      setIsPickingLocation(false);
+    }
   };
 
   const totalDeliveries = clusters.reduce((acc, c) => acc + c.deliveries.length, 0);
@@ -285,9 +304,10 @@ export default function AnalyticsDashboard() {
           <div className={styles.bentoCard}>
             <div className={styles.cardHeader}>
               <span className={styles.dragHandle}>⠿</span>
-              <h3 className={styles.cardTitle}>Точка відвантаження (Склад)</h3>
+              <h3 className={styles.cardTitle}>Логістична Мережа (Склад та Хаби)</h3>
             </div>
             <div className={styles.cardContent}>
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>1. Головний Склад (Origin)</div>
               <div className={styles.originChipsGrid}>
                 {warehouses.map(wh => (
                   <button
@@ -335,9 +355,12 @@ export default function AnalyticsDashboard() {
               {/* Action button to pick on map */}
               <button
                 className={`${styles.pickMapBtn} ${isPickingLocation ? styles.pickMapBtnActive : ''}`}
-                onClick={() => setIsPickingLocation(prev => !prev)}
+                onClick={() => {
+                  setIsPickingLocation(prev => !prev);
+                  setIsPickingCustomHub(false);
+                }}
               >
-                {isPickingLocation ? '✕ Скасувати вибір на карті' : '🎯 Клікніть на карті для нової точки'}
+                {isPickingLocation ? '✕ Скасувати вибір на карті' : '🎯 Клікніть на карті для нової точки складу'}
               </button>
 
               {/* Distance info */}
@@ -346,6 +369,56 @@ export default function AnalyticsDashboard() {
                   Відстань до ідеального Центру Тяжіння: <strong>{originInfo.distToCog.toFixed(1)} км</strong>
                 </div>
               )}
+
+              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+              
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>2. Регіональні Хаби</div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label style={{ fontSize: '12px', flex: 1 }}>Кількість авто-хабів (K-Means):</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    value={hubCount} 
+                    onChange={e => setHubCount(Math.max(1, Number(e.target.value) || 1))}
+                    style={{ width: '60px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                    disabled={customHubs.length > 0}
+                  />
+                </div>
+                
+                <div style={{ fontSize: '11px', color: '#64748b' }}>
+                  {customHubs.length > 0 
+                    ? `Використовуються ручні хаби (${customHubs.length} шт). Авто-розрахунок вимкнено.` 
+                    : 'Система автоматично розіб\'є доставки на вказану кількість зон.'}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <button
+                    className={`${styles.pickMapBtn} ${isPickingCustomHub ? styles.pickMapBtnActive : ''}`}
+                    style={{ flex: 1, borderColor: '#f59e0b', color: isPickingCustomHub ? '#111827' : '#f59e0b', background: isPickingCustomHub ? '#f59e0b' : 'transparent' }}
+                    onClick={() => {
+                      setIsPickingCustomHub(prev => !prev);
+                      setIsPickingLocation(false);
+                    }}
+                  >
+                    {isPickingCustomHub ? '✕ Завершити розстановку' : '📍 Додати ручний хаб'}
+                  </button>
+                  
+                  {customHubs.length > 0 && (
+                    <button
+                      style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '0 12px', fontSize: '12px', cursor: 'pointer' }}
+                      onClick={() => {
+                        setCustomHubs([]);
+                        setIsPickingCustomHub(false);
+                      }}
+                    >
+                      Очистити
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -373,10 +446,12 @@ export default function AnalyticsDashboard() {
                 }}
                 customOriginLocation={customOriginLocation}
                 onCustomOriginChange={handleCustomLocationPick}
-                isPickingLocation={isPickingLocation}
+                isPickingLocation={isPickingLocation || isPickingCustomHub}
                 dataSource={dataSource}
                 includeZeroWeight={includeZeroWeight}
                 fallbackWeightKg={fallbackWeightKg}
+                hubCount={hubCount}
+                customHubs={customHubs}
               />
             </div>
           </div>
@@ -453,6 +528,18 @@ export default function AnalyticsDashboard() {
               <h3 className={styles.cardTitle}>Результати Моделювання</h3>
             </div>
             <div className={styles.cardContent}>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={useRealRoads} 
+                    onChange={e => setUseRealRoads(e.target.checked)} 
+                  />
+                  Використовувати реальні дороги (Valhalla API)
+                </label>
+                {isCalculatingRoute && <span style={{ fontSize: '11px', color: '#f59e0b' }}>⏳ Розрахунок...</span>}
+              </div>
+
               {costResult ? (
                 <div className={styles.resultsGrid}>
                   <div className={styles.resultBox}>

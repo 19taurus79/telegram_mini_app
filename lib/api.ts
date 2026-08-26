@@ -1487,4 +1487,36 @@ export const getNPCounterparty = async (edrpou: string, initData: string): Promi
   return data;
 };
 
+// --- LoB Mapping Endpoints ---
+
+export const getUnmappedLobs = async (initData: string): Promise<string[]> => {
+  const { data } = await axios.get<string[]>("/delivery/unmapped_lobs", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
+export const mapLobs = async ({
+  mappings,
+  initData,
+}: {
+  mappings: Record<string, string>;
+  initData: string;
+}): Promise<{ message: string; updated_products: number }> => {
+  const { data } = await axios.post(
+    "/delivery/map_lobs",
+    { mappings },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export default axios;

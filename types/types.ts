@@ -9,6 +9,7 @@ export type DeliveryPayloadItem = {
   order_ref: string;
   parties: DeliveryPayloadParty[];
   weight: number;
+  line_of_business?: string;
 };
 
 export type DeliveryOrder = {
@@ -468,6 +469,7 @@ export type DeliveryRequestItem = {
   product: string;
   quantity: number;
   parties: DeliveryItemParty[];
+  line_of_business?: string;
 };
 
 export type DeliveryRequest = {

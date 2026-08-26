@@ -225,15 +225,7 @@ export function filterDelivery(
       return true;
     }
 
-    // Проверка 2: Поиск видов деятельности среди заказов клиента в allApplications
-    if (allApplications && delivery.client) {
-      const clientName = normalizeString(delivery.client);
-      const matchedClientApp = allApplications.find(a => normalizeString(a.client) === clientName);
-      if (matchedClientApp && Array.isArray(matchedClientApp.orders)) {
-        const hasMatchingLob = matchedClientApp.orders.some(o => matchesLoB(o.line_of_business, selectedLoBs));
-        if (hasMatchingLob) return true;
-      }
-    }
+    // Fallback removed to ensure strict LoB filtering based on mapped DB records
 
     return false;
   }

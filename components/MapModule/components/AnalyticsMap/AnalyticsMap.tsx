@@ -328,6 +328,8 @@ type Props = {
   selectedClusterId?: number | null;
   autoFilterOutliers?: boolean;
   maxRadiusKm?: number;
+  weightingMode?: 'geometric' | 'weighted';
+  outlierSigma?: number;
 };
 
 export default function AnalyticsMap({ 
@@ -348,6 +350,8 @@ export default function AnalyticsMap({
   selectedClusterId = null,
   autoFilterOutliers = true,
   maxRadiusKm = 300,
+  weightingMode = 'weighted',
+  outlierSigma = 3,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -489,11 +493,13 @@ export default function AnalyticsMap({
       filtered, 
       effFallback, 
       maxRadiusKm, 
-      autoFilterOutliers
+      autoFilterOutliers,
+      weightingMode,
+      outlierSigma
     );
 
     const includedWeightKg = postOutlierDeliveries.reduce((sum, d) => {
-      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : effFallback;
+      const w = getDeliveryWeight(d, effFallback);
       return sum + w;
     }, 0);
 
@@ -509,7 +515,7 @@ export default function AnalyticsMap({
     };
 
     return { filteredDeliveries: postOutlierDeliveries, auditMetrics: metrics, initialGlobalCog: globalCog };
-  }, [rawDeliveries, unmappedApplications, unmappedClientsList, includeZeroWeight, fallbackWeightKg, dateRange, selectedManagers, selectedLoBs, applications, autoFilterOutliers, maxRadiusKm]);
+  }, [rawDeliveries, unmappedApplications, unmappedClientsList, includeZeroWeight, fallbackWeightKg, dateRange, selectedManagers, selectedLoBs, applications, autoFilterOutliers, maxRadiusKm, weightingMode, outlierSigma]);
 
   // Send audit metrics to parent
   useEffect(() => {
@@ -525,7 +531,8 @@ export default function AnalyticsMap({
         typeof d.latitude === 'number' && typeof d.longitude === 'number'
       )
       .map((d): [number, number, number] => {
-        const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : (includeZeroWeight ? fallbackWeightKg : 0);
+        const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
+        const w = getDeliveryWeight(d, effFallback);
         return [d.latitude, d.longitude, w];
       });
   }, [filteredDeliveries, includeZeroWeight, fallbackWeightKg]);
@@ -534,10 +541,10 @@ export default function AnalyticsMap({
   useEffect(() => {
     const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
     if (filteredDeliveries.length > 0) {
-      const hub = calculateCenterOfGravity(filteredDeliveries, effFallback);
+      const hub = calculateCenterOfGravity(filteredDeliveries, effFallback, weightingMode);
       setOptimalHub(hub);
       
-      const newClusters = clusterDeliveries(filteredDeliveries, hubCount, customHubs, effFallback);
+      const newClusters = clusterDeliveries(filteredDeliveries, hubCount, customHubs, effFallback, weightingMode);
       setClusters(newClusters);
       if (onMapMetricsUpdate) onMapMetricsUpdate(newClusters, hub);
       
@@ -550,7 +557,7 @@ export default function AnalyticsMap({
       if (onMapMetricsUpdate) onMapMetricsUpdate([], null);
       setAvgDistance(0);
     }
-  }, [filteredDeliveries, onMapMetricsUpdate, includeZeroWeight, fallbackWeightKg, hubCount, customHubs]);
+  }, [filteredDeliveries, onMapMetricsUpdate, includeZeroWeight, fallbackWeightKg, hubCount, customHubs, weightingMode]);
 
   // Determine active origin coordinates
   const activeOriginCoords = useMemo(() => {

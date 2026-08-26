@@ -118,6 +118,8 @@ interface SavedSettings {
   selectedOriginId: string;
   autoFilterOutliers: boolean;
   maxRadiusKm: number;
+  weightingMode?: 'geometric' | 'weighted';
+  outlierSigma?: number;
 }
 
 function loadSettings(): Partial<SavedSettings> {
@@ -174,6 +176,9 @@ export default function AnalyticsDashboard() {
   const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(savedSettings.fallbackWeightKg ?? 100);
   const [autoFilterOutliers, setAutoFilterOutliers] = useState<boolean>(savedSettings.autoFilterOutliers ?? true);
   const [maxRadiusKm, setMaxRadiusKm] = useState<number>(savedSettings.maxRadiusKm ?? 300);
+  
+  const [weightingMode, setWeightingMode] = useState<'geometric' | 'weighted'>(savedSettings.weightingMode || 'weighted');
+  const [outlierSigma, setOutlierSigma] = useState<number>(savedSettings.outlierSigma !== undefined ? savedSettings.outlierSigma : 3);
 
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
@@ -243,8 +248,8 @@ export default function AnalyticsDashboard() {
   // Persist settings whenever they change
   useEffect(() => {
     if (!isClient) return;
-    saveSettings({ tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm });
-  }, [isClient, tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm]);
+    saveSettings({ tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm, weightingMode, outlierSigma });
+  }, [isClient, tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm, weightingMode, outlierSigma]);
 
   const handleMapMetricsUpdate = useCallback((calculatedClusters: ClusterData[], cog: { lat: number; lng: number } | null) => {
     setClusters(calculatedClusters);
@@ -297,6 +302,7 @@ export default function AnalyticsDashboard() {
   const handleCustomLocationPick = (loc: { lat: number; lng: number }) => {
     if (isPickingCustomHub) {
       setCustomHubs(prev => [...prev, loc]);
+      setIsPickingCustomHub(false);
     } else {
       setCustomOriginLocation(loc);
       setSelectedOriginId('custom');
@@ -306,9 +312,6 @@ export default function AnalyticsDashboard() {
 
   const totalDeliveries = clusters.reduce((acc, c) => acc + c.deliveries.length, 0);
   const totalWeightTons = clusters.reduce((acc, c) => acc + c.totalWeight, 0) / 1000;
-
-  // Derived: selected cluster ID for map highlighting
-  const selectedClusterId = selectedCluster?.clusterId ?? null;
 
   // Zero-weight accuracy warning
   const zeroWeightRatio = auditMetrics.includedCount > 0
@@ -573,11 +576,42 @@ export default function AnalyticsDashboard() {
                   )}
                 </div>
               </div>
+              
+              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+              
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>3. Налаштування Алгоритму (Super Analyst)</div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span>Режим розрахунку РЦ та Кластерів:</span>
+                  <select 
+                    value={weightingMode} 
+                    onChange={e => setWeightingMode(e.target.value as 'geometric' | 'weighted')}
+                    style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  >
+                    <option value="weighted">По Тоннажу (Зважений) - РЦ магнітиться до важких доставок</option>
+                    <option value="geometric">По Географії (Стандартний) - суто географічний центр</option>
+                  </select>
+                </label>
+
+                <label style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                  <span>Фільтрація аномалій (Z-Score):</span>
+                  <select 
+                    value={outlierSigma} 
+                    onChange={e => setOutlierSigma(Number(e.target.value))}
+                    style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  >
+                    <option value={3}>М&apos;яка (3 Sigma) - відкидає лише крайні викиди</option>
+                    <option value={2}>Жорстка (2 Sigma) - відкидає все, крім щільного ядра</option>
+                    <option value={0}>Вимкнено - показувати всі точки на карті</option>
+                  </select>
+                </label>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ─── 3. Interactive Map ─── */}
+        {/* ─── 4. Interactive Map ─── */}
         <div key="map">
           <div className={styles.bentoCard}>
             <div className={styles.dragHandle}>⠿</div>
@@ -602,7 +636,11 @@ export default function AnalyticsDashboard() {
                 fallbackWeightKg={fallbackWeightKg}
                 hubCount={hubCount}
                 customHubs={customHubs}
-                selectedClusterId={selectedClusterId}
+                selectedClusterId={selectedCluster?.clusterId || null}
+                autoFilterOutliers={autoFilterOutliers}
+                maxRadiusKm={maxRadiusKm}
+                weightingMode={weightingMode}
+                outlierSigma={outlierSigma}
               />
             </div>
           </div>

@@ -51,7 +51,11 @@ export const getDeliveryWeight = (d: DeliveryRequest, fallbackWeightKg: number):
 /**
  * Calculates the Center of Gravity (Optimal Hub Location) based on delivery weights and coordinates.
  */
-export const calculateCenterOfGravity = (deliveries: DeliveryRequest[], fallbackWeightKg: number = 0): { lat: number, lng: number } | null => {
+export const calculateCenterOfGravity = (
+  deliveries: DeliveryRequest[], 
+  fallbackWeightKg: number = 0,
+  weightingMode: 'geometric' | 'weighted' = 'weighted'
+): { lat: number, lng: number } | null => {
   if (!deliveries || deliveries.length === 0) return null;
 
   let totalWeight = 0;
@@ -60,7 +64,7 @@ export const calculateCenterOfGravity = (deliveries: DeliveryRequest[], fallback
 
   deliveries.forEach((d: DeliveryRequest) => {
     if (d.latitude && d.longitude) {
-      const w = getDeliveryWeight(d, fallbackWeightKg);
+      const w = weightingMode === 'weighted' ? getDeliveryWeight(d, fallbackWeightKg) : 1;
       if (w > 0) {
         totalWeight += w;
         sumLatWeight += d.latitude * w;
@@ -98,23 +102,25 @@ export const filterOutliers = (
   deliveries: DeliveryRequest[],
   fallbackWeightKg: number = 0,
   maxRadiusKm: number = 300,
-  autoFilter: boolean = true
+  autoFilter: boolean = true,
+  weightingMode: 'geometric' | 'weighted' = 'weighted',
+  outlierSigma: number = 3
 ): { filteredDeliveries: DeliveryRequest[], outliersCount: number, globalCog: { lat: number, lng: number } | null } => {
   const validDeliveries = deliveries.filter((d: DeliveryRequest) => Boolean(d.latitude && d.longitude));
   if (validDeliveries.length === 0) return { filteredDeliveries: [], outliersCount: 0, globalCog: null };
 
-  const globalCog = calculateCenterOfGravity(validDeliveries, fallbackWeightKg);
+  const globalCog = calculateCenterOfGravity(validDeliveries, fallbackWeightKg, weightingMode);
   if (!globalCog) return { filteredDeliveries: validDeliveries, outliersCount: 0, globalCog: null };
 
   const items = validDeliveries.map(d => ({
     d,
     dist: calculateDistanceKm(globalCog, { lat: d.latitude!, lng: d.longitude! }),
-    weight: getDeliveryWeight(d, fallbackWeightKg)
+    weight: weightingMode === 'weighted' ? getDeliveryWeight(d, fallbackWeightKg) : 1
   }));
 
   let maxAllowedDist = maxRadiusKm;
 
-  if (autoFilter && items.length > 2) {
+  if (autoFilter && items.length > 2 && outlierSigma > 0) {
     const totalWeight = items.reduce((sum, item) => sum + item.weight, 0) || 1;
     
     // Weighted Mean
@@ -125,8 +131,8 @@ export const filterOutliers = (
     
     const stdDev = Math.sqrt(weightedVariance);
     
-    // Use weighted mean + 2 sigma for limits
-    const zScoreLimit = weightedMean + 2 * stdDev;
+    // Use weighted mean + N sigma for limits
+    const zScoreLimit = weightedMean + outlierSigma * stdDev;
     maxAllowedDist = Math.min(maxRadiusKm, zScoreLimit);
   }
 
@@ -144,7 +150,8 @@ export const clusterDeliveries = (
   deliveries: DeliveryRequest[], 
   hubCount: number = 1,
   customHubs: { lat: number; lng: number }[] = [],
-  fallbackWeightKg: number = 0
+  fallbackWeightKg: number = 0,
+  weightingMode: 'geometric' | 'weighted' = 'weighted'
 ): ClusterData[] => {
   const validDeliveries = deliveries.filter((d: DeliveryRequest) => Boolean(d.latitude && d.longitude));
   
@@ -170,21 +177,25 @@ export const clusterDeliveries = (
       clusterGroups[nearestHubIndex].push(d);
     });
   } else {
-    // Weighted K-Means clustering
+    // Weighted or Geometric K-Means clustering
     const k = Math.min(Math.max(1, hubCount), validDeliveries.length);
     
     if (k === 1) {
       clusterGroups[0] = validDeliveries;
     } else {
       // 1. Initialize k centroids randomly (we pick top k heaviest deliveries as initial seeds for better stability)
-      const sortedByWeight = [...validDeliveries].sort((a, b) => getDeliveryWeight(b, fallbackWeightKg) - getDeliveryWeight(a, fallbackWeightKg));
+      const sortedByWeight = [...validDeliveries].sort((a, b) => {
+        const wa = weightingMode === 'weighted' ? getDeliveryWeight(a, fallbackWeightKg) : 1;
+        const wb = weightingMode === 'weighted' ? getDeliveryWeight(b, fallbackWeightKg) : 1;
+        return wb - wa;
+      });
       let centroids = sortedByWeight.slice(0, k).map(d => ({ lat: d.latitude!, lng: d.longitude! }));
       
       const assignments = new Array(validDeliveries.length).fill(0);
       let changed = true;
       let iterations = 0;
       
-      // 2. Lloyd's algorithm for weighted K-Means
+      // 2. Lloyd's algorithm
       while (changed && iterations < 20) {
         changed = false;
         const newGroups: DeliveryRequest[][] = Array.from({length: k}, () => []);
@@ -209,10 +220,10 @@ export const clusterDeliveries = (
           newGroups[bestCluster].push(d);
         });
         
-        // Recalculate centroids as the Center of Gravity (weighted by mass) of the assigned points
+        // Recalculate centroids as the Center of Gravity of the assigned points
         centroids = newGroups.map((group, gIdx) => {
           if (group.length === 0) return centroids[gIdx]; // keep old centroid if empty
-          const cog = calculateCenterOfGravity(group, fallbackWeightKg);
+          const cog = calculateCenterOfGravity(group, fallbackWeightKg, weightingMode);
           return cog || centroids[gIdx];
         });
         
@@ -249,8 +260,8 @@ export const clusterDeliveries = (
       areaSqKm = area(hull) / 1000000;
     }
 
-    // Local Center of Gravity
-    let localCog = calculateCenterOfGravity(groupDeliveries, fallbackWeightKg);
+    // Local Center of Gravity (Geometric or Weighted)
+    let localCog = calculateCenterOfGravity(groupDeliveries, fallbackWeightKg, weightingMode);
     
     // If custom hubs are provided, the local hub IS the custom hub, 
     // but we can still calculate the physical center of gravity for reference.

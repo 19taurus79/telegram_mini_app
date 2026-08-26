@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import HeatmapLayer from '../HeatmapLayer/HeatmapLayer';
 import { useApplicationsStore } from '../../store/applicationsStore';
-import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData, filterOutliers } from './HubCalculator';
+import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData, filterOutliers, getDeliveryWeight } from './HubCalculator';
 import { warehouses } from '../../warehouses';
 import { filterDelivery } from '../../utils/filterUtils';
 import { DeliveryRequest, DeliveryRequestItem } from '@/types/types';

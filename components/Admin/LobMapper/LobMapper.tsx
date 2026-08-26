@@ -59,6 +59,7 @@ export const LobMapper = () => {
   };
 
   const applyMapping = async () => {
+    if (!initData) return;
     if (selectedProducts.size === 0) {
       toast.error("Оберіть хоча б один товар");
       return;
@@ -91,6 +92,7 @@ export const LobMapper = () => {
   };
 
   const autoRecognize = () => {
+    if (!initData) return;
     const rules = [
       { lob: "Насіння", keywords: ["насін", "кукурудз", "соняшн", "пшениц", "піонер", "сингент", "ріпак"] },
       { lob: "Мінеральні добрива", keywords: ["селітр", "карбамід", "npk", "добрив", "амофос"] },

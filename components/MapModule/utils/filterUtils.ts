@@ -186,7 +186,7 @@ export function filterDelivery(
   selectedManagers: string[] = [],
   selectedDates: string[] = [],
   selectedLoBs: string[] = [],
-  allApplications?: ApplicationItem[]
+  _allApplications?: ApplicationItem[]
 ): boolean {
   if (!delivery) return false;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useInitData } from "@/store/InitData";
 import { getUnmappedLobs, mapLobs } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -25,13 +25,8 @@ export const LobMapper = () => {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [selectedLob, setSelectedLob] = useState<string>("");
 
-  useEffect(() => {
-    if (initData) {
-      fetchUnmapped();
-    }
-  }, [initData]);
-
-  const fetchUnmapped = async () => {
+  const fetchUnmapped = useCallback(async () => {
+    if (!initData) return;
     try {
       setLoading(true);
       const data = await getUnmappedLobs(initData);
@@ -42,7 +37,11 @@ export const LobMapper = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [initData]);
+
+  useEffect(() => {
+    fetchUnmapped();
+  }, [fetchUnmapped]);
 
   const toggleSelect = (product: string) => {
     const next = new Set(selectedProducts);
@@ -144,7 +143,7 @@ export const LobMapper = () => {
       </div>
 
       <p className="text-gray-600 mb-6">
-        Знайдено <strong>{unmapped.length}</strong> унікальних товарів у доставках, для яких не вказано "Вид діяльності".
+        Знайдено <strong>{unmapped.length}</strong> унікальних товарів у доставках, для яких не вказано &quot;Вид діяльності&quot;.
       </p>
 
       <div className="flex gap-4 items-center mb-6 p-4 bg-blue-50 rounded-lg">

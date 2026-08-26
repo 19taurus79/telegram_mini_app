@@ -183,8 +183,6 @@ function DeliveryDataContent() {
   }, []);
   const [formError, setFormError] = useState<string | null>(null);
   const [isAddressChange, setIsAddressChange] = useState(false);
-  const [isGeocoding, setIsGeocoding] = useState(false);
-  const [customAddressData, setCustomAddressData] = useState<AddressData | null>(null);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [initialClientData, setInitialClientData] = useState<ClientAddressData | null>(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
@@ -276,22 +274,12 @@ function DeliveryDataContent() {
 
   const handleAddressData = (data: AddressData | null) => {
     if (data && data.display_name) {
-      setCustomAddressData(data);
-      setIsGeocoding(true);
-    } else {
-      setCustomAddressData(null);
-      setIsGeocoding(false);
-    }
-  };
-
-  const handleCustomAddressApply = () => {
-    if (customAddressData) {
-      setFormData({
-        ...formData,
-        address: customAddressData.display_name,
-        latitude: parseFloat(customAddressData.lat),
-        longitude: parseFloat(customAddressData.lon)
-      });
+      setFormData(prev => ({
+        ...prev,
+        address: data.display_name,
+        latitude: parseFloat(data.lat),
+        longitude: parseFloat(data.lon)
+      }));
       setIsAddressChange(false);
     }
   };
@@ -389,7 +377,12 @@ function DeliveryDataContent() {
                   const addressData = await getAddressByClient(client.client);
                   if (addressData && addressData.length > 0) {
                     const fetchedAddress = addressData[0];
-                    const composedAddress = `${fetchedAddress.region} обл., ${fetchedAddress.area} р-н, ${fetchedAddress.commune} громада, ${fetchedAddress.city}`;
+                    const parts = [];
+                    if (fetchedAddress.region && fetchedAddress.region !== "undefined") parts.push(`${fetchedAddress.region} обл.`);
+                    if (fetchedAddress.area && fetchedAddress.area !== "undefined") parts.push(`${fetchedAddress.area} р-н`);
+                    if (fetchedAddress.commune && fetchedAddress.commune !== "undefined") parts.push(`${fetchedAddress.commune} громада`);
+                    if (fetchedAddress.city && fetchedAddress.city !== "undefined") parts.push(fetchedAddress.city);
+                    const composedAddress = parts.length > 0 ? parts.join(', ') : (fetchedAddress.address || "");
                     const formattedPhone = formatPhoneNumber(fetchedAddress.phone1 || "");
                     const cleanRepresentative = fetchedAddress.representative ? fetchedAddress.representative.trim() : "";
 
@@ -600,11 +593,6 @@ function DeliveryDataContent() {
                   {isAddressChange && (
                     <div className={styles.geocodingWrapper}>
                       <InputAddress onAddressSelect={handleAddressData}/>
-                      {isGeocoding && (
-                        <button onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
-                          Підтвердити адресу
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
@@ -718,11 +706,6 @@ function DeliveryDataContent() {
                         {isAddressChange && (
                           <div className={styles.geocodingWrapper}>
                             <InputAddress onAddressSelect={handleAddressData}/>
-                            {isGeocoding && (
-                              <button type="button" onClick={handleCustomAddressApply} className={styles.confirmAddressButton}>
-                                Підтвердити адресу
-                              </button>
-                            )}
                           </div>
                         )}
                       </div>
@@ -919,8 +902,9 @@ function DeliveryDataContent() {
                       }
 
                       const newErrors: Record<string, boolean> = {};
-                      if (!address && !isPickup && !isNP) newErrors.address = true;
-                      if (isPickup && needTTN && !address) newErrors.address = true;
+                      const isAddressInvalid = !address || address.trim() === "" || address.includes("undefined");
+                      if (isAddressInvalid && !isPickup && !isNP) newErrors.address = true;
+                      if (isPickup && needTTN && isAddressInvalid) newErrors.address = true;
                       if (!isPickup && !isNP && !contact) newErrors.contact = true;
                       if (!isPickup && !isNP && (!phone || phone.length < 19)) newErrors.phone = true;
                       if (!date) newErrors.date = true;

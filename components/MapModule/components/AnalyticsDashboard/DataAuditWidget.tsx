@@ -14,6 +14,7 @@ export interface DataAuditMetrics {
   zeroWeightCount: number;
   unmappedCount: number;
   filteredOutCount: number;
+  outliersCount?: number;
   unmappedClients: { client: string; totalWeight?: number; ordersCount?: number }[];
 }
 
@@ -25,6 +26,10 @@ interface Props {
   onToggleIncludeZeroWeight: (val: boolean) => void;
   fallbackWeightKg: number;
   onChangeFallbackWeightKg: (val: number) => void;
+  autoFilterOutliers: boolean;
+  onToggleAutoFilter: (val: boolean) => void;
+  maxRadiusKm: number;
+  onChangeMaxRadiusKm: (val: number) => void;
 }
 
 export default function DataAuditWidget({
@@ -35,6 +40,10 @@ export default function DataAuditWidget({
   onToggleIncludeZeroWeight,
   fallbackWeightKg,
   onChangeFallbackWeightKg,
+  autoFilterOutliers,
+  onToggleAutoFilter,
+  maxRadiusKm,
+  onChangeMaxRadiusKm,
 }: Props) {
   const [isUnmappedModalOpen, setIsUnmappedModalOpen] = useState(false);
 
@@ -108,6 +117,20 @@ export default function DataAuditWidget({
           <div className={styles.statVal}>{metrics.filteredOutCount} <span style={{ fontSize: 11, fontWeight: 500 }}>шт</span></div>
           <div className={styles.statSub}>За датою/менеджером</div>
         </div>
+
+        {/* Outliers */}
+        {metrics.outliersCount !== undefined && metrics.outliersCount > 0 && (
+          <div className={`${styles.statCard} ${styles.statCardDanger}`} style={{ border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.1)' }}>
+            <div className={styles.statHeader}>
+              <span className={styles.statLabel} style={{ color: '#fca5a5' }}>Гео-аномалії</span>
+              <ShieldAlert size={13} color="#fca5a5" />
+            </div>
+            <div className={`${styles.statVal} ${styles.statValDanger}`} style={{ color: '#fca5a5' }}>
+              {metrics.outliersCount} <span style={{ fontSize: 11, fontWeight: 500 }}>шт</span>
+            </div>
+            <div className={styles.statSub} style={{ color: '#fca5a5' }}>Відкинуто (занадто далеко)</div>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions & Fixes */}
@@ -138,6 +161,48 @@ export default function DataAuditWidget({
               <span className={styles.weightUnit}>кг</span>
             </div>
           )}
+        </div>
+
+        {/* Filter Outliers */}
+        <div className={styles.fixRow}>
+          <label className={styles.fixToggleLabel}>
+            <input
+              type="checkbox"
+              checked={autoFilterOutliers}
+              onChange={e => onToggleAutoFilter(e.target.checked)}
+              style={{ accentColor: '#3b82f6' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '13px' }}>Відкидати гео-аномалії (Z-score)</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Автоматично прибирати поодинокі віддалені доставки</span>
+            </div>
+          </label>
+        </div>
+
+        <div className={styles.fixRow}>
+          <label className={styles.fixToggleLabel} style={{ cursor: 'default' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span style={{ fontSize: '13px' }}>Макс. радіус від Центру Мас (км)</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Жорсткий ліміт для аналітики</span>
+            </div>
+            <input
+              type="number"
+              min="50"
+              max="2000"
+              step="50"
+              value={maxRadiusKm}
+              onChange={e => onChangeMaxRadiusKm(Number(e.target.value) || 300)}
+              style={{
+                width: '60px',
+                padding: '4px',
+                borderRadius: '4px',
+                border: '1px solid var(--border-color)',
+                background: 'rgba(0,0,0,0.2)',
+                color: 'var(--text-primary)',
+                fontSize: '12px'
+              }}
+            />
+          </label>
         </div>
 
         {/* Unmapped Modal Trigger */}

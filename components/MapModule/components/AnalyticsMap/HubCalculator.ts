@@ -76,6 +76,44 @@ export type ClusterData = {
 };
 
 /**
+ * Filters out extreme outliers based on a maximum radius from the Global Center of Gravity,
+ * and optionally an automatic statistical z-score filter (Mean + 2 * Sigma).
+ */
+export const filterOutliers = (
+  deliveries: DeliveryRequest[],
+  fallbackWeightKg: number = 0,
+  maxRadiusKm: number = 300,
+  autoFilter: boolean = true
+): { filteredDeliveries: DeliveryRequest[], outliersCount: number, globalCog: { lat: number, lng: number } | null } => {
+  const validDeliveries = deliveries.filter((d: DeliveryRequest) => Boolean(d.latitude && d.longitude));
+  if (validDeliveries.length === 0) return { filteredDeliveries: [], outliersCount: 0, globalCog: null };
+
+  const globalCog = calculateCenterOfGravity(validDeliveries, fallbackWeightKg);
+  if (!globalCog) return { filteredDeliveries: validDeliveries, outliersCount: 0, globalCog: null };
+
+  const distances = validDeliveries.map(d => ({
+    d,
+    dist: calculateDistanceKm(globalCog, { lat: d.latitude!, lng: d.longitude! })
+  }));
+
+  let maxAllowedDist = maxRadiusKm;
+
+  if (autoFilter && distances.length > 2) {
+    const mean = distances.reduce((acc, curr) => acc + curr.dist, 0) / distances.length;
+    const variance = distances.reduce((acc, curr) => acc + Math.pow(curr.dist - mean, 2), 0) / distances.length;
+    const stdDev = Math.sqrt(variance);
+    const zScoreLimit = mean + 2 * stdDev;
+    maxAllowedDist = Math.min(maxRadiusKm, zScoreLimit);
+  }
+
+  const filteredDeliveries = distances.filter(item => item.dist <= maxAllowedDist).map(item => item.d);
+  const outliersCount = validDeliveries.length - filteredDeliveries.length;
+
+  return { filteredDeliveries, outliersCount, globalCog };
+};
+
+
+/**
  * Clusters delivery points using K-Means or assigns them to custom hubs.
  */
 export const clusterDeliveries = (

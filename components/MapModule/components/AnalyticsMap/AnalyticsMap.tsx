@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useMemo, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip, Polyline, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip, Polyline, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import HeatmapLayer from '../HeatmapLayer/HeatmapLayer';
 import { useApplicationsStore } from '../../store/applicationsStore';
-import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData } from './HubCalculator';
+import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData, filterOutliers } from './HubCalculator';
 import { warehouses } from '../../warehouses';
 import { filterDelivery } from '../../utils/filterUtils';
 import { DeliveryRequest, DeliveryRequestItem } from '@/types/types';
@@ -326,6 +326,8 @@ type Props = {
   hubCount?: number;
   customHubs?: { lat: number; lng: number }[];
   selectedClusterId?: number | null;
+  autoFilterOutliers?: boolean;
+  maxRadiusKm?: number;
 };
 
 export default function AnalyticsMap({ 
@@ -344,6 +346,8 @@ export default function AnalyticsMap({
   hubCount = 1,
   customHubs = [],
   selectedClusterId = null,
+  autoFilterOutliers = true,
+  maxRadiusKm = 300,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -431,57 +435,81 @@ export default function AnalyticsMap({
   }, [unmappedApplications, rawDeliveries]);
 
   // Filter deliveries and compute Data Quality Audit metrics
-  const { filteredDeliveries, auditMetrics } = useMemo(() => {
+  const { filteredDeliveries, auditMetrics, initialGlobalCog } = useMemo(() => {
     let zeroWeightCount = 0;
     let filteredOutCount = 0;
+
+    const rejected: any[] = []; // Collect rejected deliveries for debugging
 
     const filtered = rawDeliveries.filter((d: DeliveryRequest) => {
       const hasCoords = typeof d.latitude === 'number' && typeof d.longitude === 'number';
       if (!hasCoords) {
+        rejected.push({ id: d.id, client: d.client, reason: 'No coordinates' });
         return false;
       }
 
       const hasWeight = typeof d.total_weight === 'number' && d.total_weight > 0;
       if (!hasWeight) {
         zeroWeightCount++;
-        if (!includeZeroWeight) return false;
+        if (!includeZeroWeight) {
+          rejected.push({ id: d.id, client: d.client, reason: 'Zero weight (and fallback disabled)' });
+          return false;
+        }
       }
 
       const dDate = d.delivery_date || ((d as Record<string, unknown>).date as string | undefined);
       if (dateRange.start && dDate && new Date(dDate) < new Date(dateRange.start)) {
         filteredOutCount++;
+        rejected.push({ id: d.id, client: d.client, date: dDate, reason: 'Before dateRange.start' });
         return false;
       }
       if (dateRange.end && dDate && new Date(dDate) > new Date(dateRange.end)) {
         filteredOutCount++;
+        rejected.push({ id: d.id, client: d.client, date: dDate, reason: 'After dateRange.end' });
         return false;
       }
 
       if (!filterDelivery(d, [], selectedManagers, [], selectedLoBs, applications)) {
         filteredOutCount++;
+        rejected.push({ id: d.id, client: d.client, reason: 'Failed global filters (Manager/LoB)' });
         return false;
       }
 
       return true;
     });
 
-    const includedWeightKg = filtered.reduce((sum, d) => {
-      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : (includeZeroWeight ? fallbackWeightKg : 0);
+    if (rejected.length > 0) {
+      console.warn(`[AnalyticsMap] ${rejected.length} deliveries were filtered out:`, rejected);
+    }
+
+    const effFallback = includeZeroWeight ? fallbackWeightKg : 0;
+    
+    // Apply geographical outlier filtering
+    const { filteredDeliveries: postOutlierDeliveries, outliersCount, globalCog } = filterOutliers(
+      filtered, 
+      effFallback, 
+      maxRadiusKm, 
+      autoFilterOutliers
+    );
+
+    const includedWeightKg = postOutlierDeliveries.reduce((sum, d) => {
+      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : effFallback;
       return sum + w;
     }, 0);
 
     const metrics: DataAuditMetrics = {
       totalRaw: rawDeliveries.length + (unmappedApplications?.length || 0),
-      includedCount: filtered.length,
+      includedCount: postOutlierDeliveries.length,
       includedWeightTons: includedWeightKg / 1000,
       zeroWeightCount,
       unmappedCount: unmappedClientsList.length,
       filteredOutCount,
+      outliersCount,
       unmappedClients: unmappedClientsList
     };
 
-    return { filteredDeliveries: filtered, auditMetrics: metrics };
-  }, [rawDeliveries, unmappedApplications, unmappedClientsList, includeZeroWeight, fallbackWeightKg, dateRange, selectedManagers, selectedLoBs, applications]);
+    return { filteredDeliveries: postOutlierDeliveries, auditMetrics: metrics, initialGlobalCog: globalCog };
+  }, [rawDeliveries, unmappedApplications, unmappedClientsList, includeZeroWeight, fallbackWeightKg, dateRange, selectedManagers, selectedLoBs, applications, autoFilterOutliers, maxRadiusKm]);
 
   // Send audit metrics to parent
   useEffect(() => {
@@ -856,6 +884,22 @@ export default function AnalyticsMap({
             </Popup>
           </Marker>
         )}
+
+        {/* Max Radius Circle from Global CoG */}
+        {initialGlobalCog && maxRadiusKm && (
+          <Circle
+            center={[initialGlobalCog.lat, initialGlobalCog.lng]}
+            radius={maxRadiusKm * 1000} // radius is in meters
+            pathOptions={{
+              color: '#f87171',
+              weight: 1,
+              fillColor: '#f87171',
+              fillOpacity: 0.05,
+              dashArray: '5, 10'
+            }}
+          />
+        )}
+
         {/* Map Legend */}
         <MapLegend />
       </MapContainer>

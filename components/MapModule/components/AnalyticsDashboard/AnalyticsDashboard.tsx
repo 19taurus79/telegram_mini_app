@@ -116,6 +116,8 @@ interface SavedSettings {
   includeZeroWeight: boolean;
   fallbackWeightKg: number;
   selectedOriginId: string;
+  autoFilterOutliers: boolean;
+  maxRadiusKm: number;
 }
 
 function loadSettings(): Partial<SavedSettings> {
@@ -170,6 +172,9 @@ export default function AnalyticsDashboard() {
   const [dataSource, setDataSource] = useState<DataSourceType>(savedSettings.dataSource || 'applications');
   const [includeZeroWeight, setIncludeZeroWeight] = useState<boolean>(savedSettings.includeZeroWeight ?? true);
   const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(savedSettings.fallbackWeightKg ?? 100);
+  const [autoFilterOutliers, setAutoFilterOutliers] = useState<boolean>(savedSettings.autoFilterOutliers ?? true);
+  const [maxRadiusKm, setMaxRadiusKm] = useState<number>(savedSettings.maxRadiusKm ?? 300);
+
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
     includedCount: 0,
@@ -238,8 +243,8 @@ export default function AnalyticsDashboard() {
   // Persist settings whenever they change
   useEffect(() => {
     if (!isClient) return;
-    saveSettings({ tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId });
-  }, [isClient, tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId]);
+    saveSettings({ tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm });
+  }, [isClient, tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId, autoFilterOutliers, maxRadiusKm]);
 
   const handleMapMetricsUpdate = useCallback((calculatedClusters: ClusterData[], cog: { lat: number; lng: number } | null) => {
     setClusters(calculatedClusters);
@@ -619,6 +624,10 @@ export default function AnalyticsDashboard() {
                 onToggleIncludeZeroWeight={setIncludeZeroWeight}
                 fallbackWeightKg={fallbackWeightKg}
                 onChangeFallbackWeightKg={setFallbackWeightKg}
+                autoFilterOutliers={autoFilterOutliers}
+                onToggleAutoFilter={setAutoFilterOutliers}
+                maxRadiusKm={maxRadiusKm}
+                onChangeMaxRadiusKm={setMaxRadiusKm}
               />
             </div>
           </div>

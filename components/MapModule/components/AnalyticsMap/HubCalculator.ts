@@ -1,6 +1,5 @@
 import { DeliveryRequest } from '@/types/types';
 import { point, featureCollection } from '@turf/helpers';
-import clustersKmeans from '@turf/clusters-kmeans';
 import convex from '@turf/convex';
 import area from '@turf/area';
 import buffer from '@turf/buffer';
@@ -34,6 +33,22 @@ export const calculateRoadDistanceKm = (p1: {lat: number, lng: number}, p2: {lat
 };
 
 /**
+ * Smartly calculates the weight of a delivery. If total_weight is missing,
+ * it attempts to estimate weight based on the total quantity of items.
+ */
+export const getDeliveryWeight = (d: DeliveryRequest, fallbackWeightKg: number): number => {
+  if (d.total_weight && d.total_weight > 0) return d.total_weight;
+  
+  if (d.items && d.items.length > 0) {
+    let totalQ = 0;
+    d.items.forEach(i => { totalQ += (i.quantity || 1); });
+    return totalQ > 0 ? totalQ * fallbackWeightKg : fallbackWeightKg;
+  }
+  
+  return fallbackWeightKg;
+};
+
+/**
  * Calculates the Center of Gravity (Optimal Hub Location) based on delivery weights and coordinates.
  */
 export const calculateCenterOfGravity = (deliveries: DeliveryRequest[], fallbackWeightKg: number = 0): { lat: number, lng: number } | null => {
@@ -45,7 +60,7 @@ export const calculateCenterOfGravity = (deliveries: DeliveryRequest[], fallback
 
   deliveries.forEach((d: DeliveryRequest) => {
     if (d.latitude && d.longitude) {
-      const w = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+      const w = getDeliveryWeight(d, fallbackWeightKg);
       if (w > 0) {
         totalWeight += w;
         sumLatWeight += d.latitude * w;
@@ -77,7 +92,7 @@ export type ClusterData = {
 
 /**
  * Filters out extreme outliers based on a maximum radius from the Global Center of Gravity,
- * and optionally an automatic statistical z-score filter (Mean + 2 * Sigma).
+ * and optionally an automatic statistical z-score filter (Weighted Mean + 2 * Weighted Sigma).
  */
 export const filterOutliers = (
   deliveries: DeliveryRequest[],
@@ -91,22 +106,31 @@ export const filterOutliers = (
   const globalCog = calculateCenterOfGravity(validDeliveries, fallbackWeightKg);
   if (!globalCog) return { filteredDeliveries: validDeliveries, outliersCount: 0, globalCog: null };
 
-  const distances = validDeliveries.map(d => ({
+  const items = validDeliveries.map(d => ({
     d,
-    dist: calculateDistanceKm(globalCog, { lat: d.latitude!, lng: d.longitude! })
+    dist: calculateDistanceKm(globalCog, { lat: d.latitude!, lng: d.longitude! }),
+    weight: getDeliveryWeight(d, fallbackWeightKg)
   }));
 
   let maxAllowedDist = maxRadiusKm;
 
-  if (autoFilter && distances.length > 2) {
-    const mean = distances.reduce((acc, curr) => acc + curr.dist, 0) / distances.length;
-    const variance = distances.reduce((acc, curr) => acc + Math.pow(curr.dist - mean, 2), 0) / distances.length;
-    const stdDev = Math.sqrt(variance);
-    const zScoreLimit = mean + 2 * stdDev;
+  if (autoFilter && items.length > 2) {
+    const totalWeight = items.reduce((sum, item) => sum + item.weight, 0) || 1;
+    
+    // Weighted Mean
+    const weightedMean = items.reduce((sum, item) => sum + (item.dist * item.weight), 0) / totalWeight;
+    
+    // Weighted Variance
+    const weightedVariance = items.reduce((sum, item) => sum + (item.weight * Math.pow(item.dist - weightedMean, 2)), 0) / totalWeight;
+    
+    const stdDev = Math.sqrt(weightedVariance);
+    
+    // Use weighted mean + 2 sigma for limits
+    const zScoreLimit = weightedMean + 2 * stdDev;
     maxAllowedDist = Math.min(maxRadiusKm, zScoreLimit);
   }
 
-  const filteredDeliveries = distances.filter(item => item.dist <= maxAllowedDist).map(item => item.d);
+  const filteredDeliveries = items.filter(item => item.dist <= maxAllowedDist).map(item => item.d);
   const outliersCount = validDeliveries.length - filteredDeliveries.length;
 
   return { filteredDeliveries, outliersCount, globalCog };
@@ -146,32 +170,60 @@ export const clusterDeliveries = (
       clusterGroups[nearestHubIndex].push(d);
     });
   } else {
-    // Automatic K-Means clustering
-    // Ensure k is at least 1, and at most the number of unique points
+    // Weighted K-Means clustering
     const k = Math.min(Math.max(1, hubCount), validDeliveries.length);
     
     if (k === 1) {
-      // All points belong to 1 cluster
       clusterGroups[0] = validDeliveries;
     } else {
-      const points = validDeliveries.map((d: DeliveryRequest) => {
-        return point([d.longitude!, d.latitude!], { delivery: d });
-      });
-      const fc = featureCollection(points);
+      // 1. Initialize k centroids randomly (we pick top k heaviest deliveries as initial seeds for better stability)
+      const sortedByWeight = [...validDeliveries].sort((a, b) => getDeliveryWeight(b, fallbackWeightKg) - getDeliveryWeight(a, fallbackWeightKg));
+      let centroids = sortedByWeight.slice(0, k).map(d => ({ lat: d.latitude!, lng: d.longitude! }));
       
-      try {
-        const clustered = clustersKmeans(fc, { numberOfClusters: k });
-        clustered.features.forEach((f: { properties?: { cluster?: number; delivery?: DeliveryRequest } }) => {
-          const clusterId = f.properties?.cluster;
-          if (clusterId !== undefined && f.properties?.delivery) {
-            if (!clusterGroups[clusterId]) clusterGroups[clusterId] = [];
-            clusterGroups[clusterId].push(f.properties.delivery);
+      const assignments = new Array(validDeliveries.length).fill(0);
+      let changed = true;
+      let iterations = 0;
+      
+      // 2. Lloyd's algorithm for weighted K-Means
+      while (changed && iterations < 20) {
+        changed = false;
+        const newGroups: DeliveryRequest[][] = Array.from({length: k}, () => []);
+        
+        // Assign each point to the nearest centroid
+        validDeliveries.forEach((d, idx) => {
+          let minDist = Infinity;
+          let bestCluster = 0;
+          
+          centroids.forEach((c, cIdx) => {
+            const dist = calculateRoadDistanceKm(c, { lat: d.latitude!, lng: d.longitude! });
+            if (dist < minDist) {
+              minDist = dist;
+              bestCluster = cIdx;
+            }
+          });
+          
+          if (assignments[idx] !== bestCluster) {
+            assignments[idx] = bestCluster;
+            changed = true;
           }
+          newGroups[bestCluster].push(d);
         });
-      } catch {
-        // Fallback to 1 cluster if K-Means fails (e.g., overlapping points)
-        clusterGroups[0] = validDeliveries;
+        
+        // Recalculate centroids as the Center of Gravity (weighted by mass) of the assigned points
+        centroids = newGroups.map((group, gIdx) => {
+          if (group.length === 0) return centroids[gIdx]; // keep old centroid if empty
+          const cog = calculateCenterOfGravity(group, fallbackWeightKg);
+          return cog || centroids[gIdx];
+        });
+        
+        iterations++;
       }
+      
+      // Store final groups
+      assignments.forEach((clusterId, dIdx) => {
+        if (!clusterGroups[clusterId]) clusterGroups[clusterId] = [];
+        clusterGroups[clusterId].push(validDeliveries[dIdx]);
+      });
     }
   }
 
@@ -219,7 +271,7 @@ export const clusterDeliveries = (
     groupDeliveries.forEach((d: DeliveryRequest) => {
       cLat += d.latitude!;
       cLng += d.longitude!;
-      const weight = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+      const weight = getDeliveryWeight(d, fallbackWeightKg);
       tWeight += weight;
 
       // Aggregating clients
@@ -333,7 +385,7 @@ export const calculateLogisticsCosts = (
     linehaulTkm += linehaulDist * clusterWeightTon;
 
     cluster.deliveries.forEach(d => {
-      const effWeight = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+      const effWeight = getDeliveryWeight(d, fallbackWeightKg);
       const weightTon = effWeight / 1000;
       if (weightTon > 0 && d.latitude && d.longitude) {
         const clientLoc = { lat: d.latitude, lng: d.longitude };
@@ -417,7 +469,7 @@ export const calculateLogisticsCostsAsync = async (
 
       // Batch targets for Last Mile and Direct
       const targets = cluster.deliveries
-        .filter(d => Boolean(d.latitude && d.longitude && ((d.total_weight || fallbackWeightKg) > 0)))
+        .filter(d => Boolean(d.latitude && d.longitude && (getDeliveryWeight(d, fallbackWeightKg) > 0)))
         .map(d => ({ lat: d.latitude!, lon: d.longitude! }));
 
       if (targets.length === 0) continue;
@@ -463,7 +515,7 @@ export const calculateLogisticsCostsAsync = async (
 
       let validTargetIdx = 0;
       cluster.deliveries.forEach(d => {
-        const effWeight = (d.total_weight && d.total_weight > 0) ? d.total_weight : fallbackWeightKg;
+        const effWeight = getDeliveryWeight(d, fallbackWeightKg);
         const weightTon = effWeight / 1000;
         
         if (weightTon > 0 && d.latitude && d.longitude) {

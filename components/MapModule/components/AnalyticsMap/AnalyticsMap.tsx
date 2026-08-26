@@ -226,6 +226,90 @@ interface UnmappedAppRecord {
   orders?: unknown[];
 }
 
+// ─── Map Legend Component ────────────────────────────────────────────────────
+function MapLegend() {
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 28,
+      right: 10,
+      zIndex: 1000,
+      background: 'rgba(15, 20, 35, 0.92)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '10px',
+      padding: '10px 14px',
+      fontSize: '11px',
+      color: '#cbd5e1',
+      backdropFilter: 'blur(8px)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+      minWidth: '190px',
+    }}>
+      <div style={{ fontWeight: 700, fontSize: '11px', color: '#f1f5f9', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+        Легенда карти
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <LegendRow color="#10b981" shape="star" label="Оптимальний РЦ (CoG)" sub="Ідеальне місце для головного складу" />
+        <LegendRow color="#3b82f6" shape="square" label="Фактичний склад" sub="Поточне місце відправлення" />
+        <LegendRow color="#f59e0b" shape="pin" label="Власна точка" sub="Задана вами локація" />
+        <LegendRow color="#ef4444" shape="square" label="Регіональний хаб" sub="Рекомендоване місце перевантаження" />
+        <LegendRow color="#ef4444" shape="polygon" label="Зона кластера" sub="Щільність: яскравіше = більше тоннажу" />
+        <LegendRow color="#3b82f6" shape="dashes" label="Магістраль" sub="Склад → Хаб (великий вантаж)" />
+      </div>
+    </div>
+  );
+}
+
+type LegendRowProps = { color: string; shape: 'star' | 'square' | 'pin' | 'polygon' | 'dashes'; label: string; sub: string };
+function LegendRow({ color, shape, label, sub }: LegendRowProps) {
+  const iconStyle: React.CSSProperties = { flexShrink: 0, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
+  const renderIcon = () => {
+    if (shape === 'dashes') {
+      return (
+        <svg width="18" height="10" viewBox="0 0 18 10">
+          <line x1="0" y1="5" x2="18" y2="5" stroke={color} strokeWidth="2" strokeDasharray="4,3" />
+        </svg>
+      );
+    }
+    if (shape === 'polygon') {
+      return (
+        <svg width="18" height="14" viewBox="0 0 18 14">
+          <polygon points="9,1 17,7 13,13 5,13 1,7" fill={color} fillOpacity="0.5" stroke={color} strokeWidth="1.5"/>
+        </svg>
+      );
+    }
+    if (shape === 'star') {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={color}>
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      );
+    }
+    if (shape === 'pin') {
+      return (
+        <svg width="12" height="14" viewBox="0 0 24 24" fill={color}>
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3" fill="white"/>
+        </svg>
+      );
+    }
+    // square
+    return <div style={{ width: 12, height: 12, borderRadius: 3, background: color, border: `2px solid rgba(255,255,255,0.5)` }} />;
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+      <div style={{ ...iconStyle, marginTop: 1 }}>{renderIcon()}</div>
+      <div>
+        <div style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '11px' }}>{label}</div>
+        <div style={{ color: '#64748b', fontSize: '10px', marginTop: '1px' }}>{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 type Props = {
   dateRange: { start: string; end: string };
   onClusterClick: (cluster: ClusterData) => void;
@@ -241,6 +325,7 @@ type Props = {
   fallbackWeightKg?: number;
   hubCount?: number;
   customHubs?: { lat: number; lng: number }[];
+  selectedClusterId?: number | null;
 };
 
 export default function AnalyticsMap({ 
@@ -257,7 +342,8 @@ export default function AnalyticsMap({
   includeZeroWeight = true,
   fallbackWeightKg = 100,
   hubCount = 1,
-  customHubs = []
+  customHubs = [],
+  selectedClusterId = null,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -479,20 +565,24 @@ export default function AnalyticsMap({
         </div>
       )}
 
-      {/* Analytics Overlay Stats */}
-      <div className="analytics-stats-overlay">
-        <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-          Логістичні Метрики
-        </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
-          <div><strong>Доставок:</strong> {filteredDeliveries.length} шт</div>
-          <div><strong>Загальна вага:</strong> {(heatPoints.reduce((sum: number, p: [number, number, number]) => sum + p[2], 0) / 1000).toFixed(2)} т</div>
-          {optimalHub && (
-            <div><strong>Середнє плече:</strong> {avgDistance.toFixed(1)} км (від Опт. РЦ)</div>
-          )}
-          <div><strong>Кластерів:</strong> {clusters.length}</div>
+      {/* Average arm info — compact top-left badge */}
+      {optimalHub && avgDistance > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          zIndex: 900,
+          background: 'rgba(15, 20, 35, 0.85)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          fontSize: '11px',
+          color: '#94a3b8',
+          backdropFilter: 'blur(6px)',
+        }}>
+          📏 Середнє плече від Опт. РЦ: <strong style={{ color: '#38bdf8' }}>{avgDistance.toFixed(1)} км</strong>
         </div>
-      </div>
+      )}
 
       <MapContainer 
         center={[49.5, 36.5]} // Center around Kharkiv / East region
@@ -612,6 +702,7 @@ export default function AnalyticsMap({
         {clusters.map(cluster => {
           let coords: [number, number][] = [];
           let hasPolygon = false;
+          const isSelected = selectedClusterId === cluster.clusterId;
           
           if (cluster.hull && (cluster.hull as { geometry?: { type: string; coordinates: unknown[] } }).geometry) {
             const geom = (cluster.hull as { geometry: { type: string; coordinates: unknown[] } }).geometry;
@@ -630,8 +721,14 @@ export default function AnalyticsMap({
           const intensity = cluster.density > 0 
             ? Math.min(cluster.density / 10, 1) 
             : Math.min((cluster.totalWeight / 1000) / 10, 1);
-            
-          const fillColor = `rgba(${255 * intensity}, ${59 + 100 * (1-intensity)}, ${130 + 100 * (1-intensity)}, 0.6)`;
+
+          // Selected cluster is brighter; non-selected dims when something is selected
+          const fillOpacity = isSelected ? 0.7 : (selectedClusterId != null ? 0.2 : 0.4);
+          const strokeColor = isSelected ? '#fbbf24' : '#ef4444';
+          const strokeWeight = isSelected ? 3 : 2;
+          const fillColor = isSelected
+            ? `rgba(251, 191, 36, 0.5)`
+            : `rgba(${Math.round(255 * intensity)}, ${Math.round(59 + 100 * (1-intensity))}, ${Math.round(130 + 100 * (1-intensity))}, 0.6)`;
           
           return (
             <React.Fragment key={cluster.clusterId}>
@@ -639,10 +736,10 @@ export default function AnalyticsMap({
                 <Polygon 
                   positions={coords} 
                   pathOptions={{ 
-                    color: '#ef4444', 
-                    weight: 2, 
+                    color: strokeColor, 
+                    weight: strokeWeight, 
                     fillColor: fillColor, 
-                    fillOpacity: 0.4 
+                    fillOpacity,
                   }}
                   eventHandlers={{ click: () => onClusterClick(cluster) }}
                 >
@@ -651,6 +748,7 @@ export default function AnalyticsMap({
                       <strong>Кластер #{cluster.clusterId}</strong><br/>
                       Щільність: {cluster.density.toFixed(2)} т/км²<br/>
                       Вага: {(cluster.totalWeight / 1000).toFixed(2)} т<br/>
+                      Клієнтів: {cluster.deliveries.length}<br/>
                       <span style={{ fontSize: '10px', color: '#666' }}>Клікніть для деталізації</span>
                     </div>
                   </Tooltip>
@@ -660,10 +758,10 @@ export default function AnalyticsMap({
                    position={[cluster.center.lat, cluster.center.lng]}
                    icon={L.divIcon({
                     className: 'cluster-circle-icon',
-                    html: `<div style="background:${fillColor}; border:2px solid #ef4444; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:bold; margin-left:-15px; margin-top:-15px;">
+                    html: `<div style="background:${fillColor}; border:2px solid ${strokeColor}; width:${isSelected ? 36 : 30}px; height:${isSelected ? 36 : 30}px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:bold; margin-left:-${isSelected ? 18 : 15}px; margin-top:-${isSelected ? 18 : 15}px; box-shadow: ${isSelected ? '0 0 0 3px rgba(251,191,36,0.4)' : 'none'};">
                       ${(cluster.totalWeight/1000).toFixed(1)}т
                     </div>`,
-                    iconSize: [30,30], iconAnchor: [0,0]
+                    iconSize: [isSelected ? 36 : 30, isSelected ? 36 : 30], iconAnchor: [0,0]
                   })}
                   eventHandlers={{ click: () => onClusterClick && onClusterClick(cluster) }}
                 >
@@ -679,16 +777,17 @@ export default function AnalyticsMap({
                     className: 'local-hub-icon',
                     html: `
                       <div style="
-                        background-color: #ef4444;
+                        background-color: ${isSelected ? '#f59e0b' : '#ef4444'};
                         border: 2px solid white;
                         border-radius: 6px;
-                        width: 28px;
-                        height: 28px;
-                        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+                        width: ${isSelected ? 32 : 28}px;
+                        height: ${isSelected ? 32 : 28}px;
+                        box-shadow: 0 2px 12px ${isSelected ? 'rgba(245, 158, 11, 0.9)' : 'rgba(239, 68, 68, 0.6)'};
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         position: relative;
+                        ${isSelected ? 'animation: hubPulse 1.5s ease-in-out infinite;' : ''}
                       ">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -698,25 +797,25 @@ export default function AnalyticsMap({
                         <div style="
                           position: absolute;
                           bottom: -18px;
-                          background: rgba(16, 18, 27, 0.9);
-                          color: #f87171;
+                          background: ${isSelected ? 'rgba(245, 158, 11, 0.95)' : 'rgba(16, 18, 27, 0.9)'};
+                          color: ${isSelected ? '#111827' : '#f87171'};
                           font-size: 9px;
                           font-weight: bold;
                           padding: 1px 4px;
                           border-radius: 3px;
-                          border: 1px solid rgba(239, 68, 68, 0.3);
+                          border: 1px solid ${isSelected ? '#fde68a' : 'rgba(239, 68, 68, 0.3)'};
                           box-shadow: 0 1px 3px rgba(0,0,0,0.4);
                           white-space: nowrap;
                         ">
-                          Хаб #${cluster.clusterId}
+                          Хаб #${cluster.clusterId}${isSelected ? ' ✓' : ''}
                         </div>
                       </div>
                     `,
-                    iconSize: [28, 28], 
-                    iconAnchor: [14, 14]
+                    iconSize: [isSelected ? 32 : 28, isSelected ? 32 : 28], 
+                    iconAnchor: [isSelected ? 16 : 14, isSelected ? 16 : 14]
                   })}
                 >
-                  <Tooltip>Локальний склад (Остання миля)</Tooltip>
+                  <Tooltip>Локальний склад #{cluster.clusterId} (Остання миля)</Tooltip>
                 </Marker>
               )}
             </React.Fragment>
@@ -757,6 +856,8 @@ export default function AnalyticsMap({
             </Popup>
           </Marker>
         )}
+        {/* Map Legend */}
+        <MapLegend />
       </MapContainer>
     </div>
   );

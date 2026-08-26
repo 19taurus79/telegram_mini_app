@@ -30,6 +30,7 @@ const AnalyticsMap = dynamic(() => import('../AnalyticsMap/AnalyticsMap'), {
 });
 
 const STORAGE_KEY = 'analytics-bento-layout-v3';
+const SETTINGS_KEY = 'analytics-settings-v1';
 
 const defaultLayouts: Layouts = {
   lg: [
@@ -64,6 +65,81 @@ const defaultLayouts: Layouts = {
   ]
 };
 
+// ─── Date Presets ─────────────────────────────────────────────────────────────
+const DATE_PRESETS = [
+  {
+    label: 'Цей місяць',
+    get: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    },
+  },
+  {
+    label: 'Минулий місяць',
+    get: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    },
+  },
+  {
+    label: 'Квартал',
+    get: () => {
+      const now = new Date();
+      const q = Math.floor(now.getMonth() / 3);
+      const start = new Date(now.getFullYear(), q * 3, 1);
+      const end = new Date(now.getFullYear(), q * 3 + 3, 0);
+      return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    },
+  },
+  {
+    label: 'Рік',
+    get: () => {
+      const y = new Date().getFullYear();
+      return { start: `${y}-01-01`, end: `${y}-12-31` };
+    },
+  },
+  {
+    label: 'Скинути',
+    get: () => ({ start: '', end: '' }),
+  },
+];
+
+// ─── Settings persistence ──────────────────────────────────────────────────────
+interface SavedSettings {
+  tariffs: { direct: number; linehaul: number; lastMile: number };
+  dataSource: DataSourceType;
+  hubCount: number;
+  includeZeroWeight: boolean;
+  fallbackWeightKg: number;
+  selectedOriginId: string;
+}
+
+function loadSettings(): Partial<SavedSettings> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const s = localStorage.getItem(SETTINGS_KEY);
+    return s ? JSON.parse(s) : {};
+  } catch { return {}; }
+}
+
+function saveSettings(s: SavedSettings) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+// ─── Scenario type ────────────────────────────────────────────────────────────
+type Scenario = {
+  label: string;
+  originName: string;
+  hubCount: number;
+  tariffs: { direct: number; linehaul: number; lastMile: number };
+  result: CostSimulationResult;
+};
+
 function loadLayouts(): Layouts {
   if (typeof window === 'undefined') return defaultLayouts;
   try {
@@ -80,17 +156,20 @@ export default function AnalyticsDashboard() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   
-  const [selectedOriginId, setSelectedOriginId] = useState<string>('wh-1');
+  // Load saved settings once on client
+  const savedSettings = useMemo(() => (typeof window !== 'undefined' ? loadSettings() : {}), []);
+
+  const [selectedOriginId, setSelectedOriginId] = useState<string>(savedSettings.selectedOriginId || 'wh-1');
   const [customOriginLocation, setCustomOriginLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isPickingLocation, setIsPickingLocation] = useState<boolean>(false);
 
-  const [hubCount, setHubCount] = useState<number>(1);
+  const [hubCount, setHubCount] = useState<number>(savedSettings.hubCount ?? 1);
   const [customHubs, setCustomHubs] = useState<{ lat: number; lng: number }[]>([]);
   const [isPickingCustomHub, setIsPickingCustomHub] = useState<boolean>(false);
 
-  const [dataSource, setDataSource] = useState<DataSourceType>('applications');
-  const [includeZeroWeight, setIncludeZeroWeight] = useState<boolean>(true);
-  const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(100);
+  const [dataSource, setDataSource] = useState<DataSourceType>(savedSettings.dataSource || 'applications');
+  const [includeZeroWeight, setIncludeZeroWeight] = useState<boolean>(savedSettings.includeZeroWeight ?? true);
+  const [fallbackWeightKg, setFallbackWeightKg] = useState<number>(savedSettings.fallbackWeightKg ?? 100);
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
     includedCount: 0,
@@ -102,8 +181,13 @@ export default function AnalyticsDashboard() {
   });
 
   const setSelectedCluster = useAnalyticsStore(state => state.setSelectedCluster);
+  const selectedCluster = useAnalyticsStore(state => state.selectedCluster);
   const [clusters, setClusters] = useState<ClusterData[]>([]);
   const [globalCog, setGlobalCog] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Scenario comparison
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [isComparingScenarios, setIsComparingScenarios] = useState(false);
 
   const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries } = useApplicationsStore();
 
@@ -146,10 +230,16 @@ export default function AnalyticsDashboard() {
     setLayouts(loadLayouts());
   }, []);
 
-  const [tariffs, setTariffs] = useState({ direct: 12, linehaul: 5, lastMile: 18 });
+  const [tariffs, setTariffs] = useState(savedSettings.tariffs || { direct: 12, linehaul: 5, lastMile: 18 });
   const [costResult, setCostResult] = useState<CostSimulationResult | null>(null);
   const [useRealRoads, setUseRealRoads] = useState<boolean>(false);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState<boolean>(false);
+
+  // Persist settings whenever they change
+  useEffect(() => {
+    if (!isClient) return;
+    saveSettings({ tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId });
+  }, [isClient, tariffs, dataSource, hubCount, includeZeroWeight, fallbackWeightKg, selectedOriginId]);
 
   const handleMapMetricsUpdate = useCallback((calculatedClusters: ClusterData[], cog: { lat: number; lng: number } | null) => {
     setClusters(calculatedClusters);
@@ -212,6 +302,15 @@ export default function AnalyticsDashboard() {
   const totalDeliveries = clusters.reduce((acc, c) => acc + c.deliveries.length, 0);
   const totalWeightTons = clusters.reduce((acc, c) => acc + c.totalWeight, 0) / 1000;
 
+  // Derived: selected cluster ID for map highlighting
+  const selectedClusterId = selectedCluster?.clusterId ?? null;
+
+  // Zero-weight accuracy warning
+  const zeroWeightRatio = auditMetrics.includedCount > 0
+    ? auditMetrics.zeroWeightCount / auditMetrics.includedCount
+    : 0;
+  const hasAccuracyWarning = auditMetrics.zeroWeightCount > 0;
+
   // Active origin description & distance to CoG
   const originInfo = useMemo(() => {
     let name = 'Склад Коротич';
@@ -225,6 +324,20 @@ export default function AnalyticsDashboard() {
     }
     return { name, distToCog };
   }, [selectedOriginId, activeOriginCoords, globalCog]);
+
+  // Save scenario
+  const handleSaveScenario = useCallback(() => {
+    if (!costResult) return;
+    const label = `Сценарій ${String.fromCharCode(65 + scenarios.length)}`;
+    const newScenario: Scenario = {
+      label,
+      originName: originInfo.name,
+      hubCount,
+      tariffs: { ...tariffs },
+      result: { ...costResult },
+    };
+    setScenarios(prev => [...prev.slice(-1), newScenario]); // keep last 2
+  }, [costResult, scenarios.length, originInfo.name, hubCount, tariffs]);
 
   if (!isClient) return null;
 
@@ -264,7 +377,7 @@ export default function AnalyticsDashboard() {
             <div className={styles.dragHandle}>⠿</div>
             <div className={styles.kpiRow}>
               <div className={styles.kpiItem}>
-                <span className={styles.kpiLabel}>📦 Доставок</span>
+                <span className={styles.kpiLabel}>📦 Доставок в аналітиці</span>
                 <span className={styles.kpiValue}>{totalDeliveries > 0 ? `${totalDeliveries} шт` : '—'}</span>
               </div>
               <div className={styles.kpiDivider} />
@@ -274,25 +387,61 @@ export default function AnalyticsDashboard() {
               </div>
               <div className={styles.kpiDivider} />
               <div className={styles.kpiItem}>
-                <span className={styles.kpiLabel}>🔵 Кластерів</span>
+                <span className={styles.kpiLabel}>🔵 Кластерів (зон)</span>
                 <span className={styles.kpiValue}>{clusters.length > 0 ? clusters.length : '—'}</span>
               </div>
               <div className={styles.kpiDivider} />
               <div className={`${styles.kpiItem} ${costResult && costResult.savings > 0 ? styles.kpiAccent : ''}`}>
                 <span className={styles.kpiLabel}>💰 Економія від Хабів</span>
                 <span className={styles.kpiValue}>
-                  {costResult ? `+${Math.round(costResult.savings).toLocaleString()} ₴` : '—'}
+                  {costResult ? `${costResult.savings >= 0 ? '+' : ''}${Math.round(costResult.savings).toLocaleString()} ₴` : '—'}
                 </span>
               </div>
               <div className={styles.kpiDivider} />
+              {/* Accuracy warning badge */}
+              {hasAccuracyWarning && (
+                <>
+                  <div className={styles.kpiItem} title={`${auditMetrics.zeroWeightCount} клієнтів отримали авто-вагу ${fallbackWeightKg} кг — реальний розрахунок може відрізнятись`}>
+                    <span className={styles.kpiLabel}>⚠️ Точність розрахунку</span>
+                    <span className={styles.kpiValue} style={{ color: '#fbbf24', fontSize: '12px' }}>
+                      {auditMetrics.zeroWeightCount} без ваги ({Math.round(zeroWeightRatio * 100)}%)
+                    </span>
+                  </div>
+                  <div className={styles.kpiDivider} />
+                </>
+              )}
               <div className={styles.kpiItem} style={{ flex: 2 }}>
                 <span className={styles.kpiLabel}>📅 Період</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input type="date" value={dateRange.start} className={styles.dateInput}
-                    onChange={e => setDateRange(p => ({...p, start: e.target.value}))} />
-                  <span style={{ color: '#475569' }}>—</span>
-                  <input type="date" value={dateRange.end} className={styles.dateInput}
-                    onChange={e => setDateRange(p => ({...p, end: e.target.value}))} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="date" value={dateRange.start} className={styles.dateInput}
+                      onChange={e => setDateRange(p => ({...p, start: e.target.value}))} />
+                    <span style={{ color: '#475569' }}>—</span>
+                    <input type="date" value={dateRange.end} className={styles.dateInput}
+                      onChange={e => setDateRange(p => ({...p, end: e.target.value}))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {DATE_PRESETS.map(p => (
+                      <button
+                        key={p.label}
+                        onClick={() => setDateRange(p.get())}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '10px',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.06)',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = 'rgba(59,130,246,0.2)'; (e.target as HTMLButtonElement).style.color = '#60a5fa'; }}
+                        onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.target as HTMLButtonElement).style.color = '#94a3b8'; }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -425,18 +574,14 @@ export default function AnalyticsDashboard() {
 
         {/* ─── 3. Interactive Map ─── */}
         <div key="map">
-          <div className={`${styles.bentoCard} ${styles.mapBentoCard}`}>
-            <div className={styles.cardHeader}>
-              <span className={styles.dragHandle}>⠿</span>
-              <h3 className={styles.cardTitle}>Карта доставок та хабів</h3>
-              <span className={styles.cardSubtitle}>
-                Активна база: <strong style={{ color: '#38bdf8' }}>{originInfo.name}</strong>
-              </span>
-            </div>
+          <div className={styles.bentoCard}>
+            <div className={styles.dragHandle}>⠿</div>
             <div className={styles.mapWrapper}>
               <AnalyticsMap
                 dateRange={dateRange}
-                onClusterClick={(cluster) => setSelectedCluster(cluster)}
+                onClusterClick={(cluster) => {
+                  setSelectedCluster(cluster);
+                }}
                 onMapMetricsUpdate={handleMapMetricsUpdate}
                 onAuditMetricsUpdate={handleAuditMetricsUpdate}
                 selectedOriginId={selectedOriginId}
@@ -452,6 +597,7 @@ export default function AnalyticsDashboard() {
                 fallbackWeightKg={fallbackWeightKg}
                 hubCount={hubCount}
                 customHubs={customHubs}
+                selectedClusterId={selectedClusterId}
               />
             </div>
           </div>
@@ -528,33 +674,62 @@ export default function AnalyticsDashboard() {
               <h3 className={styles.cardTitle}>Результати Моделювання</h3>
             </div>
             <div className={styles.cardContent}>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   <input 
                     type="checkbox" 
                     checked={useRealRoads} 
                     onChange={e => setUseRealRoads(e.target.checked)} 
                   />
-                  Використовувати реальні дороги (Valhalla API)
+                  Реальні дороги (Valhalla API)
                 </label>
                 {isCalculatingRoute && <span style={{ fontSize: '11px', color: '#f59e0b' }}>⏳ Розрахунок...</span>}
               </div>
+
+              {/* Zero-weight accuracy warning */}
+              {hasAccuracyWarning && (
+                <div style={{
+                  background: 'rgba(251, 191, 36, 0.08)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  marginBottom: '12px',
+                  fontSize: '11px',
+                  color: '#fbbf24',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '6px',
+                }}>
+                  <span style={{ flexShrink: 0, marginTop: 1 }}>⚠️</span>
+                  <span>
+                    <strong>Розрахунок неточний</strong> — {auditMetrics.zeroWeightCount} клієнтів
+                    {' '}({Math.round(zeroWeightRatio * 100)}%) отримали авто-вагу {fallbackWeightKg} кг.
+                    Для точних результатів заповніть вагу в 1С.
+                  </span>
+                </div>
+              )}
 
               {costResult ? (
                 <div className={styles.resultsGrid}>
                   <div className={styles.resultBox}>
                     <div className={styles.resultLabel}>1. Пряма від складу</div>
                     <div className={styles.resultValue}>{Math.round(costResult.directCost).toLocaleString()} ₴</div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>{costResult.directTkm.toFixed(0)} т·км × {tariffs.direct} ₴</div>
                   </div>
                   <div className={styles.resultBox}>
                     <div className={styles.resultLabel}>2. Хабова модель</div>
                     <div className={styles.resultValue}>{Math.round(costResult.hubModelCost).toLocaleString()} ₴</div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>
+                      {costResult.linehaulTkm.toFixed(0)} т·км × {tariffs.linehaul} ₴
+                      {' + '}{costResult.lastMileTkm.toFixed(0)} т·км × {tariffs.lastMile} ₴
+                    </div>
                   </div>
                   <div className={styles.resultBox} style={{ gridColumn: 'span 2' }}>
                     <div className={styles.resultLabel}>3. Пряма від Оптимального РЦ (якщо перенести)</div>
                     <div className={styles.resultValue} style={{ color: '#34d399' }}>
                       {Math.round(costResult.optimalDirectCost).toLocaleString()} ₴
                     </div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>{costResult.directTkm.toFixed(0)} → зменшується до ~{(costResult.optimalDirectCost / tariffs.direct).toFixed(0)} т·км</div>
                   </div>
                   
                   {/* Savings from Hubs */}
@@ -572,9 +747,97 @@ export default function AnalyticsDashboard() {
                       {costResult.relocationSavings >= 0 ? '+' : ''}{Math.round(costResult.relocationSavings).toLocaleString()} ₴
                     </div>
                   </div>
+
+                  {/* Save scenario button */}
+                  <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                    <button
+                      onClick={handleSaveScenario}
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(99,102,241,0.4)',
+                        background: 'rgba(99,102,241,0.1)',
+                        color: '#818cf8',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                    >
+                      💾 Зберегти як сценарій {scenarios.length === 0 ? 'А' : scenarios.length === 1 ? 'Б' : '(замінить А)'}
+                    </button>
+                    {scenarios.length === 2 && (
+                      <button
+                        onClick={() => setIsComparingScenarios(v => !v)}
+                        style={{
+                          width: '100%',
+                          marginTop: '4px',
+                          padding: '6px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(16,185,129,0.4)',
+                          background: isComparingScenarios ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.08)',
+                          color: '#34d399',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                        }}
+                      >
+                        📊 {isComparingScenarios ? 'Сховати порівняння' : 'Порівняти сценарії А vs Б'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className={styles.emptyState}>Дані відсутні. Завантажте карту.</div>
+              )}
+
+              {/* Scenario Comparison Table */}
+              {isComparingScenarios && scenarios.length === 2 && (
+                <div style={{ marginTop: '12px', fontSize: '11px' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '8px', color: '#e2e8f0' }}>📊 Порівняння сценаріїв</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#64748b' }}>
+                        <th style={{ padding: '4px 6px', textAlign: 'left' }}>Параметр</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right' }}>{scenarios[0].label}</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right' }}>{scenarios[1].label}</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'right' }}>Різниця</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: 'Склад', a: scenarios[0].originName, b: scenarios[1].originName, isText: true },
+                        { label: 'Хабів', a: String(scenarios[0].hubCount), b: String(scenarios[1].hubCount), isText: true },
+                        { label: 'Пряма (₴)', a: Math.round(scenarios[0].result.directCost), b: Math.round(scenarios[1].result.directCost) },
+                        { label: 'Хабова (₴)', a: Math.round(scenarios[0].result.hubModelCost), b: Math.round(scenarios[1].result.hubModelCost) },
+                        { label: 'Від Опт.РЦ (₴)', a: Math.round(scenarios[0].result.optimalDirectCost), b: Math.round(scenarios[1].result.optimalDirectCost) },
+                        { label: 'Економія Хаб (₴)', a: Math.round(scenarios[0].result.savings), b: Math.round(scenarios[1].result.savings) },
+                      ].map((row, i) => {
+                        const diff = row.isText ? null : ((row.b as number) - (row.a as number));
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '4px 6px', color: '#94a3b8' }}>{row.label}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#e2e8f0' }}>
+                              {row.isText ? row.a : (row.a as number).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#e2e8f0' }}>
+                              {row.isText ? row.b : (row.b as number).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: diff == null ? '#64748b' : diff < 0 ? '#34d399' : diff > 0 ? '#f87171' : '#64748b', fontWeight: 600 }}>
+                              {diff == null ? '—' : diff === 0 ? '=' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <button
+                    onClick={() => { setScenarios([]); setIsComparingScenarios(false); }}
+                    style={{ marginTop: '8px', fontSize: '10px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Скинути сценарії
+                  </button>
+                </div>
               )}
             </div>
           </div>

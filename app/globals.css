@@ -306,3 +306,10 @@ body:has(.main-content > div[style*="height: 100%"]) .main-content {
     overflow: visible !important;
   }
 }
+
+/* ─── Analytics Map Animations ─────────────────────────────────── */
+@keyframes hubPulse {
+  0%   { box-shadow: 0 2px 12px rgba(245, 158, 11, 0.9); }
+  50%  { box-shadow: 0 2px 24px rgba(245, 158, 11, 1), 0 0 0 6px rgba(245, 158, 11, 0.2); }
+  100% { box-shadow: 0 2px 12px rgba(245, 158, 11, 0.9); }
+}

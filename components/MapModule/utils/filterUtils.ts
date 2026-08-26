@@ -186,7 +186,8 @@ export function filterDelivery(
   selectedManagers: string[] = [],
   selectedDates: string[] = [],
   selectedLoBs: string[] = [],
-  _allApplications?: ApplicationItem[]
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  allApplications?: ApplicationItem[]
 ): boolean {
   if (!delivery) return false;
 

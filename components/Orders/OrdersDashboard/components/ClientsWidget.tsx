@@ -31,15 +31,14 @@ export default function ClientsWidget({
     enabled: !clientsList,
   });
 
-  const baseClients = clientsList || fetchedClients || [];
-
   const displayedClients = useMemo(() => {
+    const baseClients = clientsList || fetchedClients || [];
     if (!searchValue.trim()) return baseClients;
     const lowerSearch = searchValue.toLowerCase();
     return baseClients.filter((c: Client) =>
       c.client?.toLowerCase().includes(lowerSearch)
     );
-  }, [baseClients, searchValue]);
+  }, [clientsList, fetchedClients, searchValue]);
 
   // Відновлення позиції скролу
   useEffect(() => {

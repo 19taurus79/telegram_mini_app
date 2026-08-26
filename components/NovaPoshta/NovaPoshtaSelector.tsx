@@ -240,6 +240,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
     companyName,
     payer,
     paymentMethod,
+    onSelect,
   ]);
 
   // ── Handle outside clicks ──

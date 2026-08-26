@@ -439,7 +439,7 @@ export default function AnalyticsMap({
     let zeroWeightCount = 0;
     let filteredOutCount = 0;
 
-    const rejected: any[] = []; // Collect rejected deliveries for debugging
+    const rejected: { id: string | number; client: string; reason: string; date?: string }[] = []; // Collect rejected deliveries for debugging
 
     const filtered = rawDeliveries.filter((d: DeliveryRequest) => {
       const hasCoords = typeof d.latitude === 'number' && typeof d.longitude === 'number';

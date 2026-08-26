@@ -382,7 +382,7 @@ function DeliveryDataContent() {
                     if (fetchedAddress.area && fetchedAddress.area !== "undefined") parts.push(`${fetchedAddress.area} р-н`);
                     if (fetchedAddress.commune && fetchedAddress.commune !== "undefined") parts.push(`${fetchedAddress.commune} громада`);
                     if (fetchedAddress.city && fetchedAddress.city !== "undefined") parts.push(fetchedAddress.city);
-                    const composedAddress = parts.length > 0 ? parts.join(', ') : (fetchedAddress.address || "");
+                    const composedAddress = parts.length > 0 ? parts.join(', ') : ((fetchedAddress as any).address || "");
                     const formattedPhone = formatPhoneNumber(fetchedAddress.phone1 || "");
                     const cleanRepresentative = fetchedAddress.representative ? fetchedAddress.representative.trim() : "";
 

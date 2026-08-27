@@ -10,8 +10,9 @@ import ManagerFilter from '../ManagerFilter/ManagerFilter';
 import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
-import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
+import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm, calculateCenterOfGravity } from '../AnalyticsMap/HubCalculator';
 import { CandidateWarehouse, SavedZone } from '../AnalyticsMap/AnalyticsMap';
+import * as XLSX from 'xlsx';
 import { polygon } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { useAnalyticsStore } from '../../store/analyticsStore';
@@ -182,7 +183,15 @@ export default function AnalyticsDashboard() {
   
   const [weightingMode, setWeightingMode] = useState<'geometric' | 'weighted'>(savedSettings.weightingMode || 'weighted');
   const [outlierSigma, setOutlierSigma] = useState<number>(savedSettings.outlierSigma !== undefined ? savedSettings.outlierSigma : 3);
+  
+  // Visibility Toggles
   const [showTonnageLabels, setShowTonnageLabels] = useState<boolean>(true);
+  const [showWarehouses, setShowWarehouses] = useState<boolean>(true);
+  const [showPolygons, setShowPolygons] = useState<boolean>(true);
+  const [showClusters, setShowClusters] = useState<boolean>(true);
+  
+  // Modal State
+  const [viewingZoneId, setViewingZoneId] = useState<string | null>(null);
 
   // Block E: Candidate Warehouses (What-If Planner)
   const CANDIDATE_COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#ec4899'];
@@ -302,6 +311,10 @@ export default function AnalyticsDashboard() {
       }
     }
 
+    // Calculate local Center of Gravity for this zone's deliveries
+    const zoneDeliveries = clusters.flatMap(c => c.deliveries).filter(d => insideClients.has(d.client));
+    const optimalCog = calculateCenterOfGravity(zoneDeliveries, fallbackWeightKg, weightingMode) || undefined;
+
     const newZone: SavedZone = {
       id: `zone-${Date.now()}`,
       name: `Зона ${savedZones.length + 1}`,
@@ -309,12 +322,13 @@ export default function AnalyticsDashboard() {
       color: autoAssignedColor,
       polygon: polygonCoords,
       clients: Array.from(insideClients),
-      totalWeightTons
+      totalWeightTons,
+      optimalCog
     };
 
     setSavedZones(prev => [...prev, newZone]);
     setIsDrawingMode(false);
-  }, [clusters, savedZones.length, candidateWarehouses]);
+  }, [clusters, savedZones.length, candidateWarehouses, fallbackWeightKg, weightingMode]);
 
   // When candidate warehouses exist, pass them as customHubs to the map
   const effectiveCustomHubs = candidateWarehouses.length > 0
@@ -815,7 +829,28 @@ export default function AnalyticsDashboard() {
                       fontSize: '11px',
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <strong style={{ color: zone.color || '#8b5cf6' }}>{zone.name}</strong>
+                        <input 
+                          type="text"
+                          value={zone.name}
+                          onChange={(e) => {
+                            const newName = e.target.value;
+                            setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, name: newName } : z));
+                          }}
+                          style={{
+                            color: zone.color || '#8b5cf6',
+                            fontWeight: 'bold',
+                            background: 'transparent',
+                            border: '1px solid transparent',
+                            borderBottom: '1px dashed rgba(255,255,255,0.3)',
+                            padding: '0 2px',
+                            width: '100%',
+                            marginRight: '8px',
+                            outline: 'none',
+                            fontSize: '13px'
+                          }}
+                          onFocus={(e) => e.target.style.borderBottom = '1px solid ' + (zone.color || '#8b5cf6')}
+                          onBlur={(e) => e.target.style.borderBottom = '1px dashed rgba(255,255,255,0.3)'}
+                        />
                         <button
                           onClick={() => setSavedZones(prev => prev.filter(z => z.id !== zone.id))}
                           style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
@@ -842,7 +877,7 @@ export default function AnalyticsDashboard() {
                           }
                           setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, warehouseId: wId, color: wColor } : z));
                         }}
-                        style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px' }}
+                        style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px', marginBottom: '8px' }}
                       >
                         <option value="">-- Не прив&apos;язано --</option>
                         <optgroup label="Реальні склади">
@@ -858,6 +893,22 @@ export default function AnalyticsDashboard() {
                           </optgroup>
                         )}
                       </select>
+
+                      <button
+                        onClick={() => setViewingZoneId(zone.id)}
+                        style={{
+                          width: '100%',
+                          padding: '4px',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(59,130,246,0.3)',
+                          background: 'rgba(59,130,246,0.1)',
+                          color: '#60a5fa',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        👥 Переглянути клієнтів ({zone.clients.length})
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -897,6 +948,24 @@ export default function AnalyticsDashboard() {
                 <input type="checkbox" checked={showTonnageLabels} onChange={e => setShowTonnageLabels(e.target.checked)} />
                 Показувати мітки тоннажу на карті
               </label>
+
+              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+              
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>5. 👁️ Відображення шарів</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" checked={showWarehouses} onChange={e => setShowWarehouses(e.target.checked)} />
+                  Склади (фактичні та кандидати)
+                </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" checked={showClusters} onChange={e => setShowClusters(e.target.checked)} />
+                  Автоматичні кластери та локальні хаби
+                </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" checked={showPolygons} onChange={e => setShowPolygons(e.target.checked)} />
+                  Намальовані зони та локальні РЦ зон
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -932,6 +1001,9 @@ export default function AnalyticsDashboard() {
                 weightingMode={weightingMode}
                 outlierSigma={outlierSigma}
                 showTonnageLabels={showTonnageLabels}
+                showWarehouses={showWarehouses}
+                showPolygons={showPolygons}
+                showClusters={showClusters}
                 candidateWarehouses={candidateWarehouses}
                 isCandidateMode={isCandidateMode}
                 onCandidatePlaced={handleCandidatePlaced}
@@ -1223,6 +1295,121 @@ export default function AnalyticsDashboard() {
 
       <Portal>
         <AnalyticsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+        
+        {/* Zone Details Modal */}
+        {viewingZoneId && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999
+          }}>
+            <div style={{
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '800px',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setViewingZoneId(null)}
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+              
+              {(() => {
+                const zone = savedZones.find(z => z.id === viewingZoneId);
+                if (!zone) return <div>Zone not found</div>;
+                
+                // Get all deliveries for this zone's clients
+                const deliveries = clusters.flatMap(c => c.deliveries).filter(d => zone.clients.includes(d.client));
+                
+                // Deduplicate clients for simple display
+                const uniqueClientsMap = new Map();
+                deliveries.forEach(d => {
+                  if (!uniqueClientsMap.has(d.client)) {
+                    uniqueClientsMap.set(d.client, d);
+                  } else {
+                    // Accumulate weight if multiple deliveries per client
+                    const existing = uniqueClientsMap.get(d.client);
+                    existing.total_weight = (existing.total_weight || 0) + (d.total_weight || 0);
+                  }
+                });
+                const uniqueClientsList = Array.from(uniqueClientsMap.values());
+                
+                let warehouseName = 'Не прив\'язано';
+                if (zone.warehouseId) {
+                  if (zone.warehouseId.startsWith('wh-')) {
+                    warehouseName = warehouses.find(w => `wh-${w.id}` === zone.warehouseId)?.name || zone.warehouseId;
+                  } else {
+                    warehouseName = candidateWarehouses.find(c => c.id === zone.warehouseId)?.name || zone.warehouseId;
+                  }
+                }
+
+                const handleExportZone = () => {
+                  const exportData = uniqueClientsList.map(c => ({
+                    'Клієнт': c.client,
+                    'Адреса': c.address || '',
+                    'Зона (Територія)': zone.name,
+                    'ID Складу': zone.warehouseId || '',
+                    'Назва Складу': warehouseName,
+                    'Вага (кг)': c.total_weight || 0
+                  }));
+                  
+                  const wb = XLSX.utils.book_new();
+                  const ws = XLSX.utils.json_to_sheet(exportData);
+                  XLSX.utils.book_append_sheet(wb, ws, 'Клієнти Зони');
+                  XLSX.writeFile(wb, `zone_${zone.name.replace(/\s+/g, '_')}_clients.xlsx`);
+                };
+
+                return (
+                  <div>
+                    <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: 'var(--text-primary)' }}>{zone.name} - Клієнти</h2>
+                    <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#94a3b8' }}>
+                      Склад: <strong style={{ color: '#e2e8f0' }}>{warehouseName}</strong> • 
+                      Клієнтів: <strong>{uniqueClientsList.length}</strong> • 
+                      Загальна вага: <strong>{zone.totalWeightTons.toFixed(2)} т</strong>
+                    </p>
+                    
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                      <button onClick={handleExportZone} style={{ padding: '6px 12px', borderRadius: '6px', background: '#10b981', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        📥 Експорт в Excel
+                      </button>
+                      <button onClick={() => window.print()} style={{ padding: '6px 12px', borderRadius: '6px', background: 'transparent', color: '#e2e8f0', border: '1px solid #334155', cursor: 'pointer' }}>
+                        🖨️ Друк / PDF
+                      </button>
+                    </div>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #334155' }}>Клієнт</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #334155' }}>Адреса</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #334155', textAlign: 'right' }}>Вага (кг)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {uniqueClientsList.map((c, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '8px', color: '#e2e8f0' }}>{c.client}</td>
+                            <td style={{ padding: '8px', color: '#94a3b8' }}>{c.address}</td>
+                            <td style={{ padding: '8px', color: '#e2e8f0', textAlign: 'right' }}>{c.total_weight?.toLocaleString() || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
       </Portal>
     </div>
   );

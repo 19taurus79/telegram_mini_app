@@ -421,6 +421,7 @@ export interface SavedZone {
   color?: string;
   clients: string[]; // List of client names
   totalWeightTons: number; // Total weight inside
+  optimalCog?: { lat: number; lng: number }; // Local Center of Gravity for the zone
 }
 
 type Props = {
@@ -445,6 +446,10 @@ type Props = {
   outlierSigma?: number;
   // Block A: tonnage labels
   showTonnageLabels?: boolean;
+  // Visibility toggles
+  showWarehouses?: boolean;
+  showPolygons?: boolean;
+  showClusters?: boolean;
   // Block E: candidate warehouses
   candidateWarehouses?: CandidateWarehouse[];
   isCandidateMode?: boolean;
@@ -478,6 +483,9 @@ export default function AnalyticsMap({
   weightingMode = 'weighted',
   outlierSigma = 3,
   showTonnageLabels = true,
+  showWarehouses = true,
+  showPolygons = true,
+  showClusters = true,
   candidateWarehouses = [],
   isCandidateMode = false,
   onCandidatePlaced,
@@ -920,23 +928,72 @@ export default function AnalyticsMap({
         )}
 
         {/* Block D: Render Saved Zones */}
-        {savedZones && savedZones.map(zone => (
-          <Polygon
-            key={`zone-${zone.id}`}
-            positions={zone.polygon}
-            pathOptions={{
-              color: zone.color || '#8b5cf6',
-              fillColor: zone.color || '#8b5cf6',
-              fillOpacity: 0.25,
-              weight: 3,
-              dashArray: '5, 5'
-            }}
-          >
-            <Tooltip sticky>
-              <strong>🗺️ {zone.name}</strong><br/>
-              Склад: {zone.warehouseId || 'Не призначено'}
-            </Tooltip>
-          </Polygon>
+        {showPolygons && savedZones && savedZones.map(zone => (
+          <React.Fragment key={`zone-group-${zone.id}`}>
+            <Polygon
+              key={`zone-${zone.id}`}
+              positions={zone.polygon}
+              pathOptions={{
+                color: zone.color || '#8b5cf6',
+                fillColor: zone.color || '#8b5cf6',
+                fillOpacity: 0.25,
+                weight: 3,
+                dashArray: '5, 5'
+              }}
+            >
+              <Tooltip sticky>
+                <strong>🗺️ {zone.name}</strong><br/>
+                Склад: {zone.warehouseId || 'Не призначено'}
+              </Tooltip>
+            </Polygon>
+            
+            {/* Render Local Optimal CoG for Zone */}
+            {zone.optimalCog && (
+              <Marker
+                key={`zone-cog-${zone.id}`}
+                position={[zone.optimalCog.lat, zone.optimalCog.lng]}
+                icon={L.divIcon({
+                  className: 'zone-optimal-cog',
+                  html: `
+                    <div style="
+                      background-color: ${zone.color || '#8b5cf6'};
+                      border: 2px solid white;
+                      border-radius: 8px;
+                      width: 28px;
+                      height: 28px;
+                      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      position: relative;
+                    ">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                      <div style="
+                        position: absolute;
+                        bottom: -18px;
+                        background: rgba(16, 18, 27, 0.9);
+                        color: ${zone.color || '#8b5cf6'};
+                        font-size: 9px;
+                        font-weight: 700;
+                        padding: 2px 4px;
+                        border-radius: 4px;
+                        border: 1px solid rgba(255,255,255,0.2);
+                        white-space: nowrap;
+                      ">
+                        Ідеальний склад (Зона)
+                      </div>
+                    </div>
+                  `,
+                  iconSize: [28, 28],
+                  iconAnchor: [14, 14]
+                })}
+              >
+                <Tooltip>Оптимальне розміщення складу для зони &quot;{zone.name}&quot;</Tooltip>
+              </Marker>
+            )}
+          </React.Fragment>
         ))}
 
         {/* Block A: Tonnage Labels on Heatmap */}
@@ -994,7 +1051,7 @@ export default function AnalyticsMap({
         })}
 
         {/* Real Physical Warehouses */}
-        {warehouses.map(wh => {
+        {showWarehouses && warehouses.map(wh => {
           const isSelected = selectedOriginId === `wh-${wh.id}`;
           return (
             <Marker
@@ -1066,7 +1123,7 @@ export default function AnalyticsMap({
         )}
 
         {/* Render Clusters as Polygons/Circles and Local Hubs */}
-        {clusters.map(cluster => {
+        {showClusters && clusters.map(cluster => {
           let coords: [number, number][] = [];
           let hasPolygon = false;
           const isSelected = selectedClusterId === cluster.clusterId;
@@ -1190,7 +1247,7 @@ export default function AnalyticsMap({
         })}
 
         {/* Block E: Candidate Warehouse Markers */}
-        {candidateWarehouses.map((cand, idx) => (
+        {showWarehouses && candidateWarehouses.map((cand, idx) => (
           <Marker
             key={`cand-${cand.id}`}
             position={[cand.lat, cand.lng]}

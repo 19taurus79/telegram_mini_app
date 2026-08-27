@@ -392,23 +392,32 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                 <div className={styles.featureItem}>
                   <div className={styles.featureIcon}>🔗</div>
                   <div>
-                    <h4 className={styles.featureHeading}>Прив&apos;язка до складу</h4>
+                    <h4 className={styles.featureHeading}>Авто-прив&apos;язка та Центр Тяжіння (CoG)</h4>
                     <p className={styles.text}>
-                      У списку збережених зон ви можете обрати будь-який склад зі списку (включно з вашими 
-                      кандидатними складами). Зона на карті <strong>змінить колір</strong> під колір складу, 
-                      візуально об&apos;єднуючи територію.
+                      Якщо всередину зони потрапляє фактичний склад або склад-кандидат, система <strong>автоматично прив&apos;яже</strong> його до цієї зони. 
+                      Крім того, алгоритм самостійно розрахує <strong>Оптимальний Центр Тяжіння</strong> саме для цієї виділеної зони і покаже його на карті зеленим маркером-зірочкою!
                     </p>
                   </div>
                 </div>
 
                 <div className={styles.featureItem}>
-                  <div className={styles.featureIcon}>📋</div>
+                  <div className={styles.featureIcon}>👁️</div>
                   <div>
-                    <h4 className={styles.featureHeading}>Експорт та Збереження</h4>
+                    <h4 className={styles.featureHeading}>Відображення шарів (Слої карти)</h4>
                     <p className={styles.text}>
-                      Усі ваші зони автоматично зберігаються в пам&apos;ять браузера і не зникають після оновлення сторінки. 
-                      При натисканні на <strong>&quot;Excel&quot;</strong>, ці дані додаються до звіту: 
-                      з&apos;являються колонки &quot;Зона (Територія)&quot; та &quot;Склад обслуговування&quot;.
+                      У блоці 5 ви можете <strong>вимикати або вмикати</strong> відображення певних елементів на карті: 
+                      приховати автоматичні кластери, щоб бачити лише свої полігони, або приховати склади для чистоти карти.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>👥</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Перегляд та Експорт Клієнтів</h4>
+                    <p className={styles.text}>
+                      Під кожною зоною є кнопка <strong>&quot;👥 Переглянути клієнтів&quot;</strong>. Вона відкриває зручне вікно з повним списком усіх клієнтів та їх вагою. 
+                      Звідти ж можна одним кліком вивантажити цей список в Excel з усіма необхідними колонками для вашого довідника контрагентів.
                     </p>
                   </div>
                 </div>

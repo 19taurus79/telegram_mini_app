@@ -8,8 +8,10 @@ interface Props {
   onClose: () => void;
 }
 
+type TabId = 'calculator' | 'map' | 'whatif' | 'details' | 'audit';
+
 export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<'calculator' | 'map' | 'details' | 'audit'>('calculator');
+  const [activeTab, setActiveTab] = useState<TabId>('calculator');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,7 +35,7 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
             <span className={styles.headerIcon}>📘</span>
             <div>
               <h2 className={styles.title}>Довідник та Інструкція користувача</h2>
-              <span className={styles.subtitle}>Аналітика доставок, Center of Gravity та Моделювання тарифів</span>
+              <span className={styles.subtitle}>Аналітика доставок, Center of Gravity, What-If Planner та Моделювання тарифів</span>
             </div>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Закрити">✕</button>
@@ -41,65 +43,65 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
 
         {/* Navigation Tabs */}
         <div className={styles.tabNav}>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === 'calculator' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('calculator')}
-          >
+          <button className={`${styles.tabBtn} ${activeTab === 'calculator' ? styles.activeTab : ''}`} onClick={() => setActiveTab('calculator')}>
             💰 Калькулятор витрат
           </button>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === 'map' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('map')}
-          >
+          <button className={`${styles.tabBtn} ${activeTab === 'map' ? styles.activeTab : ''}`} onClick={() => setActiveTab('map')}>
             🗺️ Карта та Кластери
           </button>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === 'details' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('details')}
-          >
+          <button className={`${styles.tabBtn} ${activeTab === 'whatif' ? styles.activeTab : ''}`} onClick={() => setActiveTab('whatif')}>
+            🏭 What-If Planner
+          </button>
+          <button className={`${styles.tabBtn} ${activeTab === 'details' ? styles.activeTab : ''}`} onClick={() => setActiveTab('details')}>
             📋 Деталізація та Експорт
           </button>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === 'audit' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('audit')}
-          >
+          <button className={`${styles.tabBtn} ${activeTab === 'audit' ? styles.activeTab : ''}`} onClick={() => setActiveTab('audit')}>
             🔍 Якість та Аудит даних
           </button>
         </div>
 
         {/* Content */}
         <div className={styles.body}>
+
+          {/* ── Калькулятор витрат ── */}
           {activeTab === 'calculator' && (
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>💰 Як працює Калькулятор логістичних витрат</h3>
               <p className={styles.text}>
-                Калькулятор моделює та порівнює витрати між двома основними ланцюгами дистрибуції:
+                Калькулятор моделює та порівнює три сценарії дистрибуції. Усі розрахунки ведуться у <strong>Тонно-Кілометрах (т·км)</strong>, помноженних на ваш тариф.
               </p>
 
               <div className={styles.modelComparison}>
                 <div className={styles.modelCard}>
                   <div className={styles.modelHeader}>
-                    <span className={styles.modelBadge}>Модель 1</span>
-                    <h4>Пряма доставка (Direct)</h4>
+                    <span className={styles.modelBadge}>Сценарій 1</span>
+                    <h4>Пряма доставка (Status Quo)</h4>
                   </div>
-                  <p className={styles.modelDesc}>
-                    Товар зі складу відправляється індивідуальними рейсами напряму до кожного клієнта.
-                  </p>
+                  <p className={styles.modelDesc}>Товар зі складу відправляється напряму до кожного клієнта.</p>
                   <div className={styles.formulaBox}>
-                    <code>Витрати = Відстань × Вага (т) × Тариф прямої доставки</code>
+                    <code>Витрати = Відстань(склад→клієнт) × Вага (т) × Тариф «Пряма»</code>
                   </div>
                 </div>
 
                 <div className={styles.modelCard}>
                   <div className={styles.modelHeader}>
-                    <span className={styles.modelBadge} style={{ background: 'rgba(52, 211, 153, 0.2)', color: '#34d399' }}>Модель 2</span>
+                    <span className={styles.modelBadge} style={{ background: 'rgba(52, 211, 153, 0.2)', color: '#34d399' }}>Сценарій 2</span>
                     <h4>Хабова модель (Hub-and-Spoke)</h4>
                   </div>
-                  <p className={styles.modelDesc}>
-                    Товар перевозиться великою фурою до регіонального хабу, а далі розвозиться малими машинами.
-                  </p>
+                  <p className={styles.modelDesc}>Велика фура везе консолідований вантаж до хабу. Від хабу — малі машини до клієнтів.</p>
                   <div className={styles.formulaBox}>
-                    <code>Разом = (Магістраль × Вага × Тариф) + (Остання миля × Вага × Тариф)</code>
+                    <code>= (Склад→Хаб × Вага × Тариф «Магістраль») + (Хаб→Клієнт × Вага × Тариф «Остання миля»)</code>
+                  </div>
+                </div>
+
+                <div className={styles.modelCard}>
+                  <div className={styles.modelHeader}>
+                    <span className={styles.modelBadge} style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>Сценарій 3</span>
+                    <h4>Пряма від Оптимального РЦ</h4>
+                  </div>
+                  <p className={styles.modelDesc}>Теоретичний сценарій: а якби склад стояв у математично ідеальній точці (зелена зірочка)?</p>
+                  <div className={styles.formulaBox}>
+                    <code>= Відстань(ОптРЦ→клієнт) × Вага × Тариф «Пряма»</code>
                   </div>
                 </div>
               </div>
@@ -118,43 +120,54 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                     <tr>
                       <td><strong>Пряма доставка</strong></td>
                       <td><code>12 ₴</code></td>
-                      <td>Середній тариф для індивідуальної прямої доставки на повну дистанцію</td>
+                      <td>Тариф прямої доставки від складу до клієнта</td>
                     </tr>
                     <tr>
                       <td><strong>Магістраль (Хаб)</strong></td>
                       <td><code>5 ₴</code></td>
-                      <td>Оптовий тариф великих фур (20–22 т) від бази до перевантажувального хабу</td>
+                      <td>Оптовий тариф великих фур (20–22 т) від бази до хабу</td>
                     </tr>
                     <tr>
                       <td><strong>Остання миля</strong></td>
                       <td><code>18 ₴</code></td>
-                      <td>Тариф локальної малотоннажної доставки від хабу до господарств</td>
+                      <td>Тариф локальної малотоннажної розвозки від хабу до господарств</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               
               <div className={`${styles.callout} ${styles.calloutGreen}`} style={{ marginTop: '12px' }}>
-                <strong>💡 Порада щодо тарифів (Пряма доставка дрібними машинами):</strong>
+                <strong>💡 Якщо ви розвозите зі складу дрібними машинами (не 20-тонниками):</strong>
                 <span>
-                  Якщо вантаж зі складу до клієнта розвозиться не великими фурами, а одразу тими ж самими дрібними бусами (газелями), що й розвозка з хабу — просто <strong>впишіть однаковий тариф</strong> у поля &quot;Пряма доставка&quot; та &quot;Остання миля&quot;. Тоді алгоритм покаже реальну економію від того, що частина шляху (магістраль) поїде дешевою 20-тонною фурою!
+                  Поставте однакове значення у поля &quot;Пряма доставка&quot; та &quot;Остання миля&quot; (наприклад, 18 ₴).
+                  Тоді алгоритм покаже реальну економію від того, що магістральне плече (склад→хаб) їде дешевшою фурою.
                 </span>
               </div>
 
-              <h4 className={styles.subTitle}>📈 Інтерпретація «Економія від Хабу»</h4>
+              <h4 className={styles.subTitle}>📈 Як читати результати</h4>
               <div className={styles.calloutGroup}>
                 <div className={`${styles.callout} ${styles.calloutGreen}`}>
-                  <strong>🟢 Зелений результат (+X ₴):</strong>
-                  <span>Хабова схема вигідна! Зелена сума — це пряма економія бюджету, яку можна спрямувати на оренду локального складу.</span>
+                  <strong>🟢 Зелена «Економія від Хабів» (+X ₴):</strong>
+                  <span>Хабова схема вигідна — ця сума є прямою економією, яку можна спрямувати на оренду регіонального складу.</span>
                 </div>
                 <div className={`${styles.callout} ${styles.calloutRed}`}>
-                  <strong>🔴 Червоний результат (-X ₴):</strong>
-                  <span>Пряма доставка дешевша (точки розташовані близько до центрального складу або вага замала для магістральної фури).</span>
+                  <strong>🔴 Червона «Економія від Хабів» (-X ₴):</strong>
+                  <span>Пряма доставка дешевша. Зазвичай це означає, що тариф останньої милі зависокий, або клієнти розташовані надто близько до головного складу.</span>
                 </div>
+                <div className={`${styles.callout} ${styles.calloutGreen}`}>
+                  <strong>🟢 «Економія від переносу РЦ» (+X ₴):</strong>
+                  <span>Показує, скільки ви заощадите щомісяця, якщо перенесете головний склад до Оптимального РЦ (зелена зірочка).</span>
+                </div>
+              </div>
+
+              <div className={styles.callout} style={{ marginTop: '12px' }}>
+                <strong>🛣️ Реальні дороги (Valhalla API):</strong>
+                <span>Увімкніть чекбокс &quot;Реальні дороги&quot; для точного розрахунку по фактичних маршрутах України (замість прямої лінії × 1.3). Потребує ~5–10 секунд.</span>
               </div>
             </div>
           )}
 
+          {/* ── Карта та Кластери ── */}
           {activeTab === 'map' && (
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>🗺️ Як читати Карту та Кластери</h3>
@@ -163,9 +176,10 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                 <div className={styles.featureItem}>
                   <div className={styles.featureIcon}>🌟</div>
                   <div>
-                    <h4 className={styles.featureHeading}>Оптимальний Головний Склад</h4>
+                    <h4 className={styles.featureHeading}>Оптимальний РЦ (зелена зірочка)</h4>
                     <p className={styles.text}>
-                      <strong>Center of Gravity (Центр Тяжіння):</strong> Математично розрахована точка найменшого сумарного пробігу. Кожне замовлення притягує координату пропорційно своїй вазі.
+                      <strong>Center of Gravity</strong> — математично розрахована точка мінімального сумарного тонно-кілометражу.
+                      Кожне замовлення &quot;притягує&quot; точку пропорційно своїй вазі. Це теоретично ідеальне місце для головного складу.
                     </p>
                   </div>
                 </div>
@@ -173,9 +187,10 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                 <div className={styles.featureItem}>
                   <div className={styles.featureIcon}>🔷</div>
                   <div>
-                    <h4 className={styles.featureHeading}>Кластери (DBSCAN + Convex Hull)</h4>
+                    <h4 className={styles.featureHeading}>Кольорові Зони (Кластери)</h4>
                     <p className={styles.text}>
-                      Автоматичне групування від 3 точок у радіусі 15–20 км з буфером покриття +5 км. Яскравіший колір означає вищу щільність вантажопотоку (т/км²).
+                      Автоматичне групування замовлень алгоритмом <strong>K-Means (Ллойда)</strong>. Алгоритм ітераційно знаходить
+                      ідеальний локальний Центр Мас для кожної зони. Яскравіший колір = вища щільність (т/км²).
                     </p>
                   </div>
                 </div>
@@ -183,9 +198,33 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                 <div className={styles.featureItem}>
                   <div className={styles.featureIcon}>🔴</div>
                   <div>
-                    <h4 className={styles.featureHeading}>Локальні Хаби (Крос-докінг)</h4>
+                    <h4 className={styles.featureHeading}>Локальні Хаби (червоний квадрат)</h4>
                     <p className={styles.text}>
-                      Розраховуються алгоритмом <strong>K-Means (Ллойда)</strong>. Алгоритм розбиває замовлення на обрану кількість зон і шукає ідеальний локальний центр мас для кожної з них (мінімізуючи пробіг).
+                      Центр Тяжіння кожної зони окремо. Ідеальне місце для регіонального перевантажувального складу.
+                      Саме від цих точок рахується &quot;Остання миля&quot; в калькуляторі.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🌡️</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Теплова карта + Мітки тоннажу</h4>
+                    <p className={styles.text}>
+                      Синій→Червоний градієнт показує щільність вантажопотоку. Поверх кожного кластера відображається мітка
+                      з тоннажем і кількістю клієнтів. Вимкнути мітки можна у <strong>Налаштуваннях Алгоритму</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🖱️</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Клік на Полігон — Аналітична Картка</h4>
+                    <p className={styles.text}>
+                      При кліку на будь-який кольоровий полігон у правому куті карти з&apos;являється <strong>Аналітична Картка</strong>:
+                      тоннаж зони, площа, щільність, топ-3 клієнти, товарний мікс.
+                      Закрити: кнопка <strong>✕</strong> або клавіша <strong>Esc</strong>.
                     </p>
                   </div>
                 </div>
@@ -193,42 +232,172 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
 
               <h4 className={styles.subTitle} style={{ marginTop: '24px' }}>⚙️ Налаштування Алгоритму (Super Analyst)</h4>
               <ul className={styles.list}>
-                <li><strong>Режим &quot;По Тоннажу&quot;:</strong> класичний розрахунок Центру Тяжіння з фізики. Склад &quot;магнітиться&quot; до тих замовлень, де найбільша вага або найбільша кількість товарів (щоб зменшити витрати пального на тонну).</li>
-                <li><strong>Режим &quot;По Географії&quot;:</strong> звичайний розрахунок центру між точками на карті, незалежно від їх ваги.</li>
-                <li><strong>Фільтрація аномалій (Z-Score):</strong> алгоритм автоматично відкидає одиничні, надто далекі доставки (викиди), щоб вони не &quot;тягнули&quot; склади в ліс. М&apos;яка фільтрація (3 Sigma) залишає 99.7% клієнтів. Жорстка (2 Sigma) залишає лише 95% найщільніших клієнтів.</li>
+                <li>
+                  <strong>Кількість Авто-Хабів (K-Means):</strong> скільки регіональних зон потрібно побудувати.
+                  Збільшіть до 2–3, щоб система поставила окремий хаб у Харків і окремий у Суми.
+                </li>
+                <li>
+                  <strong>Режим &quot;По Тоннажу&quot;:</strong> Центр Тяжіння зміщується туди, де найбільша вага.
+                  Мінімізує загальний тонно-кілометраж.
+                </li>
+                <li>
+                  <strong>Режим &quot;По Географії&quot;:</strong> рівний центр між усіма точками, незалежно від ваги.
+                </li>
+                <li>
+                  <strong>Фільтрація аномалій (Z-Score):</strong> автоматично відсіює поодинокі, надто далекі доставки,
+                  щоб вони не &quot;відтягували&quot; склад від основної маси клієнтів.
+                  М&apos;яка (3 Sigma) = 99.7% клієнтів залишаються. Жорстка (2 Sigma) = 95%.
+                  Вимкніть, якщо хочете враховувати абсолютно всі точки.
+                </li>
+                <li>
+                  <strong>Мітки тоннажу на карті:</strong> показує/приховує підписи &quot;X т / Y кл.&quot; поверх хабів.
+                </li>
               </ul>
             </div>
           )}
 
+          {/* ── What-If Planner ── */}
+          {activeTab === 'whatif' && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>🏭 What-If Warehouse Planner — Кандидатні Склади</h3>
+
+              <p className={styles.text}>
+                Цей режим дозволяє вам самостійно <strong>розставити потенційні місця для складів</strong> на карті
+                та миттєво побачити, як зміняться зони обслуговування та вартість логістики.
+              </p>
+
+              <div className={styles.featureGrid}>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>1️⃣</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Увімкніть режим</h4>
+                    <p className={styles.text}>
+                      У панелі &quot;Джерела та Хаби&quot; знайдіть розділ <strong>&quot;🏭 Кандидатні Склади (What-If)&quot;</strong>
+                      і натисніть кнопку <strong>&quot;🏭 Додати кандидатний склад&quot;</strong>.
+                      На карті з&apos;явиться <strong>фіолетовий банер</strong>, курсор стане хрестиком.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>2️⃣</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Розставте точки</h4>
+                    <p className={styles.text}>
+                      Клікайте на карті у місцях, де розглядаєте відкриття складу (наприклад, Суми, Полтава, Харків-Схід).
+                      Кожен клік додає кольоровий маркер <strong>🏭 Кандидат N</strong>.
+                      Назву можна змінити прямо у списку в панелі. Маркер можна <strong>перетягнути мишкою</strong> на нове місце.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>3️⃣</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Миттєвий перерахунок</h4>
+                    <p className={styles.text}>
+                      Щойно маркер поставлено або переміщено — система <strong>автоматично</strong> перерозподіляє
+                      всіх клієнтів до найближчого кандидатного складу і перемальовує зони обслуговування.
+                      Калькулятор витрат теж оновлюється в реальному часі.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>4️⃣</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Завершіть і порівняйте</h4>
+                    <p className={styles.text}>
+                      Натисніть <strong>&quot;✕ Завершити розстановку&quot;</strong>, щоб вийти з режиму.
+                      Маркери залишаться на карті. Натисніть <strong>&quot;💾 Зберегти як сценарій А/Б&quot;</strong>
+                      у калькуляторі витрат, щоб порівняти цей варіант з іншим розташуванням.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🗑️</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Видалення</h4>
+                    <p className={styles.text}>
+                      Клікніть на маркер складу → у popup натисніть &quot;🗑️ Видалити&quot;.
+                      Або у панелі натисніть <strong>✕</strong> поруч з назвою кандидата.
+                      Кнопка <strong>&quot;🗑️ Очистити всі кандидати&quot;</strong> скидає всю розстановку.
+                      Кандидати зберігаються в пам&apos;яті браузера і не зникають після перезавантаження сторінки.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`${styles.callout} ${styles.calloutGreen}`} style={{ marginTop: '16px' }}>
+                <strong>💡 Практичний сценарій використання:</strong>
+                <span>
+                  1. Поставте 2–3 кандидати → подивіться, як кластери &quot;магнітяться&quot; до них.
+                  2. Збережіть як &quot;Сценарій А&quot; у калькуляторі.
+                  3. Перемістіть маркери → збережіть як &quot;Сценарій Б&quot;.
+                  4. Натисніть &quot;📊 Порівняти А vs Б&quot; — система покаже таблицю різниці у витратах.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Деталізація та Експорт ── */}
           {activeTab === 'details' && (
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>📋 Деталізація Зони та Експорт даних</h3>
               
               <p className={styles.text}>
-                Клікніть на будь-який кластер на карті, щоб відкрити його повне досьє у віджеті <strong>«Деталізація Зони»</strong>:
+                Клікніть на будь-який полігон на карті — з&apos;являться <strong>два способи</strong> переглянути деталі:
               </p>
 
-              <ul className={styles.list}>
-                <li><strong>Огляд зони:</strong> Кількість доставок, загальна вага (т), площа зони (км²) та щільність (т/км²).</li>
-                <li><strong>Топ Клієнти:</strong> Рейтинг ключових господарств зони за обсягом замовлень.</li>
-                <li><strong>Товарний мікс:</strong> Перелік номенклатури (насіння, ЗЗР, добрива) для планування вимог до складу.</li>
-                <li><strong>Всі доставки:</strong> Повний реєстр адрес і накладних.</li>
-              </ul>
+              <div className={styles.featureGrid}>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>💬</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Аналітична Картка (швидкий перегляд)</h4>
+                    <p className={styles.text}>
+                      Відразу при кліку у правому куті карти з&apos;являється плаваюча картка з ключовими показниками:
+                      тоннаж, кількість клієнтів, площа, щільність, топ-3 клієнти, товарний мікс.
+                      Закрити: кнопка ✕ або Esc.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>📋</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Віджет «Деталізація Зони» (повний звіт)</h4>
+                    <p className={styles.text}>
+                      Кнопка <strong>&quot;📋 Відкрити повну деталізацію →&quot;</strong> у картці або прямий клік на полігоні
+                      відкриває розгорнутий профіль зони у нижній частині дашборду:
+                    </p>
+                    <ul className={styles.list} style={{ marginTop: '8px' }}>
+                      <li><strong>Огляд зони:</strong> вага (т), площа (км²), щільність (т/км²).</li>
+                      <li><strong>Топ Клієнти:</strong> рейтинг господарств за обсягом замовлень.</li>
+                      <li><strong>Товарний мікс:</strong> перелік номенклатури для планування вимог до складу.</li>
+                      <li><strong>Всі доставки:</strong> повний реєстр адрес і накладних.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
 
               <div className={styles.callout} style={{ marginTop: '16px' }}>
                 <strong>📊 Експорт в Excel:</strong>
                 <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
-                  Кнопка «Excel» у картці фільтрів формує зведений звіт по всіх зонах, координатах хабів та клієнтах для захисту рішень перед керівництвом.
+                  Кнопка «Excel» у картці фільтрів формує зведений звіт по всіх зонах, координатах хабів та клієнтах.
+                  Корисно для презентацій перед керівництвом або для передачі даних у відділ продажів.
                 </p>
               </div>
             </div>
           )}
 
+          {/* ── Якість та Аудит даних ── */}
           {activeTab === 'audit' && (
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>🔍 Якість даних, виключені замовлення та Авто-вага</h3>
               <p className={styles.text}>
-                Для коректного розрахунку витрат і тонно-кілометрів системі потрібні координати та вага кожного замовлення. У віджеті <strong>«Аудит Даних»</strong> ви можете контролювати повноту вибірки:
+                Для коректного розрахунку витрат системі потрібні <strong>координати та вага</strong> кожного замовлення.
+                Віджет «Аудит Даних» контролює повноту вибірки та показує, скільки замовлень і чому виключено.
               </p>
 
               <div className={styles.featureGrid}>
@@ -237,7 +406,9 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                   <div>
                     <h4 className={styles.featureHeading}>Замовлення без ваги (0 кг)</h4>
                     <p className={styles.text}>
-                      Якщо в 1С для частини номенклатури не заповнено вагу, увімкніть чекбокс <strong>«Авто-вага для замовлень без ваги»</strong> і вкажіть номінальну вагу (наприклад, 100 кг). Усі замовлення без ваги миттєво підключаться до аналітики.
+                      Якщо в 1С для частини номенклатури не заповнено вагу, увімкніть
+                      <strong> «Авто-вага для замовлень без ваги»</strong> і вкажіть номінальну вагу (наприклад, 100 кг).
+                      Усі замовлення без ваги миттєво підключаться до аналітики.
                     </p>
                   </div>
                 </div>
@@ -247,7 +418,21 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                   <div>
                     <h4 className={styles.featureHeading}>Клієнти без координат</h4>
                     <p className={styles.text}>
-                      Господарства, які не геокодовані на карті. Клікніть кнопку <strong>«Переглянути негеокодованих»</strong>, щоб відкрити список та перейти в модуль швидкої прив&apos;язки адрес.
+                      Господарства, які не геокодовані на карті, виключаються з аналітики автоматично.
+                      Клікніть кнопку <strong>«Переглянути негеокодованих»</strong>, щоб відкрити список
+                      і перейти до модуля прив&apos;язки адрес.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>📊</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Лічильники в KPI-рядку</h4>
+                    <p className={styles.text}>
+                      У верхньому рядку дашборду відображається: загальна кількість доставок в аналітиці,
+                      загальний тоннаж, кількість кластерів і поточна економія від хабів.
+                      Значок ⚠️ сигналізує про знижену точність (велика частка авто-ваги).
                     </p>
                   </div>
                 </div>
@@ -257,7 +442,19 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                   <div>
                     <h4 className={styles.featureHeading}>Вибір джерела даних</h4>
                     <p className={styles.text}>
-                      Перемикайтеся між <strong>«Заявки 1С»</strong> (усі CRM-замовлення клієнтів), <strong>«Доставки»</strong> (сформовані рейси) або <strong>«Усі разом»</strong>.
+                      Перемикайтеся між <strong>«Заявки 1С»</strong> (усі CRM-замовлення),
+                      <strong> «Доставки»</strong> (сформовані рейси) або <strong>«Усі разом»</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🔵</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Фільтри (Менеджер / Вид діяльності)</h4>
+                    <p className={styles.text}>
+                      Аналізуйте не весь ринок, а конкретний сегмент: виберіть менеджера чи вид діяльності
+                      (ЛПГ, СФГ, Агрохолдинг тощо) — карта і калькулятор миттєво перефільтрують дані.
                     </p>
                   </div>
                 </div>

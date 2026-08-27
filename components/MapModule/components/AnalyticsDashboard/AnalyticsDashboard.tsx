@@ -11,6 +11,7 @@ import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
 import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
+import { CandidateWarehouse } from '../AnalyticsMap/AnalyticsMap';
 import { useAnalyticsStore } from '../../store/analyticsStore';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { useQuery } from '@tanstack/react-query';
@@ -179,6 +180,15 @@ export default function AnalyticsDashboard() {
   
   const [weightingMode, setWeightingMode] = useState<'geometric' | 'weighted'>(savedSettings.weightingMode || 'weighted');
   const [outlierSigma, setOutlierSigma] = useState<number>(savedSettings.outlierSigma !== undefined ? savedSettings.outlierSigma : 3);
+  const [showTonnageLabels, setShowTonnageLabels] = useState<boolean>(true);
+
+  // Block E: Candidate Warehouses (What-If Planner)
+  const CANDIDATE_COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#ec4899'];
+  const [candidateWarehouses, setCandidateWarehouses] = useState<CandidateWarehouse[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('candidate-warehouses') || '[]'); } catch { return []; }
+  });
+  const [isCandidateMode, setIsCandidateMode] = useState<boolean>(false);
 
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
@@ -194,6 +204,42 @@ export default function AnalyticsDashboard() {
   const selectedCluster = useAnalyticsStore(state => state.selectedCluster);
   const [clusters, setClusters] = useState<ClusterData[]>([]);
   const [globalCog, setGlobalCog] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Persist candidate warehouses to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('candidate-warehouses', JSON.stringify(candidateWarehouses));
+    }
+  }, [candidateWarehouses]);
+
+  const handleCandidatePlaced = useCallback((loc: { lat: number; lng: number }) => {
+    setCandidateWarehouses(prev => {
+      const idx = prev.length;
+      const color = CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length];
+      const newCand: CandidateWarehouse = {
+        id: `cand-${Date.now()}`,
+        name: `Кандидат ${idx + 1}`,
+        lat: loc.lat,
+        lng: loc.lng,
+        color,
+      };
+      return [...prev, newCand];
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCandidateMove = useCallback((id: string, loc: { lat: number; lng: number }) => {
+    setCandidateWarehouses(prev => prev.map(c => c.id === id ? { ...c, ...loc } : c));
+  }, []);
+
+  const handleCandidateRemove = useCallback((id: string) => {
+    setCandidateWarehouses(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  // When candidate warehouses exist, pass them as customHubs to the map
+  const effectiveCustomHubs = candidateWarehouses.length > 0
+    ? candidateWarehouses.map(c => ({ lat: c.lat, lng: c.lng }))
+    : customHubs;
 
   // Scenario comparison
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -578,8 +624,71 @@ export default function AnalyticsDashboard() {
               </div>
               
               <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+
+              {/* Block E: Candidate Warehouses */}
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>3. 🏭 Кандидатні Склади (What-If)</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
+                Розставте потенційні місця для складів. Система миттєво перерахує зони і вартість логістики.
+              </div>
+              <button
+                onClick={() => setIsCandidateMode(prev => !prev)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: `1px solid ${isCandidateMode ? '#8b5cf6' : 'rgba(139,92,246,0.4)'}`,
+                  background: isCandidateMode ? '#8b5cf6' : 'rgba(139,92,246,0.1)',
+                  color: isCandidateMode ? 'white' : '#a78bfa',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginBottom: '8px',
+                }}
+              >
+                {isCandidateMode ? '✕ Завершити розстановку' : '🏭 Додати кандидатний склад'}
+              </button>
               
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>3. Налаштування Алгоритму (Super Analyst)</div>
+              {/* Candidate list */}
+              {candidateWarehouses.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                  {candidateWarehouses.map((cand, idx) => (
+                    <div key={cand.id} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'rgba(255,255,255,0.04)',
+                      borderRadius: '6px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                    }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: cand.color, flexShrink: 0 }} />
+                      <input
+                        value={cand.name}
+                        onChange={e => setCandidateWarehouses(prev => prev.map(c => c.id === cand.id ? { ...c, name: e.target.value } : c))}
+                        style={{ flex: 1, background: 'transparent', border: 'none', color: '#e2e8f0', fontSize: '12px', outline: 'none' }}
+                      />
+                      <span style={{ color: '#64748b', fontSize: '10px', flexShrink: 0 }}>#{idx + 1}</span>
+                      <button
+                        onClick={() => handleCandidateRemove(cand.id)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '14px', lineHeight: 1 }}
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {candidateWarehouses.length > 0 && (
+                <button
+                  onClick={() => setCandidateWarehouses([])}
+                  style={{ width: '100%', padding: '4px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#f87171', fontSize: '11px', cursor: 'pointer' }}
+                >
+                  🗑️ Очистити всі кандидати
+                </button>
+              )}
+
+              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+              
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>4. Налаштування Алгоритму (Super Analyst)</div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -607,6 +716,10 @@ export default function AnalyticsDashboard() {
                   </select>
                 </label>
               </div>
+              <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                <input type="checkbox" checked={showTonnageLabels} onChange={e => setShowTonnageLabels(e.target.checked)} />
+                Показувати мітки тоннажу на карті
+              </label>
             </div>
           </div>
         </div>
@@ -635,12 +748,18 @@ export default function AnalyticsDashboard() {
                 includeZeroWeight={includeZeroWeight}
                 fallbackWeightKg={fallbackWeightKg}
                 hubCount={hubCount}
-                customHubs={customHubs}
+                customHubs={effectiveCustomHubs}
                 selectedClusterId={selectedCluster?.clusterId || null}
                 autoFilterOutliers={autoFilterOutliers}
                 maxRadiusKm={maxRadiusKm}
                 weightingMode={weightingMode}
                 outlierSigma={outlierSigma}
+                showTonnageLabels={showTonnageLabels}
+                candidateWarehouses={candidateWarehouses}
+                isCandidateMode={isCandidateMode}
+                onCandidatePlaced={handleCandidatePlaced}
+                onCandidateMove={handleCandidateMove}
+                onCandidateRemove={handleCandidateRemove}
               />
             </div>
           </div>

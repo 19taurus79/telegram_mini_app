@@ -310,6 +310,15 @@ function LegendRow({ color, shape, label, sub }: LegendRowProps) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Candidate warehouse type (What-If Planner)
+export interface CandidateWarehouse {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  color: string;
+}
+
 type Props = {
   dateRange: { start: string; end: string };
   onClusterClick: (cluster: ClusterData) => void;
@@ -330,6 +339,14 @@ type Props = {
   maxRadiusKm?: number;
   weightingMode?: 'geometric' | 'weighted';
   outlierSigma?: number;
+  // Block A: tonnage labels
+  showTonnageLabels?: boolean;
+  // Block E: candidate warehouses
+  candidateWarehouses?: CandidateWarehouse[];
+  isCandidateMode?: boolean;
+  onCandidatePlaced?: (loc: { lat: number; lng: number }) => void;
+  onCandidateMove?: (id: string, loc: { lat: number; lng: number }) => void;
+  onCandidateRemove?: (id: string) => void;
 };
 
 export default function AnalyticsMap({ 
@@ -352,12 +369,30 @@ export default function AnalyticsMap({
   maxRadiusKm = 300,
   weightingMode = 'weighted',
   outlierSigma = 3,
+  showTonnageLabels = true,
+  candidateWarehouses = [],
+  isCandidateMode = false,
+  onCandidatePlaced,
+  onCandidateMove,
+  onCandidateRemove,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
   const [clusters, setClusters] = useState<ClusterData[]>([]);
   const [optimalHub, setOptimalHub] = useState<{ lat: number; lng: number } | null>(null);
   const [avgDistance, setAvgDistance] = useState<number>(0);
+
+  // Block B: selected cluster for floating card
+  const [floatingCluster, setFloatingCluster] = useState<ClusterData | null>(null);
+
+  // Escape key clears cluster selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFloatingCluster(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Normalize raw data from selected source
   const rawDeliveries = useMemo((): DeliveryRequest[] => {
@@ -574,8 +609,11 @@ export default function AnalyticsMap({
     return warehouses[0] ? { lat: warehouses[0].lat, lng: warehouses[0].lng } : optimalHub;
   }, [selectedOriginId, optimalHub, customOriginLocation]);
 
+  // Determine cursor style
+  const cursorStyle = isCandidateMode ? 'crosshair' : isPickingLocation ? 'crosshair' : 'default';
+
   return (
-    <div style={{ height: '100%', width: '100%', position: 'relative', cursor: isPickingLocation ? 'crosshair' : 'default' }}>
+    <div style={{ height: '100%', width: '100%', position: 'relative', cursor: cursorStyle }}>
       
       {/* Picking Location Banner */}
       {isPickingLocation && (
@@ -597,6 +635,123 @@ export default function AnalyticsMap({
           gap: '8px'
         }}>
           <span>📍 Клікніть на карті, щоб встановити маркер (Склад або Хаб)</span>
+        </div>
+      )}
+
+      {/* Candidate Mode Banner */}
+      {isCandidateMode && (
+        <div style={{
+          position: 'absolute',
+          top: 14,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: 'rgba(139, 92, 246, 0.95)',
+          color: 'white',
+          padding: '8px 18px',
+          borderRadius: '30px',
+          fontWeight: 700,
+          fontSize: '13px',
+          boxShadow: '0 4px 20px rgba(139, 92, 246, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>🏭 Клікніть на карті, щоб додати кандидатний склад</span>
+        </div>
+      )}
+
+      {/* Block B: Floating Cluster Analytics Card */}
+      {floatingCluster && (
+        <div style={{
+          position: 'absolute',
+          top: 12,
+          right: 12,
+          zIndex: 1100,
+          width: 280,
+          background: 'rgba(13, 17, 28, 0.97)',
+          border: '1px solid rgba(251, 191, 36, 0.4)',
+          borderRadius: '14px',
+          padding: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(12px)',
+          color: '#e2e8f0',
+          fontSize: '12px',
+          pointerEvents: 'auto',
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#fbbf24' }}>
+              🔷 Кластер #{floatingCluster.clusterId}
+            </div>
+            <button
+              onClick={() => setFloatingCluster(null)}
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}
+            >✕</button>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+            {([
+              ['⚖️ Тоннаж', `${(floatingCluster.totalWeight / 1000).toFixed(1)} т`],
+              ['👥 Клієнтів', `${floatingCluster.deliveries.length}`],
+              ['📐 Площа', `${floatingCluster.areaSqKm.toFixed(0)} км²`],
+              ['📊 Щільність', `${floatingCluster.density.toFixed(2)} т/км²`],
+            ] as [string, string][]).map(([label, val]) => (
+              <div key={label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '6px 8px' }}>
+                <div style={{ color: '#64748b', fontSize: '10px' }}>{label}</div>
+                <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '13px' }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Clients */}
+          {floatingCluster.topClients.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏆 Топ клієнти</div>
+              {floatingCluster.topClients.slice(0, 3).map((c, i) => (
+                <div key={c.client} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ color: '#cbd5e1', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {i + 1}. {c.client}
+                  </span>
+                  <span style={{ color: '#34d399', fontWeight: 700, flexShrink: 0 }}>{(c.weight / 1000).toFixed(1)} т</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Top Products */}
+          {floatingCluster.topProducts.length > 0 && (
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📦 Товарний мікс</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {floatingCluster.topProducts.slice(0, 3).map(p => (
+                  <span key={p.product} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', color: '#a5b4fc' }}>
+                    {p.product}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          <button
+            onClick={() => { onClusterClick(floatingCluster); }}
+            style={{
+              width: '100%',
+              padding: '7px',
+              borderRadius: '8px',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              background: 'rgba(251, 191, 36, 0.1)',
+              color: '#fbbf24',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+          >
+            📋 Відкрити повну деталізацію →
+          </button>
         </div>
       )}
 
@@ -632,14 +787,54 @@ export default function AnalyticsMap({
 
         <MapInvalidator />
         <MapClickHandler 
-          isPickingLocation={isPickingLocation} 
-          onLocationPick={(loc) => onCustomOriginChange && onCustomOriginChange(loc)} 
+          isPickingLocation={isPickingLocation || isCandidateMode} 
+          onLocationPick={(loc) => {
+            if (isCandidateMode) {
+              if (onCandidatePlaced) onCandidatePlaced(loc);
+            } else {
+              if (onCustomOriginChange) onCustomOriginChange(loc);
+            }
+          }} 
         />
 
         {/* Heatmap Layer */}
         {heatPoints.length > 0 && (
           <HeatmapLayer points={heatPoints} />
         )}
+
+        {/* Block A: Tonnage Labels on Heatmap */}
+        {showTonnageLabels && clusters.map(cluster => {
+          const pos = cluster.localCog || cluster.center;
+          return (
+            <Marker
+              key={`label-${cluster.clusterId}`}
+              position={[pos.lat, pos.lng]}
+              icon={L.divIcon({
+                className: '',
+                html: `<div style="
+                  background: rgba(10,15,28,0.82);
+                  border: 1px solid rgba(251,191,36,0.5);
+                  border-radius: 8px;
+                  padding: 4px 8px;
+                  font-size: 11px;
+                  font-weight: 800;
+                  color: #fbbf24;
+                  white-space: nowrap;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+                  pointer-events: none;
+                  text-align: center;
+                  line-height: 1.4;
+                ">
+                  ${(cluster.totalWeight / 1000).toFixed(1)} т
+                  <div style="font-size:9px;font-weight:600;color:#94a3b8;">${cluster.deliveries.length} кл.</div>
+                </div>`,
+                iconSize: [70, 36],
+                iconAnchor: [35, 18]
+              })}
+              interactive={false}
+            />
+          );
+        })}
 
         {/* Linehaul Connections: lines from active origin warehouse to regional hubs */}
         {activeOriginCoords && clusters.map(c => {
@@ -776,7 +971,7 @@ export default function AnalyticsMap({
                     fillColor: fillColor, 
                     fillOpacity,
                   }}
-                  eventHandlers={{ click: () => onClusterClick(cluster) }}
+                  eventHandlers={{ click: () => { onClusterClick(cluster); setFloatingCluster(cluster); } }}
                 >
                   <Tooltip sticky>
                     <div>
@@ -856,6 +1051,69 @@ export default function AnalyticsMap({
             </React.Fragment>
           );
         })}
+
+        {/* Block E: Candidate Warehouse Markers */}
+        {candidateWarehouses.map((cand, idx) => (
+          <Marker
+            key={`cand-${cand.id}`}
+            position={[cand.lat, cand.lng]}
+            draggable={true}
+            icon={L.divIcon({
+              className: '',
+              html: `<div style="
+                background: ${cand.color};
+                border: 3px solid white;
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                width: 36px;
+                height: 36px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: grab;
+              "><div style="transform:rotate(45deg);font-size:16px">🏭</div></div>
+              <div style="
+                position: absolute;
+                bottom: -22px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${cand.color};
+                color: white;
+                font-size: 10px;
+                font-weight: 800;
+                padding: 2px 6px;
+                border-radius: 4px;
+                white-space: nowrap;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+              ">${cand.name}</div>`,
+              iconSize: [36, 36],
+              iconAnchor: [18, 36]
+            })}
+            eventHandlers={{
+              dragend: (e: L.DragEndEvent) => {
+                const latlng = (e.target as L.Marker).getLatLng();
+                if (onCandidateMove) onCandidateMove(cand.id, { lat: latlng.lat, lng: latlng.lng });
+              }
+            }}
+          >
+            <Popup>
+              <div style={{ padding: '4px', minWidth: '160px' }}>
+                <strong style={{ fontSize: '13px' }}>🏭 {cand.name}</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px', color: '#64748b' }}>
+                  Кандидат #{idx + 1}<br/>
+                  {cand.lat.toFixed(4)}, {cand.lng.toFixed(4)}
+                </p>
+                <button
+                  onClick={() => onCandidateRemove && onCandidateRemove(cand.id)}
+                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', width: '100%', marginTop: '4px' }}
+                >
+                  🗑️ Видалити
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
         {/* Optimal Hub Marker (Theoretical Center of Gravity) */}
         {optimalHub && (

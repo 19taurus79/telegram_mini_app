@@ -69,6 +69,12 @@ function GeomanDrawControl({
   onZoneCreate: (polygon: [number, number][]) => void; 
 }) {
   const map = useMap();
+  const onZoneCreateRef = React.useRef(onZoneCreate);
+
+  // Keep the ref up to date
+  React.useEffect(() => {
+    onZoneCreateRef.current = onZoneCreate;
+  }, [onZoneCreate]);
 
   useEffect(() => {
     // Only enable geoman if we are in drawing mode
@@ -106,7 +112,10 @@ function GeomanDrawControl({
     });
 
     // Programmatically enable the polygon drawing mode
-    map.pm.enableDraw('Polygon');
+    // Use setTimeout to ensure Leaflet/React DOM is fully ready
+    const drawTimer = setTimeout(() => {
+      map.pm.enableDraw('Polygon');
+    }, 100);
 
     const handleCreate = (e: unknown) => {
       const event = e as { shape: string; layer: L.Polygon | L.Layer };
@@ -122,7 +131,7 @@ function GeomanDrawControl({
         // because we will render it reactively via <Polygon>
         setTimeout(() => {
           map.removeLayer(layer);
-          onZoneCreate(polygonCoords);
+          onZoneCreateRef.current(polygonCoords);
         }, 10);
       }
     };
@@ -130,11 +139,12 @@ function GeomanDrawControl({
     map.on('pm:create', handleCreate);
 
     return () => {
+      clearTimeout(drawTimer);
       map.pm.removeControls();
       map.pm.disableDraw('Polygon');
       map.off('pm:create', handleCreate);
     };
-  }, [map, isDrawingMode, onZoneCreate]);
+  }, [map, isDrawingMode]); // Removed onZoneCreate from dependencies to prevent draw interruption
 
   return null;
 }

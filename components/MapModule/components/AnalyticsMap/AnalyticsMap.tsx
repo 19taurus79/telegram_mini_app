@@ -105,6 +105,9 @@ function GeomanDrawControl({
       rotateMode: false,
     });
 
+    // Programmatically enable the polygon drawing mode
+    map.pm.enableDraw('Polygon');
+
     const handleCreate = (e: unknown) => {
       const event = e as { shape: string; layer: L.Polygon | L.Layer };
       if (event.shape === 'Polygon' && 'getLatLngs' in event.layer) {

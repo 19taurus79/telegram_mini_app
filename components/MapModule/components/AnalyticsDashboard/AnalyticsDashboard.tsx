@@ -879,16 +879,16 @@ export default function AnalyticsDashboard() {
                         }}
                         style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px', marginBottom: '8px' }}
                       >
-                        <option value="">-- Не прив&apos;язано --</option>
-                        <optgroup label="Реальні склади">
+                        <option value="" style={{ background: '#1e293b' }}>-- Не прив&apos;язано --</option>
+                        <optgroup label="Реальні склади" style={{ background: '#0f172a' }}>
                           {warehouses.map(w => (
-                            <option key={`wh-${w.id}`} value={`wh-${w.id}`}>{w.name}</option>
+                            <option key={`wh-${w.id}`} value={`wh-${w.id}`} style={{ background: '#1e293b' }}>{w.name}</option>
                           ))}
                         </optgroup>
                         {candidateWarehouses.length > 0 && (
-                          <optgroup label="Кандидатні склади">
+                          <optgroup label="Кандидатні склади" style={{ background: '#0f172a' }}>
                             {candidateWarehouses.map(c => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
+                              <option key={c.id} value={c.id} style={{ background: '#1e293b' }}>{c.name}</option>
                             ))}
                           </optgroup>
                         )}
@@ -1305,15 +1305,15 @@ export default function AnalyticsDashboard() {
             zIndex: 9999
           }}>
             <div style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
+              background: '#0f172a',
+              border: '1px solid #334155',
               borderRadius: '12px',
               padding: '24px',
               width: '90%',
               maxWidth: '800px',
               maxHeight: '85vh',
               overflowY: 'auto',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
               position: 'relative'
             }}>
               <button 
@@ -1334,11 +1334,12 @@ export default function AnalyticsDashboard() {
                 const uniqueClientsMap = new Map();
                 deliveries.forEach(d => {
                   if (!uniqueClientsMap.has(d.client)) {
-                    uniqueClientsMap.set(d.client, d);
+                    // Clone to avoid mutating the global state!
+                    uniqueClientsMap.set(d.client, { ...d, total_weight: d.total_weight || 0 });
                   } else {
                     // Accumulate weight if multiple deliveries per client
                     const existing = uniqueClientsMap.get(d.client);
-                    existing.total_weight = (existing.total_weight || 0) + (d.total_weight || 0);
+                    existing.total_weight += (d.total_weight || 0);
                   }
                 });
                 const uniqueClientsList = Array.from(uniqueClientsMap.values());

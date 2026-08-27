@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void;
 }
 
-type TabId = 'calculator' | 'map' | 'whatif' | 'details' | 'audit';
+type TabId = 'calculator' | 'map' | 'whatif' | 'territory' | 'details' | 'audit';
 
 export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('calculator');
@@ -51,6 +51,9 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
           </button>
           <button className={`${styles.tabBtn} ${activeTab === 'whatif' ? styles.activeTab : ''}`} onClick={() => setActiveTab('whatif')}>
             🏭 What-If Planner
+          </button>
+          <button className={`${styles.tabBtn} ${activeTab === 'territory' ? styles.activeTab : ''}`} onClick={() => setActiveTab('territory')}>
+            🗺️ Зони і Території
           </button>
           <button className={`${styles.tabBtn} ${activeTab === 'details' ? styles.activeTab : ''}`} onClick={() => setActiveTab('details')}>
             📋 Деталізація та Експорт
@@ -327,6 +330,18 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                     </p>
                   </div>
                 </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🚚</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Режим «Прямі склади» (Без РЦ)</h4>
+                    <p className={styles.text}>
+                      Якщо увімкнути цей чекбокс, магістральне плече від головного РЦ вимикається. 
+                      Вважається, що ваші кандидатні склади отримують товар напряму від постачальників, 
+                      і вартість логістики рахуватиметься тільки за тарифом <strong>Останньої милі</strong> від хабу до клієнта.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className={`${styles.callout} ${styles.calloutGreen}`} style={{ marginTop: '16px' }}>
@@ -337,6 +352,66 @@ export default function AnalyticsGuideModal({ isOpen, onClose }: Props) {
                   3. Перемістіть маркери → збережіть як &quot;Сценарій Б&quot;.
                   4. Натисніть &quot;📊 Порівняти А vs Б&quot; — система покаже таблицю різниці у витратах.
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Території та Зони ── */}
+          {activeTab === 'territory' && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>🗺️ Управління Територіями (Збережені Зони)</h3>
+              <p className={styles.text}>
+                Інструмент для малювання полігонів, що дозволяє чітко розмежувати території обслуговування 
+                та прив&apos;язати конкретні регіони до певних складів.
+              </p>
+
+              <div className={styles.featureGrid}>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🖍️</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Малювання зон</h4>
+                    <p className={styles.text}>
+                      Натисніть <strong>&quot;🖍️ Намалювати нову зону&quot;</strong> у блоці D. Клікайте на карті, обводячи потрібну територію. 
+                      Система оснащена <strong>магнітом</strong> (точки прилипають одна до одної) та захистом від перетину ліній 
+                      для точної розмітки. Щоб замкнути полігон, клікніть на початкову точку.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🧮</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Автоматичний перерахунок</h4>
+                    <p className={styles.text}>
+                      Відразу після створення зони алгоритм аналізує всі координати клієнтів і 
+                      миттєво підраховує кількість клієнтів та загальний тоннаж всередині зони.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🔗</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Прив&apos;язка до складу</h4>
+                    <p className={styles.text}>
+                      У списку збережених зон ви можете обрати будь-який склад зі списку (включно з вашими 
+                      кандидатними складами). Зона на карті <strong>змінить колір</strong> під колір складу, 
+                      візуально об&apos;єднуючи територію.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>📋</div>
+                  <div>
+                    <h4 className={styles.featureHeading}>Експорт та Збереження</h4>
+                    <p className={styles.text}>
+                      Усі ваші зони автоматично зберігаються в пам&apos;ять браузера і не зникають після оновлення сторінки. 
+                      При натисканні на <strong>&quot;Excel&quot;</strong>, ці дані додаються до звіту: 
+                      з&apos;являються колонки &quot;Зона (Територія)&quot; та &quot;Склад обслуговування&quot;.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

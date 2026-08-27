@@ -7,6 +7,8 @@ import 'leaflet/dist/leaflet.css';
 import HeatmapLayer from '../HeatmapLayer/HeatmapLayer';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { calculateCenterOfGravity, clusterDeliveries, calculateAverageDistance, ClusterData, filterOutliers, getDeliveryWeight } from './HubCalculator';
+import '@geoman-io/leaflet-geoman-free';
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import { warehouses } from '../../warehouses';
 import { filterDelivery } from '../../utils/filterUtils';
 import { DeliveryRequest, DeliveryRequestItem } from '@/types/types';
@@ -53,6 +55,84 @@ function MapClickHandler({
       }
     },
   });
+  return null;
+}
+
+/**
+ * Geoman Draw Control for Territory Management (Block D)
+ */
+function GeomanDrawControl({ 
+  isDrawingMode, 
+  onZoneCreate 
+}: { 
+  isDrawingMode: boolean; 
+  onZoneCreate: (polygon: [number, number][]) => void; 
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    // Only enable geoman if we are in drawing mode
+    if (!isDrawingMode) {
+      map.pm.removeControls();
+      map.pm.disableDraw('Polygon');
+      return;
+    }
+
+    // Configure Geoman for territory drawing
+    map.pm.setGlobalOptions({
+      snappable: true,
+      snapDistance: 20,
+      allowSelfIntersection: false,
+      templineStyle: { color: '#fbbf24', weight: 3 },
+      hintlineStyle: { color: '#fbbf24', dashArray: [5, 5] },
+      pathOptions: { color: '#fbbf24', fillColor: '#fbbf24', fillOpacity: 0.2 },
+    });
+
+    // Add polygon control only
+    map.pm.addControls({
+      position: 'topleft',
+      drawMarker: false,
+      drawCircleMarker: false,
+      drawPolyline: false,
+      drawRectangle: false,
+      drawPolygon: true,
+      drawCircle: false,
+      drawText: false,
+      editMode: true,
+      dragMode: false,
+      cutPolygon: false,
+      removalMode: false,
+      rotateMode: false,
+    });
+
+    const handleCreate = (e: unknown) => {
+      const event = e as { shape: string; layer: L.Polygon | L.Layer };
+      if (event.shape === 'Polygon' && 'getLatLngs' in event.layer) {
+        const layer = event.layer as L.Polygon;
+        // getLatLngs() returns LatLng[][] for polygons, so we take the first array
+        const latlngs = layer.getLatLngs()[0] as L.LatLng[];
+        
+        // Convert to [lat, lng] array
+        const polygonCoords: [number, number][] = latlngs.map((ll) => [ll.lat, ll.lng]);
+        
+        // Give time for leaflet-geoman to finish its internal state, then remove the drawn layer
+        // because we will render it reactively via <Polygon>
+        setTimeout(() => {
+          map.removeLayer(layer);
+          onZoneCreate(polygonCoords);
+        }, 10);
+      }
+    };
+
+    map.on('pm:create', handleCreate);
+
+    return () => {
+      map.pm.removeControls();
+      map.pm.disableDraw('Polygon');
+      map.off('pm:create', handleCreate);
+    };
+  }, [map, isDrawingMode, onZoneCreate]);
+
   return null;
 }
 
@@ -319,6 +399,17 @@ export interface CandidateWarehouse {
   color: string;
 }
 
+// Block D: Territory Management (Saved Zones)
+export interface SavedZone {
+  id: string;
+  name: string;
+  warehouseId: string | null; // e.g., 'wh-1' or 'cand-123'
+  polygon: [number, number][]; // LatLng tuple array
+  color?: string;
+  clients: string[]; // List of client names
+  totalWeightTons: number; // Total weight inside
+}
+
 type Props = {
   dateRange: { start: string; end: string };
   onClusterClick: (cluster: ClusterData) => void;
@@ -347,6 +438,10 @@ type Props = {
   onCandidatePlaced?: (loc: { lat: number; lng: number }) => void;
   onCandidateMove?: (id: string, loc: { lat: number; lng: number }) => void;
   onCandidateRemove?: (id: string) => void;
+  // Block D: Territory Management
+  savedZones?: SavedZone[];
+  isDrawingMode?: boolean;
+  onZoneCreate?: (polygon: [number, number][]) => void;
 };
 
 export default function AnalyticsMap({ 
@@ -786,6 +881,12 @@ export default function AnalyticsMap({
         />
 
         <MapInvalidator />
+        {/* Block D: territory drawing tool */}
+        <GeomanDrawControl 
+          isDrawingMode={!!isDrawingMode} 
+          onZoneCreate={onZoneCreate || (() => {})} 
+        />
+
         <MapClickHandler 
           isPickingLocation={isPickingLocation || isCandidateMode} 
           onLocationPick={(loc) => {
@@ -801,6 +902,26 @@ export default function AnalyticsMap({
         {heatPoints.length > 0 && (
           <HeatmapLayer points={heatPoints} />
         )}
+
+        {/* Block D: Render Saved Zones */}
+        {savedZones && savedZones.map(zone => (
+          <Polygon
+            key={`zone-${zone.id}`}
+            positions={zone.polygon}
+            pathOptions={{
+              color: zone.color || '#8b5cf6',
+              fillColor: zone.color || '#8b5cf6',
+              fillOpacity: 0.25,
+              weight: 3,
+              dashArray: '5, 5'
+            }}
+          >
+            <Tooltip sticky>
+              <strong>🗺️ {zone.name}</strong><br/>
+              Склад: {zone.warehouseId || 'Не призначено'}
+            </Tooltip>
+          </Polygon>
+        ))}
 
         {/* Block A: Tonnage Labels on Heatmap */}
         {showTonnageLabels && clusters.map(cluster => {

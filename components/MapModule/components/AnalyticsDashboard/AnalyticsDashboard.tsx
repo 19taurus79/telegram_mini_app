@@ -11,7 +11,8 @@ import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
 import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
-import { CandidateWarehouse } from '../AnalyticsMap/AnalyticsMap';
+import { CandidateWarehouse, SavedZone } from '../AnalyticsMap/AnalyticsMap';
+import * as turf from '@turf/turf';
 import { useAnalyticsStore } from '../../store/analyticsStore';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { useQuery } from '@tanstack/react-query';
@@ -189,6 +190,21 @@ export default function AnalyticsDashboard() {
     try { return JSON.parse(localStorage.getItem('candidate-warehouses') || '[]'); } catch { return []; }
   });
   const [isCandidateMode, setIsCandidateMode] = useState<boolean>(false);
+  const [isWithoutRC, setIsWithoutRC] = useState<boolean>(false);
+
+  // Block D: Territory Management
+  const [savedZones, setSavedZones] = useState<SavedZone[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('analytics-saved-zones') || '[]'); } catch { return []; }
+  });
+  const [isDrawingMode, setIsDrawingMode] = useState<boolean>(false);
+
+  // Persist saved zones
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('analytics-saved-zones', JSON.stringify(savedZones));
+    }
+  }, [savedZones]);
 
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
@@ -235,6 +251,45 @@ export default function AnalyticsDashboard() {
   const handleCandidateRemove = useCallback((id: string) => {
     setCandidateWarehouses(prev => prev.filter(c => c.id !== id));
   }, []);
+
+  const handleZoneCreate = useCallback((polygonCoords: [number, number][]) => {
+    if (!clusters || clusters.length === 0) return;
+
+    // Check which deliveries fall into this polygon
+    // Note: polygonCoords are [lat, lng]. Turf expects [lng, lat]
+    const turfPolygon = turf.polygon([[
+      ...polygonCoords.map(c => [c[1], c[0]]),
+      [polygonCoords[0][1], polygonCoords[0][0]] // close the ring
+    ]]);
+
+    const insideClients = new Set<string>();
+    let totalWeightTons = 0;
+
+    // Gather all deliveries from the current clusters and check intersection
+    clusters.forEach(cluster => {
+      cluster.deliveries.forEach(d => {
+        if (typeof d.latitude === 'number' && typeof d.longitude === 'number') {
+          const pt = turf.point([d.longitude, d.latitude]);
+          if (turf.booleanPointInPolygon(pt, turfPolygon)) {
+            insideClients.add(d.client);
+            totalWeightTons += (d.total_weight || 0) / 1000;
+          }
+        }
+      });
+    });
+
+    const newZone: SavedZone = {
+      id: `zone-${Date.now()}`,
+      name: `Зона ${savedZones.length + 1}`,
+      warehouseId: null, // by default not attached
+      polygon: polygonCoords,
+      clients: Array.from(insideClients),
+      totalWeightTons
+    };
+
+    setSavedZones(prev => [...prev, newZone]);
+    setIsDrawingMode(false);
+  }, [clusters, savedZones.length]);
 
   // When candidate warehouses exist, pass them as customHubs to the map
   const effectiveCustomHubs = candidateWarehouses.length > 0
@@ -630,6 +685,19 @@ export default function AnalyticsDashboard() {
               <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
                 Розставте потенційні місця для складів. Система миттєво перерахує зони і вартість логістики.
               </div>
+
+              {candidateWarehouses.length > 0 && (
+                <div style={{ marginBottom: '8px', padding: '8px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fcd34d' }}>
+                    <input type="checkbox" checked={isWithoutRC} onChange={e => setIsWithoutRC(e.target.checked)} />
+                    Режим «Прямі склади» (Без головного РЦ)
+                  </label>
+                  <div style={{ fontSize: '10px', color: '#fbbf24', marginTop: '4px', opacity: 0.8 }}>
+                    Склади отримують товар напряму. Магістральне плече від головного РЦ вимикається з розрахунку.
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => setIsCandidateMode(prev => !prev)}
                 style={{
@@ -684,6 +752,90 @@ export default function AnalyticsDashboard() {
                 >
                   🗑️ Очистити всі кандидати
                 </button>
+              )}
+
+              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+
+              {/* Block D: Territory Management */}
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>🗺️ Збережені Зони (Території)</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
+                Малюйте полігони на карті, щоб жорстко прив&apos;язати клієнтів до певного складу.
+              </div>
+
+              <button
+                onClick={() => setIsDrawingMode(prev => !prev)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: `1px solid ${isDrawingMode ? '#34d399' : 'rgba(52, 211, 153, 0.4)'}`,
+                  background: isDrawingMode ? '#34d399' : 'rgba(52, 211, 153, 0.1)',
+                  color: isDrawingMode ? '#111827' : '#34d399',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginBottom: '8px',
+                }}
+              >
+                {isDrawingMode ? '✕ Завершити малювання' : '🖍️ Намалювати нову зону'}
+              </button>
+
+              {savedZones.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                  {savedZones.map((zone) => (
+                    <div key={zone.id} style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      fontSize: '11px',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <strong style={{ color: zone.color || '#8b5cf6' }}>{zone.name}</strong>
+                        <button
+                          onClick={() => setSavedZones(prev => prev.filter(z => z.id !== zone.id))}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                        >✕</button>
+                      </div>
+                      <div style={{ color: '#94a3b8', marginBottom: '6px' }}>
+                        {zone.clients.length} клієнтів • {zone.totalWeightTons.toFixed(1)} т
+                      </div>
+                      
+                      {/* Warehouse binding */}
+                      <select 
+                        value={zone.warehouseId || ''}
+                        onChange={(e) => {
+                          const wId = e.target.value || null;
+                          // Find color
+                          let wColor = '#8b5cf6';
+                          if (wId) {
+                            if (wId.startsWith('wh-')) {
+                              wColor = '#3b82f6'; // real
+                            } else {
+                              const cand = candidateWarehouses.find(c => c.id === wId);
+                              if (cand) wColor = cand.color;
+                            }
+                          }
+                          setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, warehouseId: wId, color: wColor } : z));
+                        }}
+                        style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px' }}
+                      >
+                        <option value="">-- Не прив&apos;язано --</option>
+                        <optgroup label="Реальні склади">
+                          {warehouses.map(w => (
+                            <option key={`wh-${w.id}`} value={`wh-${w.id}`}>{w.name}</option>
+                          ))}
+                        </optgroup>
+                        {candidateWarehouses.length > 0 && (
+                          <optgroup label="Кандидатні склади">
+                            {candidateWarehouses.map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </div>
+                  ))}
+                </div>
               )}
 
               <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
@@ -760,6 +912,9 @@ export default function AnalyticsDashboard() {
                 onCandidatePlaced={handleCandidatePlaced}
                 onCandidateMove={handleCandidateMove}
                 onCandidateRemove={handleCandidateRemove}
+                savedZones={savedZones}
+                isDrawingMode={isDrawingMode}
+                onZoneCreate={handleZoneCreate}
               />
             </div>
           </div>
@@ -800,7 +955,7 @@ export default function AnalyticsDashboard() {
             <div className={styles.cardContent}>
               <ManagerFilter />
               <LineOfBusinessFilter />
-              <AnalyticsExport clusters={clusters} dateRange={dateRange} />
+              <AnalyticsExport clusters={clusters} dateRange={dateRange} savedZones={savedZones} candidateWarehouses={candidateWarehouses} />
             </div>
           </div>
         </div>
@@ -882,14 +1037,28 @@ export default function AnalyticsDashboard() {
                     <div className={styles.resultValue}>{Math.round(costResult.directCost).toLocaleString()} ₴</div>
                     <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>{costResult.directTkm.toFixed(0)} т·км × {tariffs.direct} ₴</div>
                   </div>
-                  <div className={styles.resultBox}>
-                    <div className={styles.resultLabel}>2. Хабова модель</div>
-                    <div className={styles.resultValue}>{Math.round(costResult.hubModelCost).toLocaleString()} ₴</div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>
-                      {costResult.linehaulTkm.toFixed(0)} т·км × {tariffs.linehaul} ₴
-                      {' + '}{costResult.lastMileTkm.toFixed(0)} т·км × {tariffs.lastMile} ₴
+                  
+                  {isWithoutRC && candidateWarehouses.length > 0 ? (
+                    <div className={styles.resultBox} style={{ borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.05)' }}>
+                      <div className={styles.resultLabel} style={{ color: '#fcd34d' }}>2. Прямі склади (Без РЦ)</div>
+                      <div className={styles.resultValue} style={{ color: '#f59e0b' }}>
+                        {Math.round(costResult.lastMileTkm * tariffs.lastMile).toLocaleString()} ₴
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#fbbf24', marginTop: 2 }}>
+                        Без магістралі! Тільки {costResult.lastMileTkm.toFixed(0)} т·км × {tariffs.lastMile} ₴
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className={styles.resultBox}>
+                      <div className={styles.resultLabel}>2. Хабова модель</div>
+                      <div className={styles.resultValue}>{Math.round(costResult.hubModelCost).toLocaleString()} ₴</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>
+                        {costResult.linehaulTkm.toFixed(0)} т·км × {tariffs.linehaul} ₴
+                        {' + '}{costResult.lastMileTkm.toFixed(0)} т·км × {tariffs.lastMile} ₴
+                      </div>
+                    </div>
+                  )}
+
                   <div className={styles.resultBox} style={{ gridColumn: 'span 2' }}>
                     <div className={styles.resultLabel}>3. Пряма від Оптимального РЦ (якщо перенести)</div>
                     <div className={styles.resultValue} style={{ color: '#34d399' }}>
@@ -898,11 +1067,14 @@ export default function AnalyticsDashboard() {
                     <div style={{ fontSize: '10px', color: '#64748b', marginTop: 2 }}>{costResult.directTkm.toFixed(0)} → зменшується до ~{(costResult.optimalDirectCost / tariffs.direct).toFixed(0)} т·км</div>
                   </div>
                   
-                  {/* Savings from Hubs */}
-                  <div className={`${styles.resultBox} ${costResult.savings >= 0 ? styles.highlight : styles.warning}`}>
-                    <div className={styles.resultLabel}>Економія від Хабів</div>
+                  {/* Savings from Hubs / Direct Candidate */}
+                  <div className={`${styles.resultBox} ${ (isWithoutRC && candidateWarehouses.length > 0 ? (costResult.directCost - (costResult.lastMileTkm * tariffs.lastMile)) : costResult.savings) >= 0 ? styles.highlight : styles.warning}`}>
+                    <div className={styles.resultLabel}>
+                      {isWithoutRC && candidateWarehouses.length > 0 ? 'Економія від Прямих Складів' : 'Економія від Хабів'}
+                    </div>
                     <div className={styles.resultValue}>
-                      {costResult.savings >= 0 ? '+' : ''}{Math.round(costResult.savings).toLocaleString()} ₴
+                      {(isWithoutRC && candidateWarehouses.length > 0 ? (costResult.directCost - (costResult.lastMileTkm * tariffs.lastMile)) : costResult.savings) >= 0 ? '+' : ''}
+                      {Math.round(isWithoutRC && candidateWarehouses.length > 0 ? (costResult.directCost - (costResult.lastMileTkm * tariffs.lastMile)) : costResult.savings).toLocaleString()} ₴
                     </div>
                   </div>
 

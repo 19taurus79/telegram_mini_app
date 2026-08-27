@@ -2,13 +2,17 @@ import React from 'react';
 import * as XLSX from 'xlsx';
 import { ClusterData } from '../AnalyticsMap/HubCalculator';
 import { Download } from 'lucide-react';
+import { SavedZone, CandidateWarehouse } from '../AnalyticsMap/AnalyticsMap';
+import { warehouses } from '../../warehouses';
 
 type Props = {
   clusters: ClusterData[];
   dateRange: { start: string, end: string };
+  savedZones?: SavedZone[];
+  candidateWarehouses?: CandidateWarehouse[];
 };
 
-export default function AnalyticsExport({ clusters, dateRange }: Props) {
+export default function AnalyticsExport({ clusters, dateRange, savedZones = [], candidateWarehouses = [] }: Props) {
   
   const handleExportExcel = () => {
     // Sheet 1: Summary by Clusters
@@ -28,17 +32,34 @@ export default function AnalyticsExport({ clusters, dateRange }: Props) {
 
     // Sheet 2: Detailed Deliveries
     const detailedData = clusters.flatMap(c => 
-      c.deliveries.map(d => ({
-        'ID Кластеру': c.clusterId,
-        'Клієнт': d.client,
-        'Адреса': d.address,
-        'Менеджер': d.manager,
-        'Дата': d.delivery_date,
-        'Вага (кг)': d.total_weight,
-        'Широта': d.latitude,
-        'Довгота': d.longitude,
-        'Коментар': d.comment
-      }))
+      c.deliveries.map(d => {
+        // Find if this client belongs to any saved zone
+        const zone = savedZones.find(z => z.clients.includes(d.client));
+        let warehouseName = '';
+        if (zone && zone.warehouseId) {
+          if (zone.warehouseId.startsWith('wh-')) {
+            const wh = warehouses.find(w => `wh-${w.id}` === zone.warehouseId);
+            if (wh) warehouseName = wh.name;
+          } else {
+            const cand = candidateWarehouses.find(cw => cw.id === zone.warehouseId);
+            if (cand) warehouseName = cand.name;
+          }
+        }
+
+        return {
+          'ID Кластеру': c.clusterId,
+          'Клієнт': d.client,
+          'Зона (Територія)': zone ? zone.name : '',
+          'Склад обслуговування': warehouseName,
+          'Адреса': d.address,
+          'Менеджер': d.manager,
+          'Дата': d.delivery_date,
+          'Вага (кг)': d.total_weight,
+          'Широта': d.latitude,
+          'Довгота': d.longitude,
+          'Коментар': d.comment
+        };
+      })
     );
 
     const wb = XLSX.utils.book_new();

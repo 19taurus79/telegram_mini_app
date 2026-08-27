@@ -12,7 +12,8 @@ import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
 import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm } from '../AnalyticsMap/HubCalculator';
 import { CandidateWarehouse, SavedZone } from '../AnalyticsMap/AnalyticsMap';
-import * as turf from '@turf/turf';
+import { polygon } from '@turf/helpers';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { useAnalyticsStore } from '../../store/analyticsStore';
 import { useApplicationsStore } from '../../store/applicationsStore';
 import { useQuery } from '@tanstack/react-query';
@@ -257,7 +258,7 @@ export default function AnalyticsDashboard() {
 
     // Check which deliveries fall into this polygon
     // Note: polygonCoords are [lat, lng]. Turf expects [lng, lat]
-    const turfPolygon = turf.polygon([[
+    const turfPolygon = polygon([[
       ...polygonCoords.map(c => [c[1], c[0]]),
       [polygonCoords[0][1], polygonCoords[0][0]] // close the ring
     ]]);
@@ -269,8 +270,7 @@ export default function AnalyticsDashboard() {
     clusters.forEach(cluster => {
       cluster.deliveries.forEach(d => {
         if (typeof d.latitude === 'number' && typeof d.longitude === 'number') {
-          const pt = turf.point([d.longitude, d.latitude]);
-          if (turf.booleanPointInPolygon(pt, turfPolygon)) {
+          if (booleanPointInPolygon([d.longitude, d.latitude], turfPolygon)) {
             insideClients.add(d.client);
             totalWeightTons += (d.total_weight || 0) / 1000;
           }

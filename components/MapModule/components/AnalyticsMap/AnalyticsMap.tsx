@@ -470,6 +470,9 @@ export default function AnalyticsMap({
   onCandidatePlaced,
   onCandidateMove,
   onCandidateRemove,
+  savedZones = [],
+  isDrawingMode = false,
+  onZoneCreate,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   

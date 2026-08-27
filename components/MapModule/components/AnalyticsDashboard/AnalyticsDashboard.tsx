@@ -278,10 +278,35 @@ export default function AnalyticsDashboard() {
       });
     });
 
+    // Auto-detect if a warehouse is inside the polygon
+    let autoAssignedWarehouseId: string | null = null;
+    let autoAssignedColor: string | undefined = undefined;
+
+    // Check candidate warehouses first
+    for (const cand of candidateWarehouses) {
+      if (booleanPointInPolygon([cand.lng, cand.lat], turfPolygon)) {
+        autoAssignedWarehouseId = cand.id;
+        autoAssignedColor = cand.color;
+        break;
+      }
+    }
+
+    // Check actual warehouses if no candidate was found
+    if (!autoAssignedWarehouseId) {
+      for (const wh of warehouses) {
+        if (booleanPointInPolygon([wh.lng, wh.lat], turfPolygon)) {
+          autoAssignedWarehouseId = `wh-${wh.id}`;
+          autoAssignedColor = '#3b82f6';
+          break;
+        }
+      }
+    }
+
     const newZone: SavedZone = {
       id: `zone-${Date.now()}`,
       name: `Зона ${savedZones.length + 1}`,
-      warehouseId: null, // by default not attached
+      warehouseId: autoAssignedWarehouseId,
+      color: autoAssignedColor,
       polygon: polygonCoords,
       clients: Array.from(insideClients),
       totalWeightTons
@@ -289,7 +314,7 @@ export default function AnalyticsDashboard() {
 
     setSavedZones(prev => [...prev, newZone]);
     setIsDrawingMode(false);
-  }, [clusters, savedZones.length]);
+  }, [clusters, savedZones.length, candidateWarehouses]);
 
   // When candidate warehouses exist, pass them as customHubs to the map
   const effectiveCustomHubs = candidateWarehouses.length > 0

@@ -4,17 +4,37 @@ import { ClusterData } from '../AnalyticsMap/HubCalculator';
 import { Download } from 'lucide-react';
 import { SavedZone, CandidateWarehouse } from '../AnalyticsMap/AnalyticsMap';
 import { warehouses } from '../../warehouses';
+import { ClientAddress } from '@/types/types';
+
+function formatCatalogAddress(c?: ClientAddress | null): string {
+  if (!c) return '—';
+  const parts: string[] = [];
+  if (c.region) parts.push(`${c.region} обл.`);
+  if (c.area) parts.push(`${c.area} р-н`);
+  if (c.commune) parts.push(`${c.commune} громада`);
+  if (c.city) parts.push(c.city);
+  return parts.length > 0 ? parts.join(', ') : '—';
+}
 
 type Props = {
   clusters: ClusterData[];
   dateRange: { start: string, end: string };
   savedZones?: SavedZone[];
   candidateWarehouses?: CandidateWarehouse[];
+  clients?: ClientAddress[];
 };
 
-export default function AnalyticsExport({ clusters, dateRange, savedZones = [], candidateWarehouses = [] }: Props) {
+export default function AnalyticsExport({ clusters, dateRange, savedZones = [], candidateWarehouses = [], clients = [] }: Props) {
   
   const handleExportExcel = () => {
+    // Lookup map for fast client directory retrieval
+    const clientCatalogMap = new Map<string, ClientAddress>();
+    clients.forEach(c => {
+      if (c && c.client) {
+        clientCatalogMap.set(c.client.trim().toLowerCase(), c);
+      }
+    });
+
     // Sheet 1: Summary by Clusters
     const summaryData = clusters.map(c => ({
       'ID Кластеру': c.clusterId,
@@ -33,26 +53,37 @@ export default function AnalyticsExport({ clusters, dateRange, savedZones = [], 
     // Sheet 2: Detailed Deliveries
     const detailedData = clusters.flatMap(c => 
       c.deliveries.map(d => {
-        // Find if this client belongs to any saved zone
-        const zone = savedZones.find(z => z.clients.includes(d.client));
+        // Find all saved zones that contain this client
+        const matchingZones = savedZones.filter(z => z.clients.includes(d.client));
+        const primaryZone = matchingZones[0];
+        
         let warehouseName = '';
-        if (zone && zone.warehouseId) {
-          if (zone.warehouseId.startsWith('wh-')) {
-            const wh = warehouses.find(w => `wh-${w.id}` === zone.warehouseId);
+        if (primaryZone && primaryZone.warehouseId) {
+          if (primaryZone.warehouseId.startsWith('wh-')) {
+            const wh = warehouses.find(w => `wh-${w.id}` === primaryZone.warehouseId);
             if (wh) warehouseName = wh.name;
           } else {
-            const cand = candidateWarehouses.find(cw => cw.id === zone.warehouseId);
+            const cand = candidateWarehouses.find(cw => cw.id === primaryZone.warehouseId);
             if (cand) warehouseName = cand.name;
           }
         }
 
+        const catalogClient = d.client ? clientCatalogMap.get(d.client.trim().toLowerCase()) : undefined;
+        const catalogAddress = formatCatalogAddress(catalogClient);
+
+        const allZoneNames = matchingZones.map(z => z.name).join(', ');
+        const isOverlapping = matchingZones.length > 1;
+
         return {
           'ID Кластеру': c.clusterId,
           'Клієнт': d.client,
-          'Зона (Територія)': zone ? zone.name : '',
+          'Зона (Територія)': primaryZone ? primaryZone.name : '',
+          'Всі зони клієнта': allZoneNames || '—',
+          'Перетин зон': isOverlapping ? `Так (${allZoneNames})` : 'Ні',
           'Склад обслуговування': warehouseName,
-          'Адреса': d.address,
-          'Менеджер': d.manager,
+          'Адреса доставки': d.address,
+          'Довідкова адреса (довідник)': catalogAddress,
+          'Менеджер': d.manager || catalogClient?.manager || '',
           'Дата': d.delivery_date,
           'Вага (кг)': d.total_weight,
           'Широта': d.latitude,

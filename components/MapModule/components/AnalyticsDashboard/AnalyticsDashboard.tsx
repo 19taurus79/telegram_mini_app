@@ -21,10 +21,22 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchOrdersHeatmapData } from '../../fetchOrdersWithAddresses';
 import { getDeliveries } from '@/lib/api';
 import { getInitData } from '@/lib/getInitData';
+import { fetchClientsList } from '../../services/fetchFormData';
+import { ClientAddress } from '@/types/types';
 import AnalyticsExport from './AnalyticsExport';
 import AnalyticsGuideModal from './AnalyticsGuideModal';
 import Portal from '@/components/Portal';
 import { warehouses } from '../../warehouses';
+
+function formatCatalogAddress(c?: ClientAddress | null): string {
+  if (!c) return '—';
+  const parts: string[] = [];
+  if (c.region) parts.push(`${c.region} обл.`);
+  if (c.area) parts.push(`${c.area} р-н`);
+  if (c.commune) parts.push(`${c.commune} громада`);
+  if (c.city) parts.push(c.city);
+  return parts.length > 0 ? parts.join(', ') : '—';
+}
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -437,7 +449,25 @@ export default function AnalyticsDashboard() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [isComparingScenarios, setIsComparingScenarios] = useState(false);
 
-  const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries } = useApplicationsStore();
+  const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries, clients, setClients } = useApplicationsStore();
+
+  // Zone details modal filters
+  const [zoneSearchQuery, setZoneSearchQuery] = useState('');
+  const [showOnlyOverlapping, setShowOnlyOverlapping] = useState(false);
+
+  const { data: clientsData } = useQuery({
+    queryKey: ['clients'],
+    queryFn: fetchClientsList,
+    enabled: (!clients || clients.length === 0),
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (clientsData && Array.isArray(clientsData) && clientsData.length > 0 && (!clients || clients.length === 0)) {
+      setClients(clientsData);
+    }
+  }, [clientsData, clients, setClients]);
 
   const { data: applicationsData } = useQuery({
     queryKey: ['applications'],
@@ -1278,7 +1308,7 @@ export default function AnalyticsDashboard() {
             <div className={styles.cardContent}>
               <ManagerFilter />
               <LineOfBusinessFilter />
-              <AnalyticsExport clusters={clusters} dateRange={dateRange} savedZones={savedZones} candidateWarehouses={candidateWarehouses} />
+              <AnalyticsExport clusters={clusters} dateRange={dateRange} savedZones={savedZones} candidateWarehouses={candidateWarehouses} clients={Array.isArray(clients) ? (clients as ClientAddress[]) : []} />
             </div>
           </div>
         </div>
@@ -1543,7 +1573,11 @@ export default function AnalyticsDashboard() {
               position: 'relative'
             }}>
               <button 
-                onClick={() => setViewingZoneId(null)}
+                onClick={() => {
+                  setViewingZoneId(null);
+                  setZoneSearchQuery('');
+                  setShowOnlyOverlapping(false);
+                }}
                 style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}
               >
                 ✕
@@ -1554,21 +1588,77 @@ export default function AnalyticsDashboard() {
                 if (!zone) return <div>Zone not found</div>;
                 
                 // Get all deliveries for this zone's clients
-                const deliveries = clusters.flatMap(c => c.deliveries).filter(d => zone.clients.includes(d.client));
+                const zoneDeliveries = clusters.flatMap(c => c.deliveries).filter(d => zone.clients.includes(d.client));
                 
-                // Deduplicate clients for simple display
-                const uniqueClientsMap = new Map();
-                deliveries.forEach(d => {
-                  if (!uniqueClientsMap.has(d.client)) {
-                    // Clone to avoid mutating the global state!
-                    uniqueClientsMap.set(d.client, { ...d, total_weight: d.total_weight || 0 });
-                  } else {
-                    // Accumulate weight if multiple deliveries per client
-                    const existing = uniqueClientsMap.get(d.client);
-                    existing.total_weight += (d.total_weight || 0);
+                // Lookup map for fast client directory retrieval
+                const clientCatalogMap = new Map<string, ClientAddress>();
+                (Array.isArray(clients) ? (clients as ClientAddress[]) : []).forEach((c: ClientAddress) => {
+                  if (c && c.client) {
+                    clientCatalogMap.set(c.client.trim().toLowerCase(), c);
                   }
                 });
-                const uniqueClientsList = Array.from(uniqueClientsMap.values());
+
+                type ZoneClientItem = {
+                  client: string;
+                  deliveryAddress: string;
+                  catalogAddress: string;
+                  manager: string;
+                  totalWeightKg: number;
+                  deliveryCount: number;
+                  matchingZones: SavedZone[];
+                  otherZones: SavedZone[];
+                  isOverlapping: boolean;
+                };
+
+                const clientMap = new Map<string, ZoneClientItem>();
+
+                zoneDeliveries.forEach(d => {
+                  const clientName = d.client || 'Невідомий';
+                  const matchingZones = savedZones.filter(z => z.clients.includes(clientName));
+                  const otherZones = matchingZones.filter(z => z.id !== zone.id);
+                  const catalogClient = clientCatalogMap.get(clientName.trim().toLowerCase());
+                  const catalogAddress = formatCatalogAddress(catalogClient);
+                  const manager = d.manager || catalogClient?.manager || '—';
+
+                  if (!clientMap.has(clientName)) {
+                    clientMap.set(clientName, {
+                      client: clientName,
+                      deliveryAddress: d.address || '—',
+                      catalogAddress,
+                      manager,
+                      totalWeightKg: d.total_weight || 0,
+                      deliveryCount: 1,
+                      matchingZones,
+                      otherZones,
+                      isOverlapping: otherZones.length > 0,
+                    });
+                  } else {
+                    const existing = clientMap.get(clientName);
+                    if (existing) {
+                      existing.totalWeightKg += (d.total_weight || 0);
+                      existing.deliveryCount += 1;
+                      if (!existing.deliveryAddress || existing.deliveryAddress === '—') {
+                        existing.deliveryAddress = d.address || '—';
+                      }
+                    }
+                  }
+                });
+
+                const allZoneClients = Array.from(clientMap.values()).sort((a, b) => b.totalWeightKg - a.totalWeightKg);
+                const overlappingCount = allZoneClients.filter(c => c.isOverlapping).length;
+
+                const filteredZoneClients = allZoneClients.filter(c => {
+                  if (showOnlyOverlapping && !c.isOverlapping) return false;
+                  if (!zoneSearchQuery.trim()) return true;
+                  const q = zoneSearchQuery.toLowerCase();
+                  return (
+                    c.client.toLowerCase().includes(q) ||
+                    c.deliveryAddress.toLowerCase().includes(q) ||
+                    c.catalogAddress.toLowerCase().includes(q) ||
+                    c.manager.toLowerCase().includes(q) ||
+                    c.otherZones.some(z => z.name.toLowerCase().includes(q))
+                  );
+                });
                 
                 let warehouseName = 'Не прив\'язано';
                 if (zone.warehouseId) {
@@ -1580,13 +1670,20 @@ export default function AnalyticsDashboard() {
                 }
 
                 const handleExportZone = () => {
-                  const exportData = uniqueClientsList.map(c => ({
+                  const exportData = filteredZoneClients.map(c => ({
                     'Клієнт': c.client,
-                    'Адреса': c.address || '',
-                    'Зона (Територія)': zone.name,
+                    'Менеджер': c.manager,
+                    'Адреса доставки': c.deliveryAddress,
+                    'Довідкова адреса (довідник)': c.catalogAddress,
+                    'Поточна зона': zone.name,
                     'ID Складу': zone.warehouseId || '',
                     'Назва Складу': warehouseName,
-                    'Вага (кг)': c.total_weight || 0
+                    'Зони перетину': c.otherZones.map(z => z.name).join(', ') || '—',
+                    'Кількість зон': c.matchingZones.length,
+                    'Перетин (Так/Ні)': c.isOverlapping ? 'Так' : 'Ні',
+                    'Кількість доставок': c.deliveryCount,
+                    'Вага (кг)': c.totalWeightKg,
+                    'Вага (т)': Number((c.totalWeightKg / 1000).toFixed(2))
                   }));
                   
                   const wb = XLSX.utils.book_new();
@@ -1597,40 +1694,181 @@ export default function AnalyticsDashboard() {
 
                 return (
                   <div>
-                    <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: 'var(--text-primary)' }}>{zone.name} - Клієнти</h2>
-                    <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#94a3b8' }}>
-                      Склад: <strong style={{ color: '#e2e8f0' }}>{warehouseName}</strong> • 
-                      Клієнтів: <strong>{uniqueClientsList.length}</strong> • 
-                      Загальна вага: <strong>{zone.totalWeightTons.toFixed(2)} т</strong>
-                    </p>
-                    
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                      <button onClick={handleExportZone} style={{ padding: '6px 12px', borderRadius: '6px', background: '#10b981', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                        📥 Експорт в Excel
-                      </button>
-                      <button onClick={() => window.print()} style={{ padding: '6px 12px', borderRadius: '6px', background: 'transparent', color: '#e2e8f0', border: '1px solid #334155', cursor: 'pointer' }}>
-                        🖨️ Друк / PDF
-                      </button>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', paddingRight: '32px' }}>
+                      <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: zone.color || '#8b5cf6' }} />
+                        {zone.name} — Клієнти та Логістичний Аудит
+                      </h2>
                     </div>
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #334155' }}>Клієнт</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #334155' }}>Адреса</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #334155', textAlign: 'right' }}>Вага (кг)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {uniqueClientsList.map((c, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <td style={{ padding: '8px', color: '#e2e8f0' }}>{c.client}</td>
-                            <td style={{ padding: '8px', color: '#94a3b8' }}>{c.address}</td>
-                            <td style={{ padding: '8px', color: '#e2e8f0', textAlign: 'right' }}>{c.total_weight?.toLocaleString() || 0}</td>
+                    <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#94a3b8' }}>
+                      Склад: <strong style={{ color: '#e2e8f0' }}>{warehouseName}</strong> • 
+                      Клієнтів у зоні: <strong>{allZoneClients.length}</strong> • 
+                      Загальна вага: <strong>{zone.totalWeightTons.toFixed(2)} т</strong>
+                      {overlappingCount > 0 && (
+                        <span style={{ marginLeft: '12px', color: '#f59e0b', fontWeight: 600 }}>
+                          ⚠️ Перетин: {overlappingCount} {overlappingCount === 1 ? 'клієнт входить' : 'клієнтів входять'} у кілька зон
+                        </span>
+                      )}
+                    </p>
+                    
+                    {/* Controls toolbar */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          onClick={handleExportZone} 
+                          style={{ 
+                            padding: '6px 12px', borderRadius: '6px', background: '#10b981', color: 'white', 
+                            border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' 
+                          }}
+                        >
+                          📥 Експорт в Excel
+                        </button>
+                        <button 
+                          onClick={() => window.print()} 
+                          style={{ 
+                            padding: '6px 12px', borderRadius: '6px', background: 'transparent', color: '#e2e8f0', 
+                            border: '1px solid #334155', cursor: 'pointer', fontSize: '12px' 
+                          }}
+                        >
+                          🖨️ Друк / PDF
+                        </button>
+                        
+                        {/* Overlap toggle filter */}
+                        {overlappingCount > 0 && (
+                          <button
+                            onClick={() => setShowOnlyOverlapping(prev => !prev)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              background: showOnlyOverlapping ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${showOnlyOverlapping ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`,
+                              color: showOnlyOverlapping ? '#fbbf24' : '#94a3b8',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: showOnlyOverlapping ? 600 : 400,
+                            }}
+                          >
+                            {showOnlyOverlapping ? '✓ Тільки з перетином' : `⚠️ Тільки з перетином (${overlappingCount})`}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Search input */}
+                      <div style={{ minWidth: '220px', flex: '1 1 200px', maxWidth: '320px' }}>
+                        <input
+                          type="text"
+                          placeholder="🔍 Пошук клієнта, адреси, зони..."
+                          value={zoneSearchQuery}
+                          onChange={e => setZoneSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #334155',
+                            background: 'rgba(0,0,0,0.3)',
+                            color: '#f8fafc',
+                            fontSize: '12px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155' }}>Клієнт / Менеджер</th>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155' }}>Адреса доставки</th>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155' }}>Довідкова адреса</th>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155' }}>Зони перетину</th>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155', textAlign: 'center' }}>Доставок</th>
+                            <th style={{ padding: '8px 10px', borderBottom: '1px solid #334155', textAlign: 'right' }}>Вага (кг)</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {filteredZoneClients.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                                {zoneSearchQuery || showOnlyOverlapping ? 'Нічого не знайдено за вказаними фільтрами' : 'Немає клієнтів у цій зоні'}
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredZoneClients.map((c, i) => (
+                              <tr 
+                                key={i} 
+                                style={{ 
+                                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                  background: c.isOverlapping ? 'rgba(245, 158, 11, 0.04)' : 'transparent',
+                                }}
+                              >
+                                <td style={{ padding: '8px 10px', color: '#e2e8f0', verticalAlign: 'top' }}>
+                                  <div style={{ fontWeight: 600 }}>{c.client}</div>
+                                  {c.manager && c.manager !== '—' && (
+                                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                                      Менеджер: {c.manager}
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ padding: '8px 10px', color: '#cbd5e1', verticalAlign: 'top' }}>
+                                  <div>{c.deliveryAddress}</div>
+                                </td>
+                                <td style={{ padding: '8px 10px', color: '#94a3b8', verticalAlign: 'top' }}>
+                                  <div style={{ fontStyle: c.catalogAddress === '—' ? 'italic' : 'normal' }}>
+                                    {c.catalogAddress}
+                                  </div>
+                                </td>
+                                <td style={{ padding: '8px 10px', verticalAlign: 'top' }}>
+                                  {c.isOverlapping ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <div style={{ fontSize: '10px', color: '#fbbf24', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span>⚠️ Входить ще у {c.otherZones.length} {c.otherZones.length === 1 ? 'зону' : 'зони'}:</span>
+                                      </div>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                        {c.otherZones.map(oz => (
+                                          <span 
+                                            key={oz.id}
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '1px 6px',
+                                              borderRadius: '4px',
+                                              background: 'rgba(245, 158, 11, 0.15)',
+                                              border: `1px solid ${oz.color || '#f59e0b'}`,
+                                              color: '#fde68a',
+                                              fontSize: '10px',
+                                              fontWeight: 500
+                                            }}
+                                          >
+                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: oz.color || '#f59e0b' }} />
+                                            {oz.name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span style={{ 
+                                      display: 'inline-block', padding: '1px 6px', borderRadius: '4px', 
+                                      background: 'rgba(255,255,255,0.04)', color: '#64748b', fontSize: '10px' 
+                                    }}>
+                                      Тільки ця зона
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '8px 10px', color: '#94a3b8', textAlign: 'center', verticalAlign: 'top' }}>
+                                  {c.deliveryCount}
+                                </td>
+                                <td style={{ padding: '8px 10px', color: '#e2e8f0', textAlign: 'right', fontWeight: 600, verticalAlign: 'top' }}>
+                                  {c.totalWeightKg.toLocaleString()}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
               })()}

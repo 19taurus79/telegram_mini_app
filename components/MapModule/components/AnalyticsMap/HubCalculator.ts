@@ -1,5 +1,6 @@
 import { DeliveryRequest } from '@/types/types';
-import { point, featureCollection } from '@turf/helpers';
+import { point, featureCollection, polygon } from '@turf/helpers';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import convex from '@turf/convex';
 import area from '@turf/area';
 import buffer from '@turf/buffer';
@@ -83,6 +84,8 @@ export const calculateCenterOfGravity = (
 
 export type ClusterData = {
   clusterId: number;
+  name?: string;
+  zoneId?: string;
   deliveries: DeliveryRequest[];
   totalWeight: number;
   center: { lat: number, lng: number }; // Average geometric center
@@ -92,6 +95,110 @@ export type ClusterData = {
   density: number; // weight per sq km
   topClients: { client: string; weight: number; count: number }[];
   topProducts: { product: string; quantity: number }[];
+};
+
+export interface SavedZoneInput {
+  id: string;
+  name: string;
+  polygon: [number, number][];
+  clients: string[];
+  totalWeightTons: number;
+  warehouseId: string | null;
+  color?: string;
+  optimalCog?: { lat: number; lng: number };
+}
+
+/**
+ * Converts a user-drawn SavedZone into a ClusterData structure for detailed analytics and inspection
+ */
+export const convertSavedZoneToClusterData = (
+  zone: SavedZoneInput,
+  allDeliveries: DeliveryRequest[],
+  fallbackWeightKg: number = 0,
+  weightingMode: 'geometric' | 'weighted' = 'weighted'
+): ClusterData => {
+  let insideDeliveries: DeliveryRequest[] = [];
+  let areaSqKm = 0;
+  let hull: unknown = null;
+
+  if (zone.polygon && zone.polygon.length >= 3) {
+    try {
+      const turfPoly = polygon([[
+        ...zone.polygon.map(c => [c[1], c[0]]),
+        [zone.polygon[0][1], zone.polygon[0][0]]
+      ]]);
+      hull = turfPoly;
+      areaSqKm = area(turfPoly) / 1000000;
+
+      insideDeliveries = allDeliveries.filter(d => {
+        if (typeof d.latitude === 'number' && typeof d.longitude === 'number') {
+          return booleanPointInPolygon([d.longitude, d.latitude], turfPoly);
+        }
+        return false;
+      });
+    } catch {
+      insideDeliveries = allDeliveries.filter(d => d.client && zone.clients.includes(d.client));
+    }
+  } else {
+    insideDeliveries = allDeliveries.filter(d => d.client && zone.clients.includes(d.client));
+  }
+
+  let cLat = 0, cLng = 0;
+  let tWeight = 0;
+  const clientMap: Record<string, { weight: number; count: number }> = {};
+  const productMap: Record<string, number> = {};
+
+  insideDeliveries.forEach(d => {
+    cLat += d.latitude || 0;
+    cLng += d.longitude || 0;
+    const weight = getDeliveryWeight(d, fallbackWeightKg);
+    tWeight += weight;
+
+    const cName = d.client || 'Невідомий';
+    if (!clientMap[cName]) clientMap[cName] = { weight: 0, count: 0 };
+    clientMap[cName].weight += weight;
+    clientMap[cName].count += 1;
+
+    if (d.items) {
+      d.items.forEach(item => {
+        if (item.product) {
+          productMap[item.product] = (productMap[item.product] || 0) + (item.quantity || 0);
+        }
+      });
+    }
+  });
+
+  const localCog = zone.optimalCog || calculateCenterOfGravity(insideDeliveries, fallbackWeightKg, weightingMode);
+  const density = areaSqKm > 0 ? (tWeight / 1000) / areaSqKm : 0;
+
+  const topClients = Object.entries(clientMap)
+    .map(([client, data]) => ({ client, ...data }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+
+  const topProducts = Object.entries(productMap)
+    .map(([product, quantity]) => ({ product, quantity }))
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  const center = insideDeliveries.length > 0
+    ? { lat: cLat / insideDeliveries.length, lng: cLng / insideDeliveries.length }
+    : (zone.optimalCog || { lat: zone.polygon[0]?.[0] || 0, lng: zone.polygon[0]?.[1] || 0 });
+
+  return {
+    clusterId: 0,
+    name: zone.name,
+    zoneId: zone.id,
+    deliveries: insideDeliveries,
+    totalWeight: tWeight,
+    center,
+    localCog,
+    hull,
+    areaSqKm,
+    density,
+    topClients,
+    topProducts
+  };
 };
 
 /**

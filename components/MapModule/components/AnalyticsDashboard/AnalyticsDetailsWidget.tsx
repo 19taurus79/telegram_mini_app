@@ -7,23 +7,7 @@ export default function AnalyticsDetailsWidget() {
   const setSelectedCluster = useAnalyticsStore(state => state.setSelectedCluster);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-      {/* Header */}
-      <div style={{
-        padding: '14px 20px',
-        borderBottom: '1px solid var(--glass-border)',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        background: 'rgba(255, 255, 255, 0.03)',
-      }}>
-        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--foreground)' }}>
-          Деталізація Зони
-        </h3>
-      </div>
-
-      {/* Content */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', minHeight: 0 }}>
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {selectedCluster ? (
           <ClusterDetailsPanel 
@@ -34,14 +18,16 @@ export default function AnalyticsDetailsWidget() {
           <div style={{
             display: 'flex',
             height: '100%',
+            minHeight: '140px',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-muted)',
+            color: '#64748b',
             padding: '24px',
             textAlign: 'center',
-            fontSize: '14px',
+            fontSize: '13px',
+            lineHeight: 1.6,
           }}>
-            Оберіть зону на карті для перегляду детальної аналітики
+            📍 Клікніть на будь-який кластер або нарисований полігон на карті чи натисніть <strong>«📊 Деталізація»</strong> у списку зон, щоб переглянути клієнтів, товари та аналітику плеча.
           </div>
         )}
       </div>

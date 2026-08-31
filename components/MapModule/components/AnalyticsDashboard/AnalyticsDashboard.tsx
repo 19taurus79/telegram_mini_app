@@ -10,7 +10,7 @@ import ManagerFilter from '../ManagerFilter/ManagerFilter';
 import LineOfBusinessFilter from '../LineOfBusinessFilter/LineOfBusinessFilter';
 import AnalyticsDetailsWidget from './AnalyticsDetailsWidget';
 import DataAuditWidget, { DataSourceType, DataAuditMetrics } from './DataAuditWidget';
-import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm, calculateCenterOfGravity } from '../AnalyticsMap/HubCalculator';
+import { ClusterData, calculateLogisticsCosts, calculateLogisticsCostsAsync, CostSimulationResult, calculateDistanceKm, calculateCenterOfGravity, convertSavedZoneToClusterData } from '../AnalyticsMap/HubCalculator';
 import { CandidateWarehouse, SavedZone } from '../AnalyticsMap/AnalyticsMap';
 import * as XLSX from 'xlsx';
 import { polygon } from '@turf/helpers';
@@ -245,6 +245,8 @@ export default function AnalyticsDashboard() {
     }
   }, [savedZones]);
 
+  const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries, clients, setClients } = useApplicationsStore();
+
   const [auditMetrics, setAuditMetrics] = useState<DataAuditMetrics>({
     totalRaw: 0,
     includedCount: 0,
@@ -440,6 +442,17 @@ export default function AnalyticsDashboard() {
     setBackupZonePolygon(null);
   }, [backupZonePolygon, calculateZoneMetrics]);
 
+  const handleSelectZone = useCallback((zone: SavedZone) => {
+    const rawDeliveries = (dataSource === 'deliveries' ? deliveries : applications) || [];
+    const clusterData = convertSavedZoneToClusterData(
+      zone, 
+      rawDeliveries, 
+      fallbackWeightKg, 
+      weightingMode
+    );
+    setSelectedCluster(clusterData);
+  }, [dataSource, deliveries, applications, fallbackWeightKg, weightingMode, setSelectedCluster]);
+
   // When candidate warehouses exist, pass them as customHubs to the map
   const effectiveCustomHubs = candidateWarehouses.length > 0
     ? candidateWarehouses.map(c => ({ lat: c.lat, lng: c.lng }))
@@ -448,8 +461,6 @@ export default function AnalyticsDashboard() {
   // Scenario comparison
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [isComparingScenarios, setIsComparingScenarios] = useState(false);
-
-  const { applications, setApplications, setUnmappedApplications, deliveries, setDeliveries, clients, setClients } = useApplicationsStore();
 
   // Zone details modal filters
   const [zoneSearchQuery, setZoneSearchQuery] = useState('');
@@ -1127,22 +1138,41 @@ export default function AnalyticsDashboard() {
                           )}
                         </select>
 
-                        <button
-                          type="button"
-                          onClick={() => setViewingZoneId(zone.id)}
-                          style={{
-                            width: '100%',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            border: '1px solid rgba(59,130,246,0.3)',
-                            background: 'rgba(59,130,246,0.1)',
-                            color: '#60a5fa',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          👥 Переглянути клієнти ({zone.clients.length})
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectZone(zone)}
+                            style={{
+                              flex: 1,
+                              padding: '5px 4px',
+                              borderRadius: '4px',
+                              border: `1px solid ${selectedCluster?.zoneId === zone.id ? '#38bdf8' : 'rgba(56,189,248,0.3)'}`,
+                              background: selectedCluster?.zoneId === zone.id ? 'rgba(56,189,248,0.25)' : 'rgba(56,189,248,0.1)',
+                              color: '#7dd3fc',
+                              fontSize: '11px',
+                              fontWeight: selectedCluster?.zoneId === zone.id ? 700 : 500,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            📊 Деталізація
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewingZoneId(zone.id)}
+                            style={{
+                              flex: 1,
+                              padding: '5px 4px',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(59,130,246,0.3)',
+                              background: 'rgba(59,130,246,0.1)',
+                              color: '#60a5fa',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            👥 Клієнти ({zone.clients.length})
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -1264,10 +1294,12 @@ export default function AnalyticsDashboard() {
                 isDrawingMode={isDrawingMode}
                 onZoneCreate={handleZoneCreate}
                 editingZoneId={editingZoneId}
+                selectedZoneId={selectedCluster?.zoneId || null}
                 onStartEditZone={handleStartEditZone}
                 onFinishEditZone={handleFinishEditZone}
                 onCancelEditZone={handleCancelEditZone}
                 onZoneGeometryChange={handleZoneGeometryChange}
+                onSelectZone={handleSelectZone}
               />
             </div>
           </div>

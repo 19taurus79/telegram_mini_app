@@ -32,7 +32,7 @@ export default function ClusterDetailsPanel({ cluster, onClose }: Props) {
         flexShrink: 0,
       }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>
-          Деталізація Зони #{cluster.clusterId}
+          {cluster.name ? `Деталізація: ${cluster.name}` : `Деталізація Зони #${cluster.clusterId}`}
           <span style={{ marginLeft: 8, fontSize: '12px', fontWeight: 400, color: '#64748b' }}>
             {cluster.deliveries.length} клієнтів · {(cluster.totalWeight / 1000).toFixed(2)} т
           </span>

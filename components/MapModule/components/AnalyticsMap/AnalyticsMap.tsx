@@ -175,15 +175,19 @@ function getFlatLatLngs(layer: L.Polygon): L.LatLng[] {
 interface EditableZonePolygonProps {
   zone: SavedZone;
   isEditing: boolean;
+  isSelected?: boolean;
   onEditChange: (zoneId: string, coords: [number, number][]) => void;
   onStartEdit?: (zoneId: string) => void;
+  onSelectZone?: (zone: SavedZone) => void;
 }
 
 function EditableZonePolygon({
   zone,
   isEditing,
+  isSelected = false,
   onEditChange,
   onStartEdit,
+  onSelectZone,
 }: EditableZonePolygonProps) {
   const polygonRef = React.useRef<L.Polygon | null>(null);
   const onEditChangeRef = React.useRef(onEditChange);
@@ -238,44 +242,75 @@ function EditableZonePolygon({
       ref={polygonRef}
       positions={zone.polygon}
       pathOptions={{
-        color: isEditing ? '#10b981' : zoneColor,
-        fillColor: isEditing ? '#10b981' : zoneColor,
-        fillOpacity: isEditing ? 0.35 : 0.25,
-        weight: isEditing ? 4 : 3,
-        dashArray: isEditing ? undefined : '5, 5',
+        color: isEditing ? '#10b981' : (isSelected ? '#38bdf8' : zoneColor),
+        fillColor: isEditing ? '#10b981' : (isSelected ? '#38bdf8' : zoneColor),
+        fillOpacity: isEditing ? 0.4 : (isSelected ? 0.4 : 0.25),
+        weight: isEditing ? 4 : (isSelected ? 4 : 3),
+        dashArray: isEditing ? undefined : (isSelected ? undefined : '5, 5'),
+      }}
+      eventHandlers={{
+        click: () => {
+          if (!isEditing && onSelectZone) {
+            onSelectZone(zone);
+          }
+        },
       }}
     >
       {!isEditing && (
         <Tooltip sticky>
           <strong>🗺️ {zone.name}</strong><br />
           Склад: {zone.warehouseId || 'Не призначено'}<br />
-          Клієнтів: {zone.clients.length} • {zone.totalWeightTons.toFixed(1)} т
+          Клієнтів: {zone.clients.length} • {zone.totalWeightTons.toFixed(1)} т<br />
+          <span style={{ fontSize: '10px', color: '#38bdf8' }}>Клікніть для деталізації</span>
         </Tooltip>
       )}
-      {!isEditing && onStartEdit && (
+      {!isEditing && (
         <Popup>
-          <div style={{ minWidth: '160px', padding: '4px' }}>
+          <div style={{ minWidth: '170px', padding: '4px' }}>
             <strong style={{ fontSize: '13px', color: '#1e293b' }}>🗺️ {zone.name}</strong>
             <div style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 8px' }}>
               Клієнтів: {zone.clients.length} • {zone.totalWeightTons.toFixed(1)} т
             </div>
-            <button
-              type="button"
-              onClick={() => onStartEdit(zone.id)}
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#8b5cf6',
-                color: 'white',
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              ✏️ Редагувати форму
-            </button>
+            <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
+              {onSelectZone && (
+                <button
+                  type="button"
+                  onClick={() => onSelectZone(zone)}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#38bdf8',
+                    color: '#0f172a',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  📊 Деталізація Зони
+                </button>
+              )}
+              {onStartEdit && (
+                <button
+                  type="button"
+                  onClick={() => onStartEdit(zone.id)}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#8b5cf6',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✏️ Редагувати форму
+                </button>
+              )}
+            </div>
           </div>
         </Popup>
       )}
@@ -595,16 +630,18 @@ type Props = {
   isDrawingMode?: boolean;
   onZoneCreate?: (polygon: [number, number][]) => void;
   editingZoneId?: string | null;
+  selectedZoneId?: string | null;
   onStartEditZone?: (zoneId: string) => void;
   onFinishEditZone?: () => void;
   onCancelEditZone?: () => void;
   onZoneGeometryChange?: (zoneId: string, polygon: [number, number][]) => void;
+  onSelectZone?: (zone: SavedZone) => void;
 };
 
 export default function AnalyticsMap({ 
   dateRange, 
   onClusterClick, 
-  onMapMetricsUpdate,
+  onMapMetricsUpdate, 
   onAuditMetricsUpdate,
   selectedOriginId = 'wh-1',
   onSelectOriginId,
@@ -617,6 +654,7 @@ export default function AnalyticsMap({
   hubCount = 1,
   customHubs = [],
   selectedClusterId = null,
+  selectedZoneId = null,
   autoFilterOutliers = true,
   maxRadiusKm = 300,
   weightingMode = 'weighted',
@@ -638,6 +676,7 @@ export default function AnalyticsMap({
   onFinishEditZone,
   onCancelEditZone,
   onZoneGeometryChange,
+  onSelectZone,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -1160,8 +1199,10 @@ export default function AnalyticsMap({
               key={`zone-${zone.id}`}
               zone={zone}
               isEditing={editingZoneId === zone.id}
+              isSelected={selectedZoneId === zone.id}
               onEditChange={onZoneGeometryChange || (() => {})}
               onStartEdit={onStartEditZone}
+              onSelectZone={onSelectZone}
             />
             
             {/* Render Local Optimal CoG for Zone */}

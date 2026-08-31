@@ -33,39 +33,54 @@ const AnalyticsMap = dynamic(() => import('../AnalyticsMap/AnalyticsMap'), {
   loading: () => <div className={styles.loadingMap}>Завантаження карти...</div>,
 });
 
-const STORAGE_KEY = 'analytics-bento-layout-v3';
+const STORAGE_KEY = 'analytics-bento-layout-v4';
 const SETTINGS_KEY = 'analytics-settings-v1';
 
 const defaultLayouts: Layouts = {
   lg: [
-    { i: 'kpis',    x: 0,  y: 0,  w: 12, h: 2,  minH: 2,  maxH: 3,  minW: 6 },
-    { i: 'map',     x: 0,  y: 2,  w: 8,  h: 18, minH: 6,  minW: 4 },
-    { i: 'origin',  x: 8,  y: 2,  w: 4,  h: 5,  minH: 3,  minW: 2 },
-    { i: 'audit',   x: 8,  y: 7,  w: 4,  h: 6,  minH: 4,  minW: 2 },
-    { i: 'filters', x: 8,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
-    { i: 'tariffs', x: 8,  y: 18, w: 4,  h: 5,  minH: 4,  minW: 2 },
-    { i: 'results', x: 8,  y: 23, w: 4,  h: 6,  minH: 4,  minW: 2 },
-    { i: 'details', x: 0,  y: 20, w: 8,  h: 9,  minH: 4,  minW: 4 },
+    { i: 'kpis',        x: 0,  y: 0,  w: 12, h: 2,  minH: 2,  maxH: 3,  minW: 6 },
+    { i: 'map',         x: 0,  y: 2,  w: 8,  h: 18, minH: 6,  minW: 4 },
+    { i: 'origin',      x: 8,  y: 2,  w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'hubs',        x: 8,  y: 6,  w: 4,  h: 3,  minH: 2,  minW: 2 },
+    { i: 'candidates',  x: 8,  y: 9,  w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'territories', x: 8,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'algorithm',   x: 8,  y: 18, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'layers',      x: 8,  y: 22, w: 4,  h: 3,  minH: 2,  minW: 2 },
+    { i: 'audit',       x: 8,  y: 25, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'filters',     x: 8,  y: 31, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'tariffs',     x: 8,  y: 35, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'results',     x: 8,  y: 39, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'details',     x: 0,  y: 20, w: 8,  h: 9,  minH: 4,  minW: 4 },
   ],
   md: [
-    { i: 'kpis',    x: 0,  y: 0,  w: 10, h: 2,  minH: 2,  minW: 4 },
-    { i: 'map',     x: 0,  y: 2,  w: 6,  h: 16, minH: 6,  minW: 4 },
-    { i: 'origin',  x: 6,  y: 2,  w: 4,  h: 5,  minH: 3,  minW: 2 },
-    { i: 'audit',   x: 6,  y: 7,  w: 4,  h: 6,  minH: 4,  minW: 2 },
-    { i: 'filters', x: 6,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
-    { i: 'tariffs', x: 6,  y: 18, w: 4,  h: 5,  minH: 4,  minW: 2 },
-    { i: 'results', x: 6,  y: 23, w: 4,  h: 6,  minH: 4,  minW: 2 },
-    { i: 'details', x: 0,  y: 18, w: 6,  h: 9,  minH: 4,  minW: 4 },
+    { i: 'kpis',        x: 0,  y: 0,  w: 10, h: 2,  minH: 2,  minW: 4 },
+    { i: 'map',         x: 0,  y: 2,  w: 6,  h: 16, minH: 6,  minW: 4 },
+    { i: 'origin',      x: 6,  y: 2,  w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'hubs',        x: 6,  y: 6,  w: 4,  h: 3,  minH: 2,  minW: 2 },
+    { i: 'candidates',  x: 6,  y: 9,  w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'territories', x: 6,  y: 13, w: 4,  h: 5,  minH: 3,  minW: 2 },
+    { i: 'algorithm',   x: 6,  y: 18, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'layers',      x: 6,  y: 22, w: 4,  h: 3,  minH: 2,  minW: 2 },
+    { i: 'audit',       x: 6,  y: 25, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'filters',     x: 6,  y: 31, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'tariffs',     x: 6,  y: 35, w: 4,  h: 4,  minH: 3,  minW: 2 },
+    { i: 'results',     x: 6,  y: 39, w: 4,  h: 6,  minH: 4,  minW: 2 },
+    { i: 'details',     x: 0,  y: 18, w: 6,  h: 9,  minH: 4,  minW: 4 },
   ],
   sm: [
-    { i: 'kpis',    x: 0,  y: 0,  w: 6,  h: 3,  minH: 2,  minW: 6 },
-    { i: 'map',     x: 0,  y: 3,  w: 6,  h: 14, minH: 6,  minW: 6 },
-    { i: 'origin',  x: 0,  y: 17, w: 6,  h: 5,  minH: 3,  minW: 6 },
-    { i: 'audit',   x: 0,  y: 22, w: 6,  h: 6,  minH: 4,  minW: 6 },
-    { i: 'filters', x: 0,  y: 28, w: 6,  h: 5,  minH: 3,  minW: 6 },
-    { i: 'tariffs', x: 0,  y: 33, w: 6,  h: 5,  minH: 4,  minW: 6 },
-    { i: 'results', x: 0,  y: 38, w: 6,  h: 6,  minH: 4,  minW: 6 },
-    { i: 'details', x: 0,  y: 44, w: 6,  h: 9,  minH: 4,  minW: 6 },
+    { i: 'kpis',        x: 0,  y: 0,  w: 6,  h: 3,  minH: 2,  minW: 6 },
+    { i: 'map',         x: 0,  y: 3,  w: 6,  h: 14, minH: 6,  minW: 6 },
+    { i: 'origin',      x: 0,  y: 17, w: 6,  h: 4,  minH: 3,  minW: 6 },
+    { i: 'hubs',        x: 0,  y: 21, w: 6,  h: 3,  minH: 2,  minW: 6 },
+    { i: 'candidates',  x: 0,  y: 24, w: 6,  h: 4,  minH: 3,  minW: 6 },
+    { i: 'territories', x: 0,  y: 28, w: 6,  h: 5,  minH: 3,  minW: 6 },
+    { i: 'algorithm',   x: 0,  y: 33, w: 6,  h: 4,  minH: 3,  minW: 6 },
+    { i: 'layers',      x: 0,  y: 37, w: 6,  h: 3,  minH: 2,  minW: 6 },
+    { i: 'audit',       x: 0,  y: 40, w: 6,  h: 6,  minH: 4,  minW: 6 },
+    { i: 'filters',     x: 0,  y: 46, w: 6,  h: 4,  minH: 3,  minW: 6 },
+    { i: 'tariffs',     x: 0,  y: 50, w: 6,  h: 4,  minH: 3,  minW: 6 },
+    { i: 'results',     x: 0,  y: 54, w: 6,  h: 6,  minH: 4,  minW: 6 },
+    { i: 'details',     x: 0,  y: 60, w: 6,  h: 9,  minH: 4,  minW: 6 },
   ]
 };
 
@@ -684,10 +699,9 @@ export default function AnalyticsDashboard() {
           <div className={styles.bentoCard}>
             <div className={styles.cardHeader}>
               <span className={styles.dragHandle}>⠿</span>
-              <h3 className={styles.cardTitle}>Логістична Мережа (Склад та Хаби)</h3>
+              <h3 className={styles.cardTitle}>Головний Склад (Origin)</h3>
             </div>
             <div className={styles.cardContent}>
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>1. Головний Склад (Origin)</div>
               <div className={styles.originChipsGrid}>
                 {warehouses.map(wh => (
                   <button
@@ -749,11 +763,18 @@ export default function AnalyticsDashboard() {
                   Відстань до ідеального Центру Тяжіння: <strong>{originInfo.distToCog.toFixed(1)} км</strong>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
 
-              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
-              
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>2. Регіональні Хаби</div>
-              
+        {/* ─── 3. Regional Hubs (K-Means) ─── */}
+        <div key="hubs">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Регіональні Хаби</h3>
+            </div>
+            <div className={styles.cardContent}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <label style={{ fontSize: '12px', flex: 1 }}>Кількість авто-хабів (K-Means):</label>
@@ -799,11 +820,18 @@ export default function AnalyticsDashboard() {
                   )}
                 </div>
               </div>
-              
-              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+            </div>
+          </div>
+        </div>
 
-              {/* Block E: Candidate Warehouses */}
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>3. 🏭 Кандидатні Склади (What-If)</div>
+        {/* ─── 4. Candidate Warehouses (What-If) ─── */}
+        <div key="candidates">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Кандидатні Склади (What-If)</h3>
+            </div>
+            <div className={styles.cardContent}>
               <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
                 Розставте потенційні місця для складів. Система миттєво перерахує зони і вартість логістики.
               </div>
@@ -875,13 +903,20 @@ export default function AnalyticsDashboard() {
                   🗑️ Очистити всі кандидати
                 </button>
               )}
+            </div>
+          </div>
+        </div>
 
-              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
-
-              {/* Block D: Territory Management */}
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>🗺️ Збережені Зони (Території)</div>
+        {/* ─── 5. Territory Management (Saved Zones) ─── */}
+        <div key="territories">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Збережені Зони (Території)</h3>
+            </div>
+            <div className={styles.cardContent}>
               <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
-                Малюйте полігони на карті, щоб жорстко прив&apos;язати клієнтів до певного складу.
+                Малюйте та редагуйте полігони на карті для закріплення клієнтів за складами.
               </div>
 
               <button
@@ -1034,11 +1069,10 @@ export default function AnalyticsDashboard() {
                           value={zone.warehouseId || ''}
                           onChange={(e) => {
                             const wId = e.target.value || null;
-                            // Find color
                             let wColor = '#8b5cf6';
                             if (wId) {
                               if (wId.startsWith('wh-')) {
-                                wColor = '#3b82f6'; // real
+                                wColor = '#3b82f6';
                               } else {
                                 const cand = candidateWarehouses.find(c => c.id === wId);
                                 if (cand) wColor = cand.color;
@@ -1077,18 +1111,25 @@ export default function AnalyticsDashboard() {
                             cursor: 'pointer',
                           }}
                         >
-                          👥 Переглянути клієнтів ({zone.clients.length})
+                          👥 Переглянути клієнти ({zone.clients.length})
                         </button>
                       </div>
                     );
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
 
-              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
-              
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>4. Налаштування Алгоритму (Super Analyst)</div>
-              
+        {/* ─── 6. Algorithm Settings (Super Analyst) ─── */}
+        <div key="algorithm">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Налаштування Алгоритму</h3>
+            </div>
+            <div className={styles.cardContent}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span>Режим розрахунку РЦ та Кластерів:</span>
@@ -1114,25 +1155,34 @@ export default function AnalyticsDashboard() {
                     <option value={0}>Вимкнено - показувати всі точки на карті</option>
                   </select>
                 </label>
-              </div>
-              <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                <input type="checkbox" checked={showTonnageLabels} onChange={e => setShowTonnageLabels(e.target.checked)} />
-                Показувати мітки тоннажу на карті
-              </label>
 
-              <hr style={{ margin: '16px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
-              
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '13px' }}>5. 👁️ Відображення шарів</div>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={showTonnageLabels} onChange={e => setShowTonnageLabels(e.target.checked)} />
+                  Показувати мітки тоннажу на карті
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── 7. Layer Visibility Toggles ─── */}
+        <div key="layers">
+          <div className={styles.bentoCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.dragHandle}>⠿</span>
+              <h3 className={styles.cardTitle}>Відображення Шарів</h3>
+            </div>
+            <div className={styles.cardContent}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={showWarehouses} onChange={e => setShowWarehouses(e.target.checked)} />
                   Склади (фактичні та кандидати)
                 </label>
-                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={showClusters} onChange={e => setShowClusters(e.target.checked)} />
                   Автоматичні кластери та локальні хаби
                 </label>
-                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={showPolygons} onChange={e => setShowPolygons(e.target.checked)} />
                   Намальовані зони та локальні РЦ зон
                 </label>

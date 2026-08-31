@@ -208,6 +208,8 @@ export default function AnalyticsDashboard() {
     try { return JSON.parse(localStorage.getItem('analytics-saved-zones') || '[]'); } catch { return []; }
   });
   const [isDrawingMode, setIsDrawingMode] = useState<boolean>(false);
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
+  const [backupZonePolygon, setBackupZonePolygon] = useState<{ id: string; polygon: [number, number][] } | null>(null);
 
   // Persist saved zones
   useEffect(() => {
@@ -262,8 +264,26 @@ export default function AnalyticsDashboard() {
     setCandidateWarehouses(prev => prev.filter(c => c.id !== id));
   }, []);
 
-  const handleZoneCreate = useCallback((polygonCoords: [number, number][]) => {
-    if (!clusters || clusters.length === 0) return;
+  // Helper to calculate clients, total weight, local CoG and warehouse assignment for a zone
+  const calculateZoneMetrics = useCallback((
+    polygonCoords: [number, number][],
+    existingZone?: SavedZone
+  ): {
+    clients: string[];
+    totalWeightTons: number;
+    optimalCog?: { lat: number; lng: number };
+    warehouseId: string | null;
+    color?: string;
+  } => {
+    if (!polygonCoords || polygonCoords.length < 3) {
+      return {
+        clients: existingZone?.clients || [],
+        totalWeightTons: existingZone?.totalWeightTons || 0,
+        optimalCog: existingZone?.optimalCog,
+        warehouseId: existingZone?.warehouseId || null,
+        color: existingZone?.color,
+      };
+    }
 
     // Check which deliveries fall into this polygon
     // Note: polygonCoords are [lat, lng]. Turf expects [lng, lat]
@@ -287,26 +307,25 @@ export default function AnalyticsDashboard() {
       });
     });
 
-    // Auto-detect if a warehouse is inside the polygon
-    let autoAssignedWarehouseId: string | null = null;
-    let autoAssignedColor: string | undefined = undefined;
+    // Auto-detect warehouse if not already manually chosen
+    let assignedWarehouseId = existingZone?.warehouseId || null;
+    let assignedColor = existingZone?.color;
 
-    // Check candidate warehouses first
-    for (const cand of candidateWarehouses) {
-      if (booleanPointInPolygon([cand.lng, cand.lat], turfPolygon)) {
-        autoAssignedWarehouseId = cand.id;
-        autoAssignedColor = cand.color;
-        break;
-      }
-    }
-
-    // Check actual warehouses if no candidate was found
-    if (!autoAssignedWarehouseId) {
-      for (const wh of warehouses) {
-        if (booleanPointInPolygon([wh.lng, wh.lat], turfPolygon)) {
-          autoAssignedWarehouseId = `wh-${wh.id}`;
-          autoAssignedColor = '#3b82f6';
+    if (!assignedWarehouseId) {
+      for (const cand of candidateWarehouses) {
+        if (booleanPointInPolygon([cand.lng, cand.lat], turfPolygon)) {
+          assignedWarehouseId = cand.id;
+          assignedColor = cand.color;
           break;
+        }
+      }
+      if (!assignedWarehouseId) {
+        for (const wh of warehouses) {
+          if (booleanPointInPolygon([wh.lng, wh.lat], turfPolygon)) {
+            assignedWarehouseId = `wh-${wh.id}`;
+            assignedColor = '#3b82f6';
+            break;
+          }
         }
       }
     }
@@ -315,20 +334,84 @@ export default function AnalyticsDashboard() {
     const zoneDeliveries = clusters.flatMap(c => c.deliveries).filter(d => insideClients.has(d.client));
     const optimalCog = calculateCenterOfGravity(zoneDeliveries, fallbackWeightKg, weightingMode) || undefined;
 
+    return {
+      clients: Array.from(insideClients),
+      totalWeightTons,
+      optimalCog,
+      warehouseId: assignedWarehouseId,
+      color: assignedColor,
+    };
+  }, [clusters, candidateWarehouses, fallbackWeightKg, weightingMode]);
+
+  const handleZoneCreate = useCallback((polygonCoords: [number, number][]) => {
+    if (!clusters || clusters.length === 0) return;
+
+    const metrics = calculateZoneMetrics(polygonCoords);
+
     const newZone: SavedZone = {
       id: `zone-${Date.now()}`,
       name: `Зона ${savedZones.length + 1}`,
-      warehouseId: autoAssignedWarehouseId,
-      color: autoAssignedColor,
+      warehouseId: metrics.warehouseId,
+      color: metrics.color,
       polygon: polygonCoords,
-      clients: Array.from(insideClients),
-      totalWeightTons,
-      optimalCog
+      clients: metrics.clients,
+      totalWeightTons: metrics.totalWeightTons,
+      optimalCog: metrics.optimalCog
     };
 
     setSavedZones(prev => [...prev, newZone]);
     setIsDrawingMode(false);
-  }, [clusters, savedZones.length, candidateWarehouses, fallbackWeightKg, weightingMode]);
+  }, [clusters, savedZones.length, calculateZoneMetrics]);
+
+  const handleZoneGeometryChange = useCallback((zoneId: string, newCoords: [number, number][]) => {
+    setSavedZones(prev => prev.map(zone => {
+      if (zone.id !== zoneId) return zone;
+      const metrics = calculateZoneMetrics(newCoords, zone);
+      return {
+        ...zone,
+        polygon: newCoords,
+        clients: metrics.clients,
+        totalWeightTons: metrics.totalWeightTons,
+        optimalCog: metrics.optimalCog,
+        warehouseId: metrics.warehouseId,
+        color: metrics.color || zone.color,
+      };
+    }));
+  }, [calculateZoneMetrics]);
+
+  const handleStartEditZone = useCallback((zoneId: string) => {
+    const target = savedZones.find(z => z.id === zoneId);
+    if (target) {
+      setBackupZonePolygon({ id: zoneId, polygon: [...target.polygon] });
+      setEditingZoneId(zoneId);
+      setIsDrawingMode(false);
+    }
+  }, [savedZones]);
+
+  const handleFinishEditZone = useCallback(() => {
+    setEditingZoneId(null);
+    setBackupZonePolygon(null);
+  }, []);
+
+  const handleCancelEditZone = useCallback(() => {
+    if (backupZonePolygon) {
+      const backupId = backupZonePolygon.id;
+      const backupCoords = backupZonePolygon.polygon;
+      setSavedZones(prev => prev.map(zone => {
+        if (zone.id !== backupId) return zone;
+        const metrics = calculateZoneMetrics(backupCoords, zone);
+        return {
+          ...zone,
+          polygon: backupCoords,
+          clients: metrics.clients,
+          totalWeightTons: metrics.totalWeightTons,
+          optimalCog: metrics.optimalCog,
+        };
+      }));
+    }
+    setEditingZoneId(null);
+    setBackupZonePolygon(null);
+  }, [backupZonePolygon, calculateZoneMetrics]);
 
   // When candidate warehouses exist, pass them as customHubs to the map
   const effectiveCustomHubs = candidateWarehouses.length > 0
@@ -821,96 +904,184 @@ export default function AnalyticsDashboard() {
 
               {savedZones.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                  {savedZones.map((zone) => (
-                    <div key={zone.id} style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      borderRadius: '6px',
-                      padding: '8px',
-                      fontSize: '11px',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <input 
-                          type="text"
-                          value={zone.name}
-                          onChange={(e) => {
-                            const newName = e.target.value;
-                            setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, name: newName } : z));
-                          }}
-                          style={{
-                            color: zone.color || '#8b5cf6',
-                            fontWeight: 'bold',
-                            background: 'transparent',
-                            border: '1px solid transparent',
-                            borderBottom: '1px dashed rgba(255,255,255,0.3)',
-                            padding: '0 2px',
-                            width: '100%',
-                            marginRight: '8px',
-                            outline: 'none',
-                            fontSize: '13px'
-                          }}
-                          onFocus={(e) => e.target.style.borderBottom = '1px solid ' + (zone.color || '#8b5cf6')}
-                          onBlur={(e) => e.target.style.borderBottom = '1px dashed rgba(255,255,255,0.3)'}
-                        />
-                        <button
-                          onClick={() => setSavedZones(prev => prev.filter(z => z.id !== zone.id))}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
-                        >✕</button>
-                      </div>
-                      <div style={{ color: '#94a3b8', marginBottom: '6px' }}>
-                        {zone.clients.length} клієнтів • {zone.totalWeightTons.toFixed(1)} т
-                      </div>
-                      
-                      {/* Warehouse binding */}
-                      <select 
-                        value={zone.warehouseId || ''}
-                        onChange={(e) => {
-                          const wId = e.target.value || null;
-                          // Find color
-                          let wColor = '#8b5cf6';
-                          if (wId) {
-                            if (wId.startsWith('wh-')) {
-                              wColor = '#3b82f6'; // real
-                            } else {
-                              const cand = candidateWarehouses.find(c => c.id === wId);
-                              if (cand) wColor = cand.color;
-                            }
-                          }
-                          setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, warehouseId: wId, color: wColor } : z));
+                  {savedZones.map((zone) => {
+                    const isEditing = editingZoneId === zone.id;
+                    return (
+                      <div 
+                        key={zone.id} 
+                        style={{
+                          background: isEditing ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255,255,255,0.04)',
+                          border: isEditing ? '1px solid #8b5cf6' : '1px solid transparent',
+                          borderRadius: '6px',
+                          padding: '8px',
+                          fontSize: '11px',
+                          transition: 'all 0.2s',
                         }}
-                        style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px', marginBottom: '8px' }}
                       >
-                        <option value="" style={{ background: '#1e293b' }}>-- Не прив&apos;язано --</option>
-                        <optgroup label="Реальні склади" style={{ background: '#0f172a' }}>
-                          {warehouses.map(w => (
-                            <option key={`wh-${w.id}`} value={`wh-${w.id}`} style={{ background: '#1e293b' }}>{w.name}</option>
-                          ))}
-                        </optgroup>
-                        {candidateWarehouses.length > 0 && (
-                          <optgroup label="Кандидатні склади" style={{ background: '#0f172a' }}>
-                            {candidateWarehouses.map(c => (
-                              <option key={c.id} value={c.id} style={{ background: '#1e293b' }}>{c.name}</option>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <input 
+                            type="text"
+                            value={zone.name}
+                            onChange={(e) => {
+                              const newName = e.target.value;
+                              setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, name: newName } : z));
+                            }}
+                            style={{
+                              color: zone.color || '#8b5cf6',
+                              fontWeight: 'bold',
+                              background: 'transparent',
+                              border: '1px solid transparent',
+                              borderBottom: '1px dashed rgba(255,255,255,0.3)',
+                              padding: '0 2px',
+                              width: '100%',
+                              marginRight: '8px',
+                              outline: 'none',
+                              fontSize: '13px'
+                            }}
+                            onFocus={(e) => e.target.style.borderBottom = '1px solid ' + (zone.color || '#8b5cf6')}
+                            onBlur={(e) => e.target.style.borderBottom = '1px dashed rgba(255,255,255,0.3)'}
+                          />
+                          
+                          {/* Action controls */}
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                            {isEditing ? (
+                              <>
+                                <button
+                                  type="button"
+                                  title="Завершити редагування"
+                                  onClick={handleFinishEditZone}
+                                  style={{
+                                    background: 'rgba(16, 185, 129, 0.25)',
+                                    border: '1px solid #10b981',
+                                    color: '#34d399',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  ✓ Готово
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Скасувати зміни"
+                                  onClick={handleCancelEditZone}
+                                  style={{
+                                    background: 'rgba(239, 68, 68, 0.2)',
+                                    border: '1px solid #ef4444',
+                                    color: '#f87171',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  title="Редагувати форму контуру"
+                                  onClick={() => handleStartEditZone(zone.id)}
+                                  style={{
+                                    background: 'rgba(139, 92, 246, 0.15)',
+                                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                                    color: '#a78bfa',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '2px',
+                                  }}
+                                >
+                                  ✏️ Редагувати
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Видалити зону"
+                                  onClick={() => {
+                                    if (editingZoneId === zone.id) {
+                                      handleCancelEditZone();
+                                    }
+                                    setSavedZones(prev => prev.filter(z => z.id !== zone.id));
+                                  }}
+                                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 4px', fontSize: '12px' }}
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {isEditing && (
+                          <div style={{ fontSize: '10px', color: '#34d399', marginBottom: '4px', fontWeight: 600 }}>
+                            ⚡ Режим редагування: перетягуйте точки на карті
+                          </div>
+                        )}
+
+                        <div style={{ color: '#94a3b8', marginBottom: '6px' }}>
+                          {zone.clients.length} клієнтів • {zone.totalWeightTons.toFixed(1)} т
+                        </div>
+                        
+                        {/* Warehouse binding */}
+                        <select 
+                          value={zone.warehouseId || ''}
+                          onChange={(e) => {
+                            const wId = e.target.value || null;
+                            // Find color
+                            let wColor = '#8b5cf6';
+                            if (wId) {
+                              if (wId.startsWith('wh-')) {
+                                wColor = '#3b82f6'; // real
+                              } else {
+                                const cand = candidateWarehouses.find(c => c.id === wId);
+                                if (cand) wColor = cand.color;
+                              }
+                            }
+                            setSavedZones(prev => prev.map(z => z.id === zone.id ? { ...z, warehouseId: wId, color: wColor } : z));
+                          }}
+                          style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#cbd5e1', fontSize: '11px', marginBottom: '8px' }}
+                        >
+                          <option value="" style={{ background: '#1e293b' }}>-- Не прив&apos;язано --</option>
+                          <optgroup label="Реальні склади" style={{ background: '#0f172a' }}>
+                            {warehouses.map(w => (
+                              <option key={`wh-${w.id}`} value={`wh-${w.id}`} style={{ background: '#1e293b' }}>{w.name}</option>
                             ))}
                           </optgroup>
-                        )}
-                      </select>
+                          {candidateWarehouses.length > 0 && (
+                            <optgroup label="Кандидатні склади" style={{ background: '#0f172a' }}>
+                              {candidateWarehouses.map(c => (
+                                <option key={c.id} value={c.id} style={{ background: '#1e293b' }}>{c.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </select>
 
-                      <button
-                        onClick={() => setViewingZoneId(zone.id)}
-                        style={{
-                          width: '100%',
-                          padding: '4px',
-                          borderRadius: '4px',
-                          border: '1px solid rgba(59,130,246,0.3)',
-                          background: 'rgba(59,130,246,0.1)',
-                          color: '#60a5fa',
-                          fontSize: '11px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        👥 Переглянути клієнтів ({zone.clients.length})
-                      </button>
-                    </div>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => setViewingZoneId(zone.id)}
+                          style={{
+                            width: '100%',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(59,130,246,0.3)',
+                            background: 'rgba(59,130,246,0.1)',
+                            color: '#60a5fa',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          👥 Переглянути клієнтів ({zone.clients.length})
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1012,6 +1183,11 @@ export default function AnalyticsDashboard() {
                 savedZones={savedZones}
                 isDrawingMode={isDrawingMode}
                 onZoneCreate={handleZoneCreate}
+                editingZoneId={editingZoneId}
+                onStartEditZone={handleStartEditZone}
+                onFinishEditZone={handleFinishEditZone}
+                onCancelEditZone={handleCancelEditZone}
+                onZoneGeometryChange={handleZoneGeometryChange}
               />
             </div>
           </div>

@@ -149,6 +149,140 @@ function GeomanDrawControl({
   return null;
 }
 
+/**
+ * Safely extracts a flat LatLng array from Leaflet Polygon
+ */
+function getFlatLatLngs(layer: L.Polygon): L.LatLng[] {
+  const latlngs = layer.getLatLngs();
+  if (!latlngs || !Array.isArray(latlngs) || latlngs.length === 0) return [];
+  
+  let current: unknown = latlngs;
+  while (Array.isArray(current) && current.length > 0 && Array.isArray(current[0])) {
+    current = current[0];
+  }
+  
+  if (Array.isArray(current)) {
+    return current.filter((item): item is L.LatLng => 
+      typeof item === 'object' && item !== null && 'lat' in item && 'lng' in item
+    );
+  }
+  return [];
+}
+
+/**
+ * Editable Polygon component supporting Geoman vertex drag, addition, removal and translation
+ */
+interface EditableZonePolygonProps {
+  zone: SavedZone;
+  isEditing: boolean;
+  onEditChange: (zoneId: string, coords: [number, number][]) => void;
+  onStartEdit?: (zoneId: string) => void;
+}
+
+function EditableZonePolygon({
+  zone,
+  isEditing,
+  onEditChange,
+  onStartEdit,
+}: EditableZonePolygonProps) {
+  const polygonRef = React.useRef<L.Polygon | null>(null);
+  const onEditChangeRef = React.useRef(onEditChange);
+
+  React.useEffect(() => {
+    onEditChangeRef.current = onEditChange;
+  }, [onEditChange]);
+
+  React.useEffect(() => {
+    const polygon = polygonRef.current;
+    if (!polygon) return;
+
+    if (isEditing) {
+      // Enable Geoman editing on this specific layer
+      polygon.pm.enable({
+        allowSelfIntersection: false,
+        preventMarkerRemoval: false,
+        draggable: true,
+        snappable: true,
+        snapDistance: 20,
+      });
+
+      const handleUpdate = () => {
+        const flatLatLngs = getFlatLatLngs(polygon);
+        if (flatLatLngs.length >= 3) {
+          const coords: [number, number][] = flatLatLngs.map((ll) => [ll.lat, ll.lng]);
+          onEditChangeRef.current(zone.id, coords);
+        }
+      };
+
+      polygon.on('pm:edit', handleUpdate);
+      polygon.on('pm:vertexadded', handleUpdate);
+      polygon.on('pm:vertexremoved', handleUpdate);
+      polygon.on('pm:dragend', handleUpdate);
+
+      return () => {
+        polygon.off('pm:edit', handleUpdate);
+        polygon.off('pm:vertexadded', handleUpdate);
+        polygon.off('pm:vertexremoved', handleUpdate);
+        polygon.off('pm:dragend', handleUpdate);
+        polygon.pm.disable();
+      };
+    } else {
+      polygon.pm.disable();
+    }
+  }, [isEditing, zone.id]);
+
+  const zoneColor = zone.color || '#8b5cf6';
+
+  return (
+    <Polygon
+      ref={polygonRef}
+      positions={zone.polygon}
+      pathOptions={{
+        color: isEditing ? '#10b981' : zoneColor,
+        fillColor: isEditing ? '#10b981' : zoneColor,
+        fillOpacity: isEditing ? 0.35 : 0.25,
+        weight: isEditing ? 4 : 3,
+        dashArray: isEditing ? undefined : '5, 5',
+      }}
+    >
+      {!isEditing && (
+        <Tooltip sticky>
+          <strong>🗺️ {zone.name}</strong><br />
+          Склад: {zone.warehouseId || 'Не призначено'}<br />
+          Клієнтів: {zone.clients.length} • {zone.totalWeightTons.toFixed(1)} т
+        </Tooltip>
+      )}
+      {!isEditing && onStartEdit && (
+        <Popup>
+          <div style={{ minWidth: '160px', padding: '4px' }}>
+            <strong style={{ fontSize: '13px', color: '#1e293b' }}>🗺️ {zone.name}</strong>
+            <div style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 8px' }}>
+              Клієнтів: {zone.clients.length} • {zone.totalWeightTons.toFixed(1)} т
+            </div>
+            <button
+              type="button"
+              onClick={() => onStartEdit(zone.id)}
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                background: '#8b5cf6',
+                color: 'white',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              ✏️ Редагувати форму
+            </button>
+          </div>
+        </Popup>
+      )}
+    </Polygon>
+  );
+}
+
 // Fix for default marker icon in leaflet
 const DefaultIcon = L.icon({
   iconUrl: '/leaflet/marker-icon.png',
@@ -460,6 +594,11 @@ type Props = {
   savedZones?: SavedZone[];
   isDrawingMode?: boolean;
   onZoneCreate?: (polygon: [number, number][]) => void;
+  editingZoneId?: string | null;
+  onStartEditZone?: (zoneId: string) => void;
+  onFinishEditZone?: () => void;
+  onCancelEditZone?: () => void;
+  onZoneGeometryChange?: (zoneId: string, polygon: [number, number][]) => void;
 };
 
 export default function AnalyticsMap({ 
@@ -494,6 +633,11 @@ export default function AnalyticsMap({
   savedZones = [],
   isDrawingMode = false,
   onZoneCreate,
+  editingZoneId = null,
+  onStartEditZone,
+  onFinishEditZone,
+  onCancelEditZone,
+  onZoneGeometryChange,
 }: Props) {
   const { applications, unmappedApplications, deliveries, selectedManagers, selectedLoBs } = useApplicationsStore();
   
@@ -728,6 +872,12 @@ export default function AnalyticsMap({
     return warehouses[0] ? { lat: warehouses[0].lat, lng: warehouses[0].lng } : optimalHub;
   }, [selectedOriginId, optimalHub, customOriginLocation]);
 
+  // Find currently edited zone if any
+  const editingZone = useMemo(() => {
+    if (!editingZoneId || !savedZones) return null;
+    return savedZones.find(z => z.id === editingZoneId) || null;
+  }, [editingZoneId, savedZones]);
+
   // Determine cursor style
   const cursorStyle = isCandidateMode ? 'crosshair' : isPickingLocation ? 'crosshair' : 'default';
 
@@ -777,6 +927,82 @@ export default function AnalyticsMap({
           gap: '8px'
         }}>
           <span>🏭 Клікніть на карті, щоб додати кандидатний склад</span>
+        </div>
+      )}
+
+      {/* Floating Toolbar for Zone Editing */}
+      {editingZone && (
+        <div style={{
+          position: 'absolute',
+          top: 14,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: 'rgba(15, 23, 42, 0.94)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(139, 92, 246, 0.6)',
+          borderRadius: '12px',
+          padding: '10px 18px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          color: '#e2e8f0',
+          maxWidth: '92%',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '13px', color: '#a78bfa' }}>
+              <span>✏️ Редагування зони:</span>
+              <span style={{ color: '#fff' }}>{editingZone.name}</span>
+            </div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+              👥 {editingZone.clients.length} клієнтів • ⚖️ {editingZone.totalWeightTons.toFixed(1)} т • 
+              <span style={{ color: '#64748b', marginLeft: '4px' }}>Перетягуйте вершини або клікайте на ребра для нових точок</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            {onFinishEditZone && (
+              <button
+                type="button"
+                onClick={onFinishEditZone}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#10b981',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+                }}
+              >
+                ✓ Завершити
+              </button>
+            )}
+            {onCancelEditZone && (
+              <button
+                type="button"
+                onClick={onCancelEditZone}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  color: '#f87171',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ✕ Скасувати
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -930,22 +1156,13 @@ export default function AnalyticsMap({
         {/* Block D: Render Saved Zones */}
         {showPolygons && savedZones && savedZones.map(zone => (
           <React.Fragment key={`zone-group-${zone.id}`}>
-            <Polygon
+            <EditableZonePolygon
               key={`zone-${zone.id}`}
-              positions={zone.polygon}
-              pathOptions={{
-                color: zone.color || '#8b5cf6',
-                fillColor: zone.color || '#8b5cf6',
-                fillOpacity: 0.25,
-                weight: 3,
-                dashArray: '5, 5'
-              }}
-            >
-              <Tooltip sticky>
-                <strong>🗺️ {zone.name}</strong><br/>
-                Склад: {zone.warehouseId || 'Не призначено'}
-              </Tooltip>
-            </Polygon>
+              zone={zone}
+              isEditing={editingZoneId === zone.id}
+              onEditChange={onZoneGeometryChange || (() => {})}
+              onStartEdit={onStartEditZone}
+            />
             
             {/* Render Local Optimal CoG for Zone */}
             {zone.optimalCog && (

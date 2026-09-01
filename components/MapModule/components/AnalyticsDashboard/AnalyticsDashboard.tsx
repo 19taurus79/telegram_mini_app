@@ -28,14 +28,26 @@ import AnalyticsGuideModal from './AnalyticsGuideModal';
 import Portal from '@/components/Portal';
 import { warehouses } from '../../warehouses';
 
-function formatCatalogAddress(c?: ClientAddress | null): string {
+export function normalizeClientName(name?: string | null): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/["'«»„“”]/g, '')
+    .replace(/[\s\-_]+/g, ' ')
+    .trim();
+}
+
+function formatCatalogAddress(c?: (ClientAddress & { address?: string; full_address?: string }) | null): string {
   if (!c) return '—';
   const parts: string[] = [];
-  if (c.region) parts.push(`${c.region} обл.`);
-  if (c.area) parts.push(`${c.area} р-н`);
-  if (c.commune) parts.push(`${c.commune} громада`);
+  if (c.region) parts.push(`${c.region.replace(/\s*обл\.?$/i, '')} обл.`);
+  if (c.area) parts.push(`${c.area.replace(/\s*р-н\.?$/i, '')} р-н`);
+  if (c.commune) parts.push(`${c.commune.replace(/\s*(громада|тг|отг)\.?$/i, '')} громада`);
   if (c.city) parts.push(c.city);
-  return parts.length > 0 ? parts.join(', ') : '—';
+  if (parts.length > 0) return parts.join(', ');
+  if (c.address) return c.address;
+  if (c.full_address) return c.full_address;
+  return '—';
 }
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -473,6 +485,12 @@ export default function AnalyticsDashboard() {
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+
+  const effectiveClients: ClientAddress[] = useMemo(() => {
+    if (Array.isArray(clients) && clients.length > 0) return clients as ClientAddress[];
+    if (Array.isArray(clientsData) && clientsData.length > 0) return clientsData as ClientAddress[];
+    return [];
+  }, [clients, clientsData]);
 
   useEffect(() => {
     if (clientsData && Array.isArray(clientsData) && clientsData.length > 0 && (!clients || clients.length === 0)) {
@@ -1340,7 +1358,7 @@ export default function AnalyticsDashboard() {
             <div className={styles.cardContent}>
               <ManagerFilter />
               <LineOfBusinessFilter />
-              <AnalyticsExport clusters={clusters} dateRange={dateRange} savedZones={savedZones} candidateWarehouses={candidateWarehouses} clients={Array.isArray(clients) ? (clients as ClientAddress[]) : []} />
+              <AnalyticsExport clusters={clusters} dateRange={dateRange} savedZones={savedZones} candidateWarehouses={candidateWarehouses} clients={effectiveClients} />
             </div>
           </div>
         </div>
@@ -1624,8 +1642,36 @@ export default function AnalyticsDashboard() {
                 
                 // Lookup map for fast client directory retrieval
                 const clientCatalogMap = new Map<string, ClientAddress>();
-                (Array.isArray(clients) ? (clients as ClientAddress[]) : []).forEach((c: ClientAddress) => {
+
+                // 1. Populate from applications store
+                if (Array.isArray(applications)) {
+                  applications.forEach((app: unknown) => {
+                    const item = app as { client?: string; manager?: string; address?: Partial<ClientAddress> };
+                    if (item && item.client && item.address) {
+                      const clientObj: ClientAddress = {
+                        id: item.address.id || 0,
+                        manager: item.manager || item.address.manager || '',
+                        client: item.client,
+                        region: item.address.region || '',
+                        area: item.address.area || '',
+                        commune: item.address.commune || '',
+                        city: item.address.city || '',
+                        latitude: item.address.latitude || 0,
+                        longitude: item.address.longitude || 0,
+                        representative: item.address.representative || '',
+                        phone1: item.address.phone1 || '',
+                        phone2: item.address.phone2 || '',
+                      };
+                      clientCatalogMap.set(normalizeClientName(item.client), clientObj);
+                      clientCatalogMap.set(item.client.trim().toLowerCase(), clientObj);
+                    }
+                  });
+                }
+
+                // 2. Enrich from effectiveClients
+                effectiveClients.forEach((c: ClientAddress) => {
                   if (c && c.client) {
+                    clientCatalogMap.set(normalizeClientName(c.client), c);
                     clientCatalogMap.set(c.client.trim().toLowerCase(), c);
                   }
                 });
@@ -1648,7 +1694,7 @@ export default function AnalyticsDashboard() {
                   const clientName = d.client || 'Невідомий';
                   const matchingZones = savedZones.filter(z => z.clients.includes(clientName));
                   const otherZones = matchingZones.filter(z => z.id !== zone.id);
-                  const catalogClient = clientCatalogMap.get(clientName.trim().toLowerCase());
+                  const catalogClient = clientCatalogMap.get(normalizeClientName(clientName)) || clientCatalogMap.get(clientName.trim().toLowerCase());
                   const catalogAddress = formatCatalogAddress(catalogClient);
                   const manager = d.manager || catalogClient?.manager || '—';
 

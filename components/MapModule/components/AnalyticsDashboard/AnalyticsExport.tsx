@@ -6,14 +6,26 @@ import { SavedZone, CandidateWarehouse } from '../AnalyticsMap/AnalyticsMap';
 import { warehouses } from '../../warehouses';
 import { ClientAddress } from '@/types/types';
 
-function formatCatalogAddress(c?: ClientAddress | null): string {
+function normalizeClientName(name?: string | null): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/["'«»„“”]/g, '')
+    .replace(/[\s\-_]+/g, ' ')
+    .trim();
+}
+
+function formatCatalogAddress(c?: (ClientAddress & { address?: string; full_address?: string }) | null): string {
   if (!c) return '—';
   const parts: string[] = [];
-  if (c.region) parts.push(`${c.region} обл.`);
-  if (c.area) parts.push(`${c.area} р-н`);
-  if (c.commune) parts.push(`${c.commune} громада`);
+  if (c.region) parts.push(`${c.region.replace(/\s*обл\.?$/i, '')} обл.`);
+  if (c.area) parts.push(`${c.area.replace(/\s*р-н\.?$/i, '')} р-н`);
+  if (c.commune) parts.push(`${c.commune.replace(/\s*(громада|тг|отг)\.?$/i, '')} громада`);
   if (c.city) parts.push(c.city);
-  return parts.length > 0 ? parts.join(', ') : '—';
+  if (parts.length > 0) return parts.join(', ');
+  if (c.address) return c.address;
+  if (c.full_address) return c.full_address;
+  return '—';
 }
 
 type Props = {
@@ -31,6 +43,7 @@ export default function AnalyticsExport({ clusters, dateRange, savedZones = [], 
     const clientCatalogMap = new Map<string, ClientAddress>();
     clients.forEach(c => {
       if (c && c.client) {
+        clientCatalogMap.set(normalizeClientName(c.client), c);
         clientCatalogMap.set(c.client.trim().toLowerCase(), c);
       }
     });
@@ -68,7 +81,10 @@ export default function AnalyticsExport({ clusters, dateRange, savedZones = [], 
           }
         }
 
-        const catalogClient = d.client ? clientCatalogMap.get(d.client.trim().toLowerCase()) : undefined;
+        const clientName = d.client || '';
+        const catalogClient = clientName
+          ? (clientCatalogMap.get(normalizeClientName(clientName)) || clientCatalogMap.get(clientName.trim().toLowerCase()))
+          : undefined;
         const catalogAddress = formatCatalogAddress(catalogClient);
 
         const allZoneNames = matchingZones.map(z => z.name).join(', ');

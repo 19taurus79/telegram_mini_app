@@ -49,8 +49,11 @@ export default function EditDeliveryModal() {
   // Состояния для новых фич: удаление с предупреждением и разделение
   const [itemToDelete, setItemToDelete] = useState(null); // Индекс удаляемого товара для модалки подтверждения
   const [selectedItemsToSplit, setSelectedItemsToSplit] = useState({}); // Хранение выбранных чекбоксов { [idx]: boolean }
+  const [splitQuantities, setSplitQuantities] = useState({}); // Кол-во для переноса { [idx]: number }
   const [isSplitting, setIsSplitting] = useState(false); // Флаг загрузки при разделении доставки
   const [isSaving, setIsSaving] = useState(false); // Флаг процесса сохранения
+  const [showPartiesWarning, setShowPartiesWarning] = useState(false); // Модалка мягкого предупреждения об отсутствии партий
+  const [pendingAction, setPendingAction] = useState(null); // 'ready' | 'co' — действие ожидающее подтверждения
 
 
   // --- REFS AND HOOKS ---
@@ -188,6 +191,7 @@ export default function EditDeliveryModal() {
       setActiveItemIdx(null);
       setStockRemains([]);
       setSelectedItemsToSplit({});
+      setSplitQuantities({});
     }
   }, [isEditDeliveryModalOpen, selectedDeliveries, applications, isPrintView]);
 
@@ -312,6 +316,7 @@ export default function EditDeliveryModal() {
     
     // Сбрасываем чекбоксы разделения так как индексы сместились
     setSelectedItemsToSplit({});
+    setSplitQuantities({});
     setItemToDelete(null);
     toast.success("Товар видалено з форми");
   };
@@ -331,11 +336,43 @@ export default function EditDeliveryModal() {
 
   /**
    * Обрабатывает переключение чекбокса разделения товара.
+   * При включении — устанавливает дефолтное кол-во переноса = полное количество товара.
    */
   const toggleItemSplitSelection = (idx) => {
+    const isCurrentlyChecked = !!selectedItemsToSplit[idx];
     setSelectedItemsToSplit(prev => ({
       ...prev,
       [idx]: !prev[idx]
+    }));
+    if (!isCurrentlyChecked) {
+      // Включаем — дефолт кол-во = полное количество товара
+      const item = deliveryItems[idx];
+      setSplitQuantities(prev => ({
+        ...prev,
+        [idx]: parseFloat(item.quantity) || 0
+      }));
+    } else {
+      // Выключаем — убираем из splitQuantities
+      setSplitQuantities(prev => {
+        const next = { ...prev };
+        delete next[idx];
+        return next;
+      });
+    }
+  };
+
+  /**
+   * Обрабатывает изменение количества для переноса в конкретной строке.
+   */
+  const handleSplitQuantityChange = (idx, newValue) => {
+    const item = deliveryItems[idx];
+    const maxQty = parseFloat(item.quantity) || 0;
+    let val = parseFloat(newValue) || 0;
+    if (val < 0) val = 0;
+    if (val > maxQty) val = maxQty;
+    setSplitQuantities(prev => ({
+      ...prev,
+      [idx]: val
     }));
   };
 
@@ -425,146 +462,47 @@ export default function EditDeliveryModal() {
   /**
    * Кнопка "Готово". Финальная валидация и отправка данных на сервер.
    */
-  const handleReady = async () => {
-    const itemsWithErrors = validatedItems.filter(item => item.hasError);
-
-    if (itemsWithErrors.length > 0) {
-      const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
-      if (mismatch) {
-        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}.`);
-      } else {
-        const noParties = itemsWithErrors.find(i => i.errorType === 'no_parties');
-        toast.error(`Оберіть хоча б одну партію для товару: ${noParties.product}`);
-      }
-      return;
-    }
-
-    setIsSaving(true);
-
-    // Собираем обновленные данные по доставкам
-    const updatedDeliveries = selectedDeliveries.map(delivery => {
-      const deliveryUpdatedItems = validatedItems
-        .filter(item => item.deliveryId === delivery.id)
-        .map(item => {
-          const qty = parseFloat(item.quantity) || 0;
-          let parties = (item.parties || [])
-            .map(p => {
-              const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
-                ? p.party_quantity
-                : (p.moved_q || 0);
-              return { ...p, moved_q: parseFloat(qStr) || 0 };
-            })
-            .filter(p => p.moved_q > 0);
-
-          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
-        });
-      
-      // Считаем новый общий вес для этой обновленной доставки
-      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => {
-        console.log(`[Ready] Delivery ${delivery.id} | Item: ${item.product} | Qty: ${item.quantity} | UnitWeight: ${item.unit_weight} | Weight: ${item.weight}`);
-        return sum + (item.weight || 0);
-      }, 0);
-      console.log(`[Ready] Delivery ${delivery.id} | newTotalWeight: ${newTotalWeight}`);
-
-      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems, total_weight: newTotalWeight };
-    });
-
-    try {
-        const initData = getInitData();
-        // Отправляем данные по каждой доставке параллельно
-        await Promise.all(updatedDeliveries.map(async (d) => {
-            const cleanItems = d.items.map(item => ({
-                product: String(item.product),
-                nomenclature: String(item.nomenclature || item.product),
-                quantity: parseFloat(item.quantity) || 0,
-                manager: String(item.manager || ""),
-                client: String(item.client),
-                orderRef: String(item.orderRef || item.order || item.order_ref || ""), 
-                weight: parseFloat(item.weight) || 0,
-                parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
-            }));
-            
-            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
-            
-            // Відображаємо попередження для кожної доставки, якщо вони є
-            if (res && res.warnings && res.warnings.length > 0) {
-              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
-            }
-            return res;
-        }));
-
-        updateDeliveries(updatedDeliveries); // Обновляем глобальный стор
-        
-        // Инвалидируем кэш, чтобы подтянуть свежие данные с бэкенда (особенно если изменился общий вес)
-        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-
-        toast.success("Доставки оновлено та переведено в роботу");
-        
-        // Готовим данные для печати и переходим к выбору даты
-        const validDeliveries = updatedDeliveries.filter(d => 
-          d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
-        ).map(d => ({
-          ...d,
-          items: d.items.filter(i => i.quantity > 0)
-        }));
-
-        // Об'єднуємо замовлення одного клієнта
-        const groupedByClient = validDeliveries.reduce((acc, delivery) => {
-          const client = delivery.client || "Невідомий клієнт";
-          if (!acc[client]) {
-            acc[client] = {
-              client: client,
-              manager: delivery.manager || "",
-              items: [],
-              comments: []
-            };
-          }
-          acc[client].items.push(...delivery.items);
-          if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
-            acc[client].comments.push(delivery.comment);
-          }
-          return acc;
-        }, {});
-
-        const groupedDeliveries = Object.values(groupedByClient).map(group => ({
-          ...group,
-          comment: group.comments.join(" | ")
-        }));
-
-        const sorted = groupedDeliveries.sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
-        setPrintData(sorted);
-        setIsAskingDate(true);
-    } catch (error) {
-        console.error("Failed to update deliveries:", error);
-        toast.error("Помилка при збереженні змін");
-    } finally {
-        setIsSaving(false);
-    }
-  };
+  // --- SHARED SAVE HELPERS ---
 
   /**
-   * Кнопка "Доставка з ЦО". Оформлює доставку зі статусом "Доставка з ЦО на клієнта".
+   * Формирует cleanItems для отправки на сервер.
+   * Фильтрует товары с quantity === 0 (фантомные/isNew позиции).
    */
-  const handleCODelivery = async () => {
-    const itemsWithErrors = validatedItems.filter(item => item.hasError);
+  const buildCleanItems = (items) =>
+    items
+      .filter(item => (parseFloat(item.quantity) || 0) > 0)
+      .map(item => {
+        const qty = parseFloat(item.quantity) || 0;
+        const parties = (item.parties || [])
+          .map(p => {
+            const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+              ? p.party_quantity
+              : (p.moved_q || 0);
+            return { ...p, moved_q: parseFloat(qStr) || 0 };
+          })
+          .filter(p => p.moved_q > 0);
+        return {
+          product: String(item.product),
+          nomenclature: String(item.nomenclature || item.product),
+          quantity: qty,
+          manager: String(item.manager || ""),
+          client: String(item.client),
+          orderRef: String(item.orderRef || item.order || item.order_ref || ""),
+          weight: parseFloat(item.weight) || 0,
+          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
+        };
+      });
 
-    if (itemsWithErrors.length > 0) {
-      const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
-      if (mismatch) {
-        toast.error(`Невідповідность кількості у товарі: ${mismatch.product}.`);
-      } else {
-        const noParties = itemsWithErrors.find(i => i.errorType === 'no_parties');
-        toast.error(`Оберіть хоча б одну партію для товару: ${noParties.product}`);
-      }
-      return;
-    }
-
+  /**
+   * Реальная логика сохранения "Готово" (вызывается напрямую или через модалку подтверждения).
+   */
+  const executeReady = async () => {
     setIsSaving(true);
 
-    // Собираем обновленные данные по доставкам
+    // Собираем обновленные данные по доставкам, фильтруем quantity === 0
     const updatedDeliveries = selectedDeliveries.map(delivery => {
       const deliveryUpdatedItems = validatedItems
-        .filter(item => item.deliveryId === delivery.id)
+        .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
         .map(item => {
           const qty = parseFloat(item.quantity) || 0;
           let parties = (item.parties || [])
@@ -580,30 +518,14 @@ export default function EditDeliveryModal() {
         });
       
       const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
-
-      return { 
-        ...delivery, 
-        status: 'Доставка з ЦО на клієнта', 
-        items: deliveryUpdatedItems, 
-        total_weight: newTotalWeight 
-      };
+      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems, total_weight: newTotalWeight };
     });
 
     try {
         const initData = getInitData();
         await Promise.all(updatedDeliveries.map(async (d) => {
-            const cleanItems = d.items.map(item => ({
-                product: String(item.product),
-                nomenclature: String(item.nomenclature || item.product),
-                quantity: parseFloat(item.quantity) || 0,
-                manager: String(item.manager || ""),
-                client: String(item.client),
-                orderRef: String(item.orderRef || item.order || item.order_ref || ""), 
-                weight: parseFloat(item.weight) || 0,
-                parties: item.parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
-            }));
+            const cleanItems = buildCleanItems(d.items);
             const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
-            
             if (res && res.warnings && res.warnings.length > 0) {
               res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
             }
@@ -612,15 +534,139 @@ export default function EditDeliveryModal() {
 
         updateDeliveries(updatedDeliveries);
         queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+        toast.success("Доставки оновлено та переведено в роботу");
+        
+        const validDeliveries = updatedDeliveries.filter(d =>
+          d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
+        ).map(d => ({ ...d, items: d.items.filter(i => i.quantity > 0) }));
 
+        const groupedByClient = validDeliveries.reduce((acc, delivery) => {
+          const client = delivery.client || "Невідомий клієнт";
+          if (!acc[client]) {
+            acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
+          }
+          acc[client].items.push(...delivery.items);
+          if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
+            acc[client].comments.push(delivery.comment);
+          }
+          return acc;
+        }, {});
+
+        const sorted = Object.values(groupedByClient)
+          .map(group => ({ ...group, comment: group.comments.join(" | ") }))
+          .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+        setPrintData(sorted);
+        setIsAskingDate(true);
+    } catch (error) {
+        console.error("Failed to update deliveries:", error);
+        toast.error("Помилка при збереженні змін");
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  /**
+   * Реальная логика "Доставка з ЦО" (вызывается напрямую или через модалку подтверждения).
+   */
+  const executeCODelivery = async () => {
+    setIsSaving(true);
+
+    const updatedDeliveries = selectedDeliveries.map(delivery => {
+      const deliveryUpdatedItems = validatedItems
+        .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
+        .map(item => {
+          const qty = parseFloat(item.quantity) || 0;
+          let parties = (item.parties || [])
+            .map(p => {
+              const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                ? p.party_quantity
+                : (p.moved_q || 0);
+              return { ...p, moved_q: parseFloat(qStr) || 0 };
+            })
+            .filter(p => p.moved_q > 0);
+          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
+        });
+      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
+      return { ...delivery, status: 'Доставка з ЦО на клієнта', items: deliveryUpdatedItems, total_weight: newTotalWeight };
+    });
+
+    try {
+        const initData = getInitData();
+        await Promise.all(updatedDeliveries.map(async (d) => {
+            const cleanItems = buildCleanItems(d.items);
+            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+            if (res && res.warnings && res.warnings.length > 0) {
+              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+            }
+            return res;
+        }));
+        updateDeliveries(updatedDeliveries);
+        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
         toast.success("Оформлено доставку з ЦО напряму клієнту");
-        setIsEditDeliveryModalOpen(false); // Close modal after this action as it's a bypass action
+        setIsEditDeliveryModalOpen(false);
     } catch (error) {
         console.error("Failed to update CO delivery:", error);
         toast.error("Помилка при збереженні змін");
     } finally {
         setIsSaving(false);
     }
+  };
+
+  /**
+   * Кнопка "Готово". Двухуровневая валидация: жёсткая для mismatch, мягкая для no_parties.
+   */
+  const handleReady = async () => {
+    const itemsWithErrors = validatedItems.filter(item => item.hasError && (parseFloat(item.quantity) || 0) > 0);
+
+    const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+    if (mismatch) {
+      toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
+      return;
+    }
+
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === 'no_parties');
+    if (noPartiesItems.length > 0) {
+      setPendingAction('ready');
+      setShowPartiesWarning(true);
+      return;
+    }
+
+    await executeReady();
+  };
+
+  /**
+   * Кнопка "Доставка з ЦО". Двухуровневая валидация.
+   */
+  const handleCODelivery = async () => {
+    const itemsWithErrors = validatedItems.filter(item => item.hasError && (parseFloat(item.quantity) || 0) > 0);
+
+    const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+    if (mismatch) {
+      toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
+      return;
+    }
+
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === 'no_parties');
+    if (noPartiesItems.length > 0) {
+      setPendingAction('co');
+      setShowPartiesWarning(true);
+      return;
+    }
+
+    await executeCODelivery();
+  };
+
+  /**
+   * Обрабатывает подтверждение "Продовжити без партій" из модалки предупреждения.
+   */
+  const handlePartiesWarningContinue = async () => {
+    setShowPartiesWarning(false);
+    if (pendingAction === 'ready') {
+      await executeReady();
+    } else if (pendingAction === 'co') {
+      await executeCODelivery();
+    }
+    setPendingAction(null);
   };
 
   /**
@@ -683,16 +729,18 @@ export default function EditDeliveryModal() {
     const selectedIndices = Object.keys(selectedItemsToSplit).filter(k => selectedItemsToSplit[k]).map(Number);
     if (selectedIndices.length === 0) return;
 
-    // Группируем выбранные элементы по исходным доставкам
-    // (Поскольку в EditDeliveryModal могут редактироваться несколько доставок сразу, мы разделяем каждую отдельно)
+    // Группируем по исходным доставкам (в модалке могут редактироваться несколько доставок)
     const itemsToSplitByDeliveryId = {};
     selectedIndices.forEach(idx => {
       const item = deliveryItems[idx];
+      if (item.isNew) return; // Не трогаем фантомные (isNew) строки
       if (!itemsToSplitByDeliveryId[item.deliveryId]) {
          itemsToSplitByDeliveryId[item.deliveryId] = [];
       }
       itemsToSplitByDeliveryId[item.deliveryId].push({ item, originalIdx: idx });
     });
+
+    if (Object.keys(itemsToSplitByDeliveryId).length === 0) return;
 
     setIsSplitting(true);
     let successCount = 0;
@@ -700,49 +748,63 @@ export default function EditDeliveryModal() {
     try {
       const initData = getInitData();
 
-      // Проходим по каждой затронутой доставке
+      // Вычисляем обновлённый deliveryItems после разделения (до запросов)
+      let nextItems = [...deliveryItems];
+
       for (const [delivId, splitGroup] of Object.entries(itemsToSplitByDeliveryId)) {
          const originalDelivery = selectedDeliveries.find(d => String(d.id) === String(delivId));
          if (!originalDelivery) continue;
 
-         // Подготовка Payload для клонированной доставки 
-         // Используем данные из originalDelivery, но берем только выделенные товары
          const ordersMap = {};
          
-         splitGroup.forEach(({ item }) => {
+         splitGroup.forEach(({ item, originalIdx }) => {
+            const transferQty = parseFloat(splitQuantities[originalIdx]) || parseFloat(item.quantity) || 0;
+            const totalQty = parseFloat(item.quantity) || 0;
+            const unitWeight = parseFloat(item.unit_weight) || (totalQty > 0 ? (parseFloat(item.weight) || 0) / totalQty : 0);
+            const transferWeight = unitWeight * transferQty;
+
             const orderRefName = item.orderRef || item.order || "Без заявки";
             if (!ordersMap[orderRefName]) {
                ordersMap[orderRefName] = { order: orderRefName, items: [] };
             }
 
-            const cleanParties = (item.parties || []).map(p => ({
-               party: String(p.party),
-               moved_q: parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0
-            })).filter(p => p.moved_q > 0);
+            // Пропорционально масштабируем партии к transferQty
+            const partiesSum = (item.parties || []).reduce((s, p) => {
+               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+               return s + q;
+            }, 0);
+            const scale = partiesSum > 0 ? transferQty / partiesSum : 1;
+            const cleanParties = (item.parties || []).map(p => {
+               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+               return { party: String(p.party), moved_q: Math.round(q * scale * 1000) / 1000 };
+            }).filter(p => p.moved_q > 0);
 
-            const itemWeight = parseFloat(item.weight) || 0;
-            const itemQuantity = parseFloat(item.quantity) || 0;
-            console.log(`[Split] Item: ${item.product} | Qty: ${itemQuantity} | UnitWt: ${item.unit_weight} | Weight: ${itemWeight}`);
-            
-            // Рассчитываем суммарный вес. Согласно логике приложения, weight уже является 
-            // общим весом для данной строки товара (без перемножения)
-            
+            console.log(`[Split] Item: ${item.product} | Transfer: ${transferQty}/${totalQty} | UnitWt: ${unitWeight} | Weight: ${transferWeight}`);
+
             ordersMap[orderRefName].items.push({
                product: String(item.product),
                nomenclature: String(item.nomenclature || item.product),
-               quantity: itemQuantity,
-               weight: itemWeight,
+               quantity: transferQty,
+               weight: transferWeight,
                parties: cleanParties
             });
+
+            // Обновляем оригинальную строку: частичный перенос или полное удаление
+            const remainQty = totalQty - transferQty;
+            if (remainQty <= 0.0001) {
+               nextItems[originalIdx] = null; // Помечаем для удаления
+            } else {
+               nextItems[originalIdx] = {
+                  ...nextItems[originalIdx],
+                  quantity: Math.round(remainQty * 1000) / 1000,
+                  weight: unitWeight * remainQty,
+               };
+            }
          });
 
-         // Считаем общий вес для новой доставки
+         // Считаем вес клона
          let sumWeight = 0;
-         Object.values(ordersMap).forEach(order => {
-            order.items.forEach(i => {
-               sumWeight += i.weight; // Суммируем готовый вес всех товаров напрямую
-            });
-         });
+         Object.values(ordersMap).forEach(order => order.items.forEach(i => { sumWeight += i.weight; }));
 
          const clonePayload = {
             manager: String(originalDelivery.manager || ""),
@@ -757,37 +819,55 @@ export default function EditDeliveryModal() {
             longitude: parseFloat(originalDelivery.longitude) || 0,
             total_weight: sumWeight,
             orders: Object.values(ordersMap),
-            // Зберігаємо оригінального автора заявки — адмін що ділить НЕ повинен ставати creator'ом
             override_created_by: originalDelivery.created_by || null,
             actor_name: actorName,
          };
 
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
 
-         // Отправляем клон в базу через sendDeliveryData API
+         // 1. Создаём клон
          const res = await sendDeliveryData(clonePayload, initData);
-         
          if (res && res.warnings && res.warnings.length > 0) {
             res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
          }
+
+         // 2. ФИКС ДУБЛЕЙ: сразу сохраняем оригинальную доставку на сервере
+         //    с обновлёнными/удалёнными позициями — ДО invalidateQueries
+         const updatedOriginalItems = nextItems
+            .filter(it => it !== null && it.deliveryId === String(delivId) && (parseFloat(it.quantity) || 0) > 0)
+            .map(it => ({
+               product: String(it.product),
+               nomenclature: String(it.nomenclature || it.product),
+               quantity: parseFloat(it.quantity) || 0,
+               manager: String(it.manager || ""),
+               client: String(it.client),
+               orderRef: String(it.orderRef || it.order || it.order_ref || ""),
+               weight: parseFloat(it.weight) || 0,
+               parties: (it.parties || []).map(p => {
+                  const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+                  return { party: String(p.party), moved_q: q };
+               }).filter(p => p.moved_q > 0)
+            }));
+
+         const newOriginalWeight = updatedOriginalItems.reduce((s, it) => s + (it.weight || 0), 0);
+         await updateDeliveryData(delivId, originalDelivery.status || 'В роботі', updatedOriginalItems, newOriginalWeight, initData, actorName);
+
          successCount++;
       }
 
-      // После успешного создания клонов в БД, удаляем товары из локального состояния (формы)
-      // Разделение завершено, при нажатии "Сберечь" оригинальная доставка сохранится уже без них
-      const indicesToRemove = new Set(selectedIndices);
-      const nextItems = deliveryItems.filter((_, idx) => !indicesToRemove.has(idx));
-      
-      setDeliveryItems(nextItems);
+      // Применяем локальные изменения (убираем null-строки)
+      const finalItems = nextItems.filter(it => it !== null);
+      setDeliveryItems(finalItems);
       setSelectedItemsToSplit({});
+      setSplitQuantities({});
       setActiveItemIdx(null);
       setSelectedProductId(null);
       setStockRemains([]);
 
-      // Обязательно сбрасываем кэш, чтобы новая клонированная доставка появилась на карте
+      // Теперь безопасно инвалидировать кэш — оригинал уже сохранён
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
 
-      toast.success(`Розділено товарів у ${successCount} доставках! Не забудьте зберегти форму.`);
+      toast.success(`Розділено! ${successCount} доставок оновлено.`);
     } catch (e) {
       console.error("Помилка під час розділення доставки", e);
       toast.error("Не вдалося розділити доставку. Перевірте підключення.");
@@ -1033,11 +1113,13 @@ export default function EditDeliveryModal() {
                     <th>Клієнт</th>
                     <th>Товар</th>
                     <th>Кількість</th>
+                    <th style={{ width: '90px', color: '#7289da' }} title="Кількість для переносу в нову доставку">Перенести</th>
+                    <th style={{ width: '70px', color: '#72767d' }} title="Залишок в оригінальній доставці">Залишок</th>
                     <th style={{ width: '40px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {validatedItems.map((item, idx) => (
+                  {validatedItems.filter(item => (parseFloat(item.quantity) || 0) > 0).map((item, idx) => (
                     <React.Fragment key={`${item.deliveryId}-${idx}`}>
                       <tr 
                         className={`${activeItemIdx === idx ? css.selectedRow : ""} ${item.hasError ? css.rowError : ""}`}
@@ -1065,6 +1147,35 @@ export default function EditDeliveryModal() {
                             title={item.errorType === 'mismatch' ? "Сума партій не збігається з загальною кількістю" : (item.errorType === 'no_parties' ? "Необхідно обрати партію" : "")}
                           />
                         </td>
+                        {/* Колонка "Перенести" — input видим только когда строка выбрана для split */}
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                          {selectedItemsToSplit[idx] && (
+                            <input
+                              type="number"
+                              className={css.inputNumber}
+                              style={{ width: '70px', height: '26px', fontSize: '0.82rem', textAlign: 'center', border: '1px solid #7289da' }}
+                              value={splitQuantities[idx] !== undefined ? splitQuantities[idx] : (parseFloat(item.quantity) || 0)}
+                              min={0.001}
+                              max={parseFloat(item.quantity) || 0}
+                              step={0.001}
+                              disabled={isSplitting}
+                              onChange={(e) => handleSplitQuantityChange(idx, e.target.value)}
+                              title="Кількість для переносу в нову доставку"
+                            />
+                          )}
+                        </td>
+                        {/* Колонка "Залишок" — вычисляется live */}
+                        <td style={{ textAlign: 'center', fontSize: '0.82rem', color: '#72767d' }}>
+                          {selectedItemsToSplit[idx] && (
+                            <span style={{
+                              color: (parseFloat(item.quantity) - (splitQuantities[idx] || parseFloat(item.quantity))) <= 0
+                                ? '#ed4245' : '#72767d',
+                              fontWeight: 500
+                            }}>
+                              {Math.max(0, Math.round((parseFloat(item.quantity) - (splitQuantities[idx] || parseFloat(item.quantity))) * 1000) / 1000)}
+                            </span>
+                          )}
+                        </td>
                         <td>
                           <button
                             className={css.deleteButton}
@@ -1081,7 +1192,7 @@ export default function EditDeliveryModal() {
                       {/* Вложенная таблица для партий */}
                       {item.parties && item.parties.length > 0 && (
                         <tr>
-                          <td colSpan="5" style={{ padding: '0 12px 12px 40px' }}>
+                          <td colSpan="7" style={{ padding: '0 12px 12px 40px' }}>
                             <table className={css.nestedTable}>
                               <thead>
                                 <tr>
@@ -1282,7 +1393,7 @@ export default function EditDeliveryModal() {
           </div>
         </div>
  
-        {/* Скрытое окно подтверждения удаления */}
+        {/* Скрытое окно подтверждения удаления доставки */}
         {showDeleteConfirm && (
           <div className={css.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
             <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
@@ -1291,6 +1402,42 @@ export default function EditDeliveryModal() {
               <div className={css.confirmActions}>
                 <button className={css.confirmCancel} onClick={() => setShowDeleteConfirm(false)}>Скасувати</button>
                 <button className={css.confirmDeleteBtn} onClick={confirmGlobalDelete}>Видалити</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Модалка мягкого предупреждения: товары без партий */}
+        {showPartiesWarning && (
+          <div className={css.confirmOverlay} onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}>
+            <div className={css.confirmModal} onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <h3 style={{ color: '#faa61a' }}>⚠️ Товари без партій</h3>
+              <p style={{ marginBottom: '10px', fontSize: '0.9rem' }}>Наступні товари не мають прив&apos;язки до складської партії:</p>
+              <ul style={{ margin: '0 0 14px 18px', fontSize: '0.85rem', color: '#b9bbbe' }}>
+                {validatedItems
+                  .filter(i => i.errorType === 'no_parties' && (parseFloat(i.quantity) || 0) > 0)
+                  .map((i, idx) => (
+                    <li key={idx}>{i.product}{i.orderRef ? ` (${i.orderRef})` : ''}</li>
+                  ))
+                }
+              </ul>
+              <p style={{ fontSize: '0.82rem', color: '#72767d', marginBottom: '16px' }}>
+                Товари можуть бути відвантажені без прив&apos;язки до партії. Продовжити?
+              </p>
+              <div className={css.confirmActions}>
+                <button
+                  className={css.confirmCancel}
+                  onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}
+                >
+                  Виправити
+                </button>
+                <button
+                  className={css.confirmDeleteBtn}
+                  style={{ backgroundColor: '#faa61a' }}
+                  onClick={handlePartiesWarningContinue}
+                >
+                  Продовжити без партій
+                </button>
               </div>
             </div>
           </div>

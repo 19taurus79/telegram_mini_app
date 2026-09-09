@@ -456,6 +456,7 @@ export type ClientAddress={
   "default_car_length"?: number | null,
   "default_car_width"?: number | null,
   "default_car_height"?: number | null,
+  "default_np_data"?: Record<string, unknown> | null,
 }
 export type DeliveryItemParty = {
   party: string;

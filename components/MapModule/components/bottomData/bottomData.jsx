@@ -7,11 +7,12 @@ import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import TTNInputModal from "../TTNInputModal/TTNInputModal";
+import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
 
 export default function BottomData({ onEditClient }) {
@@ -36,6 +37,7 @@ export default function BottomData({ onEditClient }) {
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
   const [ttnModalData, setTtnModalData] = useState(null);
+  const [npModalDelivery, setNpModalDelivery] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
 
   const handleCopyContact = useCallback((contact, phone, e, key = 'contact') => {
@@ -659,7 +661,7 @@ export default function BottomData({ onEditClient }) {
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {expandedIds.has(d.id) ? '▼' : '▶'} {checkedDeliveryIds.has(d.id) ? '✅ ' : ''}ID: {d.id} | {d.address}
-                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : ""}`}>{d.status}</span>
+                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : d.status?.toLowerCase().includes("нова пошт") || d.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{d.status}</span>
                           </span>
                           <span className={css.partyAmount}>{d.total_weight?.toFixed(2)} кг</span>
                         </div>
@@ -677,6 +679,15 @@ export default function BottomData({ onEditClient }) {
                                       style={{ fontSize: '0.8em', padding: '4px 12px' }}
                                     >
                                       Доставка з ЦО
+                                    </button>
+                                  )}
+                                  {d.status !== "Виконано" && (
+                                    <button 
+                                      className={`${css.deliveryEditBtn} ${css.btnNP}`} 
+                                      onClick={(e) => { e.stopPropagation(); setNpModalDelivery(d); }} 
+                                      style={{ fontSize: '0.8em', padding: '4px 12px' }}
+                                    >
+                                      <Box size={12} /> {d.status === "Нова Пошта" ? "Дані НП" : "Нова Пошта"}
                                     </button>
                                   )}
                                   <button className={`${css.deliveryEditBtn} ${d.status === "Виконано" ? css.btnOrange : css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
@@ -759,6 +770,11 @@ export default function BottomData({ onEditClient }) {
               </div>
             </div>
           )}
+          <NovaPoshtaDeliveryModal
+            isOpen={!!npModalDelivery}
+            onClose={() => setNpModalDelivery(null)}
+            delivery={npModalDelivery}
+          />
         </div>
       );
     }
@@ -771,7 +787,7 @@ export default function BottomData({ onEditClient }) {
             <div className={css.deliveryTitleBox}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>Доставка: {delivery.client}</h2>
-                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : ""}`}>{delivery.status}</span>
+                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : delivery.status?.toLowerCase().includes("нова пошт") || delivery.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{delivery.status}</span>
               </div>
             </div>
           </div>
@@ -800,6 +816,15 @@ export default function BottomData({ onEditClient }) {
                     title="Оформити доставку напряму з Центрального Офісу"
                   >
                     Доставка з ЦО
+                  </button>
+                )}
+                {!isCompleted && (
+                  <button 
+                    className={`${css.deliveryEditBtn} ${css.btnNP}`} 
+                    onClick={() => setNpModalDelivery(delivery)}
+                    title="Перевести доставку на Нову Пошту та заповнити дані"
+                  >
+                    <Box size={14} /> {delivery.status === "Нова Пошта" || delivery.status === "Потрібні дані НП" ? "Дані НП" : "Нова Пошта"}
                   </button>
                 )}
                 {!isCompleted && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }}>Змінити дату</button>}
@@ -915,6 +940,11 @@ export default function BottomData({ onEditClient }) {
               setTtnModalData(null);
             }
           }} 
+        />
+        <NovaPoshtaDeliveryModal
+          isOpen={!!npModalDelivery}
+          onClose={() => setNpModalDelivery(null)}
+          delivery={npModalDelivery}
         />
       </div>
     );

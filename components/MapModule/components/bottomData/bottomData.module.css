@@ -405,6 +405,13 @@
   box-shadow: 0 2px 10px rgba(0, 188, 212, 0.4);
 }
 
+.statusNP {
+  background: #e11d48;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.4);
+}
+
 .deliveryEditBtn, .printBtn {
   padding: 10px 16px;
   background: var(--glass-bg);
@@ -478,6 +485,18 @@
 .btnCO:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5) !important;
+}
+
+.btnNP {
+  background: linear-gradient(135deg, #e11d48, #be123c) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(225, 29, 72, 0.35) !important;
+}
+.btnNP:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.5) !important;
 }
 
 .deleteBtn, .deleteBtnSmall {

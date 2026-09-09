@@ -328,6 +328,15 @@ export const sendDeliveryData = async (
   return data;
 };
 
+export interface DeliveryExtraUpdateFields {
+  address?: string;
+  contact?: string;
+  phone?: string;
+  comment?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export const updateDeliveryData = async (
   deliveryId: string,
   status: string,
@@ -335,7 +344,8 @@ export const updateDeliveryData = async (
   totalWeight: number,
   initData: string,
   actorName: string = "",
-  ttn?: string
+  ttn?: string,
+  extraFields?: DeliveryExtraUpdateFields
 ) => {
   const { data } = await axios.post<ApiResponse>(
     "/delivery/update",
@@ -345,7 +355,8 @@ export const updateDeliveryData = async (
        total_weight: totalWeight, 
        items: items,
        actor_name: actorName,
-       ttn: ttn
+       ttn: ttn,
+       ...extraFields
     },
     {
       headers: {
@@ -389,6 +400,48 @@ export const changeDeliveryDate = async (
     }
   );
 
+  return data;
+};
+
+export interface DeliveryDetailsResponse {
+  delivery: DeliveryRequest;
+  default_np_data?: Record<string, unknown> | null;
+  client_address?: ClientAddress | null;
+}
+
+export const getDeliveryById = async (
+  id: string | number,
+  initData: string
+): Promise<DeliveryDetailsResponse> => {
+  const { data } = await axios.get<DeliveryDetailsResponse>(
+    `/delivery/get/${id}`,
+    {
+      headers: {
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const requestNPDetailsFromManager = async (
+  deliveryId: number,
+  comment?: string,
+  initData: string = ""
+) => {
+  const { data } = await axios.post<{ status: string; message: string }>(
+    "/delivery/request_np_details",
+    {
+      delivery_id: deliveryId,
+      comment: comment || null,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
   return data;
 };
 

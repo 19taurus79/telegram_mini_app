@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
@@ -7,7 +7,7 @@ import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -36,6 +36,59 @@ export default function BottomData({ onEditClient }) {
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
   const [ttnModalData, setTtnModalData] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyContact = useCallback((contact, phone, e, key = 'contact') => {
+    const isDesktop = typeof window !== 'undefined' ? window.innerWidth > 768 : true;
+
+    if (isDesktop) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    } else {
+      if (e && e.target && e.target.closest && e.target.closest('a[href^="tel:"]')) {
+        return;
+      }
+    }
+
+    const parts = [];
+    if (contact) parts.push(String(contact).trim());
+    if (phone && (!contact || !String(contact).includes(String(phone).trim()))) {
+      parts.push(String(phone).trim());
+    }
+    const textToCopy = parts.join(" ");
+
+    if (!textToCopy) {
+      toast.error("Контактні дані відсутні");
+      return;
+    }
+
+    const copyText = async () => {
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else {
+          const textArea = document.createElement("textarea");
+          textArea.value = textToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-9999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+        }
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+        toast.success(`Скопійовано: ${textToCopy}`);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        toast.error("Не вдалося скопіювати");
+      }
+    };
+
+    copyText();
+  }, []);
 
   const toggleClientExpand = (clientId) => {
     setExpandedClientIds(prev => {
@@ -767,7 +820,42 @@ export default function BottomData({ onEditClient }) {
               <p><strong>Менеджер:</strong> {delivery.manager}</p>
               <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
               <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
-              <p><strong>Контакт:</strong> {delivery.contact} (<a href={`tel:${delivery.phone}`}>{delivery.phone}</a>)</p>
+              <p 
+                className={css.clickableRow}
+                onClick={(e) => handleCopyContact(delivery.contact, delivery.phone, e, 'delivery_contact')}
+                title="Натисніть, щоб скопіювати контакт та номер телефону"
+              >
+                <strong>Контакт:</strong>
+                <span className={css.contactRowContent}>
+                  {delivery.contact && <span>{delivery.contact}</span>}
+                  {delivery.phone && (
+                    <span>
+                      {delivery.contact ? " (" : ""}
+                      <a 
+                        href={`tel:${delivery.phone}`}
+                        onClick={(e) => {
+                          if (typeof window !== 'undefined' && window.innerWidth > 768) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        {delivery.phone}
+                      </a>
+                      {delivery.contact ? ")" : ""}
+                    </span>
+                  )}
+                  {!delivery.contact && !delivery.phone && <span>Не вказано</span>}
+                  {(delivery.contact || delivery.phone) && (
+                    <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
+                      {copiedKey === 'delivery_contact' ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  )}
+                </span>
+              </p>
               {delivery.comment && (
                 <div className={css.comment}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px' }}>
@@ -998,9 +1086,79 @@ export default function BottomData({ onEditClient }) {
           <div className={css.addressInfo}>
               <p><strong>Адреса:</strong> {selectedClient.region} обл., {selectedClient.area} район, {selectedClient.commune} громада, {selectedClient.city}</p>
               <p><strong>Менеджер:</strong> {selectedClient.manager}</p>
-              <p><strong>Контактна особа:</strong> {selectedClient.representative}</p>
-              <p><strong>Телефон:</strong> <a href={`tel:${selectedClient.phone1}`}>{selectedClient.phone1}</a></p>
-              {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && <p><strong>Телефон 2:</strong> <a href={`tel:${selectedClient.phone2}`}>{selectedClient.phone2}</a></p>}
+              <p 
+                className={css.clickableRow}
+                onClick={(e) => handleCopyContact(selectedClient.representative, selectedClient.phone1, e, 'client_rep')}
+                title="Натисніть, щоб скопіювати контакт та номер телефону"
+              >
+                <strong>Контактна особа:</strong>
+                <span className={css.contactRowContent}>
+                  <span>{selectedClient.representative || "Не вказано"}</span>
+                  {selectedClient.representative && (
+                    <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
+                      {copiedKey === 'client_rep' ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  )}
+                </span>
+              </p>
+              <p 
+                className={css.clickableRow}
+                onClick={(e) => handleCopyContact(selectedClient.representative, selectedClient.phone1, e, 'client_phone1')}
+                title="Натисніть, щоб скопіювати контакт та номер телефону"
+              >
+                <strong>Телефон:</strong>
+                <span className={css.contactRowContent}>
+                  <a 
+                    href={`tel:${selectedClient.phone1}`}
+                    onClick={(e) => {
+                      if (typeof window !== 'undefined' && window.innerWidth > 768) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    {selectedClient.phone1}
+                  </a>
+                  <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
+                    {copiedKey === 'client_phone1' ? (
+                      <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                    ) : (
+                      <Copy size={13} />
+                    )}
+                  </span>
+                </span>
+              </p>
+              {selectedClient.phone2 && selectedClient.phone2 !== "Не вказано" && (
+                <p 
+                  className={css.clickableRow}
+                  onClick={(e) => handleCopyContact(selectedClient.representative, selectedClient.phone2, e, 'client_phone2')}
+                  title="Натисніть, щоб скопіювати контакт та номер телефону"
+                >
+                  <strong>Телефон 2:</strong>
+                  <span className={css.contactRowContent}>
+                    <a 
+                      href={`tel:${selectedClient.phone2}`}
+                      onClick={(e) => {
+                        if (typeof window !== 'undefined' && window.innerWidth > 768) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      {selectedClient.phone2}
+                    </a>
+                    <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
+                      {copiedKey === 'client_phone2' ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  </span>
+                </p>
+              )}
               {selectedClient.email && <p><strong>Email:</strong> {selectedClient.email}</p>}
           </div>
           {(selectedClient.default_car_make || selectedClient.default_car_number || selectedClient.default_driver || maxWeight || ownWeight || dimensionsStr) && (

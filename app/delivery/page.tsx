@@ -540,6 +540,18 @@ function DeliveryDataContent() {
             <div className={styles.dragHandle} {...swipeFormClient.handlers} />
             <div className={styles.modalHeader} {...swipeFormClient.handlers}>
               <h3 className={styles.modalTitle}>Доставка: {formClient}</h3>
+              {(() => {
+                const clientGroup = grouped.find((c) => c.client === formClient);
+                const mgr = clientGroup?.orders?.[0]?.items?.[0]?.manager || initialClientData?.manager;
+                if (mgr) {
+                  return (
+                    <div style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color, #888)', marginTop: '4px' }}>
+                      👨‍💼 Менеджер клієнта: <b>{mgr}</b>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             <div className={styles.modalBody}>
@@ -993,7 +1005,7 @@ function DeliveryDataContent() {
                       }
 
                       const clientData = grouped.find((c) => c.client === formClient);
-                      const manager = clientData?.orders?.[0]?.items?.[0]?.manager ?? "";
+                      const manager = clientData?.orders?.[0]?.items?.[0]?.manager || initialClientData?.manager || "";
                       const orders = (clientData?.orders.map((order) => {
                           const validItems = order.items
                               .filter(item => item.quantity > 0)

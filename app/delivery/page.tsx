@@ -34,7 +34,7 @@ interface ClientAddressData {
   default_car_length?: number | null;
   default_car_width?: number | null;
   default_car_height?: number | null;
-  default_np_data?: NPSelection | null;
+  default_np_data?: Partial<NPSelection> | null;
 }
 
 // Тип для вибраного елемента для редагування в модальному вікні.
@@ -386,12 +386,17 @@ function DeliveryDataContent() {
                     const formattedPhone = formatPhoneNumber(fetchedAddress.phone1 || "");
                     const cleanRepresentative = fetchedAddress.representative ? fetchedAddress.representative.trim() : "";
 
+                    const initialNp = fetchedAddress.default_np_data
+                      ? (fetchedAddress.default_np_data as unknown as Partial<NPSelection>)
+                      : null;
+
                     // Зберігаємо еталонні значення для коректного порівняння змін (dirty state)
                     setInitialClientData({
                       ...fetchedAddress,
                       address: composedAddress,
                       phone1: formattedPhone,
-                      representative: cleanRepresentative
+                      representative: cleanRepresentative,
+                      default_np_data: initialNp,
                     });
 
                     setFormData({

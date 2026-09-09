@@ -8,6 +8,8 @@ interface TelegramWebAppBackButton {
 interface TelegramWebApp {
   initData?: string;
   close: () => void;
+  ready?: () => void;
+  expand?: () => void;
   BackButton: TelegramWebAppBackButton;
   disableVerticalSwipes?: () => void;
   enableVerticalSwipes?: () => void;

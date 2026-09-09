@@ -441,6 +441,7 @@ export type ClientAddress={
   "area": string,
   "commune": string,
   "city": string,
+  "address"?: string,
   "latitude": number,
   "longitude": number,
   "representative":string,
@@ -461,6 +462,7 @@ export type ClientAddress={
 export type DeliveryItemParty = {
   party: string;
   party_quantity: number;
+  moved_q?: number;
 };
 
 export type DeliveryRequestItem = {
@@ -471,6 +473,8 @@ export type DeliveryRequestItem = {
   quantity: number;
   parties: DeliveryItemParty[];
   line_of_business?: string;
+  weight?: number;
+  total_weight?: number;
 };
 
 export type DeliveryRequest = {

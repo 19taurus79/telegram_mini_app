@@ -98,9 +98,14 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
           ? "Поштомат"
           : "Адресна доставка";
 
+      const streetDesc =
+        npSelection.street?.description ||
+        npSelection.street?.present ||
+        npSelection.address ||
+        "";
       const targetPoint =
         npSelection.deliveryType === "address"
-          ? `${npSelection.street?.present || npSelection.address || ""}, буд. ${npSelection.house || ""}`.trim()
+          ? `${streetDesc}, буд. ${npSelection.house || ""}`.trim()
           : npSelection.warehouse?.description || "";
 
       const payerNote = npSelection.payer === "sender" ? "Оплата: Відправник" : "Оплата: Отримувач";
@@ -129,13 +134,13 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
           product: String(item.product),
           quantity: Number(item.quantity) || 0,
           orderRef: String(recordItem.order_ref || recordItem.orderRef || ""),
-          weight: Number(recordItem.total_weight) || Number(item.weight) || 0,
+          weight: Number(recordItem.total_weight || recordItem.weight || item.weight || 0),
           parties: Array.isArray(item.parties)
             ? item.parties.map((p) => {
                 const recordParty = p as Record<string, unknown>;
                 return {
                   party: String(p.party),
-                  moved_q: Number(recordParty.party_quantity || p.moved_q) || 0,
+                  moved_q: Number(recordParty.party_quantity || recordParty.moved_q || p.party_quantity || p.moved_q || 0),
                 };
               })
             : [],
@@ -174,11 +179,12 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
         try {
           const clientPayload = {
             ...clientObj,
+            address: clientObj.address || clientObj.city || finalAddress,
             default_np_data: npSelection as unknown as Record<string, unknown>,
           };
           await updateClientAddress({
             id: clientObj.id,
-            clientData: clientPayload,
+            clientData: clientPayload as unknown as Parameters<typeof updateClientAddress>[0]["clientData"],
             initData,
           });
           setClients((prev: ClientAddress[]) =>

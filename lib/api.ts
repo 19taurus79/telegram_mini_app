@@ -1110,7 +1110,7 @@ export const updateClientAddress = async ({
     representative: string;
     phone1: string;
     phone2?: string;
-    address: string;
+    address?: string;
     latitude: number;
     longitude: number;
     default_car_make?: string;
@@ -1494,6 +1494,7 @@ export interface NPStreet {
   ref: string;
   description: string;
   street_type: string;
+  present?: string;
 }
 
 export interface NPCounterparty {

@@ -132,7 +132,10 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
         const recordItem = item as Record<string, unknown>;
         return {
           product: String(item.product),
+          nomenclature: String(recordItem.nomenclature || item.product),
           quantity: Number(item.quantity) || 0,
+          manager: String(recordItem.manager || delivery.manager || ""),
+          client: String(recordItem.client || delivery.client || ""),
           orderRef: String(recordItem.order_ref || recordItem.orderRef || ""),
           weight: Number(recordItem.total_weight || recordItem.weight || item.weight || 0),
           parties: Array.isArray(item.parties)
@@ -144,6 +147,7 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
                 };
               })
             : [],
+          line_of_business: recordItem.line_of_business ? String(recordItem.line_of_business) : undefined
         };
       });
 

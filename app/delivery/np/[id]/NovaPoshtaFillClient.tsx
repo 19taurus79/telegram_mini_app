@@ -41,8 +41,10 @@ export default function NovaPoshtaFillClient({ deliveryId }: Props) {
   useEffect(() => {
     if (typeof window !== "undefined" && window.Telegram?.WebApp) {
       try {
-        window.Telegram.WebApp.ready?.();
-        window.Telegram.WebApp.expand?.();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const webApp = (window as any).Telegram?.WebApp;
+        webApp?.ready?.();
+        webApp?.expand?.();
       } catch (err) {
         console.warn("Telegram WebApp API error:", err);
       }
@@ -163,7 +165,10 @@ export default function NovaPoshtaFillClient({ deliveryId }: Props) {
         const recordItem = item as Record<string, unknown>;
         return {
           product: String(item.product),
+          nomenclature: String(recordItem.nomenclature || item.product),
           quantity: Number(item.quantity) || 0,
+          manager: String(recordItem.manager || delivery.manager || ""),
+          client: String(recordItem.client || delivery.client || ""),
           orderRef: String(recordItem.order_ref || recordItem.orderRef || ""),
           weight: Number(recordItem.total_weight || recordItem.weight || item.weight || 0),
           parties: Array.isArray(item.parties)
@@ -175,6 +180,7 @@ export default function NovaPoshtaFillClient({ deliveryId }: Props) {
                 };
               })
             : [],
+          line_of_business: recordItem.line_of_business ? String(recordItem.line_of_business) : undefined
         };
       });
 
@@ -226,7 +232,8 @@ export default function NovaPoshtaFillClient({ deliveryId }: Props) {
       if (typeof window !== "undefined" && window.Telegram?.WebApp) {
         setTimeout(() => {
           try {
-            window.Telegram?.WebApp?.close();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ((window as any).Telegram?.WebApp as any)?.close?.();
           } catch {
             // ignore
           }
@@ -243,7 +250,8 @@ export default function NovaPoshtaFillClient({ deliveryId }: Props) {
   const handleCloseWebApp = () => {
     if (typeof window !== "undefined" && window.Telegram?.WebApp) {
       try {
-        window.Telegram.WebApp.close();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((window as any).Telegram?.WebApp as any)?.close?.();
         return;
       } catch {
         // ignore

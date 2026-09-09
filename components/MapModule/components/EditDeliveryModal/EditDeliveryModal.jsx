@@ -489,7 +489,8 @@ export default function EditDeliveryModal() {
           client: String(item.client),
           orderRef: String(item.orderRef || item.order || item.order_ref || ""),
           weight: parseFloat(item.weight) || 0,
-          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 }))
+          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 })),
+          line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
         };
       });
 
@@ -773,10 +774,11 @@ export default function EditDeliveryModal() {
                const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
                return s + q;
             }, 0);
-            const scale = partiesSum > 0 ? transferQty / partiesSum : 1;
+            
+            const scaleClone = partiesSum > 0 ? transferQty / partiesSum : 1;
             const cleanParties = (item.parties || []).map(p => {
                const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-               return { party: String(p.party), moved_q: Math.round(q * scale * 1000) / 1000 };
+               return { party: String(p.party), moved_q: Math.round(q * scaleClone * 1000) / 1000 };
             }).filter(p => p.moved_q > 0);
 
             console.log(`[Split] Item: ${item.product} | Transfer: ${transferQty}/${totalQty} | UnitWt: ${unitWeight} | Weight: ${transferWeight}`);
@@ -786,11 +788,19 @@ export default function EditDeliveryModal() {
                nomenclature: String(item.nomenclature || item.product),
                quantity: transferQty,
                weight: transferWeight,
-               parties: cleanParties
+               parties: cleanParties,
+               line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
             });
 
             // Обновляем оригинальную строку: частичный перенос или полное удаление
             const remainQty = totalQty - transferQty;
+            const scaleRemain = partiesSum > 0 ? remainQty / partiesSum : 1;
+            const remainParties = (item.parties || []).map(p => {
+               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+               const newQ = Math.round(q * scaleRemain * 1000) / 1000;
+               return { ...p, party_quantity: newQ, moved_q: newQ };
+            }).filter(p => p.moved_q > 0);
+
             if (remainQty <= 0.0001) {
                nextItems[originalIdx] = null; // Помечаем для удаления
             } else {
@@ -798,6 +808,7 @@ export default function EditDeliveryModal() {
                   ...nextItems[originalIdx],
                   quantity: Math.round(remainQty * 1000) / 1000,
                   weight: unitWeight * remainQty,
+                  parties: remainParties
                };
             }
          });
@@ -821,6 +832,7 @@ export default function EditDeliveryModal() {
             orders: Object.values(ordersMap),
             override_created_by: originalDelivery.created_by || null,
             actor_name: actorName,
+            status: originalDelivery.status || "Створено"
          };
 
          console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
@@ -846,7 +858,8 @@ export default function EditDeliveryModal() {
                parties: (it.parties || []).map(p => {
                   const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
                   return { party: String(p.party), moved_q: q };
-               }).filter(p => p.moved_q > 0)
+               }).filter(p => p.moved_q > 0),
+               line_of_business: it.line_of_business ? String(it.line_of_business) : undefined
             }));
 
          const newOriginalWeight = updatedOriginalItems.reduce((s, it) => s + (it.weight || 0), 0);

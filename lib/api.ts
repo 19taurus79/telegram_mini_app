@@ -381,6 +381,77 @@ export const validateTTN = async (ttn: string, initData: string) => {
   return data;
 };
 
+export interface Accountant {
+  id: string;
+  name: string;
+  email: string;
+  telegram_id: number | null;
+  telegram_username: string;
+  phone?: string;
+  is_default: boolean;
+}
+
+export interface SendToAccountantPayload {
+  delivery_id: number;
+  accountant_id?: string;
+  channels: string[];
+  comment?: string;
+  items?: DeliveryUpdateItem[];
+  ttn?: string;
+}
+
+export interface SendToAccountantResponse {
+  status: string;
+  accountant: Accountant;
+  telegram: { success: boolean; skipped?: boolean; error?: string };
+  email: { success: boolean; skipped?: boolean; error?: string };
+  mailto_url: string;
+  warnings?: string[];
+  printable_html?: string;
+}
+
+export const getAccountants = async (initData: string) => {
+  const { data } = await axios.get<{ status: string; accountants: Accountant[] }>(
+    "/accountants",
+    {
+      headers: {
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const getAccountantForManager = async (manager: string, initData: string) => {
+  const { data } = await axios.get<{ status: string; accountant: Accountant | null }>(
+    `/accountants/for-manager?manager=${encodeURIComponent(manager)}`,
+    {
+      headers: {
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const sendDeliveryToAccountant = async (
+  payload: SendToAccountantPayload,
+  initData: string
+) => {
+  const { data } = await axios.post<SendToAccountantResponse>(
+    "/delivery/send-to-accountant",
+    payload,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
+
 export const changeDeliveryDate = async (
   deliveryId: string,
   newDate: string,

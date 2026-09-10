@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
 import { useUser } from "@/store/User";
 import { formatQuantity } from "@/lib/utils/productUtils";
+import SendAccountantDialog from "../SendAccountantDialog/SendAccountantDialog";
+
 
 /**
  * Модальное окно для редактирования состава одной или нескольких доставок.
@@ -54,6 +56,7 @@ export default function EditDeliveryModal() {
   const [isSaving, setIsSaving] = useState(false); // Флаг процесса сохранения
   const [showPartiesWarning, setShowPartiesWarning] = useState(false); // Модалка мягкого предупреждения об отсутствии партий
   const [pendingAction, setPendingAction] = useState(null); // 'ready' | 'co' — действие ожидающее подтверждения
+  const [isAccountantDialogOpen, setIsAccountantDialogOpen] = useState(false); // Модалка отправки бухгалтеру
 
 
   // --- REFS AND HOOKS ---
@@ -1386,7 +1389,23 @@ export default function EditDeliveryModal() {
                 🚚 Доставка з ЦО
               </button>
             )}
+            <button 
+              className={`${css.button} ${css.accountantButton}`}
+              onClick={() => {
+                const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
+                if (!hasItems) {
+                  toast.error("Немає товарів для відправки");
+                  return;
+                }
+                setIsAccountantDialogOpen(true);
+              }}
+              disabled={isSaving}
+              title="Надіслати дані відвантаження та партії бухгалтеру"
+            >
+              📨 Надіслати бухгалтеру
+            </button>
           </div>
+
 
           <div className={css.footerRight}>
             <button 
@@ -1455,7 +1474,20 @@ export default function EditDeliveryModal() {
             </div>
           </div>
         )}
+
+        {/* Модалка відправки бухгалтеру */}
+        <SendAccountantDialog
+          isOpen={isAccountantDialogOpen}
+          delivery={selectedDeliveries[0] || {}}
+          items={deliveryItems}
+          onClose={() => setIsAccountantDialogOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+          }}
+        />
+
       </div>
     </div>
   );
 }
+

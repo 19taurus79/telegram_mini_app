@@ -12,6 +12,7 @@ import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import TTNInputModal from "../TTNInputModal/TTNInputModal";
+import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
 import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
 
@@ -22,6 +23,7 @@ export default function BottomData({ onEditClient }) {
     selectedDelivery, 
     setIsEditDeliveryModalOpen,
     selectedDeliveries,
+    setSelectedDeliveries,
     deliveries,
     updateDeliveries,
     multiSelectedItems,
@@ -37,6 +39,7 @@ export default function BottomData({ onEditClient }) {
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
   const [ttnModalData, setTtnModalData] = useState(null);
+  const [sendAccountantPromptData, setSendAccountantPromptData] = useState(null);
   const [npModalDelivery, setNpModalDelivery] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
 
@@ -936,10 +939,25 @@ export default function BottomData({ onEditClient }) {
           onClose={() => setTtnModalData(null)} 
           onSubmit={(ttn) => {
             if (ttnModalData) {
+              const currentDeliv = { ...ttnModalData.delivery, ttn };
               handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
               setTtnModalData(null);
+              setSendAccountantPromptData({ delivery: currentDeliv, ttn });
             }
           }} 
+        />
+        <SendAccountantConfirmModal
+          isOpen={!!sendAccountantPromptData}
+          ttn={sendAccountantPromptData?.ttn}
+          clientName={sendAccountantPromptData?.delivery?.client}
+          onConfirm={() => {
+            if (sendAccountantPromptData) {
+              setSelectedDeliveries([{ ...sendAccountantPromptData.delivery, status: "Виконано" }]);
+              setIsEditDeliveryModalOpen(true);
+              setSendAccountantPromptData(null);
+            }
+          }}
+          onCancel={() => setSendAccountantPromptData(null)}
         />
         <NovaPoshtaDeliveryModal
           isOpen={!!npModalDelivery}
@@ -1316,10 +1334,25 @@ export default function BottomData({ onEditClient }) {
         onClose={() => setTtnModalData(null)} 
         onSubmit={(ttn) => {
           if (ttnModalData) {
+            const currentDeliv = { ...ttnModalData.delivery, ttn };
             handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
             setTtnModalData(null);
+            setSendAccountantPromptData({ delivery: currentDeliv, ttn });
           }
         }} 
+      />
+      <SendAccountantConfirmModal
+        isOpen={!!sendAccountantPromptData}
+        ttn={sendAccountantPromptData?.ttn}
+        clientName={sendAccountantPromptData?.delivery?.client}
+        onConfirm={() => {
+          if (sendAccountantPromptData) {
+            setSelectedDeliveries([{ ...sendAccountantPromptData.delivery, status: "Виконано" }]);
+            setIsEditDeliveryModalOpen(true);
+            setSendAccountantPromptData(null);
+          }
+        }}
+        onCancel={() => setSendAccountantPromptData(null)}
       />
     </div>
   );

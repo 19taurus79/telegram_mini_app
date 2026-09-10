@@ -8,6 +8,7 @@ import { customIcon } from "../../leaflet-icon";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, User, MapPin, Truck, Package, Phone, UserCog, Building2 } from "lucide-react";
+import { formatCompactUkrainianPhone, isUkrainianPhoneValid } from "@/lib/phoneUtils";
 
 // Component to handle marker drag events
 function DraggableMarker({ position, setPosition }) {
@@ -140,14 +141,15 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
   }, []);
 
   const handlePhoneChange = (e) => {
-    let value = e.target.value;
-    if (!value.startsWith("+380")) {
-      value = "+380" + value.replace(/^\+380/, "").replace(/\D/g, "");
-    } else {
-      value = "+380" + value.slice(4).replace(/\D/g, "");
-    }
-    if (value.length > 13) return;
-    setFormData((prev) => ({ ...prev, phone1: value }));
+    const formatted = formatCompactUkrainianPhone(e.target.value);
+    setFormData((prev) => ({ ...prev, phone1: formatted }));
+  };
+
+  const handlePhonePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text");
+    const formatted = formatCompactUkrainianPhone(pasted);
+    setFormData((prev) => ({ ...prev, phone1: formatted }));
   };
 
   const handleAddressSelect = (data) => {
@@ -178,7 +180,7 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
       setExpandedSections(p => ({ ...p, general: true }));
       return false;
     }
-    if (!formData.phone1?.trim() || formData.phone1.length < 13) {
+    if (!formData.phone1?.trim() || !isUkrainianPhoneValid(formData.phone1)) {
       toast.error("Вкажіть коректний телефон (+380...)");
       setExpandedSections(p => ({ ...p, general: true }));
       return false;
@@ -344,7 +346,14 @@ export default function EditClientModal({ isOpen, onClose, onSave, client }) {
                     <label>Телефон <span className={css.requiredStar}>*</span></label>
                     <div className={css.neumorphicInput}>
                       <Phone size={18} className={css.inputIcon} />
-                      <input className={css.input} name="phone1" value={formData.phone1} onChange={handlePhoneChange} placeholder="+380XXXXXXXXX" />
+                      <input 
+                        className={css.input} 
+                        name="phone1" 
+                        value={formData.phone1} 
+                        onChange={handlePhoneChange} 
+                        onPaste={handlePhonePaste}
+                        placeholder="+380XXXXXXXXX" 
+                      />
                     </div>
                   </div>
                 </div>

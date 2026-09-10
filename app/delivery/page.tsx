@@ -14,6 +14,7 @@ import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare,
 import toast from "react-hot-toast";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useUser } from "@/store/User";
+import { formatUkrainianPhoneNumber, isUkrainianPhoneValid, normalizeUkrainianPhone } from "@/lib/phoneUtils";
 
 interface ClientAddressData {
   id?: number;
@@ -104,45 +105,8 @@ const formatQuantity = (value: number): string => {
   return value.toFixed(2);
 };
 
-// Функция для форматирования номера телефона в формат +380 (XX) XXX-XX-XX
-const formatPhoneNumber = (value: string): string => {
-  if (!value) return "+380";
-  
-  // Оставляем только цифры
-  let digits = value.replace(/\D/g, "");
-  
-  // Если номер не начинается с 380, добавляем
-  if (!digits.startsWith("380")) {
-    // Если пользователь удалил 380, но ввел что-то другое, 
-    // пробуем прикрепить это к префиксу
-    if (digits.length > 0 && digits.length <= 9) {
-       digits = "380" + digits;
-    } else if (digits.length === 0) {
-       return "+380";
-    }
-  }
-  
-  // Ограничиваем 12 цифрами (380 + 9 цифр номера)
-  digits = digits.slice(0, 12);
-  
-  let formatted = "+380";
-  
-  // Форматируем оставшуюся часть
-  if (digits.length > 3) {
-    formatted += " (" + digits.substring(3, 5);
-  }
-  if (digits.length >= 6) {
-    formatted += ") " + digits.substring(5, 8);
-  }
-  if (digits.length >= 9) {
-    formatted += "-" + digits.substring(8, 10);
-  }
-  if (digits.length >= 11) {
-    formatted += "-" + digits.substring(10, 12);
-  }
-  
-  return formatted;
-};
+// Форматирование номера телефона в формат +380 (XX) XXX-XX-XX
+const formatPhoneNumber = formatUkrainianPhoneNumber;
 
 function DeliveryDataContent() {
   const [isAnimatingSuccess, setIsAnimatingSuccess] = useState(false);
@@ -641,8 +605,15 @@ function DeliveryDataContent() {
                     className={`${styles.modalInput} ${errors.phone ? styles.invalid : ''}`}
                     value={formData.phone}
                     onChange={(e) => {
-                      setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) });
+                      setFormData({ ...formData, phone: formatUkrainianPhoneNumber(e.target.value) });
                       if (errors.phone) setErrors({ ...errors, phone: false });
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData("text");
+                      const formatted = formatUkrainianPhoneNumber(pasted);
+                      setFormData(prev => ({ ...prev, phone: formatted }));
+                      if (errors.phone) setErrors(prev => ({ ...prev, phone: false }));
                     }}
                     onFocus={(e) => {
                       if (!e.target.value) {
@@ -923,7 +894,7 @@ function DeliveryDataContent() {
                       if (isAddressInvalid && !isPickup && !isNP) newErrors.address = true;
                       if (isPickup && needTTN && isAddressInvalid) newErrors.address = true;
                       if (!isPickup && !isNP && !contact) newErrors.contact = true;
-                      if (!isPickup && !isNP && (!phone || phone.length < 19)) newErrors.phone = true;
+                      if (!isPickup && !isNP && !isUkrainianPhoneValid(phone)) newErrors.phone = true;
                       if (!date) newErrors.date = true;
 
                       if (isPickup && needTTN && ttnType === "client") {
@@ -1160,8 +1131,7 @@ function DeliveryDataContent() {
                              else updateMessage += " та контактну особу";
                           }
 
-                          const normalizePhone = (p?: string | null) => (p || "").replace(/[^\d+]/g, "");
-                          if (finalPhone && normalizePhone(finalPhone) !== normalizePhone(initialClientData?.phone1)) {
+                          if (finalPhone && normalizeUkrainianPhone(finalPhone) !== normalizeUkrainianPhone(initialClientData?.phone1)) {
                              clientDataForUpdate.phone1 = finalPhone;
                              hasModifications = true;
                              if (!updateMessage) updateMessage = "телефон";

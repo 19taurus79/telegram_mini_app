@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Phone
 } from "lucide-react";
+import { formatUkrainianPhoneNumber, isUkrainianPhoneValid } from "@/lib/phoneUtils";
 
 export type NPDeliveryType = "branch" | "postomat" | "address";
 export type NPRecipientType = "person" | "company";
@@ -43,22 +44,6 @@ interface Props {
   onSelect: (selection: NPSelection) => void;
   initialSelection?: Partial<NPSelection>;
 }
-
-const formatPhoneNumber = (value: string): string => {
-  if (!value) return "+380";
-  let digits = value.replace(/\D/g, "");
-  if (!digits.startsWith("380")) {
-    if (digits.length > 0 && digits.length <= 9) digits = "380" + digits;
-    else if (digits.length === 0) return "+380";
-  }
-  digits = digits.slice(0, 12);
-  let formatted = "+380";
-  if (digits.length > 3) formatted += " (" + digits.substring(3, 5);
-  if (digits.length >= 6) formatted += ") " + digits.substring(5, 8);
-  if (digits.length >= 9) formatted += "-" + digits.substring(8, 10);
-  if (digits.length >= 11) formatted += "-" + digits.substring(10, 12);
-  return formatted;
-};
 
 export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props) {
   const initData = getInitData();
@@ -197,7 +182,6 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
 
   // ── Validate and Notify Parent ──
   useEffect(() => {
-    const rawPhoneDigits = recipientPhone.replace(/\D/g, "");
     const isValid = !!(
       selectedCity &&
       (
@@ -206,7 +190,7 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
       ) &&
       (recipientType === "person" || (recipientType === "company" && companySearch.length >= 8 && companyName)) &&
       recipientName.trim().length >= 3 &&
-      rawPhoneDigits.length === 12
+      isUkrainianPhoneValid(recipientPhone)
     );
 
     onSelect({
@@ -522,9 +506,15 @@ export default function NovaPoshtaSelector({ onSelect, initialSelection }: Props
             type="text"
             className={css.input}
             placeholder="+380 (XX) XXX-XX-XX"
-            value={formatPhoneNumber(recipientPhone)}
+            value={formatUkrainianPhoneNumber(recipientPhone)}
             onChange={(e) => {
-              const formatted = formatPhoneNumber(e.target.value);
+              const formatted = formatUkrainianPhoneNumber(e.target.value);
+              setRecipientPhone(formatted);
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const pasted = e.clipboardData.getData("text");
+              const formatted = formatUkrainianPhoneNumber(pasted);
               setRecipientPhone(formatted);
             }}
           />

@@ -87,7 +87,10 @@ export default function SendAccountantDialog({
     const manager = delivery?.manager || "";
     const date = delivery?.delivery_date || delivery?.date || new Date().toLocaleDateString("uk-UA");
 
-    const subject = `Відомість на відвантаження Нова Пошта: ТТН ${ttn} (${client})`;
+    const mgrPart = manager ? ` | Менеджер: ${manager}` : "";
+    const subject = ttn 
+      ? `[Нова Пошта] Відомість: ${client} | ТТН ${ttn}${mgrPart}`
+      : `[Доставка] Відомість: ${client} | Дата: ${date}${mgrPart}`;
 
     const itemsLines = (items || [])
       .filter(i => (parseFloat(i.quantity) || 0) > 0)
@@ -105,7 +108,10 @@ export default function SendAccountantDialog({
 
     const itemsText = itemsLines.length > 0 ? itemsLines.join("\n") : "(товари не вказані)";
 
-    let body = `Доброго дня!\n\nІнформація щодо відвантаження Новою Поштою:\n- Клієнт: ${client}\n- Менеджер: ${manager}\n- ТТН: ${ttn}\n- Дата: ${date}\n- Адреса: ${delivery?.address || "—"}\n\nТовари та партії:\n${itemsText}\n`;
+    const isNp = Boolean(ttn && ttn.trim() !== "" && ttn !== "Не вказано");
+    const typeStr = isNp ? "Нова Пошта" : "Доставка / Самовивіз";
+    const ttnLine = isNp ? `- ТТН Нова Пошта: ${ttn}\n` : "";
+    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n- Клієнт: ${client}\n- Менеджер: ${manager}\n${ttnLine}- Дата: ${date}\n- Адреса: ${delivery?.address || "—"\n}\n\nТовари та складські партії:\n${itemsText}\n`;
     if (comment.trim()) {
       body += `\nКоментар: ${comment.trim()}\n`;
     }

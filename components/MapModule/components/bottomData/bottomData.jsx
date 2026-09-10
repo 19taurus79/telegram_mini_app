@@ -7,7 +7,7 @@ import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Zap } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
@@ -15,6 +15,19 @@ import TTNInputModal from "../TTNInputModal/TTNInputModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
 import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
+
+const isNPDelivery = (d) => {
+  if (!d) return false;
+  const statusLower = (d.status || "").toLowerCase();
+  const addressLower = (d.address || "").toLowerCase();
+  return (
+    statusLower.includes("нова пошт") ||
+    statusLower.includes("нп") ||
+    statusLower === "потрібні дані нп" ||
+    addressLower.includes("нова пошт") ||
+    Boolean(d.ttn && String(d.ttn).trim() !== "")
+  );
+};
 
 export default function BottomData({ onEditClient }) {
   const [commentModalData, setCommentModalData] = useState(null);
@@ -671,7 +684,7 @@ export default function BottomData({ onEditClient }) {
                       </div>
                       {expandedIds.has(d.id) && (
                         <div className={css.accordionContent}>
-                           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                               {!isGuest && (
                                 <>
                                   {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
@@ -684,16 +697,36 @@ export default function BottomData({ onEditClient }) {
                                       Доставка з ЦО
                                     </button>
                                   )}
-                                  {d.status !== "Виконано" && (
+                                  {d.status !== "Виконано" && !isNPDelivery(d) && (
                                     <button 
                                       className={`${css.deliveryEditBtn} ${css.btnNP}`} 
                                       onClick={(e) => { e.stopPropagation(); setNpModalDelivery(d); }} 
                                       style={{ fontSize: '0.8em', padding: '4px 12px' }}
+                                      title="Перевести доставку на Нову Пошту"
                                     >
-                                      <Box size={12} /> {d.status === "Нова Пошта" ? "Дані НП" : "Нова Пошта"}
+                                      <Box size={12} /> Нова Пошта
                                     </button>
                                   )}
-                                  <button className={`${css.deliveryEditBtn} ${d.status === "Виконано" ? css.btnOrange : css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Виконано" ? "В роботі" : "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>{d.status === "Виконано" ? "В роботі" : "Виконано"}</button>
+                                  {d.status === "Виконано" ? (
+                                    <button className={`${css.deliveryEditBtn} ${css.btnOrange}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "В роботі"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>
+                                      В роботі
+                                    </button>
+                                  ) : (
+                                    <>
+                                      {d.status !== "В роботі" && d.status !== "inprogress" && (
+                                        <button 
+                                          className={`${css.deliveryEditBtn} ${css.btnOrange}`} 
+                                          onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "В роботі"); }} 
+                                          style={{ fontSize: '0.8em', padding: '4px 12px' }}
+                                        >
+                                          <Zap size={12} /> В роботі
+                                        </button>
+                                      )}
+                                      <button className={`${css.deliveryEditBtn} ${css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>
+                                        <Check size={12} /> Виконано
+                                      </button>
+                                    </>
+                                  )}
                                   {d.status !== "Виконано" && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={(e) => { e.stopPropagation(); setChangeDateTarget(d); setNewDate(d.delivery_date || ""); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Змінити дату</button>}
                                   {d.status !== "Виконано" && <button className={css.deleteBtnSmall} onClick={(e) => { e.stopPropagation(); setDeleteConfirmTarget(d); }}>Видалити</button>}
                                 </>
@@ -799,9 +832,23 @@ export default function BottomData({ onEditClient }) {
             <div className={css.deliveryActionsRow}>
               <div className={css.deliveryPrimaryActions}>
                 {isCompleted ? (
-                  <button className={`${css.deliveryActionPrimary} ${css.primaryOrange}`} onClick={() => handleUpdateStatus(delivery, "В роботі")}>← Повернути до "В роботі"</button>
+                  <button className={`${css.deliveryActionPrimary} ${css.primaryOrange}`} onClick={() => handleUpdateStatus(delivery, "В роботі")}>
+                    Повернути до "В роботі"
+                  </button>
                 ) : (
-                  <button className={`${css.deliveryActionPrimary} ${css.primaryGreen}`} onClick={() => handleUpdateStatus(delivery, "Виконано")}>✓ Позначити виконаним</button>
+                  <>
+                    {delivery.status !== "В роботі" && delivery.status !== "inprogress" && (
+                      <button 
+                        className={`${css.deliveryActionPrimary} ${css.primaryOrange}`} 
+                        onClick={() => handleUpdateStatus(delivery, "В роботі")}
+                      >
+                        <Zap size={14} /> Взяти в роботу
+                      </button>
+                    )}
+                    <button className={`${css.deliveryActionPrimary} ${css.primaryGreen}`} onClick={() => handleUpdateStatus(delivery, "Виконано")}>
+                      <Check size={14} /> Позначити виконаним
+                    </button>
+                  </>
                 )}
               </div>
               <div className={css.deliverySecondaryActions}>
@@ -821,13 +868,13 @@ export default function BottomData({ onEditClient }) {
                     Доставка з ЦО
                   </button>
                 )}
-                {!isCompleted && (
+                {!isCompleted && !isNPDelivery(delivery) && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnNP}`} 
                     onClick={() => setNpModalDelivery(delivery)}
                     title="Перевести доставку на Нову Пошту та заповнити дані"
                   >
-                    <Box size={14} /> {delivery.status === "Нова Пошта" || delivery.status === "Потрібні дані НП" ? "Дані НП" : "Нова Пошта"}
+                    <Box size={14} /> Нова Пошта
                   </button>
                 )}
                 {!isCompleted && <button className={`${css.deliveryEditBtn} ${css.btnBlue}`} onClick={() => { setChangeDateTarget(delivery); setNewDate(delivery.delivery_date || ""); }}>Змінити дату</button>}

@@ -96,6 +96,8 @@ export default function SendAccountantDialog({
       .filter(i => (parseFloat(i.quantity) || 0) > 0)
       .map(it => {
         const prod = it.nomenclature || it.product || "";
+        const orderRef = (it.order_ref || it.orderRef || it.order || "").toString().trim();
+        const orderPart = orderRef && orderRef !== "—" ? ` [Доповнення: ${orderRef}]` : "";
         const qty = it.quantity || 0;
         const pStrs = (it.parties || [])
           .map(p => {
@@ -103,7 +105,7 @@ export default function SendAccountantDialog({
             return `${p.party}: ${q}`;
           });
         const partyPart = pStrs.length > 0 ? ` [Партії: ${pStrs.join(", ")}]` : "";
-        return `• ${prod} — ${qty} шт${partyPart}`;
+        return `• ${prod}${orderPart} — ${qty} шт${partyPart}`;
       });
 
     const itemsText = itemsLines.length > 0 ? itemsLines.join("\n") : "(товари не вказані)";

@@ -111,7 +111,7 @@ export default function SendAccountantDialog({
     const isNp = Boolean(ttn && ttn.trim() !== "" && ttn !== "Не вказано");
     const typeStr = isNp ? "Нова Пошта" : "Доставка / Самовивіз";
     const ttnLine = isNp ? `- ТТН Нова Пошта: ${ttn}\n` : "";
-    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n- Клієнт: ${client}\n- Менеджер: ${manager}\n${ttnLine}- Дата: ${date}\n- Адреса: ${delivery?.address || "—"\n}\n\nТовари та складські партії:\n${itemsText}\n`;
+    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n- Клієнт: ${client}\n- Менеджер: ${manager}\n${ttnLine}- Дата: ${date}\n- Адреса: ${delivery?.address || "—"}\n\nТовари та складські партії:\n${itemsText}\n`;
     if (comment.trim()) {
       body += `\nКоментар: ${comment.trim()}\n`;
     }

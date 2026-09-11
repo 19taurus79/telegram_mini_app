@@ -36,8 +36,11 @@ import {
   FileText,
   BarChart3,
   Maximize2,
+  Minimize2,
   Copy,
-  Info
+  Info,
+  RefreshCw,
+  GripVertical
 } from "lucide-react";
 
 /**
@@ -72,7 +75,7 @@ export default function EditDeliveryModal() {
   const [isLoadingRemains, setIsLoadingRemains] = useState(false);
   const [activeRightTab, setActiveRightTab] = useState("stock"); // 'stock' | 'analytics'
   const [expandedRows, setExpandedRows] = useState({}); // { [idx]: boolean }
-  const [focusedPane, setFocusedPane] = useState("left"); // 'left' | 'right'
+  const [focusedPane, setFocusedPane] = useState(null); // null (сбалансированный) | 'left' | 'right'
 
   // Печать
   const [isPrintView, setIsPrintView] = useState(false);
@@ -90,8 +93,86 @@ export default function EditDeliveryModal() {
   const [pendingAction, setPendingAction] = useState(null);
   const [isAccountantDialogOpen, setIsAccountantDialogOpen] = useState(false);
 
+  // Состояния Drag & Drop и умной замены партий
+  const [swapTarget, setSwapTarget] = useState(null); // { itemIdx, partyIdx } | null
+  const [draggedRemain, setDraggedRemain] = useState(null);
+  const [dragOverTarget, setDragOverTarget] = useState(null); // { type: 'party' | 'strip' | 'item', itemIdx, partyIdx? } | null
+
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
+
+  const leftTableContainerRef = useRef(null);
+  const rightInspectorBodyRef = useRef(null);
+
+  // Проверка наличия скролла (переполнения контентом) в блоке
+  const checkHasScroll = (containerEl) => {
+    if (!containerEl) return false;
+    // Проверка вертикального и горизонтального скролла с запасом в 4px от погрешностей масштабирования
+    const hasVertical = containerEl.scrollHeight > containerEl.clientHeight + 4;
+    const hasHorizontal = containerEl.scrollWidth > containerEl.clientWidth + 4;
+    if (hasVertical || hasHorizontal) return true;
+
+    // Также проверяем вложенные потенциально скроллящиеся элементы (на случай таба аналитики или таблиц)
+    const innerScrollables = containerEl.querySelectorAll('div, table');
+    for (const el of innerScrollables) {
+      if (el.scrollHeight > el.clientHeight + 4 || el.scrollWidth > el.clientWidth + 4) {
+        const style = window.getComputedStyle(el);
+        const canScrollY = (style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 4;
+        const canScrollX = (style.overflowX === 'auto' || style.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 4;
+        if (canScrollY || canScrollX) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  const handleLeftPaneClick = (e) => {
+    // Не реагируем на клики по кнопкам, инпутам и другим интерактивным элементам управления
+    if (e.target.closest('button, input, textarea, select, label, a, [role="button"]')) {
+      return;
+    }
+
+    const hasScroll = checkHasScroll(leftTableContainerRef.current);
+
+    if (!hasScroll) {
+      // Контент полностью поместился (нет скролла) — НЕ зумим блок!
+      // Если до этого был увеличен правый блок, возвращаем к сбалансированному виду
+      if (focusedPane === "right") {
+        setFocusedPane(null);
+      }
+      return;
+    }
+
+    // Если есть скролл и блок ещё не зазумлен — увеличиваем его для удобного просмотра
+    if (focusedPane !== "left") {
+      setFocusedPane("left");
+    }
+  };
+
+  const handleRightPaneClick = (e) => {
+    // Не реагируем на клики по кнопкам, инпутам и другим интерактивным элементам управления
+    if (e.target.closest('button, input, textarea, select, label, a, [role="button"]')) {
+      return;
+    }
+
+    const hasScroll = checkHasScroll(rightInspectorBodyRef.current);
+
+    if (!hasScroll) {
+      // Контент полностью поместился (нет скролла) — НЕ зумим блок!
+      // Если до этого был увеличен левый блок, возвращаем к сбалансированному виду
+      if (focusedPane === "left") {
+        setFocusedPane(null);
+      }
+      return;
+    }
+
+    // Если есть скролл и блок ещё не зазумлен — увеличиваем его для удобного просмотра
+    if (focusedPane !== "right") {
+      setFocusedPane("right");
+    }
+  };
 
   // Закрытие по Escape
   useEffect(() => {
@@ -334,13 +415,14 @@ export default function EditDeliveryModal() {
 
       const hasMismatch = totalQty > 0 && Math.abs(totalQty - partiesSum) > 0.0001;
       const hasValidParties = parties.length > 0 && parties.some(p => p.party && p.party.trim() !== "");
+      const hasUnassigned = parties.some(p => (!p.party || p.party.trim() === "") && (parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0)) || 0) > 0);
       const noParties = totalQty > 0 && !hasValidParties;
 
       return {
         ...item,
         partiesSum,
-        hasError: hasMismatch || noParties,
-        errorType: noParties ? "no_parties" : (hasMismatch ? "mismatch" : null)
+        hasError: hasMismatch || noParties || hasUnassigned,
+        errorType: noParties ? "no_parties" : (hasMismatch ? "mismatch" : (hasUnassigned ? "unassigned" : null))
       };
     });
   }, [deliveryItems]);
@@ -439,9 +521,15 @@ export default function EditDeliveryModal() {
     setExpandedRows(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  // Добавить партию из правой панели
-  const handleAddPartyFromRemains = (remainOrName) => {
-    if (activeItemIdx === null) {
+  // Сброс цели замены при смене товара
+  useEffect(() => {
+    setSwapTarget(null);
+  }, [activeItemIdx]);
+
+  // Умное распределение / перенос партии из остатков
+  const applyPartyAllocation = (targetItemIdx, targetPartyIdx, remainOrName) => {
+    const itemIndex = targetItemIdx !== null && targetItemIdx !== undefined ? targetItemIdx : activeItemIdx;
+    if (itemIndex === null || itemIndex === undefined || !deliveryItems[itemIndex]) {
       toast.error("Спершу оберіть товар у лівій таблиці");
       return;
     }
@@ -450,46 +538,237 @@ export default function EditDeliveryModal() {
       ? remainOrName
       : (remainOrName.nomenclature_series || "Без серії");
 
-    const nextItems = [...deliveryItems];
-    const item = { ...nextItems[activeItemIdx] };
-    const parties = [...(item.parties || [])];
+    const availStock = (typeof remainOrName === "object" && remainOrName !== null && remainOrName.buh !== undefined)
+      ? Math.max(0, parseFloat(remainOrName.buh) || 0)
+      : null;
 
-    const exists = parties.some(p =>
-      (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
+    const nextItems = [...deliveryItems];
+    const item = { ...nextItems[itemIndex] };
+    const parties = [...(item.parties || [])];
+    const totalQty = parseFloat(item.quantity) || 0;
+
+    // Проверка дубликата партии (кроме строки, которую заменяем)
+    const duplicateIdx = parties.findIndex((p, idx) =>
+      idx !== targetPartyIdx && (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
     );
-    if (exists) {
-      toast.error("Ця партія вже додана до цього товару");
+    if (duplicateIdx >= 0) {
+      toast.error(`Партію "${partyName}" вже призначено для цього товару`);
       return;
     }
 
-    // Вычисляем сколько еще не распределено по партиям
-    const totalQty = parseFloat(item.quantity) || 0;
-    const currentPartiesSum = parties.reduce((sum, p) => {
-      const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
-      return sum + (parseFloat(qStr) || 0);
-    }, 0);
-    const unallocated = Math.max(0, Math.round((totalQty - currentPartiesSum) * 1000) / 1000);
+    // СЦЕНАРИЙ 1: Замена или заполнение конкретного слота targetPartyIdx
+    if (targetPartyIdx !== null && targetPartyIdx !== undefined && parties[targetPartyIdx] !== undefined) {
+      const targetSlot = parties[targetPartyIdx];
+      const targetQtyStr = targetSlot.party_quantity !== "" && targetSlot.party_quantity !== undefined
+        ? targetSlot.party_quantity
+        : (targetSlot.moved_q || 0);
+      let targetSlotQty = parseFloat(targetQtyStr) || 0;
 
-    parties.push({
-      party: partyName,
-      party_quantity: unallocated > 0 ? unallocated : ""
-    });
+      // Если в слоте было 0, пробуем вычислить нераспределенный остаток
+      if (targetSlotQty <= 0) {
+        const otherSum = parties.reduce((s, p, i) => {
+          if (i === targetPartyIdx) return s;
+          const q = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
+          return s + (parseFloat(q) || 0);
+        }, 0);
+        targetSlotQty = Math.max(0, Math.round((totalQty - otherSum) * 1000) / 1000);
+        if (targetSlotQty <= 0) targetSlotQty = totalQty;
+      }
+
+      // Сколько берем из остатка
+      let qtyToTake = targetSlotQty;
+      if (availStock !== null && availStock > 0) {
+        qtyToTake = Math.min(targetSlotQty, availStock);
+      }
+
+      // Заменяем целевой слот
+      parties[targetPartyIdx] = {
+        ...targetSlot,
+        party: partyName,
+        party_quantity: qtyToTake
+      };
+
+      // Если в слоте нужно было больше, чем доступно, выделяем остаток в пустой слот
+      const remainder = Math.round((targetSlotQty - qtyToTake) * 1000) / 1000;
+      if (remainder > 0) {
+        parties.splice(targetPartyIdx + 1, 0, {
+          party: "",
+          party_quantity: remainder
+        });
+        toast.success(`Партію ${partyName} призначено (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
+      } else {
+        toast.success(`Партію ${partyName} призначено (${formatQuantity(qtyToTake)})`);
+      }
+    } else {
+      // СЦЕНАРИЙ 2: Добавление без конкретной строки (по кнопке "+ Взяти" или сброс на полосу/товар)
+      const emptySlotIdx = parties.findIndex(p => !p.party || p.party.trim() === "");
+      if (emptySlotIdx >= 0) {
+        const emptySlot = parties[emptySlotIdx];
+        const emptyQtyStr = emptySlot.party_quantity !== "" && emptySlot.party_quantity !== undefined
+          ? emptySlot.party_quantity
+          : (emptySlot.moved_q || 0);
+        let emptyQty = parseFloat(emptyQtyStr) || 0;
+        if (emptyQty <= 0) {
+          const otherSum = parties.reduce((s, p, i) => {
+            if (i === emptySlotIdx) return s;
+            const q = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
+            return s + (parseFloat(q) || 0);
+          }, 0);
+          emptyQty = Math.max(0, Math.round((totalQty - otherSum) * 1000) / 1000);
+        }
+
+        let qtyToTake = emptyQty;
+        if (availStock !== null && availStock > 0) {
+          qtyToTake = Math.min(emptyQty, availStock);
+        }
+
+        parties[emptySlotIdx] = {
+          ...emptySlot,
+          party: partyName,
+          party_quantity: qtyToTake
+        };
+
+        const remainder = Math.round((emptyQty - qtyToTake) * 1000) / 1000;
+        if (remainder > 0) {
+          parties.splice(emptySlotIdx + 1, 0, {
+            party: "",
+            party_quantity: remainder
+          });
+          toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
+        } else {
+          toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)})`);
+        }
+      } else {
+        // Нет пустого слота — считаем нераспределенный остаток
+        const currentPartiesSum = parties.reduce((sum, p) => {
+          const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
+          return sum + (parseFloat(qStr) || 0);
+        }, 0);
+        const unallocated = Math.max(0, Math.round((totalQty - currentPartiesSum) * 1000) / 1000);
+
+        if (unallocated <= 0) {
+          toast.error("Вся кількість уже розподілена по партіях. Перетягніть партію на конкретний рядок для заміни.");
+          return;
+        }
+
+        let qtyToTake = unallocated;
+        if (availStock !== null && availStock > 0) {
+          qtyToTake = Math.min(unallocated, availStock);
+        }
+
+        parties.push({
+          party: partyName,
+          party_quantity: qtyToTake
+        });
+
+        const remainder = Math.round((unallocated - qtyToTake) * 1000) / 1000;
+        if (remainder > 0) {
+          parties.push({
+            party: "",
+            party_quantity: remainder
+          });
+          toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
+        } else {
+          toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)})`);
+        }
+      }
+    }
 
     item.parties = parties;
-    nextItems[activeItemIdx] = item;
+    nextItems[itemIndex] = item;
     setDeliveryItems(nextItems);
-    setExpandedRows(prev => ({ ...prev, [activeItemIdx]: true }));
-    toast.success(`Партію ${partyName} додано`);
+    setExpandedRows(prev => ({ ...prev, [itemIndex]: true }));
+    setSwapTarget(null);
   };
 
+  // Клик по партии из правого окна
+  const handleAddPartyFromRemains = (remainOrName) => {
+    if (swapTarget) {
+      applyPartyAllocation(swapTarget.itemIdx, swapTarget.partyIdx, remainOrName);
+    } else {
+      applyPartyAllocation(activeItemIdx, null, remainOrName);
+    }
+  };
+
+  // Расчет умного объема для кнопки "+ Взяти N" в остатках
+  const getSmartTakeInfo = (remain) => {
+    if (swapTarget && swapTarget.itemIdx === activeItemIdx) {
+      const activeItem = deliveryItems[activeItemIdx];
+      const targetParty = activeItem?.parties?.[swapTarget.partyIdx];
+      const targetQtyStr = targetParty?.party_quantity !== "" && targetParty?.party_quantity !== undefined
+        ? targetParty?.party_quantity
+        : (targetParty?.moved_q || 0);
+      const targetQty = parseFloat(targetQtyStr) || 0;
+      const availBuh = Math.max(0, parseFloat(remain.buh) || 0);
+      const qty = targetQty > 0 ? (availBuh > 0 ? Math.min(targetQty, availBuh) : targetQty) : availBuh;
+      return { label: `Замінити (${formatQuantity(qty)})`, isSwap: true, qty };
+    }
+
+    if (activeItemIdx !== null && deliveryItems[activeItemIdx]) {
+      const item = deliveryItems[activeItemIdx];
+      const totalQty = parseFloat(item.quantity) || 0;
+      const parties = item.parties || [];
+      const emptySlot = parties.find(p => !p.party || p.party.trim() === "");
+
+      let needed = 0;
+      if (emptySlot) {
+        const eqStr = emptySlot.party_quantity !== "" && emptySlot.party_quantity !== undefined
+          ? emptySlot.party_quantity
+          : (emptySlot.moved_q || 0);
+        needed = parseFloat(eqStr) || 0;
+      }
+      if (needed <= 0) {
+        const sumValid = parties
+          .filter(p => p.party && p.party.trim())
+          .reduce((s, p) => s + (parseFloat(p.party_quantity !== "" && p.party_quantity !== undefined ? p.party_quantity : p.moved_q) || 0), 0);
+        needed = Math.max(0, Math.round((totalQty - sumValid) * 1000) / 1000);
+      }
+
+      const availBuh = Math.max(0, parseFloat(remain.buh) || 0);
+      if (needed > 0 && availBuh > 0) {
+        const takeQty = Math.min(needed, availBuh);
+        return { label: `+ Взяти ${formatQuantity(takeQty)}`, isSwap: false, qty: takeQty };
+      }
+    }
+
+    return { label: "+ Додати", isSwap: false, qty: 0 };
+  };
+
+  // Удаление партии с возвратом количества в нераспределенный пул
   const handleDeleteParty = (itemIdx, partyIdx) => {
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[itemIdx] };
     const parties = [...item.parties];
+    const removedParty = parties[partyIdx];
+    const removedQty = parseFloat(
+      removedParty.party_quantity !== "" && removedParty.party_quantity !== undefined
+        ? removedParty.party_quantity
+        : (removedParty.moved_q || 0)
+    ) || 0;
+
     parties.splice(partyIdx, 1);
+
+    // Если удалена реальная партия (с именем) и у неё было количество > 0,
+    // возвращаем это количество в нераспределенный пул, чтобы не ломать баланс
+    if (removedParty.party && removedParty.party.trim() !== "" && removedQty > 0) {
+      const emptyIdx = parties.findIndex(p => !p.party || p.party.trim() === "");
+      if (emptyIdx >= 0) {
+        const curEmptyQty = parseFloat(parties[emptyIdx].party_quantity) || 0;
+        parties[emptyIdx].party_quantity = Math.round((curEmptyQty + removedQty) * 1000) / 1000;
+      } else {
+        parties.push({
+          party: "",
+          party_quantity: removedQty
+        });
+      }
+    }
+
     item.parties = parties;
     nextItems[itemIdx] = item;
     setDeliveryItems(nextItems);
+    if (swapTarget && swapTarget.itemIdx === itemIdx && swapTarget.partyIdx === partyIdx) {
+      setSwapTarget(null);
+    }
   };
 
   const handleDeleteItemClick = (itemIdx) => {
@@ -587,7 +866,7 @@ export default function EditDeliveryModal() {
               : (p.moved_q || 0);
             return { ...p, moved_q: parseFloat(qStr) || 0 };
           })
-          .filter(p => p.moved_q > 0);
+          .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
         return {
           product: String(item.product),
           nomenclature: String(item.nomenclature || item.product),
@@ -615,7 +894,7 @@ export default function EditDeliveryModal() {
                 : (p.moved_q || 0);
               return { ...p, moved_q: parseFloat(qStr) || 0 };
             })
-            .filter(p => p.moved_q > 0);
+            .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
 
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
@@ -682,7 +961,7 @@ export default function EditDeliveryModal() {
                 : (p.moved_q || 0);
               return { ...p, moved_q: parseFloat(qStr) || 0 };
             })
-            .filter(p => p.moved_q > 0);
+            .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
       const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
@@ -718,7 +997,7 @@ export default function EditDeliveryModal() {
       toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
       return;
     }
-    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties");
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties" || i.errorType === "unassigned");
     if (noPartiesItems.length > 0) {
       setPendingAction("ready");
       setShowPartiesWarning(true);
@@ -734,7 +1013,7 @@ export default function EditDeliveryModal() {
       toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
       return;
     }
-    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties");
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties" || i.errorType === "unassigned");
     if (noPartiesItems.length > 0) {
       setPendingAction("co");
       setShowPartiesWarning(true);
@@ -769,7 +1048,7 @@ export default function EditDeliveryModal() {
           parties: (item.parties || []).map(p => {
             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
             return { ...p, moved_q: parseFloat(qStr) || 0 };
-          }).filter(p => p.moved_q > 0)
+          }).filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "")
         }));
       return { ...delivery, items };
     }).filter(d => d.items.length > 0);
@@ -1236,7 +1515,7 @@ export default function EditDeliveryModal() {
         {/* ЛЕВАЯ ПАНЕЛЬ: ТОВАРЫ В ДОСТАВКЕ */}
         <section
           className={`${css.leftPane} ${focusedPane === "left" ? css.paneActive : ""}`}
-          onClick={() => setFocusedPane("left")}
+          onClick={handleLeftPaneClick}
         >
           <div className={css.paneHeader}>
             <h3 className={css.paneTitle}>
@@ -1251,12 +1530,12 @@ export default function EditDeliveryModal() {
                 className={`${css.zoomHintBtn} ${focusedPane === "left" ? css.zoomHintBtnActive : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setFocusedPane(focusedPane === "left" ? "right" : "left");
+                  setFocusedPane(focusedPane === "left" ? null : "left");
                 }}
-                title={focusedPane === "left" ? "Блок збільшено (активний фокус)" : "Натисніть для збільшення блоку товарів"}
+                title={focusedPane === "left" ? "Повернути звичайний розмір" : "Натисніть для збільшення блоку товарів"}
               >
-                <Maximize2 size={11} />
-                <span>{focusedPane === "left" ? "Збільшено" : "Збільшити"}</span>
+                {focusedPane === "left" ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+                <span>{focusedPane === "left" ? "Зменшити" : "Збільшити"}</span>
               </button>
 
               <button
@@ -1320,7 +1599,7 @@ export default function EditDeliveryModal() {
           )}
 
           {/* Таблица товаров */}
-          <div className={css.tableContainer}>
+          <div ref={leftTableContainerRef} className={css.tableContainer}>
             <table className={css.dataTable}>
               <thead>
                 <tr>
@@ -1368,12 +1647,38 @@ export default function EditDeliveryModal() {
                   const partiesSum = item.partiesSum || 0;
                   const percentAllocated = qty > 0 ? Math.min(100, Math.round((partiesSum / qty) * 100)) : 0;
                   const isFullyAllocated = qty > 0 && Math.abs(qty - partiesSum) < 0.0001;
+                  const isItemDropTarget = dragOverTarget?.type === 'item' && dragOverTarget?.itemIdx === idx;
 
                   return (
                     <React.Fragment key={`${item.deliveryId}-${idx}`}>
                       <tr
-                        className={`${css.itemRow} ${isRowActive ? css.itemRowSelected : ""} ${item.hasError ? css.itemRowError : ""}`}
+                        className={`${css.itemRow} ${isRowActive ? css.itemRowSelected : ""} ${item.hasError ? css.itemRowError : ""} ${isItemDropTarget ? css.dropTargetItemRowActive : ""}`}
                         onClick={() => handleItemClick(item, idx)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "copy";
+                          if (dragOverTarget?.type !== 'item' || dragOverTarget?.itemIdx !== idx) {
+                            setDragOverTarget({ type: 'item', itemIdx: idx });
+                          }
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverTarget?.type === 'item' && dragOverTarget?.itemIdx === idx) {
+                            setDragOverTarget(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverTarget(null);
+                          try {
+                            const dataStr = e.dataTransfer.getData("application/json");
+                            const remain = dataStr ? JSON.parse(dataStr) : draggedRemain;
+                            if (remain) {
+                              applyPartyAllocation(idx, null, remain);
+                            }
+                          } catch (err) {
+                            console.error("Drop error:", err);
+                          }
+                        }}
                       >
                         {/* Чекбокс */}
                         <td onClick={(e) => e.stopPropagation()} style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
@@ -1518,120 +1823,212 @@ export default function EditDeliveryModal() {
                       {isExpanded && (
                         <tr className={css.batchAccordionRow}>
                           <td colSpan={selectedIndices.length > 0 ? 9 : 7}>
-                            <div className={css.batchStrip}>
-                              <div className={css.batchStripHeader}>
-                                <div className={css.batchProgressLabel}>
-                                  <span>Розподіл за складовими партіями ({item.parties?.length || 0})</span>
-                                  {item.hasError && item.errorType === "mismatch" && (
-                                    <span style={{ color: "#ef4444", fontSize: "0.75rem" }}>
-                                      ⚠️ Різниця: {formatQuantity(qty - partiesSum)}
-                                    </span>
-                                  )}
-                                  {item.hasError && item.errorType === "no_parties" && (
-                                    <span style={{ color: "#f59e0b", fontSize: "0.75rem" }}>
-                                      ⚠️ Оберіть партію у правому вікні залишків
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+                            {(() => {
+                              const isStripDropTarget = dragOverTarget?.type === 'strip' && dragOverTarget?.itemIdx === idx;
+                              return (
+                                <div
+                                  className={`${css.batchStrip} ${isStripDropTarget ? css.dropTargetStripActive : ""}`}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.dataTransfer.dropEffect = "copy";
+                                    if (dragOverTarget?.type !== 'strip' || dragOverTarget?.itemIdx !== idx) {
+                                      setDragOverTarget({ type: 'strip', itemIdx: idx });
+                                    }
+                                  }}
+                                  onDragLeave={(e) => {
+                                    e.stopPropagation();
+                                    if (dragOverTarget?.type === 'strip' && dragOverTarget?.itemIdx === idx) {
+                                      setDragOverTarget(null);
+                                    }
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDragOverTarget(null);
+                                    try {
+                                      const dataStr = e.dataTransfer.getData("application/json");
+                                      const remain = dataStr ? JSON.parse(dataStr) : draggedRemain;
+                                      if (remain) applyPartyAllocation(idx, null, remain);
+                                    } catch (err) {
+                                      console.error("Drop error:", err);
+                                    }
+                                  }}
+                                >
+                                  <div className={css.batchStripHeader}>
+                                    <div className={css.batchProgressLabel}>
+                                      <span>Розподіл за складовими партіями ({item.parties?.length || 0})</span>
+                                      {item.hasError && item.errorType === "mismatch" && (
+                                        <span style={{ color: "#ef4444", fontSize: "0.75rem" }}>
+                                          ⚠️ Різниця: {formatQuantity(qty - partiesSum)}
+                                        </span>
+                                      )}
+                                      {item.hasError && (item.errorType === "no_parties" || item.errorType === "unassigned") && (
+                                        <span style={{ color: "#f59e0b", fontSize: "0.75rem" }}>
+                                          ⚠️ Оберіть або перетягніть партію у правому вікні залишків
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
 
-                              {item.parties && item.parties.length > 0 ? (
-                                <table className={css.allocatedTable}>
-                                  <thead>
-                                    <tr>
-                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
-                                      <th>Серія / Партія</th>
-                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}>Залишки на складі</th>
-                                      <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>Кількість для списання</th>
-                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {item.parties.map((p, pIdx) => {
-                                      const partyQty = (p.party_quantity !== "" && p.party_quantity !== undefined)
-                                        ? p.party_quantity
-                                        : (p.moved_q || 0);
-                                      const stockStatus = isRowActive ? getPartyStockStatus(p.party, partyQty) : "unknown";
-
-                                      const key = (p.party || "").trim().toLowerCase();
-                                      const st = partyStockMap[key];
-                                      const realBuh = st ? st.totalBuh : 0;
-                                      const realSkl = st ? (st.totalSkl - st.totalStorage) : 0;
-
-                                      return (
-                                        <tr key={pIdx}>
-                                          <td style={{ width: "1%", whiteSpace: "nowrap" }}>
-                                            {stockStatus === "ok" && <CheckCircle2 size={14} color="#10b981" />}
-                                            {stockStatus === "low" && <AlertTriangle size={14} color="#f59e0b" />}
-                                            {stockStatus === "missing" && <AlertTriangle size={14} color="#ef4444" />}
-                                          </td>
-                                          <td style={{ fontWeight: 600, color: "#f8fafc" }}>
-                                            {p.party && p.party.trim() !== "" ? (
-                                              p.party
-                                            ) : (
-                                              <span style={{ color: "#f87171", fontStyle: "italic", fontSize: "0.8rem" }}>
-                                                ⚠️ Партія не призначена
-                                              </span>
-                                            )}
-                                          </td>
-                                          <td style={{ width: "1%", whiteSpace: "nowrap" }}>
-                                            {st ? (
-                                              <span style={{ fontSize: "0.78rem", color: stockStatus === "ok" ? "#34d399" : "#fca5a5" }}>
-                                                Бух: {formatQuantity(realBuh)} · Склад: {formatQuantity(realSkl)}
-                                              </span>
-                                            ) : (
-                                              <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
-                                                Немає на поточному складі
-                                              </span>
-                                            )}
-                                          </td>
-                                          <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
-                                            <div className={css.stepperGroup}>
-                                              <button
-                                                type="button"
-                                                className={css.stepperBtn}
-                                                onClick={() => handleStepPartyQty(idx, pIdx, -1)}
-                                                title="-1"
-                                              >
-                                                <Minus size={12} />
-                                              </button>
-                                              <input
-                                                type="number"
-                                                className={css.stepperInput}
-                                                value={p.party_quantity !== undefined ? p.party_quantity : (p.moved_q || 0)}
-                                                step="any"
-                                                onChange={(e) => handlePartyQuantityChange(idx, pIdx, e.target.value)}
-                                              />
-                                              <button
-                                                type="button"
-                                                className={css.stepperBtn}
-                                                onClick={() => handleStepPartyQty(idx, pIdx, +1)}
-                                                title="+1"
-                                              >
-                                                <Plus size={12} />
-                                              </button>
-                                            </div>
-                                          </td>
-                                          <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
-                                            <button
-                                              className={css.deletePartyBtn}
-                                              onClick={() => handleDeleteParty(idx, pIdx)}
-                                              title="Видалити цю партію"
-                                            >
-                                              <X size={14} />
-                                            </button>
-                                          </td>
+                                  {item.parties && item.parties.length > 0 ? (
+                                    <table className={css.allocatedTable}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
+                                          <th>Серія / Партія</th>
+                                          <th style={{ width: "1%", whiteSpace: "nowrap" }}>Залишки на складі</th>
+                                          <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>Кількість для списання</th>
+                                          <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
                                         </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <div style={{ fontSize: "0.8rem", color: "#64748b", padding: "8px 0" }}>
-                                  ⚠️ Партії ще не розподілені. Натисніть на потрібну партію у правому вікні, щоб призначити її.
+                                      </thead>
+                                      <tbody>
+                                        {item.parties.map((p, pIdx) => {
+                                          const partyQty = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                                            ? p.party_quantity
+                                            : (p.moved_q || 0);
+                                          const isUnassigned = !p.party || p.party.trim() === "";
+                                          const stockStatus = isRowActive ? (isUnassigned ? "unassigned" : getPartyStockStatus(p.party, partyQty)) : "unknown";
+
+                                          const key = (p.party || "").trim().toLowerCase();
+                                          const st = partyStockMap[key];
+                                          const realBuh = st ? st.totalBuh : 0;
+                                          const realSkl = st ? (st.totalSkl - st.totalStorage) : 0;
+
+                                          const isSwapTarget = swapTarget && swapTarget.itemIdx === idx && swapTarget.partyIdx === pIdx;
+                                          const isPartyDropTarget = dragOverTarget && dragOverTarget.type === 'party' && dragOverTarget.itemIdx === idx && dragOverTarget.partyIdx === pIdx;
+
+                                          return (
+                                            <tr
+                                              key={pIdx}
+                                              className={`${isSwapTarget ? css.swapTargetActive : ""} ${isPartyDropTarget ? css.dropTargetActive : ""} ${isUnassigned ? css.unassignedRow : ""}`}
+                                              onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                e.dataTransfer.dropEffect = "copy";
+                                                if (dragOverTarget?.type !== 'party' || dragOverTarget?.itemIdx !== idx || dragOverTarget?.partyIdx !== pIdx) {
+                                                  setDragOverTarget({ type: 'party', itemIdx: idx, partyIdx: pIdx });
+                                                }
+                                              }}
+                                              onDragLeave={(e) => {
+                                                e.stopPropagation();
+                                                if (dragOverTarget?.type === 'party' && dragOverTarget?.itemIdx === idx && dragOverTarget?.partyIdx === pIdx) {
+                                                  setDragOverTarget(null);
+                                                }
+                                              }}
+                                              onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setDragOverTarget(null);
+                                                try {
+                                                  const dataStr = e.dataTransfer.getData("application/json");
+                                                  const remain = dataStr ? JSON.parse(dataStr) : draggedRemain;
+                                                  if (remain) applyPartyAllocation(idx, pIdx, remain);
+                                                } catch (err) {
+                                                  console.error("Drop error:", err);
+                                                }
+                                              }}
+                                            >
+                                              <td style={{ width: "1%", whiteSpace: "nowrap" }}>
+                                                {stockStatus === "ok" && <CheckCircle2 size={14} color="#10b981" />}
+                                                {stockStatus === "low" && <AlertTriangle size={14} color="#f59e0b" />}
+                                                {stockStatus === "missing" && <AlertTriangle size={14} color="#ef4444" />}
+                                                {stockStatus === "unassigned" && <AlertTriangle size={14} color="#f59e0b" />}
+                                              </td>
+                                              <td style={{ fontWeight: 600, color: "#f8fafc" }}>
+                                                {isUnassigned ? (
+                                                  <div className={css.unassignedBadgeContainer}>
+                                                    <span className={css.unassignedBadge}>
+                                                      ⚠️ Партія не призначена
+                                                    </span>
+                                                    <span className={css.unassignedHint}>
+                                                      (Перетягніть сюди або натисніть «+ Взяти» праворуч)
+                                                    </span>
+                                                  </div>
+                                                ) : (
+                                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                    <span>{p.party}</span>
+                                                    {isRowActive && (
+                                                      <button
+                                                        type="button"
+                                                        className={`${css.swapBtn} ${isSwapTarget ? css.swapBtnActive : ""}`}
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setSwapTarget(isSwapTarget ? null : { itemIdx: idx, partyIdx: pIdx });
+                                                        }}
+                                                        title={isSwapTarget ? "Скасувати заміну" : "Замінити цю партію з залишків"}
+                                                      >
+                                                        <RefreshCw size={11} className={isSwapTarget ? css.spinIcon : ""} />
+                                                        <span>{isSwapTarget ? "Очікує..." : "Замінити"}</span>
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </td>
+                                              <td style={{ width: "1%", whiteSpace: "nowrap" }}>
+                                                {isUnassigned ? (
+                                                  <span style={{ fontSize: "0.75rem", color: "#f59e0b", fontStyle: "italic" }}>
+                                                    Потребує призначення зі складу
+                                                  </span>
+                                                ) : st ? (
+                                                  <span style={{ fontSize: "0.78rem", color: stockStatus === "ok" ? "#34d399" : "#fca5a5" }}>
+                                                    Бух: {formatQuantity(realBuh)} · Склад: {formatQuantity(realSkl)}
+                                                  </span>
+                                                ) : (
+                                                  <span style={{ fontSize: "0.75rem", color: "#ef4444" }}>
+                                                    Немає на поточному складі
+                                                  </span>
+                                                )}
+                                              </td>
+                                              <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
+                                                <div className={css.stepperGroup}>
+                                                  <button
+                                                    type="button"
+                                                    className={css.stepperBtn}
+                                                    onClick={() => handleStepPartyQty(idx, pIdx, -1)}
+                                                    title="-1"
+                                                  >
+                                                    <Minus size={12} />
+                                                  </button>
+                                                  <input
+                                                    type="number"
+                                                    className={css.stepperInput}
+                                                    value={p.party_quantity !== undefined ? p.party_quantity : (p.moved_q || 0)}
+                                                    step="any"
+                                                    onChange={(e) => handlePartyQuantityChange(idx, pIdx, e.target.value)}
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    className={css.stepperBtn}
+                                                    onClick={() => handleStepPartyQty(idx, pIdx, +1)}
+                                                    title="+1"
+                                                  >
+                                                    <Plus size={12} />
+                                                  </button>
+                                                </div>
+                                              </td>
+                                              <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
+                                                <button
+                                                  className={css.deletePartyBtn}
+                                                  onClick={() => handleDeleteParty(idx, pIdx)}
+                                                  title="Видалити цю партію"
+                                                >
+                                                  <X size={14} />
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  ) : (
+                                    <div style={{ fontSize: "0.8rem", color: "#64748b", padding: "8px 0" }}>
+                                      ⚠️ Партії ще не розподілені. Натисніть на потрібну партію у правому вікні, щоб призначити її.
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
+                              );
+                            })()}
                           </td>
                         </tr>
                       )}
@@ -1646,7 +2043,7 @@ export default function EditDeliveryModal() {
         {/* ПРАВАЯ ПАНЕЛЬ: ИНСПЕКТОР СКЛАДА И АНАЛИТИКА (С ТАБАМИ) */}
         <section
           className={`${css.rightPane} ${focusedPane === "right" ? css.paneActive : ""}`}
-          onClick={() => setFocusedPane("right")}
+          onClick={handleRightPaneClick}
         >
           <div className={css.paneHeader}>
             <h3 className={css.paneTitle} style={{ maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1662,7 +2059,6 @@ export default function EditDeliveryModal() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveRightTab("stock");
-                    setFocusedPane("right");
                   }}
                 >
                   <Boxes size={13} />
@@ -1673,7 +2069,6 @@ export default function EditDeliveryModal() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveRightTab("analytics");
-                    setFocusedPane("right");
                   }}
                 >
                   <BarChart3 size={13} />
@@ -1686,17 +2081,17 @@ export default function EditDeliveryModal() {
                 className={`${css.zoomHintBtn} ${focusedPane === "right" ? css.zoomHintBtnActive : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setFocusedPane(focusedPane === "right" ? "left" : "right");
+                  setFocusedPane(focusedPane === "right" ? null : "right");
                 }}
-                title={focusedPane === "right" ? "Блок збільшено (активний фокус)" : "Натисніть для збільшення блоку аналітики"}
+                title={focusedPane === "right" ? "Повернути звичайний розмір" : "Натисніть для збільшення блоку аналітики"}
               >
-                <Maximize2 size={11} />
-                <span>{focusedPane === "right" ? "Збільшено" : "Збільшити"}</span>
+                {focusedPane === "right" ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+                <span>{focusedPane === "right" ? "Зменшити" : "Збільшити"}</span>
               </button>
             </div>
           </div>
 
-          <div className={css.inspectorBody}>
+          <div ref={rightInspectorBodyRef} className={css.inspectorBody}>
             {/* ТАБ 1: СКЛАДСКИЕ ОСТАТКИ */}
             {activeRightTab === "stock" && (
               <>
@@ -1718,44 +2113,65 @@ export default function EditDeliveryModal() {
                       </tr>
                     </thead>
                     <tbody>
-                      {stockRemains.map((remain, rIdx) => (
-                        <tr
-                          key={rIdx}
-                          className={css.remainRow}
-                          onClick={() => handleAddPartyFromRemains(remain)}
-                          title="Натисніть для додавання цієї партії до обраного товару"
-                        >
-                          <td>
-                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>
-                              {remain.nomenclature_series || "Без серії"}
-                            </div>
-                            <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "2px" }}>
-                              {remain.warehouse}
-                            </div>
-                          </td>
-                          <td style={{ textAlign: "right", fontWeight: 600, color: "#34d399" }}>
-                            {formatQuantity(remain.buh)}
-                          </td>
-                          <td style={{ textAlign: "right", color: "#cbd5e1" }}>
-                            {formatQuantity(remain.skl)}
-                          </td>
-                          <td style={{ textAlign: "right", color: "#94a3b8" }}>
-                            {formatQuantity(remain.storage)}
-                          </td>
-                          <td style={{ textAlign: "right", color: "#64748b", fontSize: "0.78rem" }}>
-                            {remain.weight || "—"}
-                          </td>
-                          <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              className={css.usePartyBtn}
-                              onClick={() => handleAddPartyFromRemains(remain)}
-                            >
-                              <Plus size={11} />
-                              <span>Додати</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {stockRemains.map((remain, rIdx) => {
+                        const smartTake = getSmartTakeInfo(remain);
+                        const isCurrentlyDragging = draggedRemain?.nomenclature_series === remain.nomenclature_series;
+
+                        return (
+                          <tr
+                            key={rIdx}
+                            className={`${css.remainRow} ${css.draggableRow} ${isCurrentlyDragging ? css.dragging : ""}`}
+                            draggable={true}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/json", JSON.stringify(remain));
+                              e.dataTransfer.effectAllowed = "copyMove";
+                              setDraggedRemain(remain);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedRemain(null);
+                              setDragOverTarget(null);
+                            }}
+                            onClick={() => handleAddPartyFromRemains(remain)}
+                            title="Перетягніть у ліве вікно або натисніть для додавання цієї партії"
+                          >
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <GripVertical size={13} className={css.dragGripIcon} />
+                                <div>
+                                  <div style={{ fontWeight: 600, color: "#f8fafc" }}>
+                                    {remain.nomenclature_series || "Без серії"}
+                                  </div>
+                                  <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "2px" }}>
+                                    {remain.warehouse}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: "right", fontWeight: 600, color: "#34d399" }}>
+                              {formatQuantity(remain.buh)}
+                            </td>
+                            <td style={{ textAlign: "right", color: "#cbd5e1" }}>
+                              {formatQuantity(remain.skl)}
+                            </td>
+                            <td style={{ textAlign: "right", color: "#94a3b8" }}>
+                              {formatQuantity(remain.storage)}
+                            </td>
+                            <td style={{ textAlign: "right", color: "#64748b", fontSize: "0.78rem" }}>
+                              {remain.weight || "—"}
+                            </td>
+                            <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className={`${css.usePartyBtn} ${smartTake.isSwap ? css.usePartyBtnSwap : ""}`}
+                                onClick={() => handleAddPartyFromRemains(remain)}
+                                title={smartTake.isSwap ? "Замінити обрану партію" : "Додати цей обсяг до замовлення"}
+                              >
+                                {smartTake.isSwap ? <RefreshCw size={11} /> : <Plus size={11} />}
+                                <span>{smartTake.label}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (
@@ -1820,7 +2236,7 @@ export default function EditDeliveryModal() {
             <p style={{ marginBottom: "10px" }}>Наступні товари не мають прив&apos;язки до партій:</p>
             <ul style={{ margin: "0 0 14px 18px", fontSize: "0.85rem", color: "#cbd5e1" }}>
               {validatedItems
-                .filter(i => i.errorType === "no_parties" && (parseFloat(i.quantity) || 0) > 0)
+                .filter(i => (i.errorType === "no_parties" || i.errorType === "unassigned") && (parseFloat(i.quantity) || 0) > 0)
                 .map((i, idx) => (
                   <li key={idx}>{i.product}{i.orderRef ? ` (${i.orderRef})` : ""}</li>
                 ))}

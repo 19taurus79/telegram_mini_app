@@ -273,49 +273,51 @@ export default function DetailsOrdersByProduct({
                 </div>
               )}
             </div>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>Партія</th>
-                  <th>Склад (Бух/Скл)</th>
-                  <th>Вже переміщено</th>
-                  <th>Вільний залишок</th>
-                </tr>
-              </thead>
-              <tbody>
-                {partyList.map((p, idx) => (
-                  <tr 
-                    key={idx} 
-                    onClick={() => onPartyClick?.(p.party)}
-                    style={{ cursor: onPartyClick ? 'pointer' : 'default' }}
-                    className={onPartyClick ? css.rowSelectable : ""}
-                  >
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{p.party}</div>
-                      {p.warehouses.length > 0 && (
-                        <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>{p.warehouses.join(', ')}</div>
-                      )}
-                    </td>
-                    <td>{p.buh} / {p.skl}</td>
-                    <td style={{ color: "rgba(255,255,255,0.7)" }}>{p.moved > 0 ? p.moved : "—"}</td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                        {p.freeSkl > 0 ? (
-                          <span className={css.badgeGreen}>Скл: {p.freeSkl}</span>
-                        ) : (
-                          <span className={css.badgeRed}>Скл: {p.freeSkl}</span>
-                        )}
-                        {p.freeBuh > 0 ? (
-                          <span className={css.badgeGreen} style={{ opacity: 0.8 }}>Бух: {p.freeBuh}</span>
-                        ) : (
-                          <span className={css.badgeRed} style={{ opacity: 0.8 }}>Бух: {p.freeBuh}</span>
-                        )}
-                      </div>
-                    </td>
+            <div className={css.tableWrapper}>
+              <table className={css.table}>
+                <thead>
+                  <tr>
+                    <th>Партія</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Склад (Бух/Скл)</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Вже переміщено</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Вільний залишок</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {partyList.map((p, idx) => (
+                    <tr 
+                      key={idx} 
+                      onClick={() => onPartyClick?.(p.party)}
+                      style={{ cursor: onPartyClick ? 'pointer' : 'default' }}
+                      className={onPartyClick ? css.rowSelectable : ""}
+                    >
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{p.party}</div>
+                        {p.warehouses.length > 0 && (
+                          <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px' }}>{p.warehouses.join(', ')}</div>
+                        )}
+                      </td>
+                      <td style={{ width: "1%", whiteSpace: "nowrap" }}>{p.buh} / {p.skl}</td>
+                      <td style={{ width: "1%", whiteSpace: "nowrap", color: "rgba(255,255,255,0.7)" }}>{p.moved > 0 ? p.moved : "—"}</td>
+                      <td style={{ width: "1%", whiteSpace: "nowrap" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          {p.freeSkl > 0 ? (
+                            <span className={css.badgeGreen}>Скл: {p.freeSkl}</span>
+                          ) : (
+                            <span className={css.badgeRed}>Скл: {p.freeSkl}</span>
+                          )}
+                          {p.freeBuh > 0 ? (
+                            <span className={css.badgeGreen} style={{ opacity: 0.8 }}>Бух: {p.freeBuh}</span>
+                          ) : (
+                            <span className={css.badgeRed} style={{ opacity: 0.8 }}>Бух: {p.freeBuh}</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             
             {/* Мобільні картки для аналізу */}
             <div className={css.mobileCards}>
@@ -356,27 +358,29 @@ export default function DetailsOrdersByProduct({
         {movedProducts && movedProducts.length > 0 && (
           <div className={css.analysisSection} style={{ marginTop: '24px' }}>
             <h3 className={css.analysisTitle}>🚚 Деталізація існуючих переміщень (Резерви)</h3>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>Клієнт / Менеджер</th>
-                  <th>Партія</th>
-                  <th>Кількість</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movedProducts.map((m, idx) => (
-                  <tr key={idx}>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{m.client || "Невідомий клієнт"}</div>
-                      <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{m.manager || "Невідомий менеджер"}</div>
-                    </td>
-                    <td>{m.party_sign_y || "Без серії"}</td>
-                    <td style={{ fontWeight: 600 }}>{m.qt_moved}</td>
+            <div className={css.tableWrapper}>
+              <table className={css.table}>
+                <thead>
+                  <tr>
+                    <th>Клієнт / Менеджер</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Партія</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "right" }}>Кількість</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {movedProducts.map((m, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{m.client || "Невідомий клієнт"}</div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{m.manager || "Невідомий менеджер"}</div>
+                      </td>
+                      <td style={{ width: "1%", whiteSpace: "nowrap" }}>{m.party_sign_y || "Без серії"}</td>
+                      <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "right", fontWeight: 600 }}>{m.qt_moved}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Мобільні картки для деталізації переміщень */}
             <div className={css.mobileCards}>
@@ -467,60 +471,62 @@ export default function DetailsOrdersByProduct({
         </div>
         {sortedData && sortedData.length > 0 ? (
             <>
-              <table className={css.table}>
-                <thead>
-                <tr>
-                  <th>Менеджер</th>
-                  <th>Клієнт</th>
-                  <th>Доповнення</th>
-                  <th>Вид діяльності</th>
-                  <th>Док. статус</th>
-                  <th onClick={handleSort} className={css.sortableHeader}>
-                    Постачання{" "}
-                    {sortDirection === "ascending"
-                        ? "↑"
-                        : sortDirection === "descending"
-                            ? "↓"
-                            : ""}
-                  </th>
-                  <th>Кількість</th>
-                  <th className={css.checkmarkHeader}>Оплата</th>
-                  <th className={css.checkmarkHeader}>Переміщено</th>
-                </tr>
-                </thead>
-                <tbody>
-                {sortedData.map((order) => (
-                    <tr key={order.id}>
-                      <td>{order.manager}</td>
-                      <td>{order.client}</td>
-                      <td>{order.contract_supplement}</td>
-                      <td><span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{order.line_of_business}</span></td>
-                      <td>
-                        <span style={{ 
-                          fontSize: '0.75rem', 
-                          fontWeight: 700,
-                          color: order.document_status === "затверджено" ? "var(--success-light)" : "var(--warning-light)",
-                          background: order.document_status === "затверджено" ? "rgba(74, 222, 128, 0.1)" : "rgba(251, 191, 36, 0.1)",
-                          padding: '2px 6px',
-                          borderRadius: '4px'
-                        }}>
-                          {order.document_status}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 500 }}>До пост:</span>
+              <div className={css.tableWrapper}>
+                <table className={`${css.table} ${css.ordersTable}`}>
+                  <thead>
+                  <tr>
+                    <th style={{ minWidth: "120px" }}>Менеджер</th>
+                    <th style={{ minWidth: "180px" }}>Клієнт</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Доповнення</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Вид діяльності</th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap" }}>Док. статус</th>
+                    <th onClick={handleSort} className={css.sortableHeader} style={{ width: "1%", whiteSpace: "nowrap" }}>
+                      Постачання{" "}
+                      {sortDirection === "ascending"
+                          ? "↑"
+                          : sortDirection === "descending"
+                              ? "↓"
+                              : ""}
+                    </th>
+                    <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "right" }}>Кількість</th>
+                    <th className={css.checkmarkHeader} style={{ width: "1%", whiteSpace: "nowrap" }}>Оплата</th>
+                    <th className={css.checkmarkHeader} style={{ width: "1%", whiteSpace: "nowrap" }}>Переміщено</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  {sortedData.map((order) => (
+                      <tr key={order.id}>
+                        <td style={{ minWidth: "120px", lineHeight: "1.35" }}>{order.manager}</td>
+                        <td style={{ minWidth: "180px", fontWeight: 600, lineHeight: "1.35" }}>{order.client}</td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: "0.82rem" }}>{order.contract_supplement}</td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap" }}><span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{order.line_of_business}</span></td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap" }}>
                           <span style={{ 
-                            fontSize: '0.8rem', 
+                            fontSize: '0.75rem', 
                             fontWeight: 700,
-                            color: order.delivery_status?.includes("Так") ? "var(--success-light)" : "var(--alert-color)"
+                            color: order.document_status === "затверджено" ? "var(--success-light)" : "var(--warning-light)",
+                            background: order.document_status === "затверджено" ? "rgba(74, 222, 128, 0.1)" : "rgba(251, 191, 36, 0.1)",
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
                           }}>
-                            {order.delivery_status?.includes("Так") ? "Так" : "Ні"}
+                            {order.document_status}
                           </span>
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'center', fontWeight: 700 }}>{order.different}</td>
-                        <td className={css.checkmarkCell}>
+                        </td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 500 }}>До пост:</span>
+                            <span style={{ 
+                              fontSize: '0.8rem', 
+                              fontWeight: 700,
+                              color: order.delivery_status?.includes("Так") ? "var(--success-light)" : "var(--alert-color)"
+                            }}>
+                              {order.delivery_status?.includes("Так") ? "Так" : "Ні"}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: 'right', fontWeight: 700 }}>{order.different}</td>
+                        <td className={css.checkmarkCell} style={{ width: "1%", whiteSpace: "nowrap" }}>
                           {(() => {
                             const pay = getPaymentInfo(order);
                             return (
@@ -543,23 +549,24 @@ export default function DetailsOrdersByProduct({
                             );
                           })()}
                         </td>
-                      <td className={css.checkmarkCell}>
-                        {(() => {
-                          const movedQty =
-                            movedContractsMap.get(order.contract_supplement) || 0;
-                          if (movedQty === 0) return null;
+                        <td className={css.checkmarkCell} style={{ width: "1%", whiteSpace: "nowrap" }}>
+                          {(() => {
+                            const movedQty =
+                              movedContractsMap.get(order.contract_supplement) || 0;
+                            if (movedQty === 0) return null;
 
-                          if (movedQty >= order.different) {
-                            return <span className={css.checkmarkGreen}>✓</span>;
-                          } else {
-                            return <span className={css.checkmarkYellow}>✓</span>;
-                          }
-                        })()}
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
+                            if (movedQty >= order.different) {
+                              return <span className={css.checkmarkGreen}>✓</span>;
+                            } else {
+                              return <span className={css.checkmarkYellow}>✓</span>;
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
 
               <div className={css.mobileCards}>
                 {sortedData.map((order) => {

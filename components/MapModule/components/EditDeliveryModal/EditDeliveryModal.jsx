@@ -34,6 +34,8 @@ import {
   PlusCircle,
   Boxes,
   FileText,
+  BarChart3,
+  Maximize2,
   Copy,
   Info
 } from "lucide-react";
@@ -70,6 +72,7 @@ export default function EditDeliveryModal() {
   const [isLoadingRemains, setIsLoadingRemains] = useState(false);
   const [activeRightTab, setActiveRightTab] = useState("stock"); // 'stock' | 'analytics'
   const [expandedRows, setExpandedRows] = useState({}); // { [idx]: boolean }
+  const [focusedPane, setFocusedPane] = useState("left"); // 'left' | 'right'
 
   // Печать
   const [isPrintView, setIsPrintView] = useState(false);
@@ -1220,8 +1223,8 @@ export default function EditDeliveryModal() {
         </div>
       </header>
 
-      {/* ─── ОСНОВНОЙ РАБОЧИЙ ГРИД ─── */}
-      <main className={css.workspaceBody}>
+      {/* ─── ОСНОВНОЙ РАБОЧИЙ ГРИД С ДИНАМИЧЕСКИМ ЗУМОМ ─── */}
+      <main className={`${css.workspaceBody} ${focusedPane === "right" ? css.focusRight : css.focusLeft}`}>
         {/* Индикатор сохранения */}
         {isSaving && (
           <div className={css.loadingOverlay}>
@@ -1231,19 +1234,36 @@ export default function EditDeliveryModal() {
         )}
 
         {/* ЛЕВАЯ ПАНЕЛЬ: ТОВАРЫ В ДОСТАВКЕ */}
-        <section className={css.leftPane}>
+        <section
+          className={`${css.leftPane} ${focusedPane === "left" ? css.paneActive : ""}`}
+          onClick={() => setFocusedPane("left")}
+        >
           <div className={css.paneHeader}>
             <h3 className={css.paneTitle}>
               <Boxes size={18} color="#38bdf8" />
               <span>Товари у доставці ({activeItems.length})</span>
             </h3>
 
-            {/* Быстрые действия над всеми */}
+            {/* Быстрые действия над всеми и индикатор зума */}
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                type="button"
+                className={`${css.zoomHintBtn} ${focusedPane === "left" ? css.zoomHintBtnActive : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFocusedPane(focusedPane === "left" ? "right" : "left");
+                }}
+                title={focusedPane === "left" ? "Блок збільшено (активний фокус)" : "Натисніть для збільшення блоку товарів"}
+              >
+                <Maximize2 size={11} />
+                <span>{focusedPane === "left" ? "Збільшено" : "Збільшити"}</span>
+              </button>
+
               <button
                 className={css.btnSecondary}
                 style={{ padding: "5px 10px", fontSize: "0.78rem" }}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const allActive = validatedItems
                     .map((item, idx) => ({ item, idx }))
                     .filter(x => (parseFloat(x.item.quantity) || 0) > 0);
@@ -1304,7 +1324,7 @@ export default function EditDeliveryModal() {
             <table className={css.dataTable}>
               <thead>
                 <tr>
-                  <th style={{ width: "36px", textAlign: "center" }}>
+                  <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
                     <input
                       type="checkbox"
                       title="Обрати всі позиції"
@@ -1321,18 +1341,18 @@ export default function EditDeliveryModal() {
                       }}
                     />
                   </th>
-                  <th style={{ width: "110px" }}>Заявка</th>
-                  <th style={{ width: "22%" }}>Клієнт</th>
-                  <th>Товар та залишки</th>
-                  <th style={{ width: "105px", textAlign: "right" }}>Кількість</th>
-                  <th style={{ width: "140px" }}>Комплектація</th>
+                  <th style={{ width: "1%", whiteSpace: "nowrap" }}>Заявка</th>
+                  <th style={{ minWidth: "140px" }}>Клієнт</th>
+                  <th style={{ minWidth: "180px" }}>Товар та залишки</th>
+                  <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "right" }}>Кількість</th>
+                  <th style={{ width: "1%", whiteSpace: "nowrap", minWidth: "135px" }}>Комплектація</th>
                   {selectedIndices.length > 0 && (
                     <>
-                      <th style={{ width: "85px", textAlign: "center", color: "#818cf8" }}>Перенести</th>
-                      <th style={{ width: "75px", textAlign: "center", color: "#64748b" }}>Залишок</th>
+                      <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center", color: "#818cf8" }}>Перенести</th>
+                      <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center", color: "#64748b" }}>Залишок</th>
                     </>
                   )}
-                  <th style={{ width: "40px" }}></th>
+                  <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -1356,7 +1376,7 @@ export default function EditDeliveryModal() {
                         onClick={() => handleItemClick(item, idx)}
                       >
                         {/* Чекбокс */}
-                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
                           <input
                             type="checkbox"
                             checked={isSelectedForSplit}
@@ -1366,7 +1386,7 @@ export default function EditDeliveryModal() {
                         </td>
 
                         {/* Номер заявки */}
-                        <td>
+                        <td style={{ width: "1%", whiteSpace: "nowrap" }}>
                           <span className={css.orderRefPill} title={item.orderRef}>
                             {item.orderRef || "—"}
                           </span>
@@ -1408,7 +1428,7 @@ export default function EditDeliveryModal() {
                         </td>
 
                         {/* Количество */}
-                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "right" }}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ width: "1%", whiteSpace: "nowrap", textAlign: "right" }}>
                           <input
                             type="number"
                             className={`${css.inputNumber} ${item.hasError ? css.inputError : ""}`}
@@ -1426,8 +1446,8 @@ export default function EditDeliveryModal() {
                         </td>
 
                         {/* Индикатор комплектации партий */}
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <td style={{ width: "1%", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: "135px" }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: "3px" }}>
                                 <span style={{ color: isFullyAllocated ? "#34d399" : "#94a3b8", fontWeight: 600 }}>
@@ -1483,7 +1503,7 @@ export default function EditDeliveryModal() {
                         )}
 
                         {/* Удаление */}
-                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
                           <button
                             className={css.deleteItemBtn}
                             onClick={() => handleDeleteItemClick(idx)}
@@ -1509,37 +1529,21 @@ export default function EditDeliveryModal() {
                                   )}
                                   {item.hasError && item.errorType === "no_parties" && (
                                     <span style={{ color: "#f59e0b", fontSize: "0.75rem" }}>
-                                      ⚠️ Необхідно обрати хоча б одну партію зі залишків
+                                      ⚠️ Оберіть партію у правому вікні залишків
                                     </span>
                                   )}
                                 </div>
-
-                                <button
-                                  className={css.usePartyBtn}
-                                  onClick={() => {
-                                    setActiveRightTab("stock");
-                                    if (stockRemains.length > 0) {
-                                      handleAddPartyFromRemains(stockRemains[0]);
-                                    } else {
-                                      toast("Оберіть партію у правому інспекторі", { icon: "👉" });
-                                    }
-                                  }}
-                                  title="Додати партію з доступних на складі"
-                                >
-                                  <Plus size={12} />
-                                  <span>Додати партію зі залишків</span>
-                                </button>
                               </div>
 
                               {item.parties && item.parties.length > 0 ? (
                                 <table className={css.allocatedTable}>
                                   <thead>
                                     <tr>
-                                      <th style={{ width: "24px" }}></th>
+                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
                                       <th>Серія / Партія</th>
-                                      <th style={{ width: "220px" }}>Залишки на складі</th>
-                                      <th style={{ width: "160px", textAlign: "center" }}>Кількість для списання</th>
-                                      <th style={{ width: "36px" }}></th>
+                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}>Залишки на складі</th>
+                                      <th style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>Кількість для списання</th>
+                                      <th style={{ width: "1%", whiteSpace: "nowrap" }}></th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -1556,15 +1560,21 @@ export default function EditDeliveryModal() {
 
                                       return (
                                         <tr key={pIdx}>
-                                          <td>
+                                          <td style={{ width: "1%", whiteSpace: "nowrap" }}>
                                             {stockStatus === "ok" && <CheckCircle2 size={14} color="#10b981" />}
                                             {stockStatus === "low" && <AlertTriangle size={14} color="#f59e0b" />}
                                             {stockStatus === "missing" && <AlertTriangle size={14} color="#ef4444" />}
                                           </td>
                                           <td style={{ fontWeight: 600, color: "#f8fafc" }}>
-                                            {p.party}
+                                            {p.party && p.party.trim() !== "" ? (
+                                              p.party
+                                            ) : (
+                                              <span style={{ color: "#f87171", fontStyle: "italic", fontSize: "0.8rem" }}>
+                                                ⚠️ Партія не призначена
+                                              </span>
+                                            )}
                                           </td>
-                                          <td>
+                                          <td style={{ width: "1%", whiteSpace: "nowrap" }}>
                                             {st ? (
                                               <span style={{ fontSize: "0.78rem", color: stockStatus === "ok" ? "#34d399" : "#fca5a5" }}>
                                                 Бух: {formatQuantity(realBuh)} · Склад: {formatQuantity(realSkl)}
@@ -1575,7 +1585,7 @@ export default function EditDeliveryModal() {
                                               </span>
                                             )}
                                           </td>
-                                          <td style={{ textAlign: "center" }}>
+                                          <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
                                             <div className={css.stepperGroup}>
                                               <button
                                                 type="button"
@@ -1602,7 +1612,7 @@ export default function EditDeliveryModal() {
                                               </button>
                                             </div>
                                           </td>
-                                          <td style={{ textAlign: "center" }}>
+                                          <td style={{ width: "1%", whiteSpace: "nowrap", textAlign: "center" }}>
                                             <button
                                               className={css.deletePartyBtn}
                                               onClick={() => handleDeleteParty(idx, pIdx)}
@@ -1634,28 +1644,54 @@ export default function EditDeliveryModal() {
         </section>
 
         {/* ПРАВАЯ ПАНЕЛЬ: ИНСПЕКТОР СКЛАДА И АНАЛИТИКА (С ТАБАМИ) */}
-        <section className={css.rightPane}>
+        <section
+          className={`${css.rightPane} ${focusedPane === "right" ? css.paneActive : ""}`}
+          onClick={() => setFocusedPane("right")}
+        >
           <div className={css.paneHeader}>
-            <h3 className={css.paneTitle} style={{ maxWidth: "55%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <h3 className={css.paneTitle} style={{ maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               <Package size={17} color="#38bdf8" />
               <span title={activeProductTitle}>{activeProductTitle}</span>
             </h3>
 
-            {/* Вкладки: Остатки vs Аналитика заказов */}
-            <div className={css.tabGroup}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Вкладки: Остатки vs Аналитика заказов */}
+              <div className={css.tabGroup}>
+                <button
+                  className={`${css.tabBtn} ${activeRightTab === "stock" ? css.tabBtnActive : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveRightTab("stock");
+                    setFocusedPane("right");
+                  }}
+                >
+                  <Boxes size={13} />
+                  <span>Залишки ({stockRemains.length})</span>
+                </button>
+                <button
+                  className={`${css.tabBtn} ${activeRightTab === "analytics" ? css.tabBtnActive : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveRightTab("analytics");
+                    setFocusedPane("right");
+                  }}
+                >
+                  <BarChart3 size={13} />
+                  <span>Аналітика товару</span>
+                </button>
+              </div>
+
               <button
-                className={`${css.tabBtn} ${activeRightTab === "stock" ? css.tabBtnActive : ""}`}
-                onClick={() => setActiveRightTab("stock")}
+                type="button"
+                className={`${css.zoomHintBtn} ${focusedPane === "right" ? css.zoomHintBtnActive : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFocusedPane(focusedPane === "right" ? "left" : "right");
+                }}
+                title={focusedPane === "right" ? "Блок збільшено (активний фокус)" : "Натисніть для збільшення блоку аналітики"}
               >
-                <Boxes size={13} />
-                <span>Залишки ({stockRemains.length})</span>
-              </button>
-              <button
-                className={`${css.tabBtn} ${activeRightTab === "analytics" ? css.tabBtnActive : ""}`}
-                onClick={() => setActiveRightTab("analytics")}
-              >
-                <FileText size={13} />
-                <span>Черга заявок</span>
+                <Maximize2 size={11} />
+                <span>{focusedPane === "right" ? "Збільшено" : "Збільшити"}</span>
               </button>
             </div>
           </div>

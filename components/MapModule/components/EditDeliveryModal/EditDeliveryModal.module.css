@@ -233,19 +233,27 @@
   color: #f87171;
 }
 
-/* ---------- MAIN WORKSPACE BODY (SPLIT GRID) ---------- */
+/* ---------- MAIN WORKSPACE BODY (DYNAMIC ZOOM SPLIT) ---------- */
 .workspaceBody {
   flex: 1;
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
   gap: 16px;
   padding: 16px 24px;
   overflow: hidden;
   background: #080c14;
+  transition: grid-template-columns 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focusLeft {
+  grid-template-columns: 2fr 1fr;
+}
+
+.focusRight {
+  grid-template-columns: 1fr 2.2fr;
 }
 
 @media (max-width: 1200px) {
-  .workspaceBody {
+  .workspaceBody, .focusLeft, .focusRight {
     grid-template-columns: 1fr;
     overflow-y: auto;
   }
@@ -260,6 +268,38 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.paneActive {
+  border-color: rgba(56, 189, 248, 0.28);
+  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.04);
+}
+
+.zoomHintBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zoomHintBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f1f5f9;
+}
+
+.zoomHintBtnActive {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.12);
 }
 
 .paneHeader {

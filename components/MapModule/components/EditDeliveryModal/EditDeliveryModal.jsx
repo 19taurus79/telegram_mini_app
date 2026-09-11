@@ -12,66 +12,85 @@ import { useUser } from "@/store/User";
 import { formatQuantity } from "@/lib/utils/productUtils";
 import SendAccountantDialog from "../SendAccountantDialog/SendAccountantDialog";
 import { useOrderCart } from "@/store/OrderCart";
-import { ShoppingCart, Zap, PlusCircle } from "lucide-react";
-
+import {
+  ArrowLeft,
+  Check,
+  Printer,
+  Send,
+  Truck,
+  Scissors,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
+  Package,
+  Scale,
+  X,
+  Plus,
+  Minus,
+  ShoppingCart,
+  Zap,
+  PlusCircle,
+  Boxes,
+  FileText,
+  Copy,
+  Info
+} from "lucide-react";
 
 /**
- * Модальное окно для редактирования состава одной или нескольких доставок.
- * Позволяет изменять количество товаров, распределять их по партиям,
- * просматривать остатки и сохранять изменения.
+ * EditDeliveryModal — Полноэкранный логистический воркспейс для комплектации и редактирования доставки.
+ * Интегрирован прямо в интерфейс карты: занимает 100% экрана без модальных рамок,
+ * мгновенно возвращает пользователя на карту без перезагрузки и сброса координат.
  */
 export default function EditDeliveryModal() {
-  // --- STATE MANAGEMENT ---
   const router = useRouter();
 
-  // Глобальное состояние из Zustand
-  const { 
-    isEditDeliveryModalOpen,    // Флаг, открыто ли модальное окно
-    setIsEditDeliveryModalOpen, // Функция для управления видимостью окна
-    selectedDeliveries,         // Массив выбранных на карте доставок для редактирования
-    updateDeliveries,           // Функция для обновления данных о доставках в глобальном сторе
-    applications,               // Список всех заявок (для поиска не добавленных товаров)
-    removeDelivery              // Функция для удаления доставки из стора
+  // Глобальное состояние Zustand
+  const {
+    isEditDeliveryModalOpen,
+    setIsEditDeliveryModalOpen,
+    selectedDeliveries,
+    updateDeliveries,
+    applications,
+    removeDelivery
   } = useApplicationsStore();
-  
+
   const queryClient = useQueryClient();
   const userData = useUser(state => state.userData);
   const actorName = userData?.full_name_for_orders || "";
 
   // Локальное состояние компонента
-  const [deliveryItems, setDeliveryItems] = useState([]); // Массив всех товаров из всех выбранных доставок
-  const [selectedProductId, setSelectedProductId] = useState(null); // ID/название продукта, выбранного для просмотра остатков
-  const [activeItemIdx, setActiveItemIdx] = useState(null); // Индекс активной строки товара в левой таблице
-  const [stockRemains, setStockRemains] = useState([]); // Остатки по выбранному товару
-  const [productBuhMap, setProductBuhMap] = useState({}); // Кэш остатков по всем товарам доставки: { [productKey]: { totalBuh: number, remains: Remains[], loading: boolean } }
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Флаг для модального окна подтверждения удаления
-  const [isLoadingRemains, setIsLoadingRemains] = useState(false); // Флаг загрузки остатков
-  
-  // Состояние для управления процессом печати
-  const [isPrintView, setIsPrintView] = useState(false); // Флаг режима предпросмотра печати
-  const [printData, setPrintData] = useState(null); // Данные, подготовленные для печати
-  const [isAskingDate, setIsAskingDate] = useState(false); // Флаг для модалки запроса даты печати
-  const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split('T')[0]); // Дата для печатной формы
-  
-  // Состояния для новых фич: удаление с предупреждением и разделение
-  const [itemToDelete, setItemToDelete] = useState(null); // Индекс удаляемого товара для модалки подтверждения
-  const [selectedItemsToSplit, setSelectedItemsToSplit] = useState({}); // Хранение выбранных чекбоксов { [idx]: boolean }
-  const [splitQuantities, setSplitQuantities] = useState({}); // Кол-во для переноса { [idx]: number }
-  const [isSplitting, setIsSplitting] = useState(false); // Флаг загрузки при разделении доставки
-  const [isSaving, setIsSaving] = useState(false); // Флаг процесса сохранения
-  const [showPartiesWarning, setShowPartiesWarning] = useState(false); // Модалка мягкого предупреждения об отсутствии партий
-  const [pendingAction, setPendingAction] = useState(null); // 'ready' | 'co' — действие ожидающее подтверждения
-  const [isAccountantDialogOpen, setIsAccountantDialogOpen] = useState(false); // Модалка отправки бухгалтеру
+  const [deliveryItems, setDeliveryItems] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [activeItemIdx, setActiveItemIdx] = useState(null);
+  const [stockRemains, setStockRemains] = useState([]);
+  const [productBuhMap, setProductBuhMap] = useState({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoadingRemains, setIsLoadingRemains] = useState(false);
+  const [activeRightTab, setActiveRightTab] = useState("stock"); // 'stock' | 'analytics'
+  const [expandedRows, setExpandedRows] = useState({}); // { [idx]: boolean }
 
+  // Печать
+  const [isPrintView, setIsPrintView] = useState(false);
+  const [printData, setPrintData] = useState(null);
+  const [isAskingDate, setIsAskingDate] = useState(false);
+  const [printDeliveryDate, setPrintDeliveryDate] = useState(new Date().toISOString().split("T")[0]);
 
-  // --- REFS AND HOOKS ---
+  // Разделение и удаление
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [selectedItemsToSplit, setSelectedItemsToSplit] = useState({});
+  const [splitQuantities, setSplitQuantities] = useState({});
+  const [isSplitting, setIsSplitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPartiesWarning, setShowPartiesWarning] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [isAccountantDialogOpen, setIsAccountantDialogOpen] = useState(false);
 
-  const contentRef = useRef(null); // Ref для области, которая будет отправлена на печать
-  const reactToPrintFn = useReactToPrint({ contentRef }); // Хук для печати содержимого `contentRef`
+  const contentRef = useRef(null);
+  const reactToPrintFn = useReactToPrint({ contentRef });
 
-  // --- `useEffect` HOOKS ---
-
-  // Закрытие модального окна по нажатию на 'Escape'
+  // Закрытие по Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -84,15 +103,10 @@ export default function EditDeliveryModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isEditDeliveryModalOpen, setIsEditDeliveryModalOpen]);
 
-  /**
-   * Инициализация состояния `deliveryItems` при открытии модального окна.
-   * Собирает все товары из `selectedDeliveries`, а также ищет в `applications`
-   * товары, которые относятся к клиенту, но еще не были добавлены в доставку,
-   * и добавляет их с количеством 0.
-   */
+  // Инициализация позиций доставки при открытии
   useEffect(() => {
     if (isEditDeliveryModalOpen && selectedDeliveries.length > 0) {
-      if (isPrintView) return; // Не выполнять, если мы в режиме печати
+      if (isPrintView) return;
 
       const allItems = [];
       const cleanStr = (n) => (n || "").toString().trim().toLowerCase();
@@ -100,11 +114,8 @@ export default function EditDeliveryModal() {
 
       selectedDeliveries.forEach(d => {
         const sClient = cleanStr(d.client);
-        
-        // 2. Ищем товары в заявках этого клиента, которые еще не в доставке (и базу для веса существующих товаров)
         const clientApp = applications.find(a => cleanStr(a.client) === sClient);
-        
-        // 1. Берем существующие товары из доставки
+
         const totalDeliveryQuantity = (d.items || []).reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0);
         const fallbackUnitWeight = totalDeliveryQuantity > 0 ? (parseFloat(d.total_weight) || 0) / totalDeliveryQuantity : 0;
 
@@ -112,23 +123,21 @@ export default function EditDeliveryModal() {
           let unitWeight = fallbackUnitWeight;
           let ordersQ = 0;
           const cleanedItemProduct = cleanName(item.product);
-          
+
           if (clientApp && clientApp.orders) {
-             const matchedOrder = clientApp.orders.find(o => {
-                const oRef = (o.contract_supplement || o.id || "").toString();
-                const iRef = (item.order_ref || "").toString();
-                const oName = cleanName(o.nomenclature);
-                return (oRef && iRef && oRef === iRef) || (oName === cleanedItemProduct);
-             });
-             
-             if (matchedOrder) {
-                // The backend returns 'total_weight' and 'different' (quantity), but not a singular 'weight' field.
-                const totalW = parseFloat(matchedOrder.total_weight) || 0;
-                const diffQ = parseFloat(matchedOrder.different) || 0;
-                unitWeight = parseFloat(matchedOrder.weight) || (diffQ > 0 ? totalW / diffQ : 0);
-                
-                ordersQ = parseFloat(matchedOrder.orders_q) || diffQ;
-             }
+            const matchedOrder = clientApp.orders.find(o => {
+              const oRef = (o.contract_supplement || o.id || "").toString();
+              const iRef = (item.order_ref || "").toString();
+              const oName = cleanName(o.nomenclature);
+              return (oRef && iRef && oRef === iRef) || (oName === cleanedItemProduct);
+            });
+
+            if (matchedOrder) {
+              const totalW = parseFloat(matchedOrder.total_weight) || 0;
+              const diffQ = parseFloat(matchedOrder.different) || 0;
+              unitWeight = parseFloat(matchedOrder.weight) || (diffQ > 0 ? totalW / diffQ : 0);
+              ordersQ = parseFloat(matchedOrder.orders_q) || diffQ;
+            }
           }
 
           const qty = parseFloat(item.quantity) || 0;
@@ -145,65 +154,66 @@ export default function EditDeliveryModal() {
             parties: (item.parties || []).map(p => ({ ...p }))
           };
         });
-        
+
         if (clientApp && clientApp.orders) {
           clientApp.orders.forEach(order => {
-            const cleanedOrderProd = cleanName(order.nomenclature);
-            const orderId = (order.id || "").toString();
-            const orderSuppl = (order.contract_supplement || "").toString();
+            const orderProductClean = cleanName(order.nomenclature);
+            const orderRef = (order.contract_supplement || order.id || "").toString();
 
-            // Проверяем, есть ли уже такой товар в списке
-            const isIncluded = deliveryItemsList.some(di => {
-              const diRef = (di.orderRef || "").toString();
-              return (orderId && diRef === orderId) || 
-                     (orderSuppl && diRef === orderSuppl) ||
-                     cleanName(di.product) === cleanedOrderProd;
+            const isAlreadyInDelivery = deliveryItemsList.some(item => {
+              const itemProductClean = cleanName(item.product);
+              const itemRef = (item.orderRef || "").toString();
+              return (orderRef && itemRef && orderRef === itemRef) || (itemProductClean === orderProductClean);
             });
 
-            // Если не включен, добавляем его с количеством 0
-            if (!isIncluded) {
-              const parts = [];
-              if (order.nomenclature) parts.push(order.nomenclature);
-              if (order.party_sign && order.party_sign.trim() !== "") parts.push(order.party_sign.trim());
-              if (order.buying_season && order.buying_season.trim() !== "") parts.push(order.buying_season.trim());
-              const fullProductName = parts.join(" ").replace(/\s*рік\s*$/i, "").trim();
-
+            if (!isAlreadyInDelivery) {
               const totalW = parseFloat(order.total_weight) || 0;
               const diffQ = parseFloat(order.different) || 0;
-              const unitWeight = parseFloat(order.weight) || (diffQ > 0 ? totalW / diffQ : 0);
+              const uWeight = parseFloat(order.weight) || (diffQ > 0 ? totalW / diffQ : 0);
               const ordersQ = parseFloat(order.orders_q) || diffQ;
 
               deliveryItemsList.push({
-                product: fullProductName,
-                nomenclature: order.nomenclature || "",
-                quantity: 0, 
+                product: (order.nomenclature || "").replace(/\s*рік\s*$/i, "").trim(),
+                quantity: 0,
                 client: d.client,
                 deliveryId: d.id,
-                orderRef: order.contract_supplement || order.id || "",
-                manager: order.manager || "",
-                unit_weight: unitWeight,
+                orderRef: orderRef,
+                unit_weight: uWeight,
                 weight: 0,
                 orders_q: ordersQ,
                 parties: [],
-                isNew: true // Флаг, что это новый, не сохраненный товар
+                isNew: true,
+                manager: order.manager || d.manager || "",
+                line_of_business: order.line_of_business || "ЗЗР"
               });
             }
           });
         }
+
         allItems.push(...deliveryItemsList);
       });
 
-      // Инициализируем состояние
       setDeliveryItems(allItems);
-      setSelectedProductId(null);
-      setActiveItemIdx(null);
+
+      // Автовыбор первой позиции
+      if (allItems.length > 0) {
+        const firstActiveIdx = allItems.findIndex(i => (parseFloat(i.quantity) || 0) > 0);
+        const idxToSelect = firstActiveIdx >= 0 ? firstActiveIdx : 0;
+        setActiveItemIdx(idxToSelect);
+        setSelectedProductId(allItems[idxToSelect].product_id || allItems[idxToSelect].product);
+        setExpandedRows({ [idxToSelect]: true });
+      } else {
+        setActiveItemIdx(null);
+        setSelectedProductId(null);
+      }
+
       setStockRemains([]);
       setSelectedItemsToSplit({});
       setSplitQuantities({});
     }
   }, [isEditDeliveryModalOpen, selectedDeliveries, applications, isPrintView]);
 
-  // Сброс состояния печати при закрытии модального окна
+  // Сброс режима печати при закрытии
   useEffect(() => {
     if (!isEditDeliveryModalOpen) {
       setIsPrintView(false);
@@ -212,7 +222,7 @@ export default function EditDeliveryModal() {
     }
   }, [isEditDeliveryModalOpen]);
 
-  // Предварительная загрузка остатков для всех уникальных товаров в доставке
+  // Предварительная загрузка остатков для всех уникальных товаров
   useEffect(() => {
     if (!isEditDeliveryModalOpen || !deliveryItems.length) return;
 
@@ -248,7 +258,7 @@ export default function EditDeliveryModal() {
     });
   }, [isEditDeliveryModalOpen, deliveryItems]);
 
-  // Загрузка остатков по выбранному товару (с использованием кэша productBuhMap)
+  // Загрузка остатков для выбранного товара
   useEffect(() => {
     if (!selectedProductId) return;
 
@@ -280,9 +290,7 @@ export default function EditDeliveryModal() {
     fetchRemains();
   }, [selectedProductId, productBuhMap]);
 
-  /**
-   * Получение данных об остатке по бухучету и дефиците для позиции доставки
-   */
+  // Хелпер остатка по бухучету
   const getItemBuhInfo = (item) => {
     const prodKey = item.product_id || item.product;
     const buhInfo = productBuhMap[prodKey];
@@ -294,23 +302,83 @@ export default function EditDeliveryModal() {
     return { totalBuh, deficitBuh, hasDeficit, isLoading };
   };
 
-  // Список товаров с дефицитом по бухгалтерскому учету
+  // Товары с дефицитом
   const deficitItems = useMemo(() => {
     return deliveryItems
       .map((item, idx) => ({ item, idx, ...getItemBuhInfo(item) }))
       .filter(({ item, hasDeficit }) => (parseFloat(item.quantity) || 0) > 0 && hasDeficit);
   }, [deliveryItems, productBuhMap]);
 
-  // Индексы строк, выбранных чекбоксами
+  // Выбранные чекбоксами индексы
   const selectedIndices = useMemo(() => {
     return Object.entries(selectedItemsToSplit)
       .filter(([_, val]) => Boolean(val))
       .map(([idx]) => parseInt(idx, 10));
   }, [selectedItemsToSplit]);
 
-  /**
-   * Переход в BI заказ с переданным списком товаров
-   */
+  // Валидация товаров
+  const validatedItems = useMemo(() => {
+    return deliveryItems.map(item => {
+      const totalQty = parseFloat(item.quantity) || 0;
+      const parties = item.parties || [];
+
+      const partiesSum = parties.reduce((sum, p) => {
+        const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
+          ? p.party_quantity
+          : (p.moved_q || 0);
+        return sum + (parseFloat(qStr) || 0);
+      }, 0);
+
+      const hasMismatch = totalQty > 0 && Math.abs(totalQty - partiesSum) > 0.0001;
+      const hasValidParties = parties.length > 0 && parties.some(p => p.party && p.party.trim() !== "");
+      const noParties = totalQty > 0 && !hasValidParties;
+
+      return {
+        ...item,
+        partiesSum,
+        hasError: hasMismatch || noParties,
+        errorType: noParties ? "no_parties" : (hasMismatch ? "mismatch" : null)
+      };
+    });
+  }, [deliveryItems]);
+
+  // Суммарный вес доставки
+  const totalWeightSummary = useMemo(() => {
+    const total = validatedItems
+      .filter(i => (parseFloat(i.quantity) || 0) > 0)
+      .reduce((sum, i) => sum + (parseFloat(i.weight) || 0), 0);
+    return Math.round(total * 100) / 100;
+  }, [validatedItems]);
+
+  // Карта складских остатков по сериям
+  const partyStockMap = useMemo(() => {
+    const map = {};
+    stockRemains.forEach(r => {
+      const key = (r.nomenclature_series || "").trim().toLowerCase();
+      if (!key) return;
+      if (!map[key]) map[key] = { totalBuh: 0, totalSkl: 0, totalStorage: 0 };
+      map[key].totalBuh += parseFloat(r.buh) || 0;
+      map[key].totalSkl += parseFloat(r.skl) || 0;
+      map[key].totalStorage += parseFloat(r.storage) || 0;
+    });
+    return map;
+  }, [stockRemains]);
+
+  const getPartyStockStatus = (partyName, partyQty) => {
+    if (!stockRemains.length) return "unknown";
+    const key = (partyName || "").trim().toLowerCase();
+    const stock = partyStockMap[key];
+    if (!stock) return "missing";
+    const qty = parseFloat(partyQty) || 0;
+    if (qty <= 0) return "unknown";
+
+    const realBuh = stock.totalBuh;
+    const realSkl = stock.totalSkl - stock.totalStorage;
+
+    return (realBuh >= qty && realSkl >= qty) ? "ok" : "low";
+  };
+
+  // Переход в BI
   const handleOrderToBi = (itemsToProcess, label = "товарів") => {
     if (!itemsToProcess || itemsToProcess.length === 0) {
       toast.error("Немає товарів для замовлення");
@@ -326,7 +394,7 @@ export default function EditDeliveryModal() {
       const cleanProductName = (item.product || "").replace(/\s*рік\s*$/i, "").trim();
       const orderRef = (item.orderRef || item.order_ref || "").trim();
       const client = (item.client || "").trim();
-      const id = `delivery_${item.deliveryId || 'del'}_${orderRef}_${cleanProductName}_${idx}`.trim();
+      const id = `delivery_${item.deliveryId || "del"}_${orderRef}_${cleanProductName}_${idx}`.trim();
 
       const existingIdx = newCartItems.findIndex(ci => ci.id === id || (orderRef && ci.contract_supplement === orderRef && ci.product === cleanProductName));
 
@@ -360,58 +428,57 @@ export default function EditDeliveryModal() {
     router.push("/bi?showSelected=true");
   };
 
-  // --- EVENT HANDLERS ---
-
-  /**
-   * Обработчик клика по строке товара в левой таблице.
-   * Устанавливает активный товар для загрузки остатков.
-   */
+  // Клик по строке товара
   const handleItemClick = (item, idx) => {
     const productId = item.product_id || item.product;
     setSelectedProductId(productId);
     setActiveItemIdx(idx);
+    setExpandedRows(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
-   
-  /**
-   * Добавляет партию из таблицы остатков (справа) к выбранному товару (слева).
-   */
+
+  // Добавить партию из правой панели
   const handleAddPartyFromRemains = (remainOrName) => {
     if (activeItemIdx === null) {
-        toast.error("Спершу оберіть товар у лівій таблиці");
-        return;
+      toast.error("Спершу оберіть товар у лівій таблиці");
+      return;
     }
 
-    const partyName = typeof remainOrName === 'string' 
-      ? remainOrName 
+    const partyName = typeof remainOrName === "string"
+      ? remainOrName
       : (remainOrName.nomenclature_series || "Без серії");
 
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[activeItemIdx] };
     const parties = [...(item.parties || [])];
 
-    // Проверка, что такая партия еще не добавлена
-    const exists = parties.some(p => 
-        (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
+    const exists = parties.some(p =>
+      (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
     );
     if (exists) {
       toast.error("Ця партія вже додана до цього товару");
       return;
     }
 
+    // Вычисляем сколько еще не распределено по партиям
+    const totalQty = parseFloat(item.quantity) || 0;
+    const currentPartiesSum = parties.reduce((sum, p) => {
+      const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
+      return sum + (parseFloat(qStr) || 0);
+    }, 0);
+    const unallocated = Math.max(0, Math.round((totalQty - currentPartiesSum) * 1000) / 1000);
+
     parties.push({
       party: partyName,
-      party_quantity: "" // Инициализируем пустым значением для удобного ввода
+      party_quantity: unallocated > 0 ? unallocated : ""
     });
 
     item.parties = parties;
     nextItems[activeItemIdx] = item;
     setDeliveryItems(nextItems);
+    setExpandedRows(prev => ({ ...prev, [activeItemIdx]: true }));
     toast.success(`Партію ${partyName} додано`);
   };
 
-  /**
-   * Удаляет партию у товара.
-   */
   const handleDeleteParty = (itemIdx, partyIdx) => {
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[itemIdx] };
@@ -422,23 +489,16 @@ export default function EditDeliveryModal() {
     setDeliveryItems(nextItems);
   };
 
-  /**
-   * Открывает диалог удаления товара.
-   */
   const handleDeleteItemClick = (itemIdx) => {
     setItemToDelete(itemIdx);
   };
 
-  /**
-   * Подтверждает удаление товара из списка доставки.
-   */
   const confirmDeleteItem = () => {
     if (itemToDelete === null) return;
     const nextItems = [...deliveryItems];
     nextItems.splice(itemToDelete, 1);
     setDeliveryItems(nextItems);
-    
-    // Сбрасываем выбор, если удалили активный товар
+
     if (activeItemIdx === itemToDelete) {
       setActiveItemIdx(null);
       setSelectedProductId(null);
@@ -446,17 +506,13 @@ export default function EditDeliveryModal() {
     } else if (activeItemIdx > itemToDelete) {
       setActiveItemIdx(activeItemIdx - 1);
     }
-    
-    // Сбрасываем чекбоксы разделения так как индексы сместились
+
     setSelectedItemsToSplit({});
     setSplitQuantities({});
     setItemToDelete(null);
     toast.success("Товар видалено з форми");
   };
 
-  /**
-   * Обрабатывает изменение общего количества товара.
-   */
   const handleQuantityChange = (index, newValue) => {
     const nextItems = [...deliveryItems];
     const newQty = newValue === "" ? "" : (parseFloat(newValue) || 0);
@@ -467,10 +523,6 @@ export default function EditDeliveryModal() {
     setDeliveryItems(nextItems);
   };
 
-  /**
-   * Обрабатывает переключение чекбокса разделения товара.
-   * При включении — устанавливает дефолтное кол-во переноса = полное количество товара.
-   */
   const toggleItemSplitSelection = (idx) => {
     const isCurrentlyChecked = !!selectedItemsToSplit[idx];
     setSelectedItemsToSplit(prev => ({
@@ -478,14 +530,12 @@ export default function EditDeliveryModal() {
       [idx]: !prev[idx]
     }));
     if (!isCurrentlyChecked) {
-      // Включаем — дефолт кол-во = полное количество товара
       const item = deliveryItems[idx];
       setSplitQuantities(prev => ({
         ...prev,
         [idx]: parseFloat(item.quantity) || 0
       }));
     } else {
-      // Выключаем — убираем из splitQuantities
       setSplitQuantities(prev => {
         const next = { ...prev };
         delete next[idx];
@@ -494,9 +544,6 @@ export default function EditDeliveryModal() {
     }
   };
 
-  /**
-   * Обрабатывает изменение количества для переноса в конкретной строке.
-   */
   const handleSplitQuantityChange = (idx, newValue) => {
     const item = deliveryItems[idx];
     const maxQty = parseFloat(item.quantity) || 0;
@@ -509,98 +556,22 @@ export default function EditDeliveryModal() {
     }));
   };
 
-  /**
-   * Обрабатывает изменение количества в конкретной партии.
-   */
   const handlePartyQuantityChange = (itemIdx, partyIdx, newValue) => {
     const nextItems = [...deliveryItems];
     nextItems[itemIdx].parties[partyIdx].party_quantity = newValue === "" ? "" : (parseFloat(newValue) || 0);
     setDeliveryItems(nextItems);
   };
 
-  // --- VALIDATION LOGIC ---
-
-  /**
-   * Хелпер, который проходит по всем товарам и проверяет корректность данных:
-   * 1. `mismatch`: Общее количество не совпадает с суммой по партиям.
-   * 2. `no_parties`: У товара с количеством > 0 не указана ни одна партия.
-   * Возвращает новый массив с флагами ошибок для каждой строки.
-   */
-  const getItemsWithErrors = () => {
-    return deliveryItems.map(item => {
-      const totalQty = parseFloat(item.quantity) || 0;
-      const parties = item.parties || [];
-      
-      const partiesSum = parties.reduce((sum, p) => {
-        const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) 
-          ? p.party_quantity 
-          : (p.moved_q || 0);
-        return sum + (parseFloat(qStr) || 0);
-      }, 0);
-      
-      const hasMismatch = totalQty > 0 && Math.abs(totalQty - partiesSum) > 0.0001;
-      const hasValidParties = parties.length > 0 && parties.some(p => p.party && p.party.trim() !== "");
-      const noParties = totalQty > 0 && !hasValidParties;
-
-      return {
-        ...item,
-        hasError: hasMismatch || noParties,
-        errorType: noParties ? 'no_parties' : (hasMismatch ? 'mismatch' : null)
-      };
-    });
+  const handleStepPartyQty = (itemIdx, partyIdx, delta) => {
+    const nextItems = [...deliveryItems];
+    const party = nextItems[itemIdx].parties[partyIdx];
+    const current = parseFloat(party.party_quantity !== "" && party.party_quantity !== undefined ? party.party_quantity : party.moved_q) || 0;
+    const nextVal = Math.max(0, Math.round((current + delta) * 1000) / 1000);
+    party.party_quantity = nextVal;
+    setDeliveryItems(nextItems);
   };
 
-  // Мемоизированный результат валидации, пересчитывается только при изменении `deliveryItems`
-  const validatedItems = useMemo(() => getItemsWithErrors(), [deliveryItems]);
-
-  /**
-   * Карта остатков по партиям: nomenclature_series -> { totalBuh, totalSkl }
-   * Суммируем по всем складам, так как одна партия может лежать в нескольких местах.
-   */
-  const partyStockMap = useMemo(() => {
-    const map = {};
-    stockRemains.forEach(r => {
-      const key = (r.nomenclature_series || "").trim().toLowerCase();
-      if (!key) return;
-      if (!map[key]) map[key] = { totalBuh: 0, totalSkl: 0, totalStorage: 0 };
-      map[key].totalBuh += parseFloat(r.buh) || 0;
-      map[key].totalSkl += parseFloat(r.skl) || 0;
-      map[key].totalStorage += parseFloat(r.storage) || 0;
-    });
-    return map;
-  }, [stockRemains]);
-
-  /**
-   * Возвращает статус партии относительно остатков на складе.
-   * 'ok'      — есть в остатках, и buh >= qty И skl >= qty
-   * 'low'     — есть в остатках, но хотя бы одно из значений (buh / skl) < qty
-   * 'unknown' — данных по этой партии нет (остатки ещё не загружены или партии нет)
-   */
-  const getPartyStockStatus = (partyName, partyQty) => {
-    if (!stockRemains.length) return 'unknown';
-    const key = (partyName || "").trim().toLowerCase();
-    const stock = partyStockMap[key];
-    if (!stock) return 'missing';
-    const qty = parseFloat(partyQty) || 0;
-    if (qty <= 0) return 'unknown';
-    
-    const realBuh = stock.totalBuh;
-    const realSkl = stock.totalSkl - stock.totalStorage;
-    
-    return (realBuh >= qty && realSkl >= qty) ? 'ok' : 'low';
-  };
-
-  // --- MAIN ACTION HANDLERS ---
-
-  /**
-   * Кнопка "Готово". Финальная валидация и отправка данных на сервер.
-   */
-  // --- SHARED SAVE HELPERS ---
-
-  /**
-   * Формирует cleanItems для отправки на сервер.
-   * Фильтрует товары с quantity === 0 (фантомные/isNew позиции).
-   */
+  // Подготовка отправки на сервер
   const buildCleanItems = (items) =>
     items
       .filter(item => (parseFloat(item.quantity) || 0) > 0)
@@ -627,13 +598,8 @@ export default function EditDeliveryModal() {
         };
       });
 
-  /**
-   * Реальная логика сохранения "Готово" (вызывается напрямую или через модалку подтверждения).
-   */
   const executeReady = async () => {
     setIsSaving(true);
-
-    // Собираем обновленные данные по доставкам, фильтруем quantity === 0
     const updatedDeliveries = selectedDeliveries.map(delivery => {
       const deliveryUpdatedItems = validatedItems
         .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
@@ -650,61 +616,57 @@ export default function EditDeliveryModal() {
 
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
-      
+
       const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
-      return { ...delivery, status: 'В роботі', items: deliveryUpdatedItems, total_weight: newTotalWeight };
+      return { ...delivery, status: "В роботі", items: deliveryUpdatedItems, total_weight: newTotalWeight };
     });
 
     try {
-        const initData = getInitData();
-        await Promise.all(updatedDeliveries.map(async (d) => {
-            const cleanItems = buildCleanItems(d.items);
-            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
-            if (res && res.warnings && res.warnings.length > 0) {
-              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
-            }
-            return res;
-        }));
+      const initData = getInitData();
+      await Promise.all(updatedDeliveries.map(async (d) => {
+        const cleanItems = buildCleanItems(d.items);
+        const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+        if (res && res.warnings && res.warnings.length > 0) {
+          res.warnings.forEach(warn => toast(warn, { icon: "⚠️", duration: 6000 }));
+        }
+        return res;
+      }));
 
-        updateDeliveries(updatedDeliveries);
-        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-        toast.success("Доставки оновлено та переведено в роботу");
-        
-        const validDeliveries = updatedDeliveries.filter(d =>
-          d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
-        ).map(d => ({ ...d, items: d.items.filter(i => i.quantity > 0) }));
+      updateDeliveries(updatedDeliveries);
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+      toast.success("Доставки оновлено та переведено в роботу");
 
-        const groupedByClient = validDeliveries.reduce((acc, delivery) => {
-          const client = delivery.client || "Невідомий клієнт";
-          if (!acc[client]) {
-            acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
-          }
-          acc[client].items.push(...delivery.items);
-          if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
-            acc[client].comments.push(delivery.comment);
-          }
-          return acc;
-        }, {});
+      const validDeliveries = updatedDeliveries.filter(d =>
+        d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
+      ).map(d => ({ ...d, items: d.items.filter(i => i.quantity > 0) }));
 
-        const sorted = Object.values(groupedByClient)
-          .map(group => ({ ...group, comment: group.comments.join(" | ") }))
-          .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
-        setPrintData(sorted);
-        setIsAskingDate(true);
+      const groupedByClient = validDeliveries.reduce((acc, delivery) => {
+        const client = delivery.client || "Невідомий клієнт";
+        if (!acc[client]) {
+          acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
+        }
+        acc[client].items.push(...delivery.items);
+        if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
+          acc[client].comments.push(delivery.comment);
+        }
+        return acc;
+      }, {});
+
+      const sorted = Object.values(groupedByClient)
+        .map(group => ({ ...group, comment: group.comments.join(" | ") }))
+        .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+      setPrintData(sorted);
+      setIsAskingDate(true);
     } catch (error) {
-        console.error("Failed to update deliveries:", error);
-        toast.error("Помилка при збереженні змін");
+      console.error("Failed to update deliveries:", error);
+      toast.error("Помилка при збереженні змін");
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
-  /**
-   * Реальная логика "Доставка з ЦО" (вызывается напрямую или через модалку подтверждения).
-   */
   const executeCODelivery = async () => {
     setIsSaving(true);
-
     const updatedDeliveries = selectedDeliveries.map(delivery => {
       const deliveryUpdatedItems = validatedItems
         .filter(item => item.deliveryId === delivery.id && (parseFloat(item.quantity) || 0) > 0)
@@ -721,91 +683,72 @@ export default function EditDeliveryModal() {
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
       const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
-      return { ...delivery, status: 'Доставка з ЦО на клієнта', items: deliveryUpdatedItems, total_weight: newTotalWeight };
+      return { ...delivery, status: "Доставка з ЦО на клієнта", items: deliveryUpdatedItems, total_weight: newTotalWeight };
     });
 
     try {
-        const initData = getInitData();
-        await Promise.all(updatedDeliveries.map(async (d) => {
-            const cleanItems = buildCleanItems(d.items);
-            const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
-            if (res && res.warnings && res.warnings.length > 0) {
-              res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
-            }
-            return res;
-        }));
-        updateDeliveries(updatedDeliveries);
-        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-        toast.success("Оформлено доставку з ЦО напряму клієнту");
-        setIsEditDeliveryModalOpen(false);
+      const initData = getInitData();
+      await Promise.all(updatedDeliveries.map(async (d) => {
+        const cleanItems = buildCleanItems(d.items);
+        const res = await updateDeliveryData(d.id, d.status, cleanItems, d.total_weight, initData, actorName);
+        if (res && res.warnings && res.warnings.length > 0) {
+          res.warnings.forEach(warn => toast(warn, { icon: "⚠️", duration: 6000 }));
+        }
+        return res;
+      }));
+      updateDeliveries(updatedDeliveries);
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+      toast.success("Оформлено доставку з ЦО напряму клієнту");
+      setIsEditDeliveryModalOpen(false);
     } catch (error) {
-        console.error("Failed to update CO delivery:", error);
-        toast.error("Помилка при збереженні змін");
+      console.error("Failed to update CO delivery:", error);
+      toast.error("Помилка при збереженні змін");
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
-  /**
-   * Кнопка "Готово". Двухуровневая валидация: жёсткая для mismatch, мягкая для no_parties.
-   */
   const handleReady = async () => {
     const itemsWithErrors = validatedItems.filter(item => item.hasError && (parseFloat(item.quantity) || 0) > 0);
-
-    const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+    const mismatch = itemsWithErrors.find(i => i.errorType === "mismatch");
     if (mismatch) {
       toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
       return;
     }
-
-    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === 'no_parties');
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties");
     if (noPartiesItems.length > 0) {
-      setPendingAction('ready');
+      setPendingAction("ready");
       setShowPartiesWarning(true);
       return;
     }
-
     await executeReady();
   };
 
-  /**
-   * Кнопка "Доставка з ЦО". Двухуровневая валидация.
-   */
   const handleCODelivery = async () => {
     const itemsWithErrors = validatedItems.filter(item => item.hasError && (parseFloat(item.quantity) || 0) > 0);
-
-    const mismatch = itemsWithErrors.find(i => i.errorType === 'mismatch');
+    const mismatch = itemsWithErrors.find(i => i.errorType === "mismatch");
     if (mismatch) {
       toast.error(`Невідповідність кількості у товарі: ${mismatch.product}.`);
       return;
     }
-
-    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === 'no_parties');
+    const noPartiesItems = itemsWithErrors.filter(i => i.errorType === "no_parties");
     if (noPartiesItems.length > 0) {
-      setPendingAction('co');
+      setPendingAction("co");
       setShowPartiesWarning(true);
       return;
     }
-
     await executeCODelivery();
   };
 
-  /**
-   * Обрабатывает подтверждение "Продовжити без партій" из модалки предупреждения.
-   */
   const handlePartiesWarningContinue = async () => {
     setShowPartiesWarning(false);
-    if (pendingAction === 'ready') {
+    if (pendingAction === "ready") {
       await executeReady();
-    } else if (pendingAction === 'co') {
+    } else if (pendingAction === "co") {
       await executeCODelivery();
     }
     setPendingAction(null);
   };
-
-  /**
-   * Кнопка "Друк". Готовит данные для печати и открывает окно выбора даты.
-   */
 
   const handlePrintPreview = () => {
     const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
@@ -821,23 +764,17 @@ export default function EditDeliveryModal() {
           ...item,
           quantity: parseFloat(item.quantity) || 0,
           parties: (item.parties || []).map(p => {
-             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
-             return { ...p, moved_q: parseFloat(qStr) || 0 };
+            const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0);
+            return { ...p, moved_q: parseFloat(qStr) || 0 };
           }).filter(p => p.moved_q > 0)
         }));
       return { ...delivery, items };
     }).filter(d => d.items.length > 0);
 
-    // Об'єднуємо замовлення одного клієнта
     const groupedByClient = validDeliveries.reduce((acc, delivery) => {
       const client = delivery.client || "Невідомий клієнт";
       if (!acc[client]) {
-        acc[client] = {
-          client: client,
-          manager: delivery.manager || "",
-          items: [],
-          comments: []
-        };
+        acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
       }
       acc[client].items.push(...delivery.items);
       if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
@@ -846,30 +783,23 @@ export default function EditDeliveryModal() {
       return acc;
     }, {});
 
-    const groupedDeliveries = Object.values(groupedByClient).map(group => ({
-      ...group,
-      comment: group.comments.join(" | ")
-    }));
-
-    const sorted = groupedDeliveries.sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+    const sorted = Object.values(groupedByClient)
+      .map(group => ({ ...group, comment: group.comments.join(" | ") }))
+      .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
     setPrintData(sorted);
     setIsAskingDate(true);
   };
 
-  /**
-   * Разделяет выбранные чекбоксом товары в новую доставку.
-   */
   const handleSplitDelivery = async () => {
     const selectedIndices = Object.keys(selectedItemsToSplit).filter(k => selectedItemsToSplit[k]).map(Number);
     if (selectedIndices.length === 0) return;
 
-    // Группируем по исходным доставкам (в модалке могут редактироваться несколько доставок)
     const itemsToSplitByDeliveryId = {};
     selectedIndices.forEach(idx => {
       const item = deliveryItems[idx];
-      if (item.isNew) return; // Не трогаем фантомные (isNew) строки
+      if (item.isNew) return;
       if (!itemsToSplitByDeliveryId[item.deliveryId]) {
-         itemsToSplitByDeliveryId[item.deliveryId] = [];
+        itemsToSplitByDeliveryId[item.deliveryId] = [];
       }
       itemsToSplitByDeliveryId[item.deliveryId].push({ item, originalIdx: idx });
     });
@@ -881,127 +811,113 @@ export default function EditDeliveryModal() {
 
     try {
       const initData = getInitData();
-
-      // Вычисляем обновлённый deliveryItems после разделения (до запросов)
       let nextItems = [...deliveryItems];
 
       for (const [delivId, splitGroup] of Object.entries(itemsToSplitByDeliveryId)) {
-         const originalDelivery = selectedDeliveries.find(d => String(d.id) === String(delivId));
-         if (!originalDelivery) continue;
+        const originalDelivery = selectedDeliveries.find(d => String(d.id) === String(delivId));
+        if (!originalDelivery) continue;
 
-         const ordersMap = {};
-         
-         splitGroup.forEach(({ item, originalIdx }) => {
-            const transferQty = parseFloat(splitQuantities[originalIdx]) || parseFloat(item.quantity) || 0;
-            const totalQty = parseFloat(item.quantity) || 0;
-            const unitWeight = parseFloat(item.unit_weight) || (totalQty > 0 ? (parseFloat(item.weight) || 0) / totalQty : 0);
-            const transferWeight = unitWeight * transferQty;
+        const ordersMap = {};
 
-            const orderRefName = item.orderRef || item.order || "Без заявки";
-            if (!ordersMap[orderRefName]) {
-               ordersMap[orderRefName] = { order: orderRefName, items: [] };
-            }
+        splitGroup.forEach(({ item, originalIdx }) => {
+          const transferQty = parseFloat(splitQuantities[originalIdx]) || parseFloat(item.quantity) || 0;
+          const totalQty = parseFloat(item.quantity) || 0;
+          const unitWeight = parseFloat(item.unit_weight) || (totalQty > 0 ? (parseFloat(item.weight) || 0) / totalQty : 0);
+          const transferWeight = unitWeight * transferQty;
+          const orderRefName = item.orderRef || item.order || "Без заявки";
 
-            // Пропорционально масштабируем партии к transferQty
-            const partiesSum = (item.parties || []).reduce((s, p) => {
-               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-               return s + q;
-            }, 0);
-            
-            const scaleClone = partiesSum > 0 ? transferQty / partiesSum : 1;
-            const cleanParties = (item.parties || []).map(p => {
-               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-               return { party: String(p.party), moved_q: Math.round(q * scaleClone * 1000) / 1000 };
-            }).filter(p => p.moved_q > 0);
+          if (!ordersMap[orderRefName]) {
+            ordersMap[orderRefName] = { order: orderRefName, items: [] };
+          }
 
-            console.log(`[Split] Item: ${item.product} | Transfer: ${transferQty}/${totalQty} | UnitWt: ${unitWeight} | Weight: ${transferWeight}`);
+          const partiesSum = (item.parties || []).reduce((s, p) => {
+            const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+            return s + q;
+          }, 0);
 
-            ordersMap[orderRefName].items.push({
-               product: String(item.product),
-               nomenclature: String(item.nomenclature || item.product),
-               quantity: transferQty,
-               weight: transferWeight,
-               parties: cleanParties,
-               line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
-            });
+          const scaleClone = partiesSum > 0 ? transferQty / partiesSum : 1;
+          const cleanParties = (item.parties || []).map(p => {
+            const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+            return { party: String(p.party), moved_q: Math.round(q * scaleClone * 1000) / 1000 };
+          }).filter(p => p.moved_q > 0);
 
-            // Обновляем оригинальную строку: частичный перенос или полное удаление
-            const remainQty = totalQty - transferQty;
-            const scaleRemain = partiesSum > 0 ? remainQty / partiesSum : 1;
-            const remainParties = (item.parties || []).map(p => {
-               const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-               const newQ = Math.round(q * scaleRemain * 1000) / 1000;
-               return { ...p, party_quantity: newQ, moved_q: newQ };
-            }).filter(p => p.moved_q > 0);
+          ordersMap[orderRefName].items.push({
+            product: String(item.product),
+            nomenclature: String(item.nomenclature || item.product),
+            quantity: transferQty,
+            weight: transferWeight,
+            parties: cleanParties,
+            line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
+          });
 
-            if (remainQty <= 0.0001) {
-               nextItems[originalIdx] = null; // Помечаем для удаления
-            } else {
-               nextItems[originalIdx] = {
-                  ...nextItems[originalIdx],
-                  quantity: Math.round(remainQty * 1000) / 1000,
-                  weight: unitWeight * remainQty,
-                  parties: remainParties
-               };
-            }
-         });
+          const remainQty = totalQty - transferQty;
+          const scaleRemain = partiesSum > 0 ? remainQty / partiesSum : 1;
+          const remainParties = (item.parties || []).map(p => {
+            const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+            const newQ = Math.round(q * scaleRemain * 1000) / 1000;
+            return { ...p, party_quantity: newQ, moved_q: newQ };
+          }).filter(p => p.moved_q > 0);
 
-         // Считаем вес клона
-         let sumWeight = 0;
-         Object.values(ordersMap).forEach(order => order.items.forEach(i => { sumWeight += i.weight; }));
+          if (remainQty <= 0.0001) {
+            nextItems[originalIdx] = null;
+          } else {
+            nextItems[originalIdx] = {
+              ...nextItems[originalIdx],
+              quantity: Math.round(remainQty * 1000) / 1000,
+              weight: unitWeight * remainQty,
+              parties: remainParties
+            };
+          }
+        });
 
-         const clonePayload = {
-            manager: String(originalDelivery.manager || ""),
-            client: String(originalDelivery.client || ""),
-            address: String(originalDelivery.address || ""),
-            contact: String(originalDelivery.contact || ""),
-            phone: String(originalDelivery.phone || ""),
-            date: String(originalDelivery.date || originalDelivery.delivery_date || new Date().toISOString().split('T')[0]),
-            comment: String(originalDelivery.comment || "") + " (Розділено)",
-            is_custom_address: !!originalDelivery.is_custom_address,
-            latitude: parseFloat(originalDelivery.latitude) || 0,
-            longitude: parseFloat(originalDelivery.longitude) || 0,
-            total_weight: sumWeight,
-            orders: Object.values(ordersMap),
-            override_created_by: originalDelivery.created_by || null,
-            actor_name: actorName,
-            status: originalDelivery.status || "Створено"
-         };
+        let sumWeight = 0;
+        Object.values(ordersMap).forEach(order => order.items.forEach(i => { sumWeight += i.weight; }));
 
-         console.log(`[Split] Cloned Delivery total_weight: ${sumWeight}`, clonePayload);
+        const clonePayload = {
+          manager: String(originalDelivery.manager || ""),
+          client: String(originalDelivery.client || ""),
+          address: String(originalDelivery.address || ""),
+          contact: String(originalDelivery.contact || ""),
+          phone: String(originalDelivery.phone || ""),
+          date: String(originalDelivery.date || originalDelivery.delivery_date || new Date().toISOString().split("T")[0]),
+          comment: String(originalDelivery.comment || "") + " (Розділено)",
+          is_custom_address: !!originalDelivery.is_custom_address,
+          latitude: parseFloat(originalDelivery.latitude) || 0,
+          longitude: parseFloat(originalDelivery.longitude) || 0,
+          total_weight: sumWeight,
+          orders: Object.values(ordersMap),
+          override_created_by: originalDelivery.created_by || null,
+          actor_name: actorName,
+          status: originalDelivery.status || "Створено"
+        };
 
-         // 1. Создаём клон
-         const res = await sendDeliveryData(clonePayload, initData);
-         if (res && res.warnings && res.warnings.length > 0) {
-            res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
-         }
+        const res = await sendDeliveryData(clonePayload, initData);
+        if (res && res.warnings && res.warnings.length > 0) {
+          res.warnings.forEach(warn => toast(warn, { icon: "⚠️", duration: 6000 }));
+        }
 
-         // 2. ФИКС ДУБЛЕЙ: сразу сохраняем оригинальную доставку на сервере
-         //    с обновлёнными/удалёнными позициями — ДО invalidateQueries
-         const updatedOriginalItems = nextItems
-            .filter(it => it !== null && it.deliveryId === String(delivId) && (parseFloat(it.quantity) || 0) > 0)
-            .map(it => ({
-               product: String(it.product),
-               nomenclature: String(it.nomenclature || it.product),
-               quantity: parseFloat(it.quantity) || 0,
-               manager: String(it.manager || ""),
-               client: String(it.client),
-               orderRef: String(it.orderRef || it.order || it.order_ref || ""),
-               weight: parseFloat(it.weight) || 0,
-               parties: (it.parties || []).map(p => {
-                  const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-                  return { party: String(p.party), moved_q: q };
-               }).filter(p => p.moved_q > 0),
-               line_of_business: it.line_of_business ? String(it.line_of_business) : undefined
-            }));
+        const updatedOriginalItems = nextItems
+          .filter(it => it !== null && it.deliveryId === String(delivId) && (parseFloat(it.quantity) || 0) > 0)
+          .map(it => ({
+            product: String(it.product),
+            nomenclature: String(it.nomenclature || it.product),
+            quantity: parseFloat(it.quantity) || 0,
+            manager: String(it.manager || ""),
+            client: String(it.client),
+            orderRef: String(it.orderRef || it.order || it.order_ref || ""),
+            weight: parseFloat(it.weight) || 0,
+            parties: (it.parties || []).map(p => {
+              const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
+              return { party: String(p.party), moved_q: q };
+            }).filter(p => p.moved_q > 0),
+            line_of_business: it.line_of_business ? String(it.line_of_business) : undefined
+          }));
 
-         const newOriginalWeight = updatedOriginalItems.reduce((s, it) => s + (it.weight || 0), 0);
-         await updateDeliveryData(delivId, originalDelivery.status || 'В роботі', updatedOriginalItems, newOriginalWeight, initData, actorName);
-
-         successCount++;
+        const newOriginalWeight = updatedOriginalItems.reduce((s, it) => s + (it.weight || 0), 0);
+        await updateDeliveryData(delivId, originalDelivery.status || "В роботі", updatedOriginalItems, newOriginalWeight, initData, actorName);
+        successCount++;
       }
 
-      // Применяем локальные изменения (убираем null-строки)
       const finalItems = nextItems.filter(it => it !== null);
       setDeliveryItems(finalItems);
       setSelectedItemsToSplit({});
@@ -1010,9 +926,7 @@ export default function EditDeliveryModal() {
       setSelectedProductId(null);
       setStockRemains([]);
 
-      // Теперь безопасно инвалидировать кэш — оригинал уже сохранён
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-
       toast.success(`Розділено! ${successCount} доставок оновлено.`);
     } catch (e) {
       console.error("Помилка під час розділення доставки", e);
@@ -1022,17 +936,13 @@ export default function EditDeliveryModal() {
     }
   };
 
-  /**
-   * Подтверждает и выполняет удаление всех выбранных доставок.
-   */
   const confirmGlobalDelete = async () => {
     setShowDeleteConfirm(false);
     try {
       const initData = getInitData();
-      await Promise.all(selectedDeliveries.map(d => 
+      await Promise.all(selectedDeliveries.map(d =>
         import("@/lib/api").then(m => m.deleteDeliveryData(String(d.id), initData))
       ));
-      
       toast.success("Доставки видалено");
       selectedDeliveries.forEach(d => removeDelivery(d.id));
       setIsEditDeliveryModalOpen(false);
@@ -1042,162 +952,27 @@ export default function EditDeliveryModal() {
     }
   };
 
-  /**
-   * Открывает окно подтверждения удаления.
-   */
   const handleGlobalDelete = async () => {
     if (selectedDeliveries.length === 0) return;
     setShowDeleteConfirm(true);
   };
 
-  // --- RENDER LOGIC ---
-
-  // Если модальное окно не должно быть открыто, ничего не рендерим
   if (!isEditDeliveryModalOpen) return null;
 
-  // Модальное окно подтверждения удаления товара
+  // Диалог подтверждения удаления позиции товара
   if (itemToDelete !== null) {
-      const item = deliveryItems[itemToDelete];
-      return (
-        <div className={css.overlay} style={{ zIndex: 1100 }}>
-          <div className={css.modal} style={{ height: 'auto', maxWidth: '400px', backgroundColor: '#2f3136' }}>
-             <div className={css.header} style={{ backgroundColor: '#202225', borderBottom: '1px solid #4f545c' }}>
-               <h2 style={{ color: '#dcddde' }}>⚠️ Підтвердження видалення</h2>
-             </div>
-             <div className={css.content} style={{ display: 'block', padding: '30px', textAlign: 'center', color: '#dcddde' }}>
-                <p>Ви впевнені, що хочете видалити товар <strong>{item?.product}</strong> з цієї форми доставки?</p>
-                <p style={{ fontSize: '0.85rem', color: '#b9bbbe', marginTop: '10px' }}>
-                  Товар не буде переведено "в роботу", але заявка залишиться нерозподіленою.
-                </p>
-             </div>
-             <div className={css.footer} style={{ backgroundColor: '#202225', borderTop: '1px solid #4f545c', padding: '15px' }}>
-                <button 
-                  className={`${css.button} ${css.cancelButton}`}
-                  onClick={() => setItemToDelete(null)}
-                  style={{ backgroundColor: '#4f545c', color: 'white' }}
-                >
-                  Ні, скасувати
-                </button>
-                <button 
-                  className={css.button}
-                  style={{ backgroundColor: '#ed4245', color: 'white', border: 'none' }}
-                  onClick={confirmDeleteItem}
-                >
-                  Так, видалити
-                </button>
-             </div>
-          </div>
-        </div>
-      );
-  }
-
-  // Рендеринг модального окна для выбора даты печати
-  if (isAskingDate) {
-     return (
-       <div className={css.overlay}>
-         <div className={css.modal} style={{ height: 'auto', maxWidth: '400px' }}>
-           <div className={css.header}>
-             <h2>📅 Оберіть дату доставки</h2>
-           </div>
-           <div className={css.content} style={{ display: 'block', padding: '30px', textAlign: 'center' }}>
-              <p>Оберіть дату, яка буде відображена у друкованій формі:</p>
-              <input 
-               type="date" 
-               className={css.inputDate} 
-               value={printDeliveryDate}
-               onChange={(e) => setPrintDeliveryDate(e.target.value)}
-               style={{ fontSize: '1.2rem', padding: '10px', width: '100%' }}
-              />
-           </div>
-           <div className={css.footer}>
-             <button className={`${css.button} ${css.cancelButton}`} onClick={() => setIsAskingDate(false)}>Назад</button>
-             <button 
-               className={`${css.button} ${css.saveButton}`}
-               onClick={() => {
-                 setIsAskingDate(false);
-                 setIsPrintView(true);
-               }}
-             >
-               До друку
-             </button>
-           </div>
-         </div>
-       </div>
-     );
-  }
- 
-  // Рендеринг вида для предпросмотра печати
-  if (isPrintView && printData) {
+    const item = deliveryItems[itemToDelete];
     return (
-      <div className={css.overlay}>
-        <div className={css.modal} style={{ height: 'auto', maxHeight: '95vh' }}>
-          <div className={`${css.header} ${css.noPrint}`}>
-            <h2>📄 Форма для друку</h2>
-            <button className={css.closeButton} onClick={() => setIsEditDeliveryModalOpen(false)}>
-              &times;
+      <div className={css.confirmOverlay}>
+        <div className={css.confirmCard}>
+          <h3>⚠️ Підтвердження видалення</h3>
+          <p>Ви впевнені, що хочете видалити товар <strong>{item?.product}</strong> з цієї доставки?</p>
+          <div className={css.confirmActions}>
+            <button className={css.btnSecondary} onClick={() => setItemToDelete(null)}>
+              Скасувати
             </button>
-          </div>
-          <div className={css.content} style={{ overflow: 'auto', display: 'block' }}>
-            <div className={css.printableArea} ref={contentRef}>
-              <div style={{ textAlign: 'center', borderBottom: '2px solid #333', marginBottom: '20px', paddingBottom: '10px' }}>
-                <h2 style={{ margin: 0 }}>Відомість доставки</h2>
-                <div style={{ fontSize: '0.9rem', marginTop: '5px' }}>Дата: {new Date().toLocaleDateString('uk-UA')}</div>
-              </div>
-
-              {printData.length > 0 ? (
-                printData.map((delivery, dIdx) => (
-                  <div key={dIdx} className={css.printGroup}>
-                    <div className={css.printDeliveryHeader}>
-                      <div><strong>Менеджер:</strong> {delivery.manager}</div>
-                      <div><strong>Клієнт:</strong> {delivery.client}</div>
-                      <div><strong>Дата доставки:</strong> {new Date(printDeliveryDate).toLocaleDateString('uk-UA')}</div>
-                    </div>
-                    {delivery.comment && (
-                      <div className={css.printComment}>
-                        <strong>Примітка:</strong> {delivery.comment}
-                      </div>
-                    )}
-                    <table className={css.printTable}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: '15%' }}>Заявка</th>
-                          <th style={{ width: '40%' }}>Товар</th>
-                          <th style={{ width: '10%', textAlign: 'center' }}>К-сть</th>
-                          <th>Партії</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {delivery.items.map((item, idx) => (
-                          <tr key={idx}>
-                            <td>{item.orderRef || item.order}</td>
-                            <td style={{ fontWeight: 500 }}>{item.product}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{formatQuantity(item.quantity)}</td>
-                            <td style={{ fontSize: '0.85rem' }}>
-                              {item.parties?.map(p => `${p.party} (${formatQuantity(p.moved_q)})`).join(", ")}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '20px' }}>Немає товарів для друку</div>
-              )}
-            </div>
-          </div>
-          <div className={`${css.footer} ${css.noPrint}`}>
-            <button 
-              className={`${css.button} ${css.cancelButton}`}
-              onClick={() => setIsEditDeliveryModalOpen(false)}
-            >
-              Закрити
-            </button>
-            <button 
-              className={`${css.button} ${css.saveButton}`}
-              onClick={() => reactToPrintFn()}
-            >
-              🖨️ Друк
+            <button className={css.btnDangerGhost} onClick={confirmDeleteItem}>
+              Так, видалити
             </button>
           </div>
         </div>
@@ -1205,512 +980,847 @@ export default function EditDeliveryModal() {
     );
   }
 
-  // Рендеринг основного вида редактирования
-  return (
-    <div className={css.overlay}>
-      <div className={css.modal}>
-        <div className={css.header}>
-          <h2>🚀 Редактор доставки ({selectedDeliveries.length})</h2>
-          <button className={css.closeButton} onClick={() => setIsEditDeliveryModalOpen(false)}>
-            &times;
-          </button>
+  // Диалог выбора даты печати
+  if (isAskingDate) {
+    return (
+      <div className={css.confirmOverlay}>
+        <div className={css.confirmCard}>
+          <h3>📅 Оберіть дату доставки</h3>
+          <p>Оберіть дату, яка буде відображена у друкованій формі:</p>
+          <input
+            type="date"
+            className={css.inputDate}
+            value={printDeliveryDate}
+            onChange={(e) => setPrintDeliveryDate(e.target.value)}
+          />
+          <div className={css.confirmActions} style={{ marginTop: "20px" }}>
+            <button className={css.btnSecondary} onClick={() => setIsAskingDate(false)}>
+              Назад
+            </button>
+            <button
+              className={css.btnPrimary}
+              onClick={() => {
+                setIsAskingDate(false);
+                setIsPrintView(true);
+              }}
+            >
+              До друку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Предпросмотр печати
+  if (isPrintView && printData) {
+    return (
+      <div className={css.workspaceShell} style={{ overflowY: "auto" }}>
+        <div className={css.topBar}>
+          <div className={css.topBarLeft}>
+            <button className={css.backBtn} onClick={() => setIsEditDeliveryModalOpen(false)}>
+              <ArrowLeft size={16} /> Назад
+            </button>
+            <h2 className={css.deliveryTitle}>📄 Форма для друку відомості</h2>
+          </div>
+          <div className={css.topBarRight}>
+            <button className={css.btnSecondary} onClick={() => setIsEditDeliveryModalOpen(false)}>
+              Закрити
+            </button>
+            <button className={css.btnPrimary} onClick={() => reactToPrintFn()}>
+              <Printer size={16} /> Друкувати зараз
+            </button>
+          </div>
         </div>
 
-        <div className={css.content}>
-          {isSaving && (
-            <div className={css.loadingOverlay}>
-              <div className={css.spinner} />
-              <span>Збереження...</span>
+        <div style={{ padding: "24px", maxWidth: "1100px", margin: "0 auto", width: "100%" }}>
+          <div className={css.printableArea} ref={contentRef}>
+            <div style={{ textAlign: "center", borderBottom: "2px solid #333", marginBottom: "20px", paddingBottom: "10px" }}>
+              <h2 style={{ margin: 0 }}>Відомість доставки</h2>
+              <div style={{ fontSize: "0.9rem", marginTop: "5px" }}>Дата: {new Date().toLocaleDateString("uk-UA")}</div>
+            </div>
+
+            {printData.length > 0 ? (
+              printData.map((delivery, dIdx) => (
+                <div key={dIdx} className={css.printGroup}>
+                  <div className={css.printDeliveryHeader}>
+                    <div><strong>Менеджер:</strong> {delivery.manager}</div>
+                    <div><strong>Клієнт:</strong> {delivery.client}</div>
+                    <div><strong>Дата доставки:</strong> {new Date(printDeliveryDate).toLocaleDateString("uk-UA")}</div>
+                  </div>
+                  {delivery.comment && (
+                    <div className={css.printComment}>
+                      <strong>Примітка:</strong> {delivery.comment}
+                    </div>
+                  )}
+                  <table className={css.printTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: "15%" }}>Заявка</th>
+                        <th style={{ width: "40%" }}>Товар</th>
+                        <th style={{ width: "10%", textAlign: "center" }}>К-сть</th>
+                        <th>Партії</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {delivery.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td>{item.orderRef || item.order}</td>
+                          <td style={{ fontWeight: 500 }}>{item.product}</td>
+                          <td style={{ textAlign: "center", fontWeight: "bold" }}>{formatQuantity(item.quantity)}</td>
+                          <td style={{ fontSize: "0.85rem" }}>
+                            {item.parties?.map(p => `${p.party} (${formatQuantity(p.moved_q)})`).join(", ")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px" }}>Немає товарів для друку</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Метаданные текущей доставки
+  const primaryDelivery = selectedDeliveries[0] || {};
+  const activeItems = validatedItems.filter(item => (parseFloat(item.quantity) || 0) > 0);
+  const activeProductTitle = selectedProductId
+    ? (deliveryItems.find(i => (i.product_id || i.product) === selectedProductId)?.product || selectedProductId)
+    : "Оберіть товар";
+
+  return (
+    <div className={css.workspaceShell}>
+      {/* ─── ВЕРХНИЙ КОКПИТ-ХЕДЕР ─── */}
+      <header className={css.topBar}>
+        <div className={css.topBarLeft}>
+          <button
+            className={css.backBtn}
+            onClick={() => setIsEditDeliveryModalOpen(false)}
+            title="Повернутися до карти доставок (Esc)"
+          >
+            <ArrowLeft size={16} />
+            <span>До карти доставок</span>
+          </button>
+
+          <div className={css.deliveryBadgeGroup}>
+            <h2 className={css.deliveryTitle}>
+              <Package size={18} color="#38bdf8" />
+              <span>
+                {selectedDeliveries.length > 1
+                  ? `${selectedDeliveries.length} доставок обрано`
+                  : `Доставка #${primaryDelivery.id || primaryDelivery.order_ref || ""}`}
+              </span>
+            </h2>
+            <span className={css.statusBadge}>
+              {primaryDelivery.status || "В обробці"}
+            </span>
+            {primaryDelivery.client && (
+              <span className={css.clientSubtitle} title={primaryDelivery.client}>
+                • {primaryDelivery.client}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Сводные метрики доставки */}
+        <div className={css.metricsStrip}>
+          <div className={css.metricChip} title="Кількість активних позицій у доставці">
+            <Boxes size={15} color="#94a3b8" />
+            <span><strong>{activeItems.length}</strong> поз.</span>
+          </div>
+
+          <div className={css.metricChip} title="Загальна вага доставки">
+            <Scale size={15} color="#94a3b8" />
+            <span><strong>{totalWeightSummary}</strong> кг</span>
+          </div>
+
+          {deficitItems.length > 0 ? (
+            <div
+              className={`${css.metricChip} ${css.chipDeficit}`}
+              style={{ cursor: "pointer" }}
+              onClick={() => handleOrderToBi(deficitItems, "дефіцитних позицій")}
+              title="Натисніть для переходу у замовлення дефіциту"
+            >
+              <AlertTriangle size={15} />
+              <span>Дефіцит: <strong>{deficitItems.length}</strong> поз.</span>
+            </div>
+          ) : (
+            <div className={`${css.metricChip} ${css.chipSuccess}`}>
+              <CheckCircle2 size={15} />
+              <span>Всі товари забезпечені</span>
             </div>
           )}
-          {/* Левая панель: Товары в доставке */}
-          <div className={css.leftPanel}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '8px' }}>
-               <h3 className={css.panelTitle} style={{ marginBottom: 0 }}>📦 Товари у доставці</h3>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  {/* Кнопка заказа дефицита по бухучету */}
-                  {deficitItems.length > 0 && (
-                    <button
-                      className={css.orderDeficitBtn}
-                      onClick={() => handleOrderToBi(deficitItems, "дефіцитних товарів")}
-                      title="Замовити всі позиції, яких не вистачає за бухобліком"
-                    >
-                      <Zap size={13} />
-                      <span>Замовити дефіцит ({deficitItems.length})</span>
-                    </button>
-                  )}
+        </div>
 
-                  {/* Кнопка заказа выбранных галочками */}
-                  {selectedIndices.length > 0 && (
-                    <button
-                      className={css.orderSelectedBtn}
-                      onClick={() => {
-                        const selectedList = selectedIndices
-                          .map(idx => ({ item: validatedItems[idx], idx }))
-                          .filter(x => x.item && (parseFloat(x.item.quantity) || 0) > 0);
-                        handleOrderToBi(selectedList, "обраних товарів");
-                      }}
-                      title="Перейти у вкладку Замовити з обраними товарами"
-                    >
-                      <ShoppingCart size={13} />
-                      <span>Замовити обрані ({selectedIndices.length})</span>
-                    </button>
-                  )}
+        {/* Действия хедера */}
+        <div className={css.topBarRight}>
+          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+            <button
+              className={css.btnSecondary}
+              onClick={handleCODelivery}
+              disabled={isSaving}
+              title="Оформити доставку напряму з Центрального Офісу"
+            >
+              <Truck size={15} color="#a78bfa" />
+              <span>Доставка з ЦО</span>
+            </button>
+          )}
 
-                  {/* Кнопка заказа всех товаров */}
-                  <button
-                    className={css.orderAllBtn}
-                    onClick={() => {
-                      const allActive = validatedItems
-                        .map((item, idx) => ({ item, idx }))
-                        .filter(x => (parseFloat(x.item.quantity) || 0) > 0);
-                      handleOrderToBi(allActive, "товарів");
-                    }}
-                    title="Замовити всі товари цієї доставки"
-                  >
-                    <PlusCircle size={13} />
-                    <span>Замовити всі</span>
-                  </button>
+          <button
+            className={css.btnSecondary}
+            onClick={() => {
+              const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
+              if (!hasItems) {
+                toast.error("Немає товарів для відправки");
+                return;
+              }
+              setIsAccountantDialogOpen(true);
+            }}
+            disabled={isSaving}
+            title="Надіслати відвантаження бухгалтеру"
+          >
+            <Send size={15} color="#38bdf8" />
+            <span>Бухгалтеру</span>
+          </button>
 
-                  <button 
-                     className={css.splitButton}
-                     onClick={handleSplitDelivery}
-                     disabled={isSplitting || Object.values(selectedItemsToSplit).filter(Boolean).length === 0}
-                     style={{
-                       backgroundColor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? '#5865f2' : '#4f545c',
-                       color: 'white',
-                       border: 'none',
-                       padding: '8px 12px',
-                       borderRadius: '4px',
-                       cursor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 'pointer' : 'not-allowed',
-                       display: 'flex',
-                       alignItems: 'center',
-                       gap: '6px',
-                       fontSize: '0.9rem',
-                       transition: 'opacity 0.2s',
-                       opacity: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 1 : 0.6
-                     }}
-                     title="Обрані товари будуть видалені з цієї форми та перенесені у нову ідентичну доставку"
-                  >
-                     {isSplitting ? "⏳ Обробка..." : "✂️ Розділити обрані"}
-                  </button>
-               </div>
+          <button
+            className={css.btnSecondary}
+            onClick={handlePrintPreview}
+            disabled={isSaving}
+            title="Форма для друку відомості"
+          >
+            <Printer size={15} />
+            <span>Друк</span>
+          </button>
+
+          {selectedDeliveries.every(d => d.status !== "Виконано") && (
+            <button
+              className={css.btnDangerGhost}
+              onClick={handleGlobalDelete}
+              title="Видалити цю доставку"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+
+          <button
+            className={css.btnPrimary}
+            onClick={handleReady}
+            disabled={isSaving}
+            title="Зберегти всі зміни та призначити статус 'В роботі'"
+          >
+            <Check size={16} />
+            <span>{isSaving ? "Збереження..." : "Готово"}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ─── ОСНОВНОЙ РАБОЧИЙ ГРИД ─── */}
+      <main className={css.workspaceBody}>
+        {/* Индикатор сохранения */}
+        {isSaving && (
+          <div className={css.loadingOverlay}>
+            <div className={css.spinner} />
+            <span>Збереження змін...</span>
+          </div>
+        )}
+
+        {/* ЛЕВАЯ ПАНЕЛЬ: ТОВАРЫ В ДОСТАВКЕ */}
+        <section className={css.leftPane}>
+          <div className={css.paneHeader}>
+            <h3 className={css.paneTitle}>
+              <Boxes size={18} color="#38bdf8" />
+              <span>Товари у доставці ({activeItems.length})</span>
+            </h3>
+
+            {/* Быстрые действия над всеми */}
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                className={css.btnSecondary}
+                style={{ padding: "5px 10px", fontSize: "0.78rem" }}
+                onClick={() => {
+                  const allActive = validatedItems
+                    .map((item, idx) => ({ item, idx }))
+                    .filter(x => (parseFloat(x.item.quantity) || 0) > 0);
+                  handleOrderToBi(allActive, "товарів");
+                }}
+                title="Перенести всі товари у кошик замовлень BI"
+              >
+                <PlusCircle size={13} />
+                <span>Замовити всі</span>
+              </button>
             </div>
-            <div className={css.tableContainer}>
-              <table>
-                <thead>
-                  <tr>
-                    <th style={{ width: '40px', textAlign: 'center' }}>
-                      <input 
-                        type="checkbox" 
-                        title="Обрати всі / зняти виділення"
-                        checked={validatedItems.filter(i => (parseFloat(i.quantity) || 0) > 0).length > 0 && 
-                                 validatedItems.filter(i => (parseFloat(i.quantity) || 0) > 0).every((_, idx) => !!selectedItemsToSplit[idx])}
-                        onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          const newSel = {};
-                          if (isChecked) {
-                            validatedItems.forEach((item, idx) => {
-                              if ((parseFloat(item.quantity) || 0) > 0) {
-                                newSel[idx] = true;
-                              }
-                            });
-                          }
-                          setSelectedItemsToSplit(newSel);
-                        }}
-                      />
-                    </th>
-                    <th>№ Заявки</th>
-                    <th>Клієнт</th>
-                    <th>Товар</th>
-                    <th>Кількість</th>
-                    <th style={{ width: '90px', color: '#7289da' }} title="Кількість для переносу в нову доставку">Перенести</th>
-                    <th style={{ width: '70px', color: '#72767d' }} title="Залишок в оригінальній доставці">Залишок</th>
-                    <th style={{ width: '40px' }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {validatedItems.filter(item => (parseFloat(item.quantity) || 0) > 0).map((item, idx) => (
+          </div>
+
+          {/* Плавающая плашка групповых действий при выборе чекбоксами */}
+          {selectedIndices.length > 0 && (
+            <div className={css.bulkBar}>
+              <div className={css.bulkInfo}>
+                <CheckCircle2 size={16} />
+                <span>Обрано: <strong>{selectedIndices.length}</strong> з {activeItems.length}</span>
+              </div>
+              <div className={css.bulkActions}>
+                <button
+                  className={`${css.bulkBtn} ${css.bulkBtnPrimary}`}
+                  onClick={() => {
+                    const selectedList = selectedIndices
+                      .map(idx => ({ item: validatedItems[idx], idx }))
+                      .filter(x => x.item && (parseFloat(x.item.quantity) || 0) > 0);
+                    handleOrderToBi(selectedList, "обраних позицій");
+                  }}
+                >
+                  <ShoppingCart size={13} />
+                  <span>Замовити обрані</span>
+                </button>
+
+                <button
+                  className={`${css.bulkBtn} ${css.bulkBtnGhost}`}
+                  onClick={handleSplitDelivery}
+                  disabled={isSplitting}
+                  title="Обрані товари будуть відокремлені у нову доставку"
+                >
+                  <Scissors size={13} />
+                  <span>{isSplitting ? "Обробка..." : "Розділити в нову доставку"}</span>
+                </button>
+
+                <button
+                  className={`${css.bulkBtn} ${css.bulkBtnGhost}`}
+                  onClick={() => setSelectedItemsToSplit({})}
+                  title="Зняти виділення"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Таблица товаров */}
+          <div className={css.tableContainer}>
+            <table className={css.dataTable}>
+              <thead>
+                <tr>
+                  <th style={{ width: "36px", textAlign: "center" }}>
+                    <input
+                      type="checkbox"
+                      title="Обрати всі позиції"
+                      checked={activeItems.length > 0 && activeItems.every((_, idx) => !!selectedItemsToSplit[idx])}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        const newSel = {};
+                        if (isChecked) {
+                          validatedItems.forEach((item, idx) => {
+                            if ((parseFloat(item.quantity) || 0) > 0) newSel[idx] = true;
+                          });
+                        }
+                        setSelectedItemsToSplit(newSel);
+                      }}
+                    />
+                  </th>
+                  <th style={{ width: "110px" }}>Заявка</th>
+                  <th style={{ width: "22%" }}>Клієнт</th>
+                  <th>Товар та залишки</th>
+                  <th style={{ width: "105px", textAlign: "right" }}>Кількість</th>
+                  <th style={{ width: "140px" }}>Комплектація</th>
+                  {selectedIndices.length > 0 && (
+                    <>
+                      <th style={{ width: "85px", textAlign: "center", color: "#818cf8" }}>Перенести</th>
+                      <th style={{ width: "75px", textAlign: "center", color: "#64748b" }}>Залишок</th>
+                    </>
+                  )}
+                  <th style={{ width: "40px" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {validatedItems.map((item, idx) => {
+                  const qty = parseFloat(item.quantity) || 0;
+                  if (qty <= 0 && !item.isNew) return null;
+
+                  const isSelectedForSplit = !!selectedItemsToSplit[idx];
+                  const isRowActive = activeItemIdx === idx;
+                  const isExpanded = !!expandedRows[idx];
+                  const { totalBuh, deficitBuh, hasDeficit, isLoading: isBuhLoading } = getItemBuhInfo(item);
+
+                  const partiesSum = item.partiesSum || 0;
+                  const percentAllocated = qty > 0 ? Math.min(100, Math.round((partiesSum / qty) * 100)) : 0;
+                  const isFullyAllocated = qty > 0 && Math.abs(qty - partiesSum) < 0.0001;
+
+                  return (
                     <React.Fragment key={`${item.deliveryId}-${idx}`}>
-                      <tr 
-                        className={`${activeItemIdx === idx ? css.selectedRow : ""} ${item.hasError ? css.rowError : ""}`}
+                      <tr
+                        className={`${css.itemRow} ${isRowActive ? css.itemRowSelected : ""} ${item.hasError ? css.itemRowError : ""}`}
                         onClick={() => handleItemClick(item, idx)}
-                        style={{ cursor: 'pointer' }}
                       >
+                        {/* Чекбокс */}
                         <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
-                          <input 
-                            type="checkbox" 
-                            checked={!!selectedItemsToSplit[idx]}
+                          <input
+                            type="checkbox"
+                            checked={isSelectedForSplit}
                             onChange={() => toggleItemSplitSelection(idx)}
                             disabled={isSplitting}
                           />
                         </td>
-                        <td>{item.orderRef}</td>
-                        <td>{item.client}</td>
-                        <td style={{ fontWeight: 600 }}>
-                          <div>{item.product}</div>
-                          <div style={{ marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}>
-                            {(() => {
-                              const { totalBuh, deficitBuh, hasDeficit, isLoading } = getItemBuhInfo(item);
-                              if (isLoading) {
-                                return <span className={css.buhLoadingBadge}>⏳ перевірка бух...</span>;
-                              }
-                              if (hasDeficit) {
-                                return (
-                                  <span 
-                                    className={css.buhDeficitBadge} 
-                                    title={`Потреба: ${formatQuantity(item.quantity)}, Бух. залишок: ${formatQuantity(totalBuh)}. Не вистачає: ${formatQuantity(deficitBuh)}`}
-                                  >
-                                    🔴 Бух: {formatQuantity(totalBuh)} (деф: -{formatQuantity(deficitBuh)})
-                                  </span>
-                                );
-                              }
-                              return (
-                                <span 
-                                  className={css.buhOkBadge} 
-                                  title={`Бух. залишок: ${formatQuantity(totalBuh)} (достатньо)`}
-                                >
-                                  🟢 Бух: {formatQuantity(totalBuh)}
-                                </span>
-                              );
-                            })()}
+
+                        {/* Номер заявки */}
+                        <td>
+                          <span className={css.orderRefPill} title={item.orderRef}>
+                            {item.orderRef || "—"}
+                          </span>
+                        </td>
+
+                        {/* Клиент */}
+                        <td>
+                          <div className={css.clientName}>{item.client}</div>
+                          {item.manager && <div className={css.clientCity}>Менеджер: {item.manager}</div>}
+                        </td>
+
+                        {/* Товар и бейджи остатков */}
+                        <td>
+                          <div className={css.productTitle}>{item.product}</div>
+                          <div className={css.productMeta}>
+                            {isBuhLoading ? (
+                              <span className={css.buhLoadingBadge}>⏳ перевірка залишку...</span>
+                            ) : hasDeficit ? (
+                              <span
+                                className={css.buhDeficitBadge}
+                                title={`Потреба: ${formatQuantity(qty)}, Бух. залишок: ${formatQuantity(totalBuh)}. Дефіцит: -${formatQuantity(deficitBuh)}`}
+                              >
+                                🔴 Бух: {formatQuantity(totalBuh)} (деф: -{formatQuantity(deficitBuh)})
+                              </span>
+                            ) : (
+                              <span
+                                className={css.buhOkBadge}
+                                title={`Бух. залишок: ${formatQuantity(totalBuh)}`}
+                              >
+                                🟢 Бух: {formatQuantity(totalBuh)}
+                              </span>
+                            )}
+                            {item.orders_q > 0 && (
+                              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                                Замовлено в заявці: {formatQuantity(item.orders_q)}
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td>
-                          <input 
-                            type="number" 
+
+                        {/* Количество */}
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "right" }}>
+                          <input
+                            type="number"
                             className={`${css.inputNumber} ${item.hasError ? css.inputError : ""}`}
                             value={item.quantity}
+                            step="any"
                             onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            title={item.errorType === 'mismatch' ? "Сума партій не збігається з загальною кількістю" : (item.errorType === 'no_parties' ? "Необхідно обрати партію" : "")}
+                            title={
+                              item.errorType === "mismatch"
+                                ? "Сума партій не збігається з кількістю"
+                                : item.errorType === "no_parties"
+                                ? "Необхідно вказати партію"
+                                : ""
+                            }
                           />
                         </td>
-                        {/* Колонка "Перенести" — input видим только когда строка выбрана для split */}
-                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                          {selectedItemsToSplit[idx] && (
-                            <input
-                              type="number"
-                              className={css.inputNumber}
-                              style={{ width: '70px', height: '26px', fontSize: '0.82rem', textAlign: 'center', border: '1px solid #7289da' }}
-                              value={splitQuantities[idx] !== undefined ? splitQuantities[idx] : (parseFloat(item.quantity) || 0)}
-                              min={0.001}
-                              max={parseFloat(item.quantity) || 0}
-                              step={0.001}
-                              disabled={isSplitting}
-                              onChange={(e) => handleSplitQuantityChange(idx, e.target.value)}
-                              title="Кількість для переносу в нову доставку"
-                            />
-                          )}
-                        </td>
-                        {/* Колонка "Залишок" — вычисляется live */}
-                        <td style={{ textAlign: 'center', fontSize: '0.82rem', color: '#72767d' }}>
-                          {selectedItemsToSplit[idx] && (
-                            <span style={{
-                              color: (parseFloat(item.quantity) - (splitQuantities[idx] || parseFloat(item.quantity))) <= 0
-                                ? '#ed4245' : '#72767d',
-                              fontWeight: 500
-                            }}>
-                              {Math.max(0, Math.round((parseFloat(item.quantity) - (splitQuantities[idx] || parseFloat(item.quantity))) * 1000) / 1000)}
-                            </span>
-                          )}
-                        </td>
+
+                        {/* Индикатор комплектации партий */}
                         <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: "3px" }}>
+                                <span style={{ color: isFullyAllocated ? "#34d399" : "#94a3b8", fontWeight: 600 }}>
+                                  {formatQuantity(partiesSum)} / {formatQuantity(qty)}
+                                </span>
+                                <span style={{ color: "#64748b" }}>{percentAllocated}%</span>
+                              </div>
+                              <div className={css.progressBarContainer} style={{ width: "100%" }}>
+                                <div
+                                  className={css.progressBarFill}
+                                  style={{
+                                    width: `${percentAllocated}%`,
+                                    background: isFullyAllocated ? "#10b981" : (partiesSum > qty ? "#ef4444" : "#38bdf8")
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <span style={{ color: "#64748b" }}>
+                              {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Перенос (при разделении) */}
+                        {selectedIndices.length > 0 && (
+                          <>
+                            <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
+                              {isSelectedForSplit && (
+                                <input
+                                  type="number"
+                                  className={css.splitTransferInput}
+                                  value={splitQuantities[idx] !== undefined ? splitQuantities[idx] : qty}
+                                  min={0.001}
+                                  max={qty}
+                                  step="any"
+                                  disabled={isSplitting}
+                                  onChange={(e) => handleSplitQuantityChange(idx, e.target.value)}
+                                  title="Кількість для переносу в нову доставку"
+                                />
+                              )}
+                            </td>
+                            <td style={{ textAlign: "center", fontSize: "0.82rem" }}>
+                              {isSelectedForSplit && (
+                                <span style={{
+                                  color: (qty - (splitQuantities[idx] || qty)) <= 0 ? "#ef4444" : "#94a3b8",
+                                  fontWeight: 600
+                                }}>
+                                  {Math.max(0, Math.round((qty - (splitQuantities[idx] || qty)) * 1000) / 1000)}
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        )}
+
+                        {/* Удаление */}
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: "center" }}>
                           <button
-                            className={css.deleteButton}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteItemClick(idx);
-                            }}
-                            title="Видалити товар з форми"
+                            className={css.deleteItemBtn}
+                            onClick={() => handleDeleteItemClick(idx)}
+                            title="Видалити товар з цієї форми"
                           >
-                            🗑️
+                            <Trash2 size={14} />
                           </button>
                         </td>
                       </tr>
-                      {/* Вложенная таблица для партий */}
-                      {item.parties && item.parties.length > 0 && (
-                        <tr>
-                          <td colSpan="7" style={{ padding: '0 12px 12px 40px' }}>
-                            <table className={css.nestedTable}>
-                              <thead>
-                                <tr>
-                                  <th style={{ width: '40px' }}></th>
-                                  <th style={{ fontSize: '0.8rem' }}>Партія</th>
-                                  <th style={{ fontSize: '0.8rem' }}>Кількість</th>
-                                  <th style={{ width: '30px' }}></th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {item.parties.map((p, pIdx) => {
-                                  const partyQty = (p.party_quantity !== "" && p.party_quantity !== undefined)
-                                    ? p.party_quantity
-                                    : (p.moved_q || 0);
-                                  const stockStatus = idx === activeItemIdx
-                                    ? getPartyStockStatus(p.party, partyQty)
-                                    : 'unknown';
-                                  const partyRowStyle = stockStatus === 'ok'
-                                    ? { background: 'rgba(16, 185, 129, 0.12)', borderLeft: '3px solid var(--success-color)' }
-                                    : (stockStatus === 'low' || stockStatus === 'missing')
-                                    ? { background: 'rgba(var(--alert-color-rgb), 0.10)', borderLeft: '3px solid var(--alert-color)' }
-                                    : {};
-                                  return (
-                                  <tr key={pIdx} style={partyRowStyle}>
-                                    <td style={{ width: '28px' }}>
-                                      {stockStatus === 'ok' && <span title="На складі достатньо (buh і skl)">✅</span>}
-                                      {stockStatus === 'low' && <span title="На складі недостатньо">⚠️</span>}
-                                      {stockStatus === 'missing' && <span title="Партії немає в залишках">⚠️</span>}
-                                    </td>
-                                    <td style={{ fontSize: '0.8rem', fontWeight: stockStatus === 'ok' ? 600 : 400 }}>
-                                      {p.party}
-                                      {stockStatus !== 'unknown' && (
-                                        <div style={{ fontSize: '0.68rem', opacity: 0.65, marginTop: '2px' }}>
-                                          {(() => {
-                                            const key = (p.party || '').trim().toLowerCase();
-                                            const st = partyStockMap[key];
-                                            if (!st) return 'Немає в залишках';
-                                            const realBuh = st.totalBuh;
-                                            const realSkl = st.totalSkl - st.totalStorage;
-                                            return `Бух: ${formatQuantity(realBuh)} · Скл: ${formatQuantity(realSkl)}`;
-                                          })()}
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td>
-                                      <input 
-                                        type="number" 
-                                        className={`${css.inputNumber} ${item.hasError && item.errorType === 'mismatch' ? css.inputError : ""}`}
-                                        style={{ height: '24px', fontSize: '0.8rem' }}
-                                        value={p.party_quantity}
-                                        onChange={(e) => handlePartyQuantityChange(idx, pIdx, e.target.value)}
-                                      />
-                                    </td>
-                                    <td>
-                                      <button 
-                                        className={css.deletePartyBtn}
-                                        onClick={() => handleDeleteParty(idx, pIdx)}
-                                        title="Видалити партію"
-                                      >
-                                        ✕
-                                      </button>
-                                    </td>
-                                  </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+
+                      {/* РАСКРЫВАЮЩАЯСЯ СЕКЦИЯ КОМПЛЕКТАЦИИ ПАРТИЙ ДЛЯ ЭТОГО ТОВАРА */}
+                      {isExpanded && (
+                        <tr className={css.batchAccordionRow}>
+                          <td colSpan={selectedIndices.length > 0 ? 9 : 7}>
+                            <div className={css.batchStrip}>
+                              <div className={css.batchStripHeader}>
+                                <div className={css.batchProgressLabel}>
+                                  <span>Розподіл за складовими партіями ({item.parties?.length || 0})</span>
+                                  {item.hasError && item.errorType === "mismatch" && (
+                                    <span style={{ color: "#ef4444", fontSize: "0.75rem" }}>
+                                      ⚠️ Різниця: {formatQuantity(qty - partiesSum)}
+                                    </span>
+                                  )}
+                                  {item.hasError && item.errorType === "no_parties" && (
+                                    <span style={{ color: "#f59e0b", fontSize: "0.75rem" }}>
+                                      ⚠️ Необхідно обрати хоча б одну партію зі залишків
+                                    </span>
+                                  )}
+                                </div>
+
+                                <button
+                                  className={css.usePartyBtn}
+                                  onClick={() => {
+                                    setActiveRightTab("stock");
+                                    if (stockRemains.length > 0) {
+                                      handleAddPartyFromRemains(stockRemains[0]);
+                                    } else {
+                                      toast("Оберіть партію у правому інспекторі", { icon: "👉" });
+                                    }
+                                  }}
+                                  title="Додати партію з доступних на складі"
+                                >
+                                  <Plus size={12} />
+                                  <span>Додати партію зі залишків</span>
+                                </button>
+                              </div>
+
+                              {item.parties && item.parties.length > 0 ? (
+                                <table className={css.allocatedTable}>
+                                  <thead>
+                                    <tr>
+                                      <th style={{ width: "24px" }}></th>
+                                      <th>Серія / Партія</th>
+                                      <th style={{ width: "220px" }}>Залишки на складі</th>
+                                      <th style={{ width: "160px", textAlign: "center" }}>Кількість для списання</th>
+                                      <th style={{ width: "36px" }}></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {item.parties.map((p, pIdx) => {
+                                      const partyQty = (p.party_quantity !== "" && p.party_quantity !== undefined)
+                                        ? p.party_quantity
+                                        : (p.moved_q || 0);
+                                      const stockStatus = isRowActive ? getPartyStockStatus(p.party, partyQty) : "unknown";
+
+                                      const key = (p.party || "").trim().toLowerCase();
+                                      const st = partyStockMap[key];
+                                      const realBuh = st ? st.totalBuh : 0;
+                                      const realSkl = st ? (st.totalSkl - st.totalStorage) : 0;
+
+                                      return (
+                                        <tr key={pIdx}>
+                                          <td>
+                                            {stockStatus === "ok" && <CheckCircle2 size={14} color="#10b981" />}
+                                            {stockStatus === "low" && <AlertTriangle size={14} color="#f59e0b" />}
+                                            {stockStatus === "missing" && <AlertTriangle size={14} color="#ef4444" />}
+                                          </td>
+                                          <td style={{ fontWeight: 600, color: "#f8fafc" }}>
+                                            {p.party}
+                                          </td>
+                                          <td>
+                                            {st ? (
+                                              <span style={{ fontSize: "0.78rem", color: stockStatus === "ok" ? "#34d399" : "#fca5a5" }}>
+                                                Бух: {formatQuantity(realBuh)} · Склад: {formatQuantity(realSkl)}
+                                              </span>
+                                            ) : (
+                                              <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                                                Немає на поточному складі
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td style={{ textAlign: "center" }}>
+                                            <div className={css.stepperGroup}>
+                                              <button
+                                                type="button"
+                                                className={css.stepperBtn}
+                                                onClick={() => handleStepPartyQty(idx, pIdx, -1)}
+                                                title="-1"
+                                              >
+                                                <Minus size={12} />
+                                              </button>
+                                              <input
+                                                type="number"
+                                                className={css.stepperInput}
+                                                value={p.party_quantity !== undefined ? p.party_quantity : (p.moved_q || 0)}
+                                                step="any"
+                                                onChange={(e) => handlePartyQuantityChange(idx, pIdx, e.target.value)}
+                                              />
+                                              <button
+                                                type="button"
+                                                className={css.stepperBtn}
+                                                onClick={() => handleStepPartyQty(idx, pIdx, +1)}
+                                                title="+1"
+                                              >
+                                                <Plus size={12} />
+                                              </button>
+                                            </div>
+                                          </td>
+                                          <td style={{ textAlign: "center" }}>
+                                            <button
+                                              className={css.deletePartyBtn}
+                                              onClick={() => handleDeleteParty(idx, pIdx)}
+                                              title="Видалити цю партію"
+                                            >
+                                              <X size={14} />
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div style={{ fontSize: "0.8rem", color: "#64748b", padding: "8px 0" }}>
+                                  ⚠️ Партії ще не розподілені. Натисніть на потрібну партію у правому вікні, щоб призначити її.
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )}
                     </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ПРАВАЯ ПАНЕЛЬ: ИНСПЕКТОР СКЛАДА И АНАЛИТИКА (С ТАБАМИ) */}
+        <section className={css.rightPane}>
+          <div className={css.paneHeader}>
+            <h3 className={css.paneTitle} style={{ maxWidth: "55%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Package size={17} color="#38bdf8" />
+              <span title={activeProductTitle}>{activeProductTitle}</span>
+            </h3>
+
+            {/* Вкладки: Остатки vs Аналитика заказов */}
+            <div className={css.tabGroup}>
+              <button
+                className={`${css.tabBtn} ${activeRightTab === "stock" ? css.tabBtnActive : ""}`}
+                onClick={() => setActiveRightTab("stock")}
+              >
+                <Boxes size={13} />
+                <span>Залишки ({stockRemains.length})</span>
+              </button>
+              <button
+                className={`${css.tabBtn} ${activeRightTab === "analytics" ? css.tabBtnActive : ""}`}
+                onClick={() => setActiveRightTab("analytics")}
+              >
+                <FileText size={13} />
+                <span>Черга заявок</span>
+              </button>
             </div>
           </div>
 
-          {/* Правая панель: Остатки на складе */}
-          <div className={css.rightPanel}>
-            <h3 className={css.panelTitle}>⚖️ Залишки на складі</h3>
-            <div className={css.tableContainer} style={{ flex: '0 1 auto', minHeight: '200px', maxHeight: '45%' }}>
-              {isLoadingRemains ? (
-                <div style={{ padding: '20px', textAlign: 'center' }}>Завантаження...</div>
-              ) : stockRemains.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Партія / Склад</th>
-                      <th>Бух.</th>
-                      <th>Скл.</th>
-                      <th>Збер.</th>
-                      <th>Вага</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stockRemains.map((remain, rIdx) => (
-                      <tr 
-                        key={rIdx} 
-                        onClick={() => handleAddPartyFromRemains(remain)}
-                        style={{ cursor: 'pointer' }}
-                        className={css.remainRow}
-                      >
-                        <td>
-                          <div style={{ fontWeight: 500 }}>{remain.nomenclature_series || "Без серії"}</div>
-                          <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{remain.warehouse}</div>
-                        </td>
-                        <td>{formatQuantity(remain.buh)}</td>
-                        <td>{formatQuantity(remain.skl)}</td>
-                        <td>{formatQuantity(remain.storage)}</td>
-                        <td>{remain.weight}</td>
+          <div className={css.inspectorBody}>
+            {/* ТАБ 1: СКЛАДСКИЕ ОСТАТКИ */}
+            {activeRightTab === "stock" && (
+              <>
+                {isLoadingRemains ? (
+                  <div className={css.emptyState}>
+                    <div className={css.spinner} />
+                    <span>Завантаження залишків по товару...</span>
+                  </div>
+                ) : stockRemains.length > 0 ? (
+                  <table className={css.remainsTable}>
+                    <thead>
+                      <tr>
+                        <th>Партія / Склад</th>
+                        <th style={{ width: "55px", textAlign: "right" }}>Бух.</th>
+                        <th style={{ width: "55px", textAlign: "right" }}>Скл.</th>
+                        <th style={{ width: "50px", textAlign: "right" }}>Збер.</th>
+                        <th style={{ width: "50px", textAlign: "right" }}>Вага</th>
+                        <th style={{ width: "80px", textAlign: "center" }}>Дія</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={{ padding: '20px', textAlign: 'center', opacity: 0.6 }}>
-                  {selectedProductId ? "Залишків не знайдено" : "Оберіть товар зліва для перегляду залишків"}
-                </div>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {stockRemains.map((remain, rIdx) => (
+                        <tr
+                          key={rIdx}
+                          className={css.remainRow}
+                          onClick={() => handleAddPartyFromRemains(remain)}
+                          title="Натисніть для додавання цієї партії до обраного товару"
+                        >
+                          <td>
+                            <div style={{ fontWeight: 600, color: "#f8fafc" }}>
+                              {remain.nomenclature_series || "Без серії"}
+                            </div>
+                            <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "2px" }}>
+                              {remain.warehouse}
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "right", fontWeight: 600, color: "#34d399" }}>
+                            {formatQuantity(remain.buh)}
+                          </td>
+                          <td style={{ textAlign: "right", color: "#cbd5e1" }}>
+                            {formatQuantity(remain.skl)}
+                          </td>
+                          <td style={{ textAlign: "right", color: "#94a3b8" }}>
+                            {formatQuantity(remain.storage)}
+                          </td>
+                          <td style={{ textAlign: "right", color: "#64748b", fontSize: "0.78rem" }}>
+                            {remain.weight || "—"}
+                          </td>
+                          <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className={css.usePartyBtn}
+                              onClick={() => handleAddPartyFromRemains(remain)}
+                            >
+                              <Plus size={11} />
+                              <span>Додати</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className={css.emptyState}>
+                    <Info size={28} color="#64748b" />
+                    <span>
+                      {selectedProductId
+                        ? "Залишків по цьому товару не виявлено"
+                        : "Оберіть товар у лівій таблиці, щоб побачити складські залишки"}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
 
-            {/* Нижня частина: Аналітика (DetailsOrdersByProduct) */}
-            {selectedProductId && stockRemains && stockRemains.length > 0 && stockRemains[0].product && (
-              <div style={{ 
-                marginTop: '16px', 
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
-                paddingTop: '16px',
-                flex: "1 1 0%",
-                overflow: "auto" 
-              }}>
-                <DetailsOrdersByProduct 
-                  selectedProductId={stockRemains[0].product} 
-                  onPartyClick={handleAddPartyFromRemains}
-                />
+            {/* ТАБ 2: АНАЛИТИКА ЗАЯВОК (DetailsOrdersByProduct) */}
+            {activeRightTab === "analytics" && (
+              <div style={{ height: "100%", overflowY: "auto" }}>
+                {selectedProductId && stockRemains && stockRemains.length > 0 && stockRemains[0].product ? (
+                  <DetailsOrdersByProduct
+                    selectedProductId={stockRemains[0].product}
+                    onPartyClick={handleAddPartyFromRemains}
+                  />
+                ) : (
+                  <div className={css.emptyState}>
+                    <AlertTriangle size={24} color="#f59e0b" />
+                    <span>Аналітика черги заявок доступна при наявності ідентифікованого товару.</span>
+                  </div>
+                )}
               </div>
             )}
-            {selectedProductId && (!stockRemains || stockRemains.length === 0) && (
-              <div style={{ 
-                marginTop: '16px', 
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
-                paddingTop: '16px',
-                textAlign: 'center',
-                opacity: 0.6
-              }}>
-                ⚠️ Аналітика партій по заявкам недоступна через відсутність залишків для визначення товару.
-              </div>
-            )}
+          </div>
+        </section>
+      </main>
+
+      {/* ─── МОДАЛКА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ВСЕХ ДОСТАВОК ─── */}
+      {showDeleteConfirm && (
+        <div className={css.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
+          <div className={css.confirmCard} onClick={e => e.stopPropagation()}>
+            <h3>Видалення доставки</h3>
+            <p>
+              Ви впевнені, що хочете видалити {selectedDeliveries.length > 1 ? "ці доставки" : "цю доставку"} (
+              {selectedDeliveries.map(d => d.id).join(", ")})?
+            </p>
+            <div className={css.confirmActions}>
+              <button className={css.btnSecondary} onClick={() => setShowDeleteConfirm(false)}>
+                Скасувати
+              </button>
+              <button className={css.btnDangerGhost} onClick={confirmGlobalDelete}>
+                Видалити
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Футер с кнопками действий */}
-        <div className={css.footer}>
-          <div className={css.footerLeft}>
-            <button 
-              className={`${css.button} ${css.cancelButton}`}
-              onClick={() => setIsEditDeliveryModalOpen(false)}
-            >
-              Скасувати
-            </button>
-            {selectedDeliveries.every(d => d.status !== "Виконано") && (
-              <button 
-                className={`${css.button} ${css.deleteDeliveryBtn}`}
-                onClick={handleGlobalDelete}
+      {/* ─── ПРЕДУПРЕЖДЕНИЕ: ТОВАРЫ БЕЗ ПАРТИЙ ─── */}
+      {showPartiesWarning && (
+        <div className={css.confirmOverlay} onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}>
+          <div className={css.confirmCard} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: "#f59e0b" }}>⚠️ Товари без партій</h3>
+            <p style={{ marginBottom: "10px" }}>Наступні товари не мають прив&apos;язки до партій:</p>
+            <ul style={{ margin: "0 0 14px 18px", fontSize: "0.85rem", color: "#cbd5e1" }}>
+              {validatedItems
+                .filter(i => i.errorType === "no_parties" && (parseFloat(i.quantity) || 0) > 0)
+                .map((i, idx) => (
+                  <li key={idx}>{i.product}{i.orderRef ? ` (${i.orderRef})` : ""}</li>
+                ))}
+            </ul>
+            <p style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
+              Товари можуть бути відвантажені без зазначення партій. Продовжити?
+            </p>
+            <div className={css.confirmActions}>
+              <button
+                className={css.btnSecondary}
+                onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}
               >
-                Видалити доставку
+                Виправити
               </button>
-            )}
-          </div>
-
-          <div className={css.footerCenter}>
-            {selectedDeliveries.every(d => d.status !== "Виконано") && (
-              <button 
-                className={`${css.button} ${css.coDeliveryButton}`}
-                onClick={handleCODelivery}
-                disabled={isSaving}
-                title="Оформити доставку напряму з Центрального Офісу"
+              <button
+                className={css.btnPrimary}
+                style={{ background: "#d97706", borderColor: "#f59e0b" }}
+                onClick={handlePartiesWarningContinue}
               >
-                🚚 Доставка з ЦО
+                Продовжити без партій
               </button>
-            )}
-            <button 
-              className={`${css.button} ${css.accountantButton}`}
-              onClick={() => {
-                const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
-                if (!hasItems) {
-                  toast.error("Немає товарів для відправки");
-                  return;
-                }
-                setIsAccountantDialogOpen(true);
-              }}
-              disabled={isSaving}
-              title="Надіслати дані відвантаження та партії бухгалтеру"
-            >
-              📨 Надіслати бухгалтеру
-            </button>
-          </div>
-
-
-          <div className={css.footerRight}>
-            <button 
-              className={`${css.button} ${css.saveButton}`}
-              onClick={handleReady}
-              disabled={isSaving}
-            >
-              {isSaving ? "⏳ Збереження..." : "Готово"}
-            </button>
-            <button 
-              className={`${css.button} ${css.printButton}`}
-              onClick={handlePrintPreview}
-              disabled={isSaving}
-            >
-              🖨️ Друк
-            </button>
+            </div>
           </div>
         </div>
- 
-        {/* Скрытое окно подтверждения удаления доставки */}
-        {showDeleteConfirm && (
-          <div className={css.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
-            <div className={css.confirmModal} onClick={e => e.stopPropagation()}>
-              <h3>Видалення доставки</h3>
-              <p>Ви впевнені, що хочете видалити {selectedDeliveries.length > 1 ? 'ці доставки' : 'цю доставку'} ({selectedDeliveries.map(d => d.id).join(", ")})?</p>
-              <div className={css.confirmActions}>
-                <button className={css.confirmCancel} onClick={() => setShowDeleteConfirm(false)}>Скасувати</button>
-                <button className={css.confirmDeleteBtn} onClick={confirmGlobalDelete}>Видалити</button>
-              </div>
-            </div>
-          </div>
-        )}
+      )}
 
-        {/* Модалка мягкого предупреждения: товары без партий */}
-        {showPartiesWarning && (
-          <div className={css.confirmOverlay} onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}>
-            <div className={css.confirmModal} onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-              <h3 style={{ color: '#faa61a' }}>⚠️ Товари без партій</h3>
-              <p style={{ marginBottom: '10px', fontSize: '0.9rem' }}>Наступні товари не мають прив&apos;язки до складської партії:</p>
-              <ul style={{ margin: '0 0 14px 18px', fontSize: '0.85rem', color: '#b9bbbe' }}>
-                {validatedItems
-                  .filter(i => i.errorType === 'no_parties' && (parseFloat(i.quantity) || 0) > 0)
-                  .map((i, idx) => (
-                    <li key={idx}>{i.product}{i.orderRef ? ` (${i.orderRef})` : ''}</li>
-                  ))
-                }
-              </ul>
-              <p style={{ fontSize: '0.82rem', color: '#72767d', marginBottom: '16px' }}>
-                Товари можуть бути відвантажені без прив&apos;язки до партії. Продовжити?
-              </p>
-              <div className={css.confirmActions}>
-                <button
-                  className={css.confirmCancel}
-                  onClick={() => { setShowPartiesWarning(false); setPendingAction(null); }}
-                >
-                  Виправити
-                </button>
-                <button
-                  className={css.confirmDeleteBtn}
-                  style={{ backgroundColor: '#faa61a' }}
-                  onClick={handlePartiesWarningContinue}
-                >
-                  Продовжити без партій
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Модалка відправки бухгалтеру */}
-        <SendAccountantDialog
-          isOpen={isAccountantDialogOpen}
-          delivery={selectedDeliveries[0] || {}}
-          items={deliveryItems}
-          onClose={() => setIsAccountantDialogOpen(false)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-          }}
-        />
-
-      </div>
+      {/* ─── МОДАЛКА ОТПРАВКИ БУХГАЛТЕРУ ─── */}
+      <SendAccountantDialog
+        isOpen={isAccountantDialogOpen}
+        delivery={selectedDeliveries[0] || {}}
+        items={deliveryItems}
+        onClose={() => setIsAccountantDialogOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+        }}
+      />
     </div>
   );
 }
-

@@ -391,11 +391,29 @@ export interface Accountant {
   is_default: boolean;
 }
 
+export interface AccountantOrderItem {
+  product: string;
+  nomenclature?: string;
+  quantity: number;
+  weight?: number;
+  parties?: { party: string; moved_q: number }[];
+  line_of_business?: string;
+}
+
+export interface AccountantOrder {
+  order_ref: string;
+  client: string;
+  manager?: string;
+  address?: string;
+  items: AccountantOrderItem[];
+}
+
 export interface SendToAccountantPayload {
   delivery_id: number;
   accountant_id?: string;
   channels: string[];
   comment?: string;
+  orders?: AccountantOrder[];
   items?: DeliveryUpdateItem[];
   ttn?: string;
 }

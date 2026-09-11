@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getInitData } from "@/lib/getInitData";
 import { getAccountants, getAccountantForManager, sendDeliveryToAccountant } from "@/lib/api";
@@ -9,6 +9,7 @@ import css from "./SendAccountantDialog.module.css";
 export default function SendAccountantDialog({
   isOpen,
   delivery,
+  deliveries = [],
   items = [],
   onClose,
   onSuccess,
@@ -25,6 +26,64 @@ export default function SendAccountantDialog({
     setMounted(true);
   }, []);
 
+  // Групування позицій замовлень по доповненнях і клієнтах
+  const groupedOrders = useMemo(() => {
+    const activeItems = (items || []).filter(i => (parseFloat(i.quantity) || 0) > 0);
+    const groups = {};
+
+    activeItems.forEach(it => {
+      const orderRef = (it.orderRef || it.order_ref || it.order || "—").toString().trim();
+      const client = (it.client || delivery?.client || "Не вказано").toString().trim();
+      const manager = (it.manager || delivery?.manager || "").toString().trim();
+      const address = (it.address || delivery?.address || "").toString().trim();
+
+      const key = `${client}___${orderRef}`;
+      if (!groups[key]) {
+        groups[key] = {
+          order_ref: orderRef,
+          client,
+          manager,
+          address,
+          items: []
+        };
+      }
+
+      const parties = (it.parties || [])
+        .map(p => ({
+          party: String(p.party),
+          moved_q: parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0
+        }))
+        .filter(p => p.moved_q > 0);
+
+      groups[key].items.push({
+        product: String(it.product),
+        nomenclature: String(it.nomenclature || it.product),
+        quantity: parseFloat(it.quantity) || 0,
+        weight: parseFloat(it.weight) || 0,
+        line_of_business: it.line_of_business ? String(it.line_of_business) : undefined,
+        parties
+      });
+    });
+
+    return Object.values(groups);
+  }, [items, delivery]);
+
+  // Унікальні клієнти, доповнення та провідний менеджер
+  const uniqueClients = useMemo(() => {
+    return Array.from(new Set(groupedOrders.map(o => o.client).filter(c => c && c !== "Не вказано")));
+  }, [groupedOrders]);
+
+  const uniqueOrderRefs = useMemo(() => {
+    return Array.from(new Set(groupedOrders.map(o => o.order_ref).filter(r => r && r !== "—")));
+  }, [groupedOrders]);
+
+  const leadManager = useMemo(() => {
+    for (const o of groupedOrders) {
+      if (o.manager) return o.manager;
+    }
+    return delivery?.manager || "";
+  }, [groupedOrders, delivery?.manager]);
+
   // Завантаження бухгалтерів та дефолтного/закріпленого бухгалтера
   useEffect(() => {
     if (!isOpen) return;
@@ -38,12 +97,11 @@ export default function SendAccountantDialog({
         const list = accRes?.accountants || [];
         if (isSubscribed) setAccountants(list);
 
-        // Шукаємо закріпленого бухгалтера для менеджера доставки
-        const managerName = delivery?.manager || "";
+        // Шукаємо закріпленого бухгалтера для менеджера замовлення
         let preselectedId = "";
 
-        if (managerName) {
-          const mgrRes = await getAccountantForManager(managerName, initData);
+        if (leadManager) {
+          const mgrRes = await getAccountantForManager(leadManager, initData);
           if (mgrRes?.accountant?.id) {
             preselectedId = mgrRes.accountant.id;
           }
@@ -69,7 +127,7 @@ export default function SendAccountantDialog({
     return () => {
       isSubscribed = false;
     };
-  }, [isOpen, delivery?.manager]);
+  }, [isOpen, leadManager]);
 
   const currentAccountant = useMemo(() => {
     return accountants.find(a => String(a.id) === String(selectedAccountantId)) || null;
@@ -82,40 +140,58 @@ export default function SendAccountantDialog({
       return;
     }
 
-    const client = delivery?.client || "";
-    const ttn = delivery?.ttn || "";
-    const manager = delivery?.manager || "";
+    const ttn = (delivery?.ttn || "").trim();
+    const isNp = Boolean(ttn && ttn !== "Не вказано");
     const date = delivery?.delivery_date || delivery?.date || new Date().toLocaleDateString("uk-UA");
 
-    const mgrPart = manager ? ` | Менеджер: ${manager}` : "";
-    const subject = ttn 
-      ? `[Нова Пошта] Відомість: ${client} | ТТН ${ttn}${mgrPart}`
-      : `[Доставка] Відомість: ${client} | Дата: ${date}${mgrPart}`;
+    const clientPart = uniqueClients.length > 0 
+      ? uniqueClients.slice(0, 2).join(", ") + (uniqueClients.length > 2 ? ` (+${uniqueClients.length - 2})` : "")
+      : (delivery?.client || "");
 
-    const itemsLines = (items || [])
-      .filter(i => (parseFloat(i.quantity) || 0) > 0)
-      .map(it => {
-        const prod = it.nomenclature || it.product || "";
-        const orderRef = (it.order_ref || it.orderRef || it.order || "").toString().trim();
-        const orderPart = orderRef && orderRef !== "—" ? ` [Доповнення: ${orderRef}]` : "";
-        const qty = it.quantity || 0;
-        const pStrs = (it.parties || [])
-          .map(p => {
-            const q = p.party_quantity !== "" && p.party_quantity !== undefined ? p.party_quantity : p.moved_q;
-            return `${p.party}: ${q}`;
-          });
-        const partyPart = pStrs.length > 0 ? ` [Партії: ${pStrs.join(", ")}]` : "";
-        return `• ${prod}${orderPart} — ${qty} шт${partyPart}`;
-      });
+    const orderPart = uniqueOrderRefs.length > 0
+      ? ` [Доп: ${uniqueOrderRefs.slice(0, 2).join(", ")}${uniqueOrderRefs.length > 2 ? "..." : ""}]`
+      : "";
 
-    const itemsText = itemsLines.length > 0 ? itemsLines.join("\n") : "(товари не вказані)";
+    const mgrPart = leadManager ? ` | Менеджер: ${leadManager}` : "";
+    const subject = isNp 
+      ? `[Нова Пошта] Відомість: ${clientPart}${orderPart} | ТТН ${ttn}${mgrPart}`
+      : `[Доставка] Відомість: ${clientPart}${orderPart} | Дата: ${date}${mgrPart}`;
 
-    const isNp = Boolean(ttn && ttn.trim() !== "" && ttn !== "Не вказано");
     const typeStr = isNp ? "Нова Пошта" : "Доставка / Самовивіз";
     const ttnLine = isNp ? `- ТТН Нова Пошта: ${ttn}\n` : "";
-    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n- Клієнт: ${client}\n- Менеджер: ${manager}\n${ttnLine}- Дата: ${date}\n- Адреса: ${delivery?.address || "—"}\n\nТовари та складські партії:\n${itemsText}\n`;
+
+    let totalQty = 0;
+    const orderBlocks = groupedOrders.map(ord => {
+      const mgrLine = ord.manager ? `- Менеджер: ${ord.manager}\n` : "";
+      const addrLine = ord.address ? `- Адреса: ${ord.address}\n` : "";
+
+      const itemsLines = ord.items.map(it => {
+        const prod = it.nomenclature || it.product || "";
+        const qty = it.quantity || 0;
+        totalQty += qty;
+        const pStrs = (it.parties || []).map(p => `${p.party}: ${p.moved_q}`);
+        const partyPart = pStrs.length > 0 ? ` [Партії: ${pStrs.join(", ")}]` : "";
+        return `  • ${prod} — ${qty} шт${partyPart}`;
+      });
+
+      const itemsText = itemsLines.length > 0 ? itemsLines.join("\n") : "  (товари не вказані)";
+
+      return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏢 Клієнт: ${ord.client}
+📄 Доповнення: #${ord.order_ref}
+${mgrLine}${addrLine}Товари та складські партії:
+${itemsText}`;
+    });
+
+    const allOrdersText = orderBlocks.length > 0 ? orderBlocks.join("\n\n") : "(замовлення відсутні)";
+
+    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n${ttnLine}- Дата: ${date}\n- Кількість заявок / доповнень: ${groupedOrders.length}\n\n${allOrdersText}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nВсього товарів: ${totalQty} шт\n`;
+
     if (comment.trim()) {
-      body += `\nКоментар: ${comment.trim()}\n`;
+      body += `\nКоментар для бухгалтера: ${comment.trim()}\n`;
+    }
+    if (delivery?.comment) {
+      body += `Примітка доставки: ${delivery.comment}\n`;
     }
     body += `\n---\nЗгенеровано з додатку логістики`;
 
@@ -171,6 +247,7 @@ export default function SendAccountantDialog({
         accountant_id: currentAccountant.id,
         channels: activeChannels,
         comment: comment.trim() || undefined,
+        orders: groupedOrders,
         items: sanitizedItems,
         ttn: delivery.ttn || undefined
       };
@@ -217,8 +294,23 @@ export default function SendAccountantDialog({
           <div>
             <h3 className={css.title}>📨 Відправка даних бухгалтеру</h3>
             <div className={css.subtitle}>
-              Клієнт: <strong>{delivery?.client}</strong> {delivery?.ttn && <>· ТТН: <strong>{delivery.ttn}</strong></>}
+              {uniqueClients.length > 1 ? (
+                <>Клієнти: <strong>{uniqueClients.join(", ")}</strong></>
+              ) : (
+                <>Клієнт: <strong>{uniqueClients[0] || delivery?.client || "Не вказано"}</strong></>
+              )}
+              {delivery?.ttn && <> · ТТН: <strong>{delivery.ttn}</strong></>}
             </div>
+            {uniqueOrderRefs.length > 0 && (
+              <div className={css.ordersSummary}>
+                <span className={css.ordersSummaryLabel}>Доповнення ({uniqueOrderRefs.length}):</span>
+                <div className={css.ordersBadges}>
+                  {uniqueOrderRefs.map(ref => (
+                    <span key={ref} className={css.orderRefBadge}>#{ref}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <button className={css.closeBtn} onClick={onClose} disabled={isSending}>
             <X size={18} />
@@ -232,6 +324,31 @@ export default function SendAccountantDialog({
           </div>
         ) : (
           <div>
+            {/* Блок попереднього перегляду складу відомості */}
+            {groupedOrders.length > 0 && (
+              <div className={css.ordersPreviewBox}>
+                <div className={css.ordersPreviewHeader}>
+                  Склад відомості ({groupedOrders.length} {groupedOrders.length === 1 ? "заявка" : "заявки/доповнення"}):
+                </div>
+                <div className={css.ordersList}>
+                  {groupedOrders.map((ord, idx) => (
+                    <div key={idx} className={css.orderItemPreview}>
+                      <div className={css.orderItemRow}>
+                        <span className={css.orderItemClient} title={ord.client}>
+                          🏢 {ord.client}
+                        </span>
+                        <span className={css.orderItemRef}>#{ord.order_ref}</span>
+                      </div>
+                      <div className={css.orderItemSub}>
+                        <span>{ord.items.length} {ord.items.length === 1 ? "товар" : "товари"}</span>
+                        {ord.manager && <span>· Менеджер: {ord.manager}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Вибір бухгалтера */}
             <div className={css.formGroup}>
               <label className={css.label}>Оберіть бухгалтера:</label>

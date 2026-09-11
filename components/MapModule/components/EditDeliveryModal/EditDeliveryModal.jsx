@@ -97,6 +97,7 @@ export default function EditDeliveryModal() {
   const [swapTarget, setSwapTarget] = useState(null); // { itemIdx, partyIdx } | null
   const [draggedRemain, setDraggedRemain] = useState(null);
   const [dragOverTarget, setDragOverTarget] = useState(null); // { type: 'party' | 'strip' | 'item', itemIdx, partyIdx? } | null
+  const [activeUsagePopover, setActiveUsagePopover] = useState(null); // partyKey | null
 
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
@@ -208,8 +209,9 @@ export default function EditDeliveryModal() {
           let ordersQ = 0;
           const cleanedItemProduct = cleanName(item.product);
 
+          let matchedOrder = null;
           if (clientApp && clientApp.orders) {
-            const matchedOrder = clientApp.orders.find(o => {
+            matchedOrder = clientApp.orders.find(o => {
               const oRef = (o.contract_supplement || o.id || "").toString();
               const iRef = (item.order_ref || "").toString();
               const oName = cleanName(o.nomenclature);
@@ -231,7 +233,9 @@ export default function EditDeliveryModal() {
             product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
             client: d.client,
             deliveryId: d.id,
-            orderRef: item.order_ref || "",
+            orderRef: item.order_ref || matchedOrder?.contract_supplement || matchedOrder?.id || "",
+            manager: matchedOrder?.manager || clientApp?.manager || d.manager || "",
+            address: matchedOrder?.address || matchedOrder?.delivery_address || clientApp?.deliveryAddress || d.address || "",
             unit_weight: unitWeight,
             weight: unitWeight * qty,
             orders_q: ordersQ,
@@ -267,7 +271,8 @@ export default function EditDeliveryModal() {
                 orders_q: ordersQ,
                 parties: [],
                 isNew: true,
-                manager: order.manager || d.manager || "",
+                manager: order.manager || clientApp?.manager || d.manager || "",
+                address: order.address || order.delivery_address || clientApp?.deliveryAddress || d.address || "",
                 line_of_business: order.line_of_business || "ЗЗР"
               });
             }
@@ -526,6 +531,87 @@ export default function EditDeliveryModal() {
     setSwapTarget(null);
   }, [activeItemIdx]);
 
+  // Реактивный подсчет использования каждой партии по всем заявкам/товарам текущей доставки
+  const batchUsageMap = useMemo(() => {
+    const map = {}; // partyKey: { partyName, totalAllocated: number, usages: Array<{ itemIdx, client, orderRef, product, qty }> }
+
+    (deliveryItems || []).forEach((item, itemIdx) => {
+      (item.parties || []).forEach(p => {
+        const partyName = (p.party || "").trim();
+        if (!partyName) return;
+        const partyKey = partyName.toLowerCase();
+        const qty = parseFloat(
+          p.party_quantity !== "" && p.party_quantity !== undefined ? p.party_quantity : p.moved_q
+        ) || 0;
+        if (qty <= 0) return;
+
+        if (!map[partyKey]) {
+          map[partyKey] = {
+            partyName,
+            totalAllocated: 0,
+            usages: []
+          };
+        }
+
+        map[partyKey].totalAllocated = Math.round((map[partyKey].totalAllocated + qty) * 1000) / 1000;
+        map[partyKey].usages.push({
+          itemIdx,
+          client: item.client || "Клієнт",
+          orderRef: item.orderRef || "",
+          product: item.product || "",
+          qty
+        });
+      });
+    });
+
+    return map;
+  }, [deliveryItems]);
+
+  // Получение доступного живого бухгалтерского остатка партии с учетом распределения в текущей сессии
+  const getPartyLiveBuh = (remain, forItemIdx = null, forPartyIdx = null) => {
+    if (!remain) {
+      return { rawBuh: 0, totalAllocated: 0, availRemainingBuh: 0, usageInfo: null, isExhausted: true };
+    }
+    const partyName = (remain.nomenclature_series || "Без серії").trim();
+    const partyKey = partyName.toLowerCase();
+    const rawBuh = Math.max(0, parseFloat(remain.buh) || 0);
+    const usage = batchUsageMap[partyKey];
+
+    if (!usage || usage.totalAllocated <= 0) {
+      return {
+        rawBuh,
+        totalAllocated: 0,
+        availRemainingBuh: rawBuh,
+        usageInfo: null,
+        isExhausted: rawBuh <= 0
+      };
+    }
+
+    // Если мы заменяем конкретный слот, исключаем количество этого слота из занятого
+    let allocatedInOtherSlots = usage.totalAllocated;
+    if (forItemIdx !== null && forPartyIdx !== null && deliveryItems[forItemIdx]) {
+      const curParty = deliveryItems[forItemIdx].parties?.[forPartyIdx];
+      if (curParty && (curParty.party || "").trim().toLowerCase() === partyKey) {
+        const curQty = parseFloat(
+          curParty.party_quantity !== "" && curParty.party_quantity !== undefined
+            ? curParty.party_quantity
+            : curParty.moved_q
+        ) || 0;
+        allocatedInOtherSlots = Math.max(0, Math.round((allocatedInOtherSlots - curQty) * 1000) / 1000);
+      }
+    }
+
+    const availRemainingBuh = Math.round((rawBuh - allocatedInOtherSlots) * 1000) / 1000;
+
+    return {
+      rawBuh,
+      totalAllocated: usage.totalAllocated,
+      availRemainingBuh,
+      usageInfo: usage,
+      isExhausted: availRemainingBuh <= 0
+    };
+  };
+
   // Умное распределение / перенос партии из остатков
   const applyPartyAllocation = (targetItemIdx, targetPartyIdx, remainOrName) => {
     const itemIndex = targetItemIdx !== null && targetItemIdx !== undefined ? targetItemIdx : activeItemIdx;
@@ -538,9 +624,23 @@ export default function EditDeliveryModal() {
       ? remainOrName
       : (remainOrName.nomenclature_series || "Без серії");
 
-    const availStock = (typeof remainOrName === "object" && remainOrName !== null && remainOrName.buh !== undefined)
-      ? Math.max(0, parseFloat(remainOrName.buh) || 0)
-      : null;
+    // Вычисляем живой бухгалтерский остаток с учетом текущей сессии
+    let availStock = null;
+    if (typeof remainOrName === "object" && remainOrName !== null && remainOrName.buh !== undefined) {
+      const liveInfo = getPartyLiveBuh(remainOrName, itemIndex, targetPartyIdx);
+      availStock = liveInfo.availRemainingBuh;
+    } else if (typeof remainOrName === "string") {
+      const foundRemain = stockRemains.find(r => (r.nomenclature_series || "Без серії").trim().toLowerCase() === partyName.trim().toLowerCase());
+      if (foundRemain) {
+        const liveInfo = getPartyLiveBuh(foundRemain, itemIndex, targetPartyIdx);
+        availStock = liveInfo.availRemainingBuh;
+      }
+    }
+
+    if (availStock !== null && availStock <= 0) {
+      toast.error(`Партію "${partyName}" вже повністю вичерпано у цій доставці`);
+      return;
+    }
 
     const nextItems = [...deliveryItems];
     const item = { ...nextItems[itemIndex] };
@@ -690,18 +790,29 @@ export default function EditDeliveryModal() {
     }
   };
 
-  // Расчет умного объема для кнопки "+ Взяти N" в остатках
+  // Расчет умного объема для кнопки "+ Взяти N" в остатках с учетом живого остатка
   const getSmartTakeInfo = (remain) => {
-    if (swapTarget && swapTarget.itemIdx === activeItemIdx) {
+    const isSwapping = swapTarget && swapTarget.itemIdx === activeItemIdx;
+    const targetItemIdx = isSwapping ? swapTarget.itemIdx : activeItemIdx;
+    const targetPartyIdx = isSwapping ? swapTarget.partyIdx : null;
+
+    const { rawBuh, availRemainingBuh, isExhausted, totalAllocated } = getPartyLiveBuh(remain, targetItemIdx, targetPartyIdx);
+
+    if (isSwapping) {
       const activeItem = deliveryItems[activeItemIdx];
       const targetParty = activeItem?.parties?.[swapTarget.partyIdx];
       const targetQtyStr = targetParty?.party_quantity !== "" && targetParty?.party_quantity !== undefined
         ? targetParty?.party_quantity
         : (targetParty?.moved_q || 0);
       const targetQty = parseFloat(targetQtyStr) || 0;
-      const availBuh = Math.max(0, parseFloat(remain.buh) || 0);
-      const qty = targetQty > 0 ? (availBuh > 0 ? Math.min(targetQty, availBuh) : targetQty) : availBuh;
-      return { label: `Замінити (${formatQuantity(qty)})`, isSwap: true, qty };
+      const qty = targetQty > 0
+        ? (availRemainingBuh > 0 ? Math.min(targetQty, availRemainingBuh) : targetQty)
+        : Math.max(0, availRemainingBuh);
+
+      if (availRemainingBuh <= 0 && totalAllocated > 0) {
+        return { label: `Вичерпано (0)`, isSwap: true, isExhausted: true, qty: 0 };
+      }
+      return { label: `Замінити (${formatQuantity(qty)})`, isSwap: true, isExhausted: false, qty };
     }
 
     if (activeItemIdx !== null && deliveryItems[activeItemIdx]) {
@@ -724,14 +835,22 @@ export default function EditDeliveryModal() {
         needed = Math.max(0, Math.round((totalQty - sumValid) * 1000) / 1000);
       }
 
-      const availBuh = Math.max(0, parseFloat(remain.buh) || 0);
-      if (needed > 0 && availBuh > 0) {
-        const takeQty = Math.min(needed, availBuh);
-        return { label: `+ Взяти ${formatQuantity(takeQty)}`, isSwap: false, qty: takeQty };
+      if (needed > 0) {
+        if (availRemainingBuh <= 0 && totalAllocated > 0) {
+          return { label: `Вичерпано`, isSwap: false, isExhausted: true, qty: 0 };
+        }
+        if (availRemainingBuh > 0) {
+          const takeQty = Math.min(needed, availRemainingBuh);
+          return { label: `+ Взяти ${formatQuantity(takeQty)}`, isSwap: false, isExhausted: false, qty: takeQty };
+        }
       }
     }
 
-    return { label: "+ Додати", isSwap: false, qty: 0 };
+    if (availRemainingBuh <= 0 && totalAllocated > 0) {
+      return { label: "Вичерпано", isSwap: false, isExhausted: true, qty: 0 };
+    }
+
+    return { label: "+ Додати", isSwap: false, isExhausted: false, qty: 0 };
   };
 
   // Удаление партии с возвратом количества в нераспределенный пул
@@ -873,6 +992,7 @@ export default function EditDeliveryModal() {
           quantity: qty,
           manager: String(item.manager || ""),
           client: String(item.client),
+          address: String(item.address || ""),
           orderRef: String(item.orderRef || item.order || item.order_ref || ""),
           weight: parseFloat(item.weight) || 0,
           parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 })),
@@ -2114,15 +2234,28 @@ export default function EditDeliveryModal() {
                     </thead>
                     <tbody>
                       {stockRemains.map((remain, rIdx) => {
+                        const isSwapping = swapTarget && swapTarget.itemIdx === activeItemIdx;
+                        const liveInfo = getPartyLiveBuh(
+                          remain,
+                          isSwapping ? swapTarget.itemIdx : activeItemIdx,
+                          isSwapping ? swapTarget.partyIdx : null
+                        );
+                        const { rawBuh, totalAllocated, availRemainingBuh, usageInfo, isExhausted } = liveInfo;
                         const smartTake = getSmartTakeInfo(remain);
                         const isCurrentlyDragging = draggedRemain?.nomenclature_series === remain.nomenclature_series;
+                        const partyKey = (remain.nomenclature_series || "Без серії").trim().toLowerCase();
+                        const isPopoverOpen = activeUsagePopover === partyKey;
 
                         return (
                           <tr
                             key={rIdx}
-                            className={`${css.remainRow} ${css.draggableRow} ${isCurrentlyDragging ? css.dragging : ""}`}
-                            draggable={true}
+                            className={`${css.remainRow} ${css.draggableRow} ${isCurrentlyDragging ? css.dragging : ""} ${isExhausted ? css.exhaustedRow : ""}`}
+                            draggable={!smartTake.isExhausted}
                             onDragStart={(e) => {
+                              if (smartTake.isExhausted) {
+                                e.preventDefault();
+                                return;
+                              }
                               e.dataTransfer.setData("application/json", JSON.stringify(remain));
                               e.dataTransfer.effectAllowed = "copyMove";
                               setDraggedRemain(remain);
@@ -2131,15 +2264,81 @@ export default function EditDeliveryModal() {
                               setDraggedRemain(null);
                               setDragOverTarget(null);
                             }}
-                            onClick={() => handleAddPartyFromRemains(remain)}
-                            title="Перетягніть у ліве вікно або натисніть для додавання цієї партії"
+                            onClick={() => {
+                              if (!smartTake.isExhausted) {
+                                handleAddPartyFromRemains(remain);
+                              }
+                            }}
+                            title={
+                              smartTake.isExhausted
+                                ? "Партію вичерпано в інших заявках цієї доставки"
+                                : "Перетягніть у ліве вікно або натисніть для додавання цієї партії"
+                            }
                           >
                             <td>
-                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <GripVertical size={13} className={css.dragGripIcon} />
-                                <div>
-                                  <div style={{ fontWeight: 600, color: "#f8fafc" }}>
-                                    {remain.nomenclature_series || "Без серії"}
+                              <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                                <GripVertical size={13} className={css.dragGripIcon} style={{ marginTop: "3px" }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                                    <span style={{ fontWeight: 600, color: "#f8fafc" }}>
+                                      {remain.nomenclature_series || "Без серії"}
+                                    </span>
+
+                                    {/* Интерактивный бейдж использования в доставке */}
+                                    {usageInfo && totalAllocated > 0 && (
+                                      <div className={css.batchUsageBadgeWrapper} onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                          type="button"
+                                          className={`${css.batchUsageBadge} ${isExhausted ? css.batchUsageBadgeExhausted : ""}`}
+                                          onClick={() => setActiveUsagePopover(isPopoverOpen ? null : partyKey)}
+                                          title="Натисніть для перегляду заявок, де використано цю партію"
+                                        >
+                                          <Package size={10} />
+                                          <span>У доставці: {formatQuantity(totalAllocated)}</span>
+                                        </button>
+
+                                        {/* Всплывающий поповер с детализацией по клиентам/заявкам */}
+                                        {isPopoverOpen && (
+                                          <div className={css.batchPopover}>
+                                            <div className={css.batchPopoverHeader}>
+                                              <div style={{ fontWeight: 700, color: "#f8fafc" }}>
+                                                Розподіл у доставці
+                                              </div>
+                                              <button
+                                                type="button"
+                                                className={css.batchPopoverClose}
+                                                onClick={() => setActiveUsagePopover(null)}
+                                              >
+                                                <X size={12} />
+                                              </button>
+                                            </div>
+                                            <div className={css.batchPopoverBody}>
+                                              {usageInfo.usages.map((u, uIdx) => (
+                                                <div key={uIdx} className={css.batchPopoverRow}>
+                                                  <div className={css.batchPopoverClient}>
+                                                    <span className={css.batchPopoverClientName} title={u.client}>
+                                                      {u.client}
+                                                    </span>
+                                                    {u.orderRef && (
+                                                      <span className={css.batchPopoverRef}>#{u.orderRef}</span>
+                                                    )}
+                                                  </div>
+                                                  <div className={css.batchPopoverQty}>
+                                                    {formatQuantity(u.qty)}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                            <div className={css.batchPopoverFooter}>
+                                              <span>Вільно для розподілу:</span>
+                                              <strong style={{ color: availRemainingBuh > 0 ? "#34d399" : "#94a3b8" }}>
+                                                {formatQuantity(Math.max(0, availRemainingBuh))}
+                                              </strong>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "2px" }}>
                                     {remain.warehouse}
@@ -2147,8 +2346,34 @@ export default function EditDeliveryModal() {
                                 </div>
                               </div>
                             </td>
-                            <td style={{ textAlign: "right", fontWeight: 600, color: "#34d399" }}>
-                              {formatQuantity(remain.buh)}
+                            <td style={{ textAlign: "right", verticalAlign: "middle" }}>
+                              <div style={{
+                                fontWeight: 700,
+                                fontSize: "0.88rem",
+                                color: availRemainingBuh > 0
+                                  ? "#34d399"
+                                  : (availRemainingBuh === 0 && totalAllocated > 0)
+                                  ? "#94a3b8"
+                                  : availRemainingBuh < 0
+                                  ? "#f87171"
+                                  : "#34d399"
+                              }}>
+                                {availRemainingBuh < 0
+                                  ? `Дефіцит: ${formatQuantity(availRemainingBuh)}`
+                                  : formatQuantity(availRemainingBuh)}
+                              </div>
+                              {totalAllocated > 0 && (
+                                <div
+                                  className={css.buhSubBadge}
+                                  title={`На складі за обліком було: ${formatQuantity(rawBuh)}, вже призначено: ${formatQuantity(totalAllocated)}`}
+                                >
+                                  {availRemainingBuh <= 0 ? (
+                                    <span style={{ color: "#94a3b8" }}>було {formatQuantity(rawBuh)}</span>
+                                  ) : (
+                                    <span>було {formatQuantity(rawBuh)}</span>
+                                  )}
+                                </div>
+                              )}
                             </td>
                             <td style={{ textAlign: "right", color: "#cbd5e1" }}>
                               {formatQuantity(remain.skl)}
@@ -2161,11 +2386,28 @@ export default function EditDeliveryModal() {
                             </td>
                             <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
                               <button
-                                className={`${css.usePartyBtn} ${smartTake.isSwap ? css.usePartyBtnSwap : ""}`}
-                                onClick={() => handleAddPartyFromRemains(remain)}
-                                title={smartTake.isSwap ? "Замінити обрану партію" : "Додати цей обсяг до замовлення"}
+                                className={`${css.usePartyBtn} ${smartTake.isSwap ? css.usePartyBtnSwap : ""} ${smartTake.isExhausted ? css.usePartyBtnExhausted : ""}`}
+                                onClick={() => {
+                                  if (!smartTake.isExhausted) {
+                                    handleAddPartyFromRemains(remain);
+                                  }
+                                }}
+                                disabled={smartTake.isExhausted}
+                                title={
+                                  smartTake.isExhausted
+                                    ? "Партію повністю вичерпано у цій доставці"
+                                    : smartTake.isSwap
+                                    ? "Замінити обрану партію"
+                                    : "Додати цей обсяг до замовлення"
+                                }
                               >
-                                {smartTake.isSwap ? <RefreshCw size={11} /> : <Plus size={11} />}
+                                {smartTake.isExhausted ? (
+                                  <Check size={11} />
+                                ) : smartTake.isSwap ? (
+                                  <RefreshCw size={11} />
+                                ) : (
+                                  <Plus size={11} />
+                                )}
                                 <span>{smartTake.label}</span>
                               </button>
                             </td>
@@ -2267,6 +2509,7 @@ export default function EditDeliveryModal() {
       <SendAccountantDialog
         isOpen={isAccountantDialogOpen}
         delivery={selectedDeliveries[0] || {}}
+        deliveries={selectedDeliveries}
         items={deliveryItems}
         onClose={() => setIsAccountantDialogOpen(false)}
         onSuccess={() => {

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import css from "./EditDeliveryModal.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { getInitData } from "@/lib/getInitData";
-import { getRemainsByProduct, updateDeliveryData, sendDeliveryData } from "@/lib/api";
+import { getRemainsByProduct, updateDeliveryData, sendDeliveryData, splitDelivery } from "@/lib/api";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsOrdersByProduct";
@@ -1223,7 +1223,7 @@ export default function EditDeliveryModal() {
     const itemsToSplitByDeliveryId = {};
     selectedIndices.forEach(idx => {
       const item = deliveryItems[idx];
-      if (item.isNew) return;
+      if (!item || item.isNew) return;
       if (!itemsToSplitByDeliveryId[item.deliveryId]) {
         itemsToSplitByDeliveryId[item.deliveryId] = [];
       }
@@ -1243,38 +1243,24 @@ export default function EditDeliveryModal() {
         const originalDelivery = selectedDeliveries.find(d => String(d.id) === String(delivId));
         if (!originalDelivery) continue;
 
-        const ordersMap = {};
+        const itemsPayload = [];
 
         splitGroup.forEach(({ item, originalIdx }) => {
           const transferQty = parseFloat(splitQuantities[originalIdx]) || parseFloat(item.quantity) || 0;
           const totalQty = parseFloat(item.quantity) || 0;
           const unitWeight = parseFloat(item.unit_weight) || (totalQty > 0 ? (parseFloat(item.weight) || 0) / totalQty : 0);
-          const transferWeight = unitWeight * transferQty;
-          const orderRefName = item.orderRef || item.order || "Без заявки";
-
-          if (!ordersMap[orderRefName]) {
-            ordersMap[orderRefName] = { order: orderRefName, items: [] };
-          }
-
           const partiesSum = (item.parties || []).reduce((s, p) => {
             const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
             return s + q;
           }, 0);
 
-          const scaleClone = partiesSum > 0 ? transferQty / partiesSum : 1;
-          const cleanParties = (item.parties || []).map(p => {
-            const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-            return { party: String(p.party), moved_q: Math.round(q * scaleClone * 1000) / 1000 };
-          }).filter(p => p.moved_q > 0);
-
-          ordersMap[orderRefName].items.push({
-            product: String(item.product),
-            nomenclature: String(item.nomenclature || item.product),
-            quantity: transferQty,
-            weight: transferWeight,
-            parties: cleanParties,
-            line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
-          });
+          if (transferQty > 0) {
+            itemsPayload.push({
+              product: String(item.product),
+              transfer_quantity: transferQty,
+              order_ref: item.orderRef || item.order || item.order_ref || "",
+            });
+          }
 
           const remainQty = totalQty - transferQty;
           const scaleRemain = partiesSum > 0 ? remainQty / partiesSum : 1;
@@ -1296,56 +1282,27 @@ export default function EditDeliveryModal() {
           }
         });
 
-        let sumWeight = 0;
-        Object.values(ordersMap).forEach(order => order.items.forEach(i => { sumWeight += i.weight; }));
+        if (itemsPayload.length === 0) continue;
 
-        const clonePayload = {
-          manager: String(originalDelivery.manager || ""),
-          client: String(originalDelivery.client || ""),
-          address: String(originalDelivery.address || ""),
-          contact: String(originalDelivery.contact || ""),
-          phone: String(originalDelivery.phone || ""),
-          date: String(originalDelivery.date || originalDelivery.delivery_date || new Date().toISOString().split("T")[0]),
-          comment: String(originalDelivery.comment || "") + " (Розділено)",
-          is_custom_address: !!originalDelivery.is_custom_address,
-          latitude: parseFloat(originalDelivery.latitude) || 0,
-          longitude: parseFloat(originalDelivery.longitude) || 0,
-          total_weight: sumWeight,
-          orders: Object.values(ordersMap),
-          override_created_by: originalDelivery.created_by || null,
-          actor_name: actorName,
-          status: originalDelivery.status || "Створено"
-        };
-
-        const res = await sendDeliveryData(clonePayload, initData);
+        // Атомарний виклик бекенду (одна транзакція замість двох окремих запитів)
+        const res = await splitDelivery(Number(delivId), itemsPayload, actorName, initData);
         if (res && res.warnings && res.warnings.length > 0) {
           res.warnings.forEach(warn => toast(warn, { icon: "⚠️", duration: 6000 }));
         }
 
-        const updatedOriginalItems = nextItems
-          .filter(it => it !== null && it.deliveryId === String(delivId) && (parseFloat(it.quantity) || 0) > 0)
-          .map(it => ({
-            product: String(it.product),
-            nomenclature: String(it.nomenclature || it.product),
-            quantity: parseFloat(it.quantity) || 0,
-            manager: String(it.manager || ""),
-            client: String(it.client),
-            orderRef: String(it.orderRef || it.order || it.order_ref || ""),
-            weight: parseFloat(it.weight) || 0,
-            parties: (it.parties || []).map(p => {
-              const q = parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0;
-              return { party: String(p.party), moved_q: q };
-            }).filter(p => p.moved_q > 0),
-            line_of_business: it.line_of_business ? String(it.line_of_business) : undefined
-          }));
+        if (res && res.original_deleted) {
+          removeDelivery(delivId);
+        }
 
-        const newOriginalWeight = updatedOriginalItems.reduce((s, it) => s + (it.weight || 0), 0);
-        await updateDeliveryData(delivId, originalDelivery.status || "В роботі", updatedOriginalItems, newOriginalWeight, initData, actorName);
         successCount++;
       }
 
       const finalItems = nextItems.filter(it => it !== null);
-      setDeliveryItems(finalItems);
+      if (finalItems.length === 0) {
+        setIsEditDeliveryModalOpen(false);
+      } else {
+        setDeliveryItems(finalItems);
+      }
       setSelectedItemsToSplit({});
       setSplitQuantities({});
       setActiveItemIdx(null);
@@ -1353,10 +1310,11 @@ export default function EditDeliveryModal() {
       setStockRemains([]);
 
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-      toast.success(`Розділено! ${successCount} доставок оновлено.`);
+      toast.success(`Розділено! Створено нову доставку.`);
     } catch (e) {
       console.error("Помилка під час розділення доставки", e);
-      toast.error("Не вдалося розділити доставку. Перевірте підключення.");
+      const detail = e?.response?.data?.detail || e.message || "Не вдалося розділити доставку. Перевірте підключення.";
+      toast.error(detail);
     } finally {
       setIsSplitting(false);
     }

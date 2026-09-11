@@ -369,6 +369,42 @@ export const updateDeliveryData = async (
   return data;
 };
 
+export interface SplitItemPayload {
+  product: string;
+  transfer_quantity: number;
+  order_ref?: string;
+}
+
+export interface SplitDeliveryResponse {
+  status: string;
+  new_delivery_id: number;
+  original_deleted: boolean;
+  warnings: string[];
+}
+
+export const splitDelivery = async (
+  deliveryId: number,
+  items: SplitItemPayload[],
+  actorName: string,
+  initData: string
+): Promise<SplitDeliveryResponse> => {
+  const { data } = await axios.post<SplitDeliveryResponse>(
+    "/delivery/split",
+    {
+      delivery_id: deliveryId,
+      items,
+      actor_name: actorName,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export const validateTTN = async (ttn: string, initData: string) => {
   const { data } = await axios.get<ApiResponse>(
     `/nova-poshta/validate_ttn?ttn=${ttn}`,

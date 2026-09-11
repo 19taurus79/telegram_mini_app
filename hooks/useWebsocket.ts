@@ -35,7 +35,8 @@ export const useWebsocket = () => {
             'DELIVERY_CREATED',
             'DELIVERY_UPDATED',
             'DELIVERY_DELETED',
-            'DELIVERIES_BATCH_UPDATED'
+            'DELIVERIES_BATCH_UPDATED',
+            'DELIVERY_SPLIT'
           ];
 
           if (deliveryEvents.includes(data.type)) {

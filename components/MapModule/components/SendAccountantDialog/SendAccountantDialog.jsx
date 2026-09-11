@@ -146,8 +146,13 @@ export default function SendAccountantDialog({
       return;
     }
 
-    const ttn = (delivery?.ttn || "").trim();
-    const isNp = Boolean(ttn && ttn !== "Не вказано");
+    const allTtns = Array.from(new Set(
+      (deliveries && deliveries.length > 0 ? deliveries : [delivery])
+        .map(d => (d?.ttn || "").toString().trim())
+        .filter(Boolean)
+    ));
+    const ttn = allTtns.join(", ");
+    const isNp = allTtns.length > 0 && ttn !== "Не вказано";
     const date = delivery?.delivery_date || delivery?.date || new Date().toLocaleDateString("uk-UA");
 
     const clientPart = uniqueClients.length > 0 
@@ -256,7 +261,11 @@ ${itemsText}`;
         comment: comment.trim() || undefined,
         orders: groupedOrders,
         items: sanitizedItems,
-        ttn: delivery.ttn || undefined
+        ttn: (Array.from(new Set(
+          (deliveries && deliveries.length > 0 ? deliveries : [delivery])
+            .map(d => (d?.ttn || "").toString().trim())
+            .filter(Boolean)
+        )).join(", ")) || delivery.ttn || undefined
       };
 
       const res = await sendDeliveryToAccountant(payload, initData);
@@ -289,6 +298,12 @@ ${itemsText}`;
 
   if (!mounted || !isOpen) return null;
 
+  const headerTtns = Array.from(new Set(
+    (deliveries && deliveries.length > 0 ? deliveries : [delivery])
+      .map(d => (d?.ttn || "").toString().trim())
+      .filter(Boolean)
+  )).join(", ");
+
   return createPortal(
     <div
       className={css.overlay}
@@ -306,7 +321,7 @@ ${itemsText}`;
               ) : (
                 <>Клієнт: <strong>{uniqueClients[0] || delivery?.client || "Не вказано"}</strong></>
               )}
-              {delivery?.ttn && <> · ТТН: <strong>{delivery.ttn}</strong></>}
+              {headerTtns && <> · ТТН: <strong>{headerTtns}</strong></>}
             </div>
             {uniqueOrderRefs.length > 0 && (
               <div className={css.ordersSummary}>

@@ -12,6 +12,9 @@ import { batchUpdateDeliveries } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Download, Printer } from "lucide-react";
 import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
+import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
+import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
+import { isNPDelivery } from "@/lib/utils/deliveryUtils";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
@@ -19,6 +22,8 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     selectedLoBs,
     selectedManagers,
     selectedDeliveries,
+    setSelectedDeliveries,
+    setIsEditDeliveryModalOpen,
     toggleSelectedDelivery,
     updateDeliveries,
     clearSelectedDeliveries
@@ -29,6 +34,8 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
   const [isBatchDateModalOpen, setIsBatchDateModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [newBatchDate, setNewBatchDate] = useState("");
+  const [batchTtnModalData, setBatchTtnModalData] = useState(null);
+  const [sendAccountantPromptData, setSendAccountantPromptData] = useState(null);
 
   const toggleDateExpansion = (date) => {
     setExpandedDates(prev => {
@@ -122,31 +129,69 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     }
   };
 
-  const handleBatchUpdate = async (status, date) => {
+  const handleBatchUpdate = async (status, date, ttnData = null) => {
     if (selectedDeliveries.length === 0) return;
     
     const ids = selectedDeliveries.map(d => d.id);
+
+    // Якщо статус змінюється на "Виконано", перевіряємо наявність доставок Нової Пошти
+    if (status === "Виконано" && !ttnData) {
+      const npDeliveries = selectedDeliveries.filter(d => isNPDelivery(d));
+      if (npDeliveries.length > 0) {
+        setIsBatchStatusModalOpen(false);
+        setBatchTtnModalData({
+          deliveries: selectedDeliveries,
+          npDeliveries: npDeliveries,
+          status: status,
+          date: date
+        });
+        return;
+      }
+    }
+
     const loadingToast = toast.loading(`Пакетне оновлення ${ids.length} доставок...`);
     
     try {
       const initData = getInitData();
-      const res = await batchUpdateDeliveries(ids, status, date, initData);
+      const res = await batchUpdateDeliveries(ids, status, date, initData, ttnData?.ttnMap, ttnData?.commonTtn);
       
+      if (res && res.warnings && res.warnings.length > 0) {
+        res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
+      }
+
       if (res && res.status === "ok") {
         toast.success(`Оновлено ${ids.length} доставок`, { id: loadingToast });
         
         const updatedDeliveries = deliveries
           .filter(d => ids.includes(d.id))
-          .map(d => ({
-            ...d,
-            ...(status ? { status } : {}),
-            ...(date ? { delivery_date: date } : {})
-          }));
+          .map(d => {
+            const newTtn = ttnData?.commonTtn || (ttnData?.ttnMap && (ttnData.ttnMap[d.id] || ttnData.ttnMap[String(d.id)])) || d.ttn;
+            return {
+              ...d,
+              ...(status ? { status } : {}),
+              ...(date ? { delivery_date: date } : {}),
+              ...(newTtn ? { ttn: newTtn } : {})
+            };
+          });
           
         updateDeliveries(updatedDeliveries);
         // Не очищуємо вибір, щоб користувач бачив результат
         setIsBatchStatusModalOpen(false);
         setIsBatchDateModalOpen(false);
+
+        // Якщо оновлювалися доставки Нової Пошти з ТТН, пропонуємо загальну відомість бухгалтеру
+        if (ttnData?.updatedNPDeliveries && ttnData.updatedNPDeliveries.length > 0) {
+          const completedNPDeliveries = updatedDeliveries.filter(d => isNPDelivery(d));
+          const allClients = Array.from(new Set(completedNPDeliveries.map(d => d.client).filter(Boolean))).join(", ");
+          const allTtns = Array.from(new Set(completedNPDeliveries.map(d => d.ttn).filter(Boolean))).join(", ");
+          setSendAccountantPromptData({
+            deliveries: completedNPDeliveries,
+            delivery: completedNPDeliveries[0],
+            client: allClients,
+            ttn: allTtns,
+            count: completedNPDeliveries.length
+          });
+        }
       } else {
         toast.error("Помилка при пакетному оновленні", { id: loadingToast });
       }
@@ -390,6 +435,35 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
           <div className={css.empty}>Немає доставок за обраними фільтрами</div>
         )}
       </div>
+
+      <BatchTTNModal
+        isOpen={!!batchTtnModalData}
+        npDeliveries={batchTtnModalData?.npDeliveries || []}
+        onClose={() => setBatchTtnModalData(null)}
+        onSubmit={(ttnData) => {
+          if (batchTtnModalData) {
+            const prev = batchTtnModalData;
+            setBatchTtnModalData(null);
+            handleBatchUpdate(prev.status, prev.date, ttnData);
+          }
+        }}
+      />
+
+      <SendAccountantConfirmModal
+        isOpen={!!sendAccountantPromptData}
+        ttn={sendAccountantPromptData?.ttn}
+        clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
+        deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}
+        onConfirm={() => {
+          if (sendAccountantPromptData) {
+            const list = sendAccountantPromptData.deliveries || (sendAccountantPromptData.delivery ? [sendAccountantPromptData.delivery] : []);
+            setSelectedDeliveries(list.map(d => ({ ...d, status: "Виконано" })));
+            setIsEditDeliveryModalOpen(true);
+            setSendAccountantPromptData(null);
+          }
+        }}
+        onCancel={() => setSendAccountantPromptData(null)}
+      />
 
       <ExportPrintModal
         isOpen={isExportModalOpen}

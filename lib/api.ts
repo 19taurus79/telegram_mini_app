@@ -575,15 +575,37 @@ export const batchUpdateDeliveries = async (
   deliveryIds: number[],
   status: string | null,
   newDate: string | null,
-  initData: string
+  initData: string,
+  ttnMap?: Record<string | number, string>,
+  commonTtn?: string
 ) => {
+  const payload: {
+    delivery_ids: number[];
+    status: string | null;
+    new_date: string | null;
+    ttn_map?: Record<string, string>;
+    common_ttn?: string;
+  } = {
+    delivery_ids: deliveryIds,
+    status: status,
+    new_date: newDate,
+  };
+
+  if (ttnMap && Object.keys(ttnMap).length > 0) {
+    const stringKeyMap: Record<string, string> = {};
+    for (const [k, v] of Object.entries(ttnMap)) {
+      if (v) stringKeyMap[String(k)] = String(v).trim();
+    }
+    payload.ttn_map = stringKeyMap;
+  }
+
+  if (commonTtn && commonTtn.trim()) {
+    payload.common_ttn = commonTtn.trim();
+  }
+
   const { data } = await axios.post<{ status: string; message: string }>(
     "/delivery/batch_update",
-    {
-      delivery_ids: deliveryIds,
-      status: status,
-      new_date: newDate,
-    },
+    payload,
     {
       headers: {
         "Content-Type": "application/json",

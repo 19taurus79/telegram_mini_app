@@ -14,22 +14,11 @@ import { useOrderCart } from "@/store/OrderCart";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import TTNInputModal from "../TTNInputModal/TTNInputModal";
+import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
 import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
-
-const isNPDelivery = (d) => {
-  if (!d) return false;
-  const statusLower = (d.status || "").toLowerCase();
-  const addressLower = (d.address || "").toLowerCase();
-  return (
-    statusLower.includes("нова пошт") ||
-    statusLower.includes("нп") ||
-    statusLower === "потрібні дані нп" ||
-    addressLower.includes("нова пошт") ||
-    Boolean(d.ttn && String(d.ttn).trim() !== "")
-  );
-};
+import { isNPDelivery } from "@/lib/utils/deliveryUtils";
 
 export default function BottomData({ onEditClient }) {
   const [commentModalData, setCommentModalData] = useState(null);
@@ -54,6 +43,7 @@ export default function BottomData({ onEditClient }) {
   const [expandedClientIds, setExpandedClientIds] = useState(new Set());
 
   const [ttnModalData, setTtnModalData] = useState(null);
+  const [batchTtnModalData, setBatchTtnModalData] = useState(null);
   const [sendAccountantPromptData, setSendAccountantPromptData] = useState(null);
   const [npModalDelivery, setNpModalDelivery] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
@@ -215,7 +205,7 @@ export default function BottomData({ onEditClient }) {
   };
 
   const handleUpdateStatus = async (d, newStatus, ttn = undefined) => {
-    if (newStatus === "Виконано" && d.address && d.address.toLowerCase().includes("нова пошт") && ttn === undefined) {
+    if (newStatus === "Виконано" && isNPDelivery(d) && ttn === undefined) {
       setTtnModalData({ delivery: d, newStatus });
       return;
     }
@@ -345,18 +335,35 @@ export default function BottomData({ onEditClient }) {
     });
   };
 
-  const handleBatchUpdate = async (status, date) => {
+  const handleBatchUpdate = async (status, date, ttnData = null) => {
     const ids = checkedDeliveryIds.size > 0 
       ? Array.from(checkedDeliveryIds) 
       : selectedDeliveries.map(d => d.id);
       
     if (ids.length === 0) return;
+
+    // Якщо статус змінюється на "Виконано", перевіряємо наявність доставок Нової Пошти
+    if (status === "Виконано" && !ttnData) {
+      const targetDeliveries = deliveries.filter(d => ids.includes(d.id));
+      const npDeliveries = targetDeliveries.filter(d => isNPDelivery(d));
+
+      if (npDeliveries.length > 0) {
+        setIsBatchStatusModalOpen(false);
+        setBatchTtnModalData({
+          deliveries: targetDeliveries,
+          npDeliveries: npDeliveries,
+          status: status,
+          date: date
+        });
+        return;
+      }
+    }
     
     const loadingToast = toast.loading(`Оновлення ${ids.length} доставок...`);
     
     try {
       const initData = getInitData();
-      const res = await batchUpdateDeliveries(ids, status, date, initData);
+      const res = await batchUpdateDeliveries(ids, status, date, initData, ttnData?.ttnMap, ttnData?.commonTtn);
       
       if (res && res.warnings && res.warnings.length > 0) {
         res.warnings.forEach(warn => toast(warn, { icon: '⚠️', duration: 6000 }));
@@ -368,16 +375,34 @@ export default function BottomData({ onEditClient }) {
         // Оновлюємо локальний стор
         const updatedDeliveries = deliveries
           .filter(d => ids.includes(d.id))
-          .map(d => ({
-            ...d,
-            ...(status ? { status } : {}),
-            ...(date ? { delivery_date: date } : {})
-          }));
+          .map(d => {
+            const newTtn = ttnData?.commonTtn || (ttnData?.ttnMap && (ttnData.ttnMap[d.id] || ttnData.ttnMap[String(d.id)])) || d.ttn;
+            return {
+              ...d,
+              ...(status ? { status } : {}),
+              ...(date ? { delivery_date: date } : {}),
+              ...(newTtn ? { ttn: newTtn } : {})
+            };
+          });
           
         updateDeliveries(updatedDeliveries);
         setCheckedDeliveryIds(new Set());
         setIsBatchDateModalOpen(false);
         setIsBatchStatusModalOpen(false);
+
+        // Якщо оновлювалися доставки Нової Пошти з ТТН, пропонуємо загальну відомість бухгалтеру
+        if (ttnData?.updatedNPDeliveries && ttnData.updatedNPDeliveries.length > 0) {
+          const completedNPDeliveries = updatedDeliveries.filter(d => isNPDelivery(d));
+          const allClients = Array.from(new Set(completedNPDeliveries.map(d => d.client).filter(Boolean))).join(", ");
+          const allTtns = Array.from(new Set(completedNPDeliveries.map(d => d.ttn).filter(Boolean))).join(", ");
+          setSendAccountantPromptData({
+            deliveries: completedNPDeliveries,
+            delivery: completedNPDeliveries[0],
+            client: allClients,
+            ttn: allTtns,
+            count: completedNPDeliveries.length
+          });
+        }
       } else {
         toast.error("Помилка при пакетному оновленні", { id: loadingToast });
       }
@@ -1208,13 +1233,27 @@ export default function BottomData({ onEditClient }) {
             }
           }} 
         />
+        <BatchTTNModal
+          isOpen={!!batchTtnModalData}
+          npDeliveries={batchTtnModalData?.npDeliveries || []}
+          onClose={() => setBatchTtnModalData(null)}
+          onSubmit={(ttnData) => {
+            if (batchTtnModalData) {
+              const prev = batchTtnModalData;
+              setBatchTtnModalData(null);
+              handleBatchUpdate(prev.status, prev.date, ttnData);
+            }
+          }}
+        />
         <SendAccountantConfirmModal
           isOpen={!!sendAccountantPromptData}
           ttn={sendAccountantPromptData?.ttn}
-          clientName={sendAccountantPromptData?.delivery?.client}
+          clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
+          deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}
           onConfirm={() => {
             if (sendAccountantPromptData) {
-              setSelectedDeliveries([{ ...sendAccountantPromptData.delivery, status: "Виконано" }]);
+              const list = sendAccountantPromptData.deliveries || (sendAccountantPromptData.delivery ? [sendAccountantPromptData.delivery] : []);
+              setSelectedDeliveries(list.map(d => ({ ...d, status: "Виконано" })));
               setIsEditDeliveryModalOpen(true);
               setSendAccountantPromptData(null);
             }
@@ -1651,13 +1690,27 @@ export default function BottomData({ onEditClient }) {
           }
         }} 
       />
+      <BatchTTNModal
+        isOpen={!!batchTtnModalData}
+        npDeliveries={batchTtnModalData?.npDeliveries || []}
+        onClose={() => setBatchTtnModalData(null)}
+        onSubmit={(ttnData) => {
+          if (batchTtnModalData) {
+            const prev = batchTtnModalData;
+            setBatchTtnModalData(null);
+            handleBatchUpdate(prev.status, prev.date, ttnData);
+          }
+        }}
+      />
       <SendAccountantConfirmModal
         isOpen={!!sendAccountantPromptData}
         ttn={sendAccountantPromptData?.ttn}
-        clientName={sendAccountantPromptData?.delivery?.client}
+        clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
+        deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}
         onConfirm={() => {
           if (sendAccountantPromptData) {
-            setSelectedDeliveries([{ ...sendAccountantPromptData.delivery, status: "Виконано" }]);
+            const list = sendAccountantPromptData.deliveries || (sendAccountantPromptData.delivery ? [sendAccountantPromptData.delivery] : []);
+            setSelectedDeliveries(list.map(d => ({ ...d, status: "Виконано" })));
             setIsEditDeliveryModalOpen(true);
             setSendAccountantPromptData(null);
           }

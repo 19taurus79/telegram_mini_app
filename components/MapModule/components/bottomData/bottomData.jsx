@@ -7,7 +7,7 @@ import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Zap, PlusCircle } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Boxes, Zap, PlusCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from "next/navigation";
 import { useOrderCart } from "@/store/OrderCart";
@@ -152,6 +152,54 @@ export default function BottomData({ onEditClient }) {
     };
 
     copyText();
+  }, []);
+
+  const handleCopyText = useCallback((text, label = "Дані", e = null, key = null) => {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const textToCopy = (text || "").toString().trim();
+    if (!textToCopy) {
+      toast.error(`${label} відсутній`);
+      return;
+    }
+
+    const copyAction = async () => {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else if (typeof document !== 'undefined') {
+          const textArea = document.createElement("textarea");
+          textArea.value = textToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-9999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+        }
+        if (key) {
+          setCopiedKey(key);
+          setTimeout(() => setCopiedKey(null), 2000);
+        }
+
+        let message = `Скопійовано: ${textToCopy}`;
+        if (label === "Клієнт" || label === "Клієнта") {
+          message = `Скопійовано клієнта: ${textToCopy}`;
+        } else if (label === "Доповнення" || label === "Номер доповнення") {
+          message = `Скопійовано номер доповнення: ${textToCopy}`;
+        } else if (label) {
+          message = `Скопійовано ${label.toLowerCase()}: ${textToCopy}`;
+        }
+        toast.success(message);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        toast.error("Не вдалося скопіювати");
+      }
+    };
+
+    copyAction();
   }, []);
 
   const toggleClientExpand = (clientId) => {
@@ -479,30 +527,52 @@ export default function BottomData({ onEditClient }) {
     if (!items || items.length === 0) return null;
     return (
       <div className={css.itemsList}>
-        {items.map((item, idx) => (
-          <div key={idx} className={css.itemRow}>
-            <div className={css.itemProductRow}>
-              <div className={css.itemNameCol}>
-                <div className={css.itemName}>
-                  {(item.product || "").replace(/\s*рік\s*$/i, "").trim()}
-                </div>
-                {item.order_ref && <span className={css.itemRef}>{item.order_ref}</span>}
-              </div>
-              <div className={css.itemTotalQuantity}>{item.quantity}</div>
-            </div>
-            
-            {item.parties && item.parties.length > 0 && (
-              <div className={css.partiesList}>
-                {item.parties.map((p, pIdx) => (
-                  <div key={pIdx} className={css.partyItem}>
-                    <span className={css.partyLabel}>Партія: {p.party}</span>
-                    <span className={css.partyAmount}>{p.party_quantity}</span>
+        {items.map((item, idx) => {
+          const orderRef = (item.order_ref || item.orderRef || item.order || "").toString().trim();
+          const copyKey = `item_ref_${idx}_${orderRef}`;
+          return (
+            <div key={idx} className={css.itemRow}>
+              <div className={css.itemProductRow}>
+                <div className={css.itemNameCol}>
+                  <div className={css.itemName}>
+                    {(item.product || "").replace(/\s*рік\s*$/i, "").trim()}
                   </div>
-                ))}
+                  {orderRef && (
+                    <div 
+                      className={css.supplementBadge}
+                      onClick={(e) => handleCopyText(orderRef, 'Номер доповнення', e, copyKey)}
+                      title="Натисніть, щоб скопіювати номер доповнення"
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <span className={css.supplementBadgeLabel}>Доповнення:</span>
+                      <span className={css.supplementBadgeValue}>{orderRef}</span>
+                      <span className={css.supplementCopyBtn} aria-label="Скопіювати номер доповнення">
+                        {copiedKey === copyKey ? (
+                          <Check size={12} style={{ color: 'var(--accent-green)' }} />
+                        ) : (
+                          <Copy size={12} />
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className={css.itemTotalQuantity}>{item.quantity}</div>
               </div>
-            )}
-          </div>
-        ))}
+              
+              {item.parties && item.parties.length > 0 && (
+                <div className={css.partiesList}>
+                  {item.parties.map((p, pIdx) => (
+                    <div key={pIdx} className={css.partyItem}>
+                      <span className={css.partyLabel}>Партія: {p.party}</span>
+                      <span className={css.partyAmount}>{p.party_quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -701,19 +771,34 @@ export default function BottomData({ onEditClient }) {
                 </button>
                 {checkedDeliveryIds.size > 0 && <button className={css.deliveryEditBtn} onClick={() => setCheckedDeliveryIds(new Set())} style={{ background: '#eee', color: '#333' }}>Скинути ({checkedDeliveryIds.size})</button>}
               </div>
-              <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                <LucidePrinter size={14} /> Друк
+              <button 
+                className={css.deliveryEditBtn} 
+                onClick={() => setIsEditDeliveryModalOpen(true)}
+                title="Комплектація та аналітика обраних доставок"
+              >
+                <Boxes size={14} /> Комплектація
               </button>
-              {!isGuest && (
-                <button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>
-              )}
             </div>
           </div>
           <div className={css.ordersContainer}>
             {Object.entries(groupingByClient).map(([client, data]) => (
               <div key={client} className={css.contractGroup}>
                 <div className={css.itemProductRow} style={{ borderBottom: 'none' }}>
-                  <h3 className={css.contractNumber} style={{ margin: 0 }}>{client}</h3>
+                  <h3 
+                    className={css.contractNumber} 
+                    style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                    onClick={(e) => handleCopyText(client, 'Клієнта', e, `multi_client_${client}`)}
+                    title="Натисніть, щоб скопіювати клієнта"
+                  >
+                    <span>{client}</span>
+                    <span className={css.copyContactBtn} aria-label="Скопіювати клієнта">
+                      {copiedKey === `multi_client_${client}` ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  </h3>
                   <div className={css.itemTotalQuantity}>{data.weight.toFixed(2)} кг</div>
                 </div>
                 <div className={css.deliverySubList}>
@@ -733,7 +818,7 @@ export default function BottomData({ onEditClient }) {
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                               {!isGuest && (
                                 <>
-                                  {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>Доставка</button>)}
+                                  {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }} title="Комплектація доставки"><Boxes size={12} /> Комплектація</button>)}
                                   {d.status !== "Виконано" && (
                                     <button 
                                       className={`${css.deliveryEditBtn} ${css.btnCO}`} 
@@ -862,13 +947,38 @@ export default function BottomData({ onEditClient }) {
     }
     const delivery = selectedDeliveries[0];
     const isCompleted = delivery.status === "Виконано";
+    const uniqueOrderRefs = Array.from(
+      new Set(
+        (delivery.items || [])
+          .map(it => (it.order_ref || it.orderRef || it.order || "").toString().trim())
+          .filter(Boolean)
+      )
+    );
     return (
       <div className={css.container}>
         <div className={css.infoCard}>
           <div className={css.deliveryHeader}>
             <div className={css.deliveryTitleBox}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>Доставка: {delivery.client}</h2>
+                <h2 className={css.title} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0, display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span>Доставка: {delivery.client}</span>
+                  {delivery.client && (
+                    <button
+                      type="button"
+                      className={css.titleCopyBtn}
+                      onClick={(e) => handleCopyText(delivery.client, 'Клієнта', e, 'title_client')}
+                      title="Скопіювати назву клієнта"
+                      aria-label="Скопіювати клієнта"
+                    >
+                      {copiedKey === 'title_client' ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                      <span className={css.copyBtnText}>Клієнт</span>
+                    </button>
+                  )}
+                </h2>
                 <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : delivery.status?.toLowerCase().includes("нова пошт") || delivery.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{delivery.status}</span>
               </div>
             </div>
@@ -898,13 +1008,13 @@ export default function BottomData({ onEditClient }) {
                 )}
               </div>
               <div className={css.deliverySecondaryActions}>
-                <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                  <LucidePrinter 
-                    size={14} 
-                  /> 
-                  Друк
+                <button 
+                  className={css.deliveryEditBtn} 
+                  onClick={() => setIsEditDeliveryModalOpen(true)}
+                  title="Комплектація та аналітика замовлень доставки"
+                >
+                  <Boxes size={14} /> Комплектація
                 </button>
-                {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
                 {!isCompleted && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnBi}`} 
@@ -940,16 +1050,66 @@ export default function BottomData({ onEditClient }) {
           
           {isGuest && (
             <div className={css.deliveryActionsRow}>
-              <button className={`${css.deliveryEditBtn} ${css.printBtn}`} onClick={() => { setIsPrintRequested(true); setIsEditDeliveryModalOpen(true); }}>
-                <LucidePrinter size={14} /> Друк
+              <button 
+                className={css.deliveryEditBtn} 
+                onClick={() => setIsEditDeliveryModalOpen(true)}
+                title="Комплектація та перегляд деталей доставки"
+              >
+                <Boxes size={14} /> Комплектація
               </button>
             </div>
           )}
           <div className={css.addressInfo}>
+              <p 
+                className={css.clickableRow}
+                onClick={(e) => handleCopyText(delivery.client, 'Клієнта', e, 'delivery_client')}
+                title="Натисніть, щоб скопіювати клієнта"
+              >
+                <strong>Клієнт:</strong>
+                <span className={css.contactRowContent}>
+                  <span>{delivery.client || "Не вказано"}</span>
+                  {delivery.client && (
+                    <span className={css.copyContactBtn} aria-label="Скопіювати клієнта">
+                      {copiedKey === 'delivery_client' ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  )}
+                </span>
+              </p>
               <p><strong>Адреса:</strong> {delivery.address}</p>
               <p><strong>Менеджер:</strong> {delivery.manager}</p>
               <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
               <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
+              {uniqueOrderRefs.length > 0 && (
+                <p className={css.clickableRow} style={{ cursor: uniqueOrderRefs.length === 1 ? 'pointer' : 'default' }}>
+                  <strong>Доповнення:</strong>
+                  <span className={css.contactRowContent} style={{ gap: '6px' }}>
+                    {uniqueOrderRefs.map((ref, rIdx) => (
+                      <span
+                        key={rIdx}
+                        className={css.supplementChip}
+                        onClick={(e) => handleCopyText(ref, 'Номер доповнення', e, `deliv_order_ref_${rIdx}`)}
+                        title={`Натисніть, щоб скопіювати номер доповнення ${ref}`}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span className={css.supplementChipLabel}>№</span>
+                        <span>{ref}</span>
+                        <span className={css.copyContactBtn} aria-label="Скопіювати доповнення">
+                          {copiedKey === `deliv_order_ref_${rIdx}` ? (
+                            <Check size={12} style={{ color: 'var(--accent-green)' }} />
+                          ) : (
+                            <Copy size={12} />
+                          )}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                </p>
+              )}
               <p 
                 className={css.clickableRow}
                 onClick={(e) => handleCopyContact(delivery.contact, delivery.phone, e, 'delivery_contact')}
@@ -1126,7 +1286,21 @@ export default function BottomData({ onEditClient }) {
       return (
         <div className={css.container}>
           <div className={css.infoCard}>
-            <h2 className={css.title}>{selectedClient.client}</h2>
+            <h2 
+              className={css.title}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+              onClick={(e) => handleCopyText(selectedClient.client, 'Клієнта', e, 'app_client')}
+              title="Натисніть, щоб скопіювати клієнта"
+            >
+              <span>{selectedClient.client}</span>
+              <span className={css.copyContactBtn} aria-label="Скопіювати клієнта">
+                {copiedKey === 'app_client' ? (
+                  <Check size={14} style={{ color: 'var(--accent-green)' }} />
+                ) : (
+                  <Copy size={14} />
+                )}
+              </span>
+            </h2>
             <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '400', opacity: 0.8 }}>
               {selectedClient.address?.manager || selectedClient.orders?.[0]?.manager || ''}
             </h3>
@@ -1163,7 +1337,27 @@ export default function BottomData({ onEditClient }) {
           <div className={css.ordersContainer}>
             {Object.entries(groupedOrders).map(([contractNum, orders]) => (
               <div key={contractNum} className={css.contractGroup}>
-                <h3 className={css.contractNumber}>Договір: {contractNum}</h3>
+                <h3 
+                  className={css.contractNumber}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: contractNum !== 'Без номера' ? 'pointer' : 'default' }}
+                  onClick={(e) => {
+                    if (contractNum !== 'Без номера') {
+                      handleCopyText(contractNum, 'Номер доповнення', e, `app_contract_${contractNum}`);
+                    }
+                  }}
+                  title={contractNum !== 'Без номера' ? "Натисніть, щоб скопіювати номер доповнення" : undefined}
+                >
+                  <span>Договір: {contractNum}</span>
+                  {contractNum !== 'Без номера' && (
+                    <span className={css.copyContactBtn} aria-label="Скопіювати доповнення">
+                      {copiedKey === `app_contract_${contractNum}` ? (
+                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </span>
+                  )}
+                </h3>
                 <ul className={css.ordersList}>
                   {orders.map((order, index) => (
                     <li key={index} className={`${css.orderItem} ${getOrderDeliveryStatus(order) ? css.inDeliveryRow : ""}`}>
@@ -1232,7 +1426,21 @@ export default function BottomData({ onEditClient }) {
     return (
       <div className={css.container}>
         <div className={css.infoCard}>
-          <h2 className={css.title}>{selectedClient.client}</h2>
+          <h2 
+            className={css.title}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            onClick={(e) => handleCopyText(selectedClient.client, 'Клієнта', e, 'clients_view_client')}
+            title="Натисніть, щоб скопіювати клієнта"
+          >
+            <span>{selectedClient.client}</span>
+            <span className={css.copyContactBtn} aria-label="Скопіювати клієнта">
+              {copiedKey === 'clients_view_client' ? (
+                <Check size={14} style={{ color: 'var(--accent-green)' }} />
+              ) : (
+                <Copy size={14} />
+              )}
+            </span>
+          </h2>
           <div className={css.addressInfo}>
               <p><strong>Адреса:</strong> {selectedClient.region} обл., {selectedClient.area} район, {selectedClient.commune} громада, {selectedClient.city}</p>
               <p><strong>Менеджер:</strong> {selectedClient.manager}</p>

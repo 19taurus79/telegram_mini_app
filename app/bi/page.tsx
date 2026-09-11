@@ -121,14 +121,20 @@ function BiPageContent() {
       groupedCart[name].push(item);
     });
 
+    const normalizeProd = (s: string) => (s || "").toLowerCase().replace(/\s*рік\s*$/i, "").trim();
+
     Object.entries(groupedCart).forEach(([productName, items]) => {
+      const normProductName = normalizeProd(productName);
       const backendItem = 
-        data.missing_but_available?.find(i => i.product === productName) ||
-        data.missing_and_unavailable?.find(i => i.product === productName);
+        data.missing_but_available?.find(i => normalizeProd(i.product) === normProductName) ||
+        data.missing_and_unavailable?.find(i => normalizeProd(i.product) === normProductName);
 
       if (backendItem) {
-        const selectedSupplementSet = new Set(items.map(i => i.contract_supplement));
-        const filteredOrders = backendItem.orders.filter(o => selectedSupplementSet.has(o.contract_supplement));
+        const selectedSupplementSet = new Set(items.map(i => i.contract_supplement).filter(Boolean));
+        const matchedOrders = selectedSupplementSet.size > 0
+          ? backendItem.orders.filter(o => selectedSupplementSet.has(o.contract_supplement))
+          : backendItem.orders;
+        const filteredOrders = matchedOrders.length > 0 ? matchedOrders : backendItem.orders;
 
         const qtyNeededSelected = filteredOrders.reduce((sum, o) => sum + o.qty, 0);
         const qtyNeededTotal = backendItem.qty_needed;

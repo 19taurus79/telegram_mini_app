@@ -503,6 +503,18 @@
   box-shadow: 0 8px 20px rgba(225, 29, 72, 0.5) !important;
 }
 
+.btnBi {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35) !important;
+}
+.btnBi:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
 .deleteBtn, .deleteBtnSmall {
   padding: 10px 16px;
   background: rgba(var(--alert-color-rgb), 0.1) !important;

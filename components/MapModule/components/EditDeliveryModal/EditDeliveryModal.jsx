@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import { useRouter } from "next/navigation";
 import css from "./EditDeliveryModal.module.css";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { getInitData } from "@/lib/getInitData";
@@ -10,6 +11,8 @@ import DetailsOrdersByProduct from "@/components/DetailsOrdersByProduct/DetailsO
 import { useUser } from "@/store/User";
 import { formatQuantity } from "@/lib/utils/productUtils";
 import SendAccountantDialog from "../SendAccountantDialog/SendAccountantDialog";
+import { useOrderCart } from "@/store/OrderCart";
+import { ShoppingCart, Zap, PlusCircle } from "lucide-react";
 
 
 /**
@@ -19,6 +22,7 @@ import SendAccountantDialog from "../SendAccountantDialog/SendAccountantDialog";
  */
 export default function EditDeliveryModal() {
   // --- STATE MANAGEMENT ---
+  const router = useRouter();
 
   // Глобальное состояние из Zustand
   const { 
@@ -39,6 +43,7 @@ export default function EditDeliveryModal() {
   const [selectedProductId, setSelectedProductId] = useState(null); // ID/название продукта, выбранного для просмотра остатков
   const [activeItemIdx, setActiveItemIdx] = useState(null); // Индекс активной строки товара в левой таблице
   const [stockRemains, setStockRemains] = useState([]); // Остатки по выбранному товару
+  const [productBuhMap, setProductBuhMap] = useState({}); // Кэш остатков по всем товарам доставки: { [productKey]: { totalBuh: number, remains: Remains[], loading: boolean } }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Флаг для модального окна подтверждения удаления
   const [isLoadingRemains, setIsLoadingRemains] = useState(false); // Флаг загрузки остатков
   
@@ -207,15 +212,62 @@ export default function EditDeliveryModal() {
     }
   }, [isEditDeliveryModalOpen]);
 
-  // Загрузка остатков по товару при выборе товара в левой таблице
+  // Предварительная загрузка остатков для всех уникальных товаров в доставке
   useEffect(() => {
+    if (!isEditDeliveryModalOpen || !deliveryItems.length) return;
+
+    const uniqueProducts = Array.from(new Set(
+      deliveryItems
+        .filter(item => (parseFloat(item.quantity) || 0) > 0)
+        .map(item => item.product_id || item.product)
+        .filter(Boolean)
+    ));
+
+    const initData = getInitData();
+
+    uniqueProducts.forEach(async (prod) => {
+      setProductBuhMap(prev => {
+        if (prev[prod] && !prev[prod].loading) return prev;
+        return { ...prev, [prod]: { ...(prev[prod] || {}), loading: true } };
+      });
+
+      try {
+        const data = await getRemainsByProduct({ product: prod, initData });
+        const totalBuh = (data || []).reduce((sum, r) => sum + (parseFloat(r.buh) || 0), 0);
+        setProductBuhMap(prev => ({
+          ...prev,
+          [prod]: { totalBuh, remains: data || [], loading: false }
+        }));
+      } catch (e) {
+        console.error(`Failed to fetch remains for ${prod}:`, e);
+        setProductBuhMap(prev => ({
+          ...prev,
+          [prod]: { totalBuh: 0, remains: [], loading: false }
+        }));
+      }
+    });
+  }, [isEditDeliveryModalOpen, deliveryItems]);
+
+  // Загрузка остатков по выбранному товару (с использованием кэша productBuhMap)
+  useEffect(() => {
+    if (!selectedProductId) return;
+
+    if (productBuhMap[selectedProductId]?.remains) {
+      setStockRemains(productBuhMap[selectedProductId].remains);
+      return;
+    }
+
     const fetchRemains = async () => {
-      if (!selectedProductId) return;
       setIsLoadingRemains(true);
       try {
         const initData = getInitData();
         const data = await getRemainsByProduct({ product: selectedProductId, initData });
         setStockRemains(data || []);
+        const totalBuh = (data || []).reduce((sum, r) => sum + (parseFloat(r.buh) || 0), 0);
+        setProductBuhMap(prev => ({
+          ...prev,
+          [selectedProductId]: { totalBuh, remains: data || [], loading: false }
+        }));
       } catch (error) {
         console.error("Error fetching remains:", error);
         setStockRemains([]);
@@ -225,10 +277,88 @@ export default function EditDeliveryModal() {
       }
     };
 
-    if (selectedProductId) {
-      fetchRemains();
+    fetchRemains();
+  }, [selectedProductId, productBuhMap]);
+
+  /**
+   * Получение данных об остатке по бухучету и дефиците для позиции доставки
+   */
+  const getItemBuhInfo = (item) => {
+    const prodKey = item.product_id || item.product;
+    const buhInfo = productBuhMap[prodKey];
+    const totalBuh = buhInfo ? buhInfo.totalBuh : 0;
+    const isLoading = buhInfo ? buhInfo.loading : true;
+    const qty = parseFloat(item.quantity) || 0;
+    const deficitBuh = Math.max(0, qty - totalBuh);
+    const hasDeficit = !isLoading && qty > 0 && totalBuh < qty;
+    return { totalBuh, deficitBuh, hasDeficit, isLoading };
+  };
+
+  // Список товаров с дефицитом по бухгалтерскому учету
+  const deficitItems = useMemo(() => {
+    return deliveryItems
+      .map((item, idx) => ({ item, idx, ...getItemBuhInfo(item) }))
+      .filter(({ item, hasDeficit }) => (parseFloat(item.quantity) || 0) > 0 && hasDeficit);
+  }, [deliveryItems, productBuhMap]);
+
+  // Индексы строк, выбранных чекбоксами
+  const selectedIndices = useMemo(() => {
+    return Object.entries(selectedItemsToSplit)
+      .filter(([_, val]) => Boolean(val))
+      .map(([idx]) => parseInt(idx, 10));
+  }, [selectedItemsToSplit]);
+
+  /**
+   * Переход в BI заказ с переданным списком товаров
+   */
+  const handleOrderToBi = (itemsToProcess, label = "товарів") => {
+    if (!itemsToProcess || itemsToProcess.length === 0) {
+      toast.error("Немає товарів для замовлення");
+      return;
     }
-  }, [selectedProductId]);
+
+    const { setItems, selectedItems: existingCart } = useOrderCart.getState();
+    const newCartItems = [...existingCart];
+
+    itemsToProcess.forEach(({ item, idx }) => {
+      const prodKey = item.product_id || item.product;
+      const buh = productBuhMap[prodKey]?.totalBuh || 0;
+      const cleanProductName = (item.product || "").replace(/\s*рік\s*$/i, "").trim();
+      const orderRef = (item.orderRef || item.order_ref || "").trim();
+      const client = (item.client || "").trim();
+      const id = `delivery_${item.deliveryId || 'del'}_${orderRef}_${cleanProductName}_${idx}`.trim();
+
+      const existingIdx = newCartItems.findIndex(ci => ci.id === id || (orderRef && ci.contract_supplement === orderRef && ci.product === cleanProductName));
+
+      const cartItemObj = {
+        id,
+        product: cleanProductName,
+        nomenclature: item.nomenclature || cleanProductName,
+        party_sign: "",
+        buying_season: "",
+        different: parseFloat(item.quantity) || 0,
+        orders_q: item.orders_q || (parseFloat(item.quantity) || 0),
+        client: client,
+        contract_supplement: orderRef,
+        manager: item.manager || "",
+        buh: buh,
+        skl: 0,
+        qok: "",
+        line_of_business: item.line_of_business || "ЗЗР",
+      };
+
+      if (existingIdx >= 0) {
+        newCartItems[existingIdx] = cartItemObj;
+      } else {
+        newCartItems.push(cartItemObj);
+      }
+    });
+
+    setItems(newCartItems);
+    toast.success(`Завантажено ${itemsToProcess.length} ${label} у вкладку Замовити!`);
+    setIsEditDeliveryModalOpen(false);
+    router.push("/bi?showSelected=true");
+  };
 
   // --- EVENT HANDLERS ---
 
@@ -1095,36 +1225,101 @@ export default function EditDeliveryModal() {
           )}
           {/* Левая панель: Товары в доставке */}
           <div className={css.leftPanel}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '8px' }}>
                <h3 className={css.panelTitle} style={{ marginBottom: 0 }}>📦 Товари у доставці</h3>
-               <button 
-                  className={css.splitButton}
-                  onClick={handleSplitDelivery}
-                  disabled={isSplitting || Object.values(selectedItemsToSplit).filter(Boolean).length === 0}
-                  style={{
-                    backgroundColor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? '#5865f2' : '#4f545c',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                    cursor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '0.9rem',
-                    transition: 'opacity 0.2s',
-                    opacity: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 1 : 0.6
-                  }}
-                  title="Обрані товари будуть видалені з цієї форми та перенесені у нову ідентичну доставку"
-               >
-                  {isSplitting ? "⏳ Обробка..." : "✂️ Розділити обрані"}
-               </button>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Кнопка заказа дефицита по бухучету */}
+                  {deficitItems.length > 0 && (
+                    <button
+                      className={css.orderDeficitBtn}
+                      onClick={() => handleOrderToBi(deficitItems, "дефіцитних товарів")}
+                      title="Замовити всі позиції, яких не вистачає за бухобліком"
+                    >
+                      <Zap size={13} />
+                      <span>Замовити дефіцит ({deficitItems.length})</span>
+                    </button>
+                  )}
+
+                  {/* Кнопка заказа выбранных галочками */}
+                  {selectedIndices.length > 0 && (
+                    <button
+                      className={css.orderSelectedBtn}
+                      onClick={() => {
+                        const selectedList = selectedIndices
+                          .map(idx => ({ item: validatedItems[idx], idx }))
+                          .filter(x => x.item && (parseFloat(x.item.quantity) || 0) > 0);
+                        handleOrderToBi(selectedList, "обраних товарів");
+                      }}
+                      title="Перейти у вкладку Замовити з обраними товарами"
+                    >
+                      <ShoppingCart size={13} />
+                      <span>Замовити обрані ({selectedIndices.length})</span>
+                    </button>
+                  )}
+
+                  {/* Кнопка заказа всех товаров */}
+                  <button
+                    className={css.orderAllBtn}
+                    onClick={() => {
+                      const allActive = validatedItems
+                        .map((item, idx) => ({ item, idx }))
+                        .filter(x => (parseFloat(x.item.quantity) || 0) > 0);
+                      handleOrderToBi(allActive, "товарів");
+                    }}
+                    title="Замовити всі товари цієї доставки"
+                  >
+                    <PlusCircle size={13} />
+                    <span>Замовити всі</span>
+                  </button>
+
+                  <button 
+                     className={css.splitButton}
+                     onClick={handleSplitDelivery}
+                     disabled={isSplitting || Object.values(selectedItemsToSplit).filter(Boolean).length === 0}
+                     style={{
+                       backgroundColor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? '#5865f2' : '#4f545c',
+                       color: 'white',
+                       border: 'none',
+                       padding: '8px 12px',
+                       borderRadius: '4px',
+                       cursor: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 'pointer' : 'not-allowed',
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: '6px',
+                       fontSize: '0.9rem',
+                       transition: 'opacity 0.2s',
+                       opacity: Object.values(selectedItemsToSplit).filter(Boolean).length > 0 ? 1 : 0.6
+                     }}
+                     title="Обрані товари будуть видалені з цієї форми та перенесені у нову ідентичну доставку"
+                  >
+                     {isSplitting ? "⏳ Обробка..." : "✂️ Розділити обрані"}
+                  </button>
+               </div>
             </div>
             <div className={css.tableContainer}>
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: '40px' }} title="Вибрати для розділення">✂️</th>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        title="Обрати всі / зняти виділення"
+                        checked={validatedItems.filter(i => (parseFloat(i.quantity) || 0) > 0).length > 0 && 
+                                 validatedItems.filter(i => (parseFloat(i.quantity) || 0) > 0).every((_, idx) => !!selectedItemsToSplit[idx])}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          const newSel = {};
+                          if (isChecked) {
+                            validatedItems.forEach((item, idx) => {
+                              if ((parseFloat(item.quantity) || 0) > 0) {
+                                newSel[idx] = true;
+                              }
+                            });
+                          }
+                          setSelectedItemsToSplit(newSel);
+                        }}
+                      />
+                    </th>
                     <th>№ Заявки</th>
                     <th>Клієнт</th>
                     <th>Товар</th>
@@ -1152,7 +1347,35 @@ export default function EditDeliveryModal() {
                         </td>
                         <td>{item.orderRef}</td>
                         <td>{item.client}</td>
-                        <td style={{ fontWeight: 600 }}>{item.product}</td>
+                        <td style={{ fontWeight: 600 }}>
+                          <div>{item.product}</div>
+                          <div style={{ marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}>
+                            {(() => {
+                              const { totalBuh, deficitBuh, hasDeficit, isLoading } = getItemBuhInfo(item);
+                              if (isLoading) {
+                                return <span className={css.buhLoadingBadge}>⏳ перевірка бух...</span>;
+                              }
+                              if (hasDeficit) {
+                                return (
+                                  <span 
+                                    className={css.buhDeficitBadge} 
+                                    title={`Потреба: ${formatQuantity(item.quantity)}, Бух. залишок: ${formatQuantity(totalBuh)}. Не вистачає: ${formatQuantity(deficitBuh)}`}
+                                  >
+                                    🔴 Бух: {formatQuantity(totalBuh)} (деф: -{formatQuantity(deficitBuh)})
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span 
+                                  className={css.buhOkBadge} 
+                                  title={`Бух. залишок: ${formatQuantity(totalBuh)} (достатньо)`}
+                                >
+                                  🟢 Бух: {formatQuantity(totalBuh)}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </td>
                         <td>
                           <input 
                             type="number" 

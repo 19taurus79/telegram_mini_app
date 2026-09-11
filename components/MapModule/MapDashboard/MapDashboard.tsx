@@ -11,6 +11,7 @@ import BottomData from "../components/bottomData/bottomData";
 import Loader from "@/components/Loader/Loader";
 import EditClientModal from "../components/EditClientModal/EditClientModal";
 import EditDeliveryModal from "../components/EditDeliveryModal/EditDeliveryModal";
+import OrderCartBtn from "@/components/OrderCartBtn/OrderCartBtn";
 import Portal from "@/components/Portal";
 import { useMapControlStore } from "../store/mapControlStore";
 import { useApplicationsStore } from "../store/applicationsStore";
@@ -308,6 +309,7 @@ export default function MapDashboard() {
       <Portal>
         <EditDeliveryModal />
       </Portal>
+      <OrderCartBtn />
     </div>
   );
 }

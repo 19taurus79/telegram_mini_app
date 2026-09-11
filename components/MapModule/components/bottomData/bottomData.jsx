@@ -7,8 +7,10 @@ import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Zap } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Zap, PlusCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useRouter } from "next/navigation";
+import { useOrderCart } from "@/store/OrderCart";
 import OrderCommentBadge from "@/components/Orders/OrderCommentBadge/OrderCommentBadge";
 import OrderCommentModal from "@/components/Orders/OrderCommentModal/OrderCommentModal";
 import TTNInputModal from "../TTNInputModal/TTNInputModal";
@@ -55,6 +57,50 @@ export default function BottomData({ onEditClient }) {
   const [sendAccountantPromptData, setSendAccountantPromptData] = useState(null);
   const [npModalDelivery, setNpModalDelivery] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
+  const router = useRouter();
+
+  const handleQuickOrderDelivery = (deliv) => {
+    if (!deliv || !deliv.items || deliv.items.length === 0) {
+      toast.error("Немає товарів для замовлення");
+      return;
+    }
+    const { setItems, selectedItems: existingCart } = useOrderCart.getState();
+    const newCartItems = [...existingCart];
+
+    deliv.items.forEach((item, idx) => {
+      const cleanProductName = (item.product || "").replace(/\s*рік\s*$/i, "").trim();
+      const orderRef = (item.order_ref || item.orderRef || "").trim();
+      const id = `delivery_${deliv.id}_${orderRef}_${cleanProductName}_${idx}`.trim();
+      const existingIdx = newCartItems.findIndex(ci => ci.id === id || (orderRef && ci.contract_supplement === orderRef && ci.product === cleanProductName));
+
+      const cartItemObj = {
+        id,
+        product: cleanProductName,
+        nomenclature: item.nomenclature || cleanProductName,
+        party_sign: "",
+        buying_season: "",
+        different: parseFloat(item.quantity) || 0,
+        orders_q: item.orders_q || (parseFloat(item.quantity) || 0),
+        client: deliv.client || "",
+        contract_supplement: orderRef,
+        manager: deliv.manager || "",
+        buh: 0,
+        skl: 0,
+        qok: "",
+        line_of_business: item.line_of_business || "ЗЗР",
+      };
+
+      if (existingIdx >= 0) {
+        newCartItems[existingIdx] = cartItemObj;
+      } else {
+        newCartItems.push(cartItemObj);
+      }
+    });
+
+    setItems(newCartItems);
+    toast.success(`Завантажено ${deliv.items.length} товарів у вкладку Замовити!`);
+    router.push("/bi?showSelected=true");
+  };
 
   const handleCopyContact = useCallback((contact, phone, e, key = 'contact') => {
     const isDesktop = typeof window !== 'undefined' ? window.innerWidth > 768 : true;
@@ -859,6 +905,15 @@ export default function BottomData({ onEditClient }) {
                   Друк
                 </button>
                 {!isCompleted && (<button className={css.deliveryEditBtn} onClick={() => setIsEditDeliveryModalOpen(true)}>Доставка</button>)}
+                {!isCompleted && (
+                  <button 
+                    className={`${css.deliveryEditBtn} ${css.btnBi}`} 
+                    onClick={() => handleQuickOrderDelivery(delivery)}
+                    title="Замовити товари цієї доставки у вкладці Замовити (BI)"
+                  >
+                    <PlusCircle size={14} /> Замовити
+                  </button>
+                )}
                 {!isCompleted && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnCO}`} 

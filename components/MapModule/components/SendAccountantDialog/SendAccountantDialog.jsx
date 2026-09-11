@@ -38,14 +38,19 @@ export default function SendAccountantDialog({
       const address = (it.address || delivery?.address || "").toString().trim();
 
       const key = `${client}___${orderRef}`;
+      const itemComment = (it.comment || "").toString().trim();
+
       if (!groups[key]) {
         groups[key] = {
           order_ref: orderRef,
           client,
           manager,
           address,
+          comment: itemComment,
           items: []
         };
+      } else if (!groups[key].comment && itemComment) {
+        groups[key].comment = itemComment;
       }
 
       const parties = (it.parties || [])
@@ -160,15 +165,14 @@ export default function SendAccountantDialog({
     const typeStr = isNp ? "Нова Пошта" : "Доставка / Самовивіз";
     const ttnLine = isNp ? `- ТТН Нова Пошта: ${ttn}\n` : "";
 
-    let totalQty = 0;
     const orderBlocks = groupedOrders.map(ord => {
       const mgrLine = ord.manager ? `- Менеджер: ${ord.manager}\n` : "";
       const addrLine = ord.address ? `- Адреса: ${ord.address}\n` : "";
+      const commentLine = ord.comment ? `- Примітка заявки: ${ord.comment}\n` : "";
 
       const itemsLines = ord.items.map(it => {
         const prod = it.nomenclature || it.product || "";
         const qty = it.quantity || 0;
-        totalQty += qty;
         const pStrs = (it.parties || []).map(p => `${p.party}: ${p.moved_q}`);
         const partyPart = pStrs.length > 0 ? ` [Партії: ${pStrs.join(", ")}]` : "";
         return `  • ${prod} — ${qty} шт${partyPart}`;
@@ -179,19 +183,16 @@ export default function SendAccountantDialog({
       return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 Клієнт: ${ord.client}
 📄 Доповнення: #${ord.order_ref}
-${mgrLine}${addrLine}Товари та складські партії:
+${mgrLine}${addrLine}${commentLine}Товари та складські партії:
 ${itemsText}`;
     });
 
     const allOrdersText = orderBlocks.length > 0 ? orderBlocks.join("\n\n") : "(замовлення відсутні)";
 
-    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n${ttnLine}- Дата: ${date}\n- Кількість заявок / доповнень: ${groupedOrders.length}\n\n${allOrdersText}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nВсього товарів: ${totalQty} шт\n`;
+    let body = `Доброго дня!\n\nІнформація щодо відвантаження (${typeStr}):\n${ttnLine}- Дата: ${date}\n- Кількість заявок / доповнень: ${groupedOrders.length}\n\n${allOrdersText}\n`;
 
     if (comment.trim()) {
-      body += `\nКоментар для бухгалтера: ${comment.trim()}\n`;
-    }
-    if (delivery?.comment) {
-      body += `Примітка доставки: ${delivery.comment}\n`;
+      body += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nКоментар для бухгалтера: ${comment.trim()}\n`;
     }
     body += `\n---\nЗгенеровано з додатку логістики`;
 
@@ -343,6 +344,12 @@ ${itemsText}`;
                         <span>{ord.items.length} {ord.items.length === 1 ? "товар" : "товари"}</span>
                         {ord.manager && <span>· Менеджер: {ord.manager}</span>}
                       </div>
+                      {ord.comment && (
+                        <div style={{ fontSize: "11px", color: "#f59e0b", display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span>💬</span>
+                          <span>{ord.comment}</span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

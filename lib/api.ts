@@ -405,6 +405,7 @@ export interface AccountantOrder {
   client: string;
   manager?: string;
   address?: string;
+  comment?: string;
   items: AccountantOrderItem[];
 }
 

@@ -236,6 +236,7 @@ export default function EditDeliveryModal() {
             orderRef: item.order_ref || matchedOrder?.contract_supplement || matchedOrder?.id || "",
             manager: matchedOrder?.manager || clientApp?.manager || d.manager || "",
             address: matchedOrder?.address || matchedOrder?.delivery_address || clientApp?.deliveryAddress || d.address || "",
+            comment: matchedOrder?.comment || d.comment || "",
             unit_weight: unitWeight,
             weight: unitWeight * qty,
             orders_q: ordersQ,
@@ -273,6 +274,7 @@ export default function EditDeliveryModal() {
                 isNew: true,
                 manager: order.manager || clientApp?.manager || d.manager || "",
                 address: order.address || order.delivery_address || clientApp?.deliveryAddress || d.address || "",
+                comment: order.comment || d.comment || "",
                 line_of_business: order.line_of_business || "ЗЗР"
               });
             }
@@ -993,6 +995,7 @@ export default function EditDeliveryModal() {
           manager: String(item.manager || ""),
           client: String(item.client),
           address: String(item.address || ""),
+          comment: String(item.comment || ""),
           orderRef: String(item.orderRef || item.order || item.order_ref || ""),
           weight: parseFloat(item.weight) || 0,
           parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 })),

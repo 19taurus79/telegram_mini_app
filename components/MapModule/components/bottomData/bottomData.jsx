@@ -218,23 +218,34 @@ export default function BottomData({ onEditClient }) {
             return;
         }
 
-        const sanitizedItems = (d.items || []).map(item => ({
-            product: String(item.product),
-            nomenclature: String(item.nomenclature || item.product),
-            quantity: Number(item.quantity) || 0,
-            manager: String(item.manager || d.manager || ""),
-            client: String(item.client || d.client || ""),
-            orderRef: String(item.order_ref || item.order || item.orderRef || ""),
-            weight: Number(item.total_weight) || Number(item.weight) || 0, // <-- Виправлено: пріоритет total_weight, потім weight
-            parties: Array.isArray(item.parties) 
-                ? item.parties.map(p => ({
-                    party: String(p.party),
-                    moved_q: Number(p.party_quantity || p.moved_q) || 0
-                  }))
-                : []
-        }));
+        const existingWeight = Number(d.total_weight) || 0;
+        const totalDeliveryQuantity = (d.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+        const fallbackUnitWeight = (existingWeight > 0 && totalDeliveryQuantity > 0)
+            ? existingWeight / totalDeliveryQuantity
+            : 1.0;
 
-        const totalWeight = sanitizedItems.reduce((sum, item) => sum + item.weight, 0);
+        const sanitizedItems = (d.items || []).map(item => {
+            const itemQty = Number(item.quantity) || 0;
+            const itemW = Number(item.total_weight) || Number(item.weight) || (itemQty * fallbackUnitWeight);
+            return {
+                product: String(item.product),
+                nomenclature: String(item.nomenclature || item.product),
+                quantity: itemQty,
+                manager: String(item.manager || d.manager || ""),
+                client: String(item.client || d.client || ""),
+                orderRef: String(item.order_ref || item.order || item.orderRef || ""),
+                weight: itemW,
+                parties: Array.isArray(item.parties) 
+                    ? item.parties.map(p => ({
+                        party: String(p.party),
+                        moved_q: Number(p.party_quantity || p.moved_q) || 0
+                      }))
+                    : []
+            };
+        });
+
+        const calculatedItemsWeight = sanitizedItems.reduce((sum, item) => sum + item.weight, 0);
+        const totalWeight = existingWeight > 0 ? existingWeight : (calculatedItemsWeight > 0 ? calculatedItemsWeight : undefined);
         const actorName = userData?.full_name_for_orders || "";
         const res = await updateDeliveryData(String(deliveryId), newStatus, sanitizedItems, totalWeight, initData, actorName, ttn);
         
@@ -245,12 +256,13 @@ export default function BottomData({ onEditClient }) {
 
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         
+        const finalWeight = totalWeight || existingWeight || (calculatedItemsWeight > 0 ? calculatedItemsWeight : 1.0);
         if (isOk) {
             toast.success(`Статус змінено на "${newStatus}"`);
-            updateDeliveries([{ ...d, status: newStatus }]);
+            updateDeliveries([{ ...d, status: newStatus, total_weight: finalWeight }]);
         } else {
             toast.success(`Статус оновлено: "${newStatus}"`);
-            updateDeliveries([{ ...d, status: newStatus }]);
+            updateDeliveries([{ ...d, status: newStatus, total_weight: finalWeight }]);
         }
     } catch (e) {
         console.error("Error updating status:", e);

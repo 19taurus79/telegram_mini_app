@@ -1043,8 +1043,10 @@ export default function EditDeliveryModal() {
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
 
-      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
-      return { ...delivery, status: "В роботі", items: deliveryUpdatedItems, total_weight: newTotalWeight };
+      const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
+      const prevWeight = parseFloat(delivery.total_weight) || 0;
+      const newTotalWeight = calculatedWeight > 0 ? calculatedWeight : (prevWeight > 0 ? prevWeight : undefined);
+      return { ...delivery, status: "В роботі", items: deliveryUpdatedItems, total_weight: newTotalWeight || prevWeight || 1.0 };
     });
 
     try {
@@ -1108,8 +1110,10 @@ export default function EditDeliveryModal() {
             .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
           return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
         });
-      const newTotalWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
-      return { ...delivery, status: "Доставка з ЦО на клієнта", items: deliveryUpdatedItems, total_weight: newTotalWeight };
+      const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
+      const prevWeight = parseFloat(delivery.total_weight) || 0;
+      const newTotalWeight = calculatedWeight > 0 ? calculatedWeight : (prevWeight > 0 ? prevWeight : undefined);
+      return { ...delivery, status: "Доставка з ЦО на клієнта", items: deliveryUpdatedItems, total_weight: newTotalWeight || prevWeight || 1.0 };
     });
 
     try {

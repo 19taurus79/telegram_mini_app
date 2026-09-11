@@ -463,6 +463,7 @@ export type DeliveryItemParty = {
   party: string;
   party_quantity: number;
   moved_q?: number;
+  warehouse?: string;
 };
 
 export type DeliveryRequestItem = {
@@ -503,6 +504,7 @@ export type DeliveryUpdateItem = {
   parties: {
     party: string;
     moved_q: number;
+    warehouse?: string;
   }[];
   weight: number;
 };

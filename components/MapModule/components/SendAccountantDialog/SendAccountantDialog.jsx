@@ -56,6 +56,7 @@ export default function SendAccountantDialog({
       const parties = (it.parties || [])
         .map(p => ({
           party: String(p.party),
+          warehouse: p.warehouse ? String(p.warehouse) : "",
           moved_q: parseFloat((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : p.moved_q) || 0
         }))
         .filter(p => p.moved_q > 0);
@@ -173,7 +174,12 @@ export default function SendAccountantDialog({
       const itemsLines = ord.items.map(it => {
         const prod = it.nomenclature || it.product || "";
         const qty = it.quantity || 0;
-        const pStrs = (it.parties || []).map(p => `${p.party}: ${p.moved_q}`);
+        const pStrs = (it.parties || []).map(p => {
+          if (p.warehouse) {
+            return `${p.party} — ${p.moved_q} шт (склад: ${p.warehouse})`;
+          }
+          return `${p.party}: ${p.moved_q} шт`;
+        });
         const partyPart = pStrs.length > 0 ? ` [Партії: ${pStrs.join(", ")}]` : "";
         return `  • ${prod} — ${qty} шт${partyPart}`;
       });
@@ -344,6 +350,24 @@ ${itemsText}`;
                         <span>{ord.items.length} {ord.items.length === 1 ? "товар" : "товари"}</span>
                         {ord.manager && <span>· Менеджер: {ord.manager}</span>}
                       </div>
+                      {ord.items.some(i => i.parties && i.parties.length > 0) && (
+                        <div style={{ marginTop: "4px", fontSize: "11px", color: "#94a3b8", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          {ord.items.map((i, iIdx) => (
+                            <div key={iIdx}>
+                              <span style={{ color: "#cbd5e1" }}>{i.product}: </span>
+                              {i.parties && i.parties.length > 0 ? (
+                                i.parties.map((p, pIdx) => (
+                                  <span key={pIdx} style={{ marginRight: "6px" }}>
+                                    <code>{p.party}</code> ({p.moved_q} шт{p.warehouse ? ` · ${p.warehouse}` : ""})
+                                  </span>
+                                ))
+                              ) : (
+                                <span style={{ fontStyle: "italic", color: "#64748b" }}>партія не призначена</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       {ord.comment && (
                         <div style={{ fontSize: "11px", color: "#f59e0b", display: "flex", alignItems: "center", gap: "4px" }}>
                           <span>💬</span>

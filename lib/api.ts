@@ -396,7 +396,7 @@ export interface AccountantOrderItem {
   nomenclature?: string;
   quantity: number;
   weight?: number;
-  parties?: { party: string; moved_q: number }[];
+  parties?: { party: string; moved_q: number; warehouse?: string }[];
   line_of_business?: string;
 }
 

@@ -564,8 +564,8 @@ export default function BottomData({ onEditClient }) {
                 <div className={css.partiesList}>
                   {item.parties.map((p, pIdx) => (
                     <div key={pIdx} className={css.partyItem}>
-                      <span className={css.partyLabel}>Партія: {p.party}</span>
-                      <span className={css.partyAmount}>{p.party_quantity}</span>
+                      <span className={css.partyLabel}>Партія: {p.party}{p.warehouse ? ` (${p.warehouse})` : ""}</span>
+                      <span className={css.partyAmount}>{p.party_quantity !== undefined ? p.party_quantity : (p.moved_q || 0)}</span>
                     </div>
                   ))}
                 </div>

@@ -33,6 +33,7 @@ import {
   Zap,
   PlusCircle,
   Boxes,
+  Building2,
   FileText,
   BarChart3,
   Maximize2,
@@ -533,15 +534,16 @@ export default function EditDeliveryModal() {
     setSwapTarget(null);
   }, [activeItemIdx]);
 
-  // Реактивный подсчет использования каждой партии по всем заявкам/товарам текущей доставки
+  // Реактивный подсчет использования каждой партии по всем заявкам/товарам текущей доставки с привязкой к складу
   const batchUsageMap = useMemo(() => {
-    const map = {}; // partyKey: { partyName, totalAllocated: number, usages: Array<{ itemIdx, client, orderRef, product, qty }> }
+    const map = {}; // partyKey: { partyName, warehouse, totalAllocated: number, usages: Array<{ itemIdx, client, orderRef, product, qty }> }
 
     (deliveryItems || []).forEach((item, itemIdx) => {
       (item.parties || []).forEach(p => {
         const partyName = (p.party || "").trim();
         if (!partyName) return;
-        const partyKey = partyName.toLowerCase();
+        const partyWarehouse = (p.warehouse || "").trim();
+        const partyKey = `${partyName.toLowerCase()}___${partyWarehouse.toLowerCase()}`;
         const qty = parseFloat(
           p.party_quantity !== "" && p.party_quantity !== undefined ? p.party_quantity : p.moved_q
         ) || 0;
@@ -550,6 +552,7 @@ export default function EditDeliveryModal() {
         if (!map[partyKey]) {
           map[partyKey] = {
             partyName,
+            warehouse: partyWarehouse,
             totalAllocated: 0,
             usages: []
           };
@@ -569,13 +572,14 @@ export default function EditDeliveryModal() {
     return map;
   }, [deliveryItems]);
 
-  // Получение доступного живого бухгалтерского остатка партии с учетом распределения в текущей сессии
+  // Получение доступного живого бухгалтерского остатка партии с учетом конкретного склада и распределения в текущей сессии
   const getPartyLiveBuh = (remain, forItemIdx = null, forPartyIdx = null) => {
     if (!remain) {
       return { rawBuh: 0, totalAllocated: 0, availRemainingBuh: 0, usageInfo: null, isExhausted: true };
     }
     const partyName = (remain.nomenclature_series || "Без серії").trim();
-    const partyKey = partyName.toLowerCase();
+    const partyWarehouse = (remain.warehouse || "").trim();
+    const partyKey = `${partyName.toLowerCase()}___${partyWarehouse.toLowerCase()}`;
     const rawBuh = Math.max(0, parseFloat(remain.buh) || 0);
     const usage = batchUsageMap[partyKey];
 
@@ -593,7 +597,11 @@ export default function EditDeliveryModal() {
     let allocatedInOtherSlots = usage.totalAllocated;
     if (forItemIdx !== null && forPartyIdx !== null && deliveryItems[forItemIdx]) {
       const curParty = deliveryItems[forItemIdx].parties?.[forPartyIdx];
-      if (curParty && (curParty.party || "").trim().toLowerCase() === partyKey) {
+      if (
+        curParty &&
+        (curParty.party || "").trim().toLowerCase() === partyName.toLowerCase() &&
+        (curParty.warehouse || "").trim().toLowerCase() === partyWarehouse.toLowerCase()
+      ) {
         const curQty = parseFloat(
           curParty.party_quantity !== "" && curParty.party_quantity !== undefined
             ? curParty.party_quantity
@@ -614,7 +622,7 @@ export default function EditDeliveryModal() {
     };
   };
 
-  // Умное распределение / перенос партии из остатков
+  // Умное распределение / перенос партии из остатков с сохранением склада
   const applyPartyAllocation = (targetItemIdx, targetPartyIdx, remainOrName) => {
     const itemIndex = targetItemIdx !== null && targetItemIdx !== undefined ? targetItemIdx : activeItemIdx;
     if (itemIndex === null || itemIndex === undefined || !deliveryItems[itemIndex]) {
@@ -625,6 +633,10 @@ export default function EditDeliveryModal() {
     const partyName = typeof remainOrName === "string"
       ? remainOrName
       : (remainOrName.nomenclature_series || "Без серії");
+
+    const remainWarehouse = (typeof remainOrName === "object" && remainOrName !== null)
+      ? (remainOrName.warehouse || "")
+      : "";
 
     // Вычисляем живой бухгалтерский остаток с учетом текущей сессии
     let availStock = null;
@@ -640,7 +652,7 @@ export default function EditDeliveryModal() {
     }
 
     if (availStock !== null && availStock <= 0) {
-      toast.error(`Партію "${partyName}" вже повністю вичерпано у цій доставці`);
+      toast.error(`Партію "${partyName}"${remainWarehouse ? ` зі складу "${remainWarehouse}"` : ""} вже повністю вичерпано у цій доставці`);
       return;
     }
 
@@ -649,12 +661,15 @@ export default function EditDeliveryModal() {
     const parties = [...(item.parties || [])];
     const totalQty = parseFloat(item.quantity) || 0;
 
-    // Проверка дубликата партии (кроме строки, которую заменяем)
+    // Проверка дубликата партии с того же склада (кроме строки, которую заменяем)
     const duplicateIdx = parties.findIndex((p, idx) =>
-      idx !== targetPartyIdx && (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase()
+      idx !== targetPartyIdx &&
+      (p.party || "").trim().toLowerCase() === partyName.trim().toLowerCase() &&
+      (p.warehouse || "").trim().toLowerCase() === remainWarehouse.trim().toLowerCase()
     );
     if (duplicateIdx >= 0) {
-      toast.error(`Партію "${partyName}" вже призначено для цього товару`);
+      const whLabel = remainWarehouse ? ` зі складу "${remainWarehouse}"` : "";
+      toast.error(`Партію "${partyName}"${whLabel} вже призначено для цього товару`);
       return;
     }
 
@@ -687,6 +702,7 @@ export default function EditDeliveryModal() {
       parties[targetPartyIdx] = {
         ...targetSlot,
         party: partyName,
+        warehouse: remainWarehouse,
         party_quantity: qtyToTake
       };
 
@@ -695,6 +711,7 @@ export default function EditDeliveryModal() {
       if (remainder > 0) {
         parties.splice(targetPartyIdx + 1, 0, {
           party: "",
+          warehouse: "",
           party_quantity: remainder
         });
         toast.success(`Партію ${partyName} призначено (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
@@ -727,6 +744,7 @@ export default function EditDeliveryModal() {
         parties[emptySlotIdx] = {
           ...emptySlot,
           party: partyName,
+          warehouse: remainWarehouse,
           party_quantity: qtyToTake
         };
 
@@ -734,6 +752,7 @@ export default function EditDeliveryModal() {
         if (remainder > 0) {
           parties.splice(emptySlotIdx + 1, 0, {
             party: "",
+            warehouse: "",
             party_quantity: remainder
           });
           toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
@@ -760,6 +779,7 @@ export default function EditDeliveryModal() {
 
         parties.push({
           party: partyName,
+          warehouse: remainWarehouse,
           party_quantity: qtyToTake
         });
 
@@ -767,6 +787,7 @@ export default function EditDeliveryModal() {
         if (remainder > 0) {
           parties.push({
             party: "",
+            warehouse: "",
             party_quantity: remainder
           });
           toast.success(`Партію ${partyName} додано (${formatQuantity(qtyToTake)}). Залишилось: ${formatQuantity(remainder)}`);
@@ -998,7 +1019,7 @@ export default function EditDeliveryModal() {
           comment: String(item.comment || ""),
           orderRef: String(item.orderRef || item.order || item.order_ref || ""),
           weight: parseFloat(item.weight) || 0,
-          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0 })),
+          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0, warehouse: p.warehouse ? String(p.warehouse) : "" })),
           line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
         };
       });
@@ -1474,7 +1495,23 @@ export default function EditDeliveryModal() {
                           <td style={{ fontWeight: 500 }}>{item.product}</td>
                           <td style={{ textAlign: "center", fontWeight: "bold" }}>{formatQuantity(item.quantity)}</td>
                           <td style={{ fontSize: "0.85rem" }}>
-                            {item.parties?.map(p => `${p.party} (${formatQuantity(p.moved_q)})`).join(", ")}
+                            {item.parties && item.parties.length > 0 ? (
+                              item.parties.map((p, pIdx) => {
+                                const pQty = formatQuantity((p.party_quantity !== "" && p.party_quantity !== undefined) ? p.party_quantity : (p.moved_q || 0));
+                                return (
+                                  <div key={pIdx} style={{ marginBottom: pIdx < item.parties.length - 1 ? "4px" : 0 }}>
+                                    <strong>{p.party}</strong> — {pQty} шт
+                                    {p.warehouse && (
+                                      <div style={{ fontSize: "0.75rem", color: "#475569" }}>
+                                        📍 {p.warehouse}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <span style={{ color: "#94a3b8", fontStyle: "italic" }}>—</span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -2011,12 +2048,34 @@ export default function EditDeliveryModal() {
                                             ? p.party_quantity
                                             : (p.moved_q || 0);
                                           const isUnassigned = !p.party || p.party.trim() === "";
-                                          const stockStatus = isRowActive ? (isUnassigned ? "unassigned" : getPartyStockStatus(p.party, partyQty)) : "unknown";
+
+                                          const exactRemain = isRowActive && stockRemains.find(r =>
+                                            (r.nomenclature_series || "Без серії").trim().toLowerCase() === (p.party || "").trim().toLowerCase() &&
+                                            (!p.warehouse || (r.warehouse || "").trim().toLowerCase() === (p.warehouse || "").trim().toLowerCase())
+                                          );
 
                                           const key = (p.party || "").trim().toLowerCase();
                                           const st = partyStockMap[key];
-                                          const realBuh = st ? st.totalBuh : 0;
-                                          const realSkl = st ? (st.totalSkl - st.totalStorage) : 0;
+
+                                          let realBuh = 0;
+                                          let realSkl = 0;
+                                          let stockStatus = "unknown";
+
+                                          if (isRowActive) {
+                                            if (isUnassigned) {
+                                              stockStatus = "unassigned";
+                                            } else if (exactRemain) {
+                                              realBuh = parseFloat(exactRemain.buh) || 0;
+                                              realSkl = Math.max(0, (parseFloat(exactRemain.skl) || 0) - (parseFloat(exactRemain.storage) || 0));
+                                              stockStatus = (realBuh >= partyQty && realSkl >= partyQty) ? "ok" : "low";
+                                            } else if (st) {
+                                              realBuh = st.totalBuh;
+                                              realSkl = Math.max(0, st.totalSkl - st.totalStorage);
+                                              stockStatus = (realBuh >= partyQty && realSkl >= partyQty) ? "ok" : "low";
+                                            } else {
+                                              stockStatus = "missing";
+                                            }
+                                          }
 
                                           const isSwapTarget = swapTarget && swapTarget.itemIdx === idx && swapTarget.partyIdx === pIdx;
                                           const isPartyDropTarget = dragOverTarget && dragOverTarget.type === 'party' && dragOverTarget.itemIdx === idx && dragOverTarget.partyIdx === pIdx;
@@ -2069,21 +2128,29 @@ export default function EditDeliveryModal() {
                                                     </span>
                                                   </div>
                                                 ) : (
-                                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                                    <span>{p.party}</span>
-                                                    {isRowActive && (
-                                                      <button
-                                                        type="button"
-                                                        className={`${css.swapBtn} ${isSwapTarget ? css.swapBtnActive : ""}`}
-                                                        onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          setSwapTarget(isSwapTarget ? null : { itemIdx: idx, partyIdx: pIdx });
-                                                        }}
-                                                        title={isSwapTarget ? "Скасувати заміну" : "Замінити цю партію з залишків"}
-                                                      >
-                                                        <RefreshCw size={11} className={isSwapTarget ? css.spinIcon : ""} />
-                                                        <span>{isSwapTarget ? "Очікує..." : "Замінити"}</span>
-                                                      </button>
+                                                  <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                      <span>{p.party}</span>
+                                                      {isRowActive && (
+                                                        <button
+                                                          type="button"
+                                                          className={`${css.swapBtn} ${isSwapTarget ? css.swapBtnActive : ""}`}
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSwapTarget(isSwapTarget ? null : { itemIdx: idx, partyIdx: pIdx });
+                                                          }}
+                                                          title={isSwapTarget ? "Скасувати заміну" : "Замінити цю партію з залишків"}
+                                                        >
+                                                          <RefreshCw size={11} className={isSwapTarget ? css.spinIcon : ""} />
+                                                          <span>{isSwapTarget ? "Очікує..." : "Замінити"}</span>
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                    {p.warehouse && (
+                                                      <div style={{ fontSize: "0.73rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }} title={p.warehouse}>
+                                                        <Building2 size={11} color="#38bdf8" />
+                                                        <span style={{ maxWidth: "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.warehouse}</span>
+                                                      </div>
                                                     )}
                                                   </div>
                                                 )}
@@ -2093,7 +2160,7 @@ export default function EditDeliveryModal() {
                                                   <span style={{ fontSize: "0.75rem", color: "#f59e0b", fontStyle: "italic" }}>
                                                     Потребує призначення зі складу
                                                   </span>
-                                                ) : st ? (
+                                                ) : exactRemain || st ? (
                                                   <span style={{ fontSize: "0.78rem", color: stockStatus === "ok" ? "#34d399" : "#fca5a5" }}>
                                                     Бух: {formatQuantity(realBuh)} · Склад: {formatQuantity(realSkl)}
                                                   </span>

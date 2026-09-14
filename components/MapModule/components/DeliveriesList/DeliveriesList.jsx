@@ -14,7 +14,7 @@ import { Download, Printer } from "lucide-react";
 import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
 import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
-import { isNPDelivery } from "@/lib/utils/deliveryUtils";
+import { isNPDelivery, isCODelivery } from "@/lib/utils/deliveryUtils";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
@@ -133,6 +133,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
     if (selectedDeliveries.length === 0) return;
     
     const ids = selectedDeliveries.map(d => d.id);
+    const coDeliveries = selectedDeliveries.filter(d => isCODelivery(d));
 
     // Якщо статус змінюється на "Виконано", перевіряємо наявність доставок Нової Пошти
     if (status === "Виконано" && !ttnData) {
@@ -166,11 +167,13 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
           .filter(d => ids.includes(d.id))
           .map(d => {
             const newTtn = ttnData?.commonTtn || (ttnData?.ttnMap && (ttnData.ttnMap[d.id] || ttnData.ttnMap[String(d.id)])) || d.ttn;
+            const wasCO = isCODelivery(d);
             return {
               ...d,
               ...(status ? { status } : {}),
               ...(date ? { delivery_date: date } : {}),
-              ...(newTtn ? { ttn: newTtn } : {})
+              ...(newTtn ? { ttn: newTtn } : {}),
+              ...(wasCO ? { isCO: true } : {})
             };
           });
           
@@ -189,7 +192,19 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
             delivery: completedNPDeliveries[0],
             client: allClients,
             ttn: allTtns,
-            count: completedNPDeliveries.length
+            count: completedNPDeliveries.length,
+            isCO: false
+          });
+        } else if (status === "Виконано" && coDeliveries.length > 0) {
+          // Якщо оновлювалися доставки з ЦО (без ТТН)
+          const completedCODeliveries = updatedDeliveries.filter(d => coDeliveries.some(cd => cd.id === d.id));
+          const allClients = Array.from(new Set(completedCODeliveries.map(d => d.client).filter(Boolean))).join(", ");
+          setSendAccountantPromptData({
+            deliveries: completedCODeliveries,
+            delivery: completedCODeliveries[0],
+            client: allClients,
+            isCO: true,
+            count: completedCODeliveries.length
           });
         }
       } else {
@@ -451,6 +466,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
 
       <SendAccountantConfirmModal
         isOpen={!!sendAccountantPromptData}
+        isCO={sendAccountantPromptData?.isCO}
         ttn={sendAccountantPromptData?.ttn}
         clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
         deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}

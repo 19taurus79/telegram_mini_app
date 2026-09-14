@@ -8,6 +8,7 @@ export default function SendAccountantConfirmModal({
   ttn,
   clientName,
   deliveriesCount = 1,
+  isCO = false,
   onConfirm,
   onCancel,
 }) {
@@ -31,11 +32,19 @@ export default function SendAccountantConfirmModal({
       <div className={css.modal}>
         <div className={css.header}>
           <div>
-            <span className={css.badge}>📦 Нова Пошта</span>
+            {isCO ? (
+              <span className={css.badgeCO}>🏢 Доставка з ЦО</span>
+            ) : (
+              <span className={css.badge}>📦 Нова Пошта</span>
+            )}
             <h3 className={css.title}>
-              {isMultiple
-                ? `ТТН успішно збережено (${deliveriesCount} дост.)`
-                : "ТТН успішно збережено"}
+              {isCO
+                ? isMultiple
+                  ? `Доставки з ЦО виконано (${deliveriesCount} дост.)`
+                  : "Доставку з ЦО успішно виконано"
+                : isMultiple
+                  ? `ТТН успішно збережено (${deliveriesCount} дост.)`
+                  : "ТТН успішно збережено"}
             </h3>
           </div>
           <button className={css.closeBtn} onClick={onCancel} title="Закрити">
@@ -46,10 +55,26 @@ export default function SendAccountantConfirmModal({
         <div className={css.body}>
           <div className={css.ttnCard}>
             <div>
-              <div className={css.ttnLabel}>
-                {isMultiple ? "ТТН Нової Пошти:" : "Номер декларації (ТТН):"}
-              </div>
-              <div className={css.ttnValue}>{ttn || "—"}</div>
+              {ttn ? (
+                <>
+                  <div className={css.ttnLabel}>
+                    {isMultiple ? "ТТН Нової Пошти:" : "Номер декларації (ТТН):"}
+                  </div>
+                  <div className={css.ttnValue}>{ttn}</div>
+                </>
+              ) : isCO ? (
+                <>
+                  <div className={css.ttnLabel}>Тип відвантаження:</div>
+                  <div className={css.ttnValueCO}>🏢 Центральний Офіс</div>
+                </>
+              ) : (
+                <>
+                  <div className={css.ttnLabel}>
+                    {isMultiple ? "ТТН Нової Пошти:" : "Номер декларації (ТТН):"}
+                  </div>
+                  <div className={css.ttnValue}>—</div>
+                </>
+              )}
             </div>
             {clientName && (
               <div style={{ textAlign: "right" }}>

@@ -18,7 +18,8 @@ import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
 import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
 import { formatQuantity } from "@/lib/utils/productUtils";
-import { isNPDelivery } from "@/lib/utils/deliveryUtils";
+import { isNPDelivery, isCODelivery } from "@/lib/utils/deliveryUtils";
+
 
 export default function BottomData({ onEditClient }) {
   const [commentModalData, setCommentModalData] = useState(null);
@@ -210,6 +211,8 @@ export default function BottomData({ onEditClient }) {
       return;
     }
 
+    const wasCO = isCODelivery(d);
+
     try {
         const initData = getInitData();
         const deliveryId = parseInt(d.id, 10);
@@ -257,12 +260,25 @@ export default function BottomData({ onEditClient }) {
         const isOk = res && (res.status === "success" || res.status === "ok" || res.status === newStatus);
         
         const finalWeight = totalWeight || existingWeight || (calculatedItemsWeight > 0 ? calculatedItemsWeight : 1.0);
+        const updatedDeliveryObj = { ...d, status: newStatus, total_weight: finalWeight, ...(wasCO ? { isCO: true } : {}) };
+
         if (isOk) {
             toast.success(`Статус змінено на "${newStatus}"`);
-            updateDeliveries([{ ...d, status: newStatus, total_weight: finalWeight }]);
+            updateDeliveries([updatedDeliveryObj]);
         } else {
             toast.success(`Статус оновлено: "${newStatus}"`);
-            updateDeliveries([{ ...d, status: newStatus, total_weight: finalWeight }]);
+            updateDeliveries([updatedDeliveryObj]);
+        }
+
+        // Якщо це закриття доставки з ЦО (без ТТН), пропонуємо надіслати дані бухгалтеру
+        if (newStatus === "Виконано" && wasCO) {
+            setSendAccountantPromptData({
+                delivery: updatedDeliveryObj,
+                deliveries: [updatedDeliveryObj],
+                client: d.client,
+                isCO: true,
+                count: 1
+            });
         }
     } catch (e) {
         console.error("Error updating status:", e);
@@ -354,9 +370,11 @@ export default function BottomData({ onEditClient }) {
       
     if (ids.length === 0) return;
 
+    const targetDeliveries = deliveries.filter(d => ids.includes(d.id));
+    const coDeliveries = targetDeliveries.filter(d => isCODelivery(d));
+
     // Якщо статус змінюється на "Виконано", перевіряємо наявність доставок Нової Пошти
     if (status === "Виконано" && !ttnData) {
-      const targetDeliveries = deliveries.filter(d => ids.includes(d.id));
       const npDeliveries = targetDeliveries.filter(d => isNPDelivery(d));
 
       if (npDeliveries.length > 0) {
@@ -389,11 +407,13 @@ export default function BottomData({ onEditClient }) {
           .filter(d => ids.includes(d.id))
           .map(d => {
             const newTtn = ttnData?.commonTtn || (ttnData?.ttnMap && (ttnData.ttnMap[d.id] || ttnData.ttnMap[String(d.id)])) || d.ttn;
+            const wasCO = isCODelivery(d);
             return {
               ...d,
               ...(status ? { status } : {}),
               ...(date ? { delivery_date: date } : {}),
-              ...(newTtn ? { ttn: newTtn } : {})
+              ...(newTtn ? { ttn: newTtn } : {}),
+              ...(wasCO ? { isCO: true } : {})
             };
           });
           
@@ -412,7 +432,19 @@ export default function BottomData({ onEditClient }) {
             delivery: completedNPDeliveries[0],
             client: allClients,
             ttn: allTtns,
-            count: completedNPDeliveries.length
+            count: completedNPDeliveries.length,
+            isCO: false
+          });
+        } else if (status === "Виконано" && coDeliveries.length > 0) {
+          // Якщо оновлювалися доставки з ЦО (без ТТН)
+          const completedCODeliveries = updatedDeliveries.filter(d => coDeliveries.some(cd => cd.id === d.id));
+          const allClients = Array.from(new Set(completedCODeliveries.map(d => d.client).filter(Boolean))).join(", ");
+          setSendAccountantPromptData({
+            deliveries: completedCODeliveries,
+            delivery: completedCODeliveries[0],
+            client: allClients,
+            isCO: true,
+            count: completedCODeliveries.length
           });
         }
       } else {
@@ -1241,7 +1273,7 @@ export default function BottomData({ onEditClient }) {
               const currentDeliv = { ...ttnModalData.delivery, ttn };
               handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
               setTtnModalData(null);
-              setSendAccountantPromptData({ delivery: currentDeliv, ttn });
+              setSendAccountantPromptData({ delivery: currentDeliv, ttn, isCO: false });
             }
           }} 
         />
@@ -1259,6 +1291,7 @@ export default function BottomData({ onEditClient }) {
         />
         <SendAccountantConfirmModal
           isOpen={!!sendAccountantPromptData}
+          isCO={sendAccountantPromptData?.isCO}
           ttn={sendAccountantPromptData?.ttn}
           clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
           deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}
@@ -1698,7 +1731,7 @@ export default function BottomData({ onEditClient }) {
             const currentDeliv = { ...ttnModalData.delivery, ttn };
             handleUpdateStatus(ttnModalData.delivery, ttnModalData.newStatus, ttn);
             setTtnModalData(null);
-            setSendAccountantPromptData({ delivery: currentDeliv, ttn });
+            setSendAccountantPromptData({ delivery: currentDeliv, ttn, isCO: false });
           }
         }} 
       />
@@ -1716,6 +1749,7 @@ export default function BottomData({ onEditClient }) {
       />
       <SendAccountantConfirmModal
         isOpen={!!sendAccountantPromptData}
+        isCO={sendAccountantPromptData?.isCO}
         ttn={sendAccountantPromptData?.ttn}
         clientName={sendAccountantPromptData?.client || sendAccountantPromptData?.delivery?.client}
         deliveriesCount={sendAccountantPromptData?.deliveries?.length || (sendAccountantPromptData?.delivery ? 1 : 0)}

@@ -4,6 +4,7 @@ import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, Aler
 import toast from "react-hot-toast";
 import { getInitData } from "@/lib/getInitData";
 import { getAccountants, getAccountantForManager, sendDeliveryToAccountant } from "@/lib/api";
+import { isCODelivery } from "@/lib/utils/deliveryUtils";
 import css from "./SendAccountantDialog.module.css";
 
 export default function SendAccountantDialog({
@@ -90,6 +91,11 @@ export default function SendAccountantDialog({
     return delivery?.manager || "";
   }, [groupedOrders, delivery?.manager]);
 
+  const isCO = useMemo(() => {
+    const list = deliveries && deliveries.length > 0 ? deliveries : (delivery ? [delivery] : []);
+    return list.some(d => d?.isCO || isCODelivery(d));
+  }, [deliveries, delivery]);
+
   // Завантаження бухгалтерів та дефолтного/закріпленого бухгалтера
   useEffect(() => {
     if (!isOpen) return;
@@ -166,9 +172,11 @@ export default function SendAccountantDialog({
     const mgrPart = leadManager ? ` | Менеджер: ${leadManager}` : "";
     const subject = isNp 
       ? `[Нова Пошта] Відомість: ${clientPart}${orderPart} | ТТН ${ttn}${mgrPart}`
+      : isCO
+      ? `[ЦО] Відомість: ${clientPart}${orderPart} | Дата: ${date}${mgrPart}`
       : `[Доставка] Відомість: ${clientPart}${orderPart} | Дата: ${date}${mgrPart}`;
 
-    const typeStr = isNp ? "Нова Пошта" : "Доставка / Самовивіз";
+    const typeStr = isNp ? "Нова Пошта" : (isCO ? "Доставка з ЦО" : "Доставка / Самовивіз");
     const ttnLine = isNp ? `- ТТН Нова Пошта: ${ttn}\n` : "";
 
     const orderBlocks = groupedOrders.map(ord => {
@@ -322,6 +330,7 @@ ${itemsText}`;
                 <>Клієнт: <strong>{uniqueClients[0] || delivery?.client || "Не вказано"}</strong></>
               )}
               {headerTtns && <> · ТТН: <strong>{headerTtns}</strong></>}
+              {!headerTtns && isCO && <> · Відвантаження: <strong style={{ color: "#a78bfa" }}>Центральний Офіс</strong></>}
             </div>
             {uniqueOrderRefs.length > 0 && (
               <div className={css.ordersSummary}>

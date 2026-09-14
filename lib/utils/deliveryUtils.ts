@@ -20,3 +20,11 @@ export const isNPDelivery = (d: DeliveryLike | null | undefined): boolean => {
     Boolean(d.ttn && String(d.ttn).trim() !== "")
   );
 };
+
+export const isCODelivery = (d: DeliveryLike | null | undefined): boolean => {
+  if (!d) return false;
+  if (d.isCO === true) return true;
+  const statusLower = (d.status || "").toLowerCase();
+  return statusLower.includes("цо") || statusLower.includes("центральн");
+};
+

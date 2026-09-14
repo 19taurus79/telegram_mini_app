@@ -15,6 +15,7 @@ import { useOrderCart } from "@/store/OrderCart";
 import {
   ArrowLeft,
   Check,
+  Save,
   Printer,
   Send,
   Truck,
@@ -99,6 +100,14 @@ export default function EditDeliveryModal() {
   const [draggedRemain, setDraggedRemain] = useState(null);
   const [dragOverTarget, setDragOverTarget] = useState(null); // { type: 'party' | 'strip' | 'item', itemIdx, partyIdx? } | null
   const [activeUsagePopover, setActiveUsagePopover] = useState(null); // partyKey | null
+
+  // Определяем, все ли выбранные доставки уже находятся в работе
+  const isAlreadyInWork = useMemo(() => {
+    return selectedDeliveries.length > 0 && selectedDeliveries.every(d => {
+      const s = (d.status || "").trim().toLowerCase();
+      return s === "в роботі" || s === "inprogress";
+    });
+  }, [selectedDeliveries]);
 
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
@@ -1046,7 +1055,8 @@ export default function EditDeliveryModal() {
       const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
       const prevWeight = parseFloat(delivery.total_weight) || 0;
       const newTotalWeight = calculatedWeight > 0 ? calculatedWeight : (prevWeight > 0 ? prevWeight : undefined);
-      return { ...delivery, status: "В роботі", items: deliveryUpdatedItems, total_weight: newTotalWeight || prevWeight || 1.0 };
+      const targetStatus = isAlreadyInWork ? (delivery.status || "В роботі") : "В роботі";
+      return { ...delivery, status: targetStatus, items: deliveryUpdatedItems, total_weight: newTotalWeight || prevWeight || 1.0 };
     });
 
     try {
@@ -1062,29 +1072,35 @@ export default function EditDeliveryModal() {
 
       updateDeliveries(updatedDeliveries);
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-      toast.success("Доставки оновлено та переведено в роботу");
 
-      const validDeliveries = updatedDeliveries.filter(d =>
-        d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
-      ).map(d => ({ ...d, items: d.items.filter(i => i.quantity > 0) }));
+      if (isAlreadyInWork) {
+        toast.success("Зміни збережено");
+        setIsEditDeliveryModalOpen(false);
+      } else {
+        toast.success("Доставки оновлено та переведено в роботу");
 
-      const groupedByClient = validDeliveries.reduce((acc, delivery) => {
-        const client = delivery.client || "Невідомий клієнт";
-        if (!acc[client]) {
-          acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
-        }
-        acc[client].items.push(...delivery.items);
-        if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
-          acc[client].comments.push(delivery.comment);
-        }
-        return acc;
-      }, {});
+        const validDeliveries = updatedDeliveries.filter(d =>
+          d.items && d.items.length > 0 && d.items.some(i => i.quantity > 0)
+        ).map(d => ({ ...d, items: d.items.filter(i => i.quantity > 0) }));
 
-      const sorted = Object.values(groupedByClient)
-        .map(group => ({ ...group, comment: group.comments.join(" | ") }))
-        .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
-      setPrintData(sorted);
-      setIsAskingDate(true);
+        const groupedByClient = validDeliveries.reduce((acc, delivery) => {
+          const client = delivery.client || "Невідомий клієнт";
+          if (!acc[client]) {
+            acc[client] = { client, manager: delivery.manager || "", items: [], comments: [] };
+          }
+          acc[client].items.push(...delivery.items);
+          if (delivery.comment && !acc[client].comments.includes(delivery.comment)) {
+            acc[client].comments.push(delivery.comment);
+          }
+          return acc;
+        }, {});
+
+        const sorted = Object.values(groupedByClient)
+          .map(group => ({ ...group, comment: group.comments.join(" | ") }))
+          .sort((a, b) => (a.manager || "").localeCompare(b.manager || ""));
+        setPrintData(sorted);
+        setIsAskingDate(true);
+      }
     } catch (error) {
       console.error("Failed to update deliveries:", error);
       toast.error("Помилка при збереженні змін");
@@ -1616,10 +1632,16 @@ export default function EditDeliveryModal() {
             className={css.btnPrimary}
             onClick={handleReady}
             disabled={isSaving}
-            title="Зберегти всі зміни та призначити статус 'В роботі'"
+            title={isAlreadyInWork ? "Зберегти всі внесені зміни" : "Зберегти всі зміни та призначити статус 'В роботі'"}
           >
-            <Check size={16} />
-            <span>{isSaving ? "Збереження..." : "Готово"}</span>
+            {isAlreadyInWork ? <Save size={16} /> : <Check size={16} />}
+            <span>
+              {isSaving
+                ? "Збереження..."
+                : isAlreadyInWork
+                ? "Зберегти"
+                : "Зберегти та в роботу"}
+            </span>
           </button>
         </div>
       </header>

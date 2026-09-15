@@ -53,7 +53,7 @@ export default function ContractsWidget({
     let date: string | null = null;
 
     allDeliveries.forEach(d => {
-      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
       const matchesStatus = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
       if (!matchesStatus) return;
 

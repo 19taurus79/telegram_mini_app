@@ -267,7 +267,7 @@ export default function DetailsWidget({
     
     // Находим все активные доставки для этого товара
     const matchingDeliveries = allDeliveries.filter(d => {
-        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
         if (!activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase())) return false;
         
         return d.items?.some(di => {

@@ -17,8 +17,7 @@ import TTNInputModal from "../TTNInputModal/TTNInputModal";
 import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
 import NovaPoshtaDeliveryModal from "../NovaPoshtaDeliveryModal/NovaPoshtaDeliveryModal";
-import { formatQuantity } from "@/lib/utils/productUtils";
-import { isNPDelivery, isCODelivery } from "@/lib/utils/deliveryUtils";
+import { isNPDelivery, isCODelivery, isWarehouseDelivery } from "@/lib/utils/deliveryUtils";
 
 
 export default function BottomData({ onEditClient }) {
@@ -206,6 +205,11 @@ export default function BottomData({ onEditClient }) {
   };
 
   const handleUpdateStatus = async (d, newStatus, ttn = undefined) => {
+    // Якщо це заявка на склад і її беруть в роботу — вона одразу закривається (переходить у 'Виконано')
+    if (newStatus === "В роботі" && (d.status === "Доставка на склад" || d.status?.toLowerCase().includes("склад"))) {
+      newStatus = "Виконано";
+    }
+
     if (newStatus === "Виконано" && isNPDelivery(d) && ttn === undefined) {
       setTtnModalData({ delivery: d, newStatus });
       return;
@@ -876,8 +880,8 @@ export default function BottomData({ onEditClient }) {
                       <div className={css.accordionHeader} onClick={(e) => toggleExpansion(d.id, e)}>
                         <div className={css.partyItem} style={{ opacity: 1, width: '100%', marginBottom: expandedIds.has(d.id) ? '8px' : 0 }}>
                           <span className={css.partyLabel} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {expandedIds.has(d.id) ? '▼' : '▶'} {checkedDeliveryIds.has(d.id) ? '✅ ' : ''}ID: {d.id} | {d.address}
-                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : d.status?.toLowerCase().includes("нова пошт") || d.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{d.status}</span>
+                            {expandedIds.has(d.id) ? '▼' : '▶'} {checkedDeliveryIds.has(d.id) ? '✅ ' : ''}ID: {d.id} | {isWarehouseDelivery(d) ? `Склад: ${d.target_warehouse || (d.address?.replace(/^Склад:\s*/i, "") || d.address)}` : d.address}
+                            <span className={`${css.statusBadge} ${d.status === "Створено" || d.status === "created" ? css.statusCreated : d.status === "В роботі" || d.status === "inprogress" ? css.statusInProgress : d.status === "Виконано" || d.status === "completed" ? css.statusCompleted : d.status?.toLowerCase().includes("цо") ? css.statusCO : d.status?.toLowerCase().includes("склад") ? css.statusWarehouse : d.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : d.status?.toLowerCase().includes("нова пошт") || d.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{d.status}</span>
                           </span>
                           <span className={css.partyAmount}>{d.total_weight?.toFixed(2)} кг</span>
                         </div>
@@ -888,7 +892,7 @@ export default function BottomData({ onEditClient }) {
                               {!isGuest && (
                                 <>
                                   {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }} title="Комплектація доставки"><Boxes size={12} /> Комплектація</button>)}
-                                  {d.status !== "Виконано" && (
+                                  {d.status !== "Виконано" && !isWarehouseDelivery(d) && (
                                     <button 
                                       className={`${css.deliveryEditBtn} ${css.btnCO}`} 
                                       onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "Доставка з ЦО на клієнта"); }} 
@@ -897,7 +901,7 @@ export default function BottomData({ onEditClient }) {
                                       Доставка з ЦО
                                     </button>
                                   )}
-                                  {d.status !== "Виконано" && !isNPDelivery(d) && (
+                                  {d.status !== "Виконано" && !isNPDelivery(d) && !isWarehouseDelivery(d) && (
                                     <button 
                                       className={`${css.deliveryEditBtn} ${css.btnNP}`} 
                                       onClick={(e) => { e.stopPropagation(); setNpModalDelivery(d); }} 
@@ -916,10 +920,11 @@ export default function BottomData({ onEditClient }) {
                                       {d.status !== "В роботі" && d.status !== "inprogress" && (
                                         <button 
                                           className={`${css.deliveryEditBtn} ${css.btnOrange}`} 
-                                          onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "В роботі"); }} 
+                                          onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, d.status === "Доставка на склад" ? "Виконано" : "В роботі"); }} 
                                           style={{ fontSize: '0.8em', padding: '4px 12px' }}
+                                          title={d.status === "Доставка на склад" ? "Взяти в роботу (закриє заявку)" : "Взяти в роботу"}
                                         >
-                                          <Zap size={12} /> В роботі
+                                          <Zap size={12} /> {d.status === "Доставка на склад" ? "В роботу (Закрити)" : "В роботі"}
                                         </button>
                                       )}
                                       <button className={`${css.deliveryEditBtn} ${css.btnGreen}`} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(d, "Виконано"); }} style={{ fontSize: '0.8em', padding: '4px 12px' }}>
@@ -1048,7 +1053,7 @@ export default function BottomData({ onEditClient }) {
                     </button>
                   )}
                 </h2>
-                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : delivery.status?.toLowerCase().includes("нова пошт") || delivery.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{delivery.status}</span>
+                <span className={`${css.statusBadge} ${delivery.status === "Створено" || delivery.status === "created" ? css.statusCreated : delivery.status === "В роботі" || delivery.status === "inprogress" ? css.statusInProgress : delivery.status === "Виконано" || delivery.status === "completed" ? css.statusCompleted : delivery.status?.toLowerCase().includes("цо") ? css.statusCO : delivery.status?.toLowerCase().includes("склад") ? css.statusWarehouse : delivery.status?.toLowerCase().includes("самовивіз") ? css.statusPickup : delivery.status?.toLowerCase().includes("нова пошт") || delivery.status?.toLowerCase().includes("нп") ? css.statusNP : ""}`}>{delivery.status}</span>
               </div>
             </div>
           </div>
@@ -1065,9 +1070,10 @@ export default function BottomData({ onEditClient }) {
                     {delivery.status !== "В роботі" && delivery.status !== "inprogress" && (
                       <button 
                         className={`${css.deliveryActionPrimary} ${css.primaryOrange}`} 
-                        onClick={() => handleUpdateStatus(delivery, "В роботі")}
+                        onClick={() => handleUpdateStatus(delivery, delivery.status === "Доставка на склад" ? "Виконано" : "В роботі")}
+                        title={delivery.status === "Доставка на склад" ? "Взяти в роботу (закриє заявку)" : "Взяти в роботу"}
                       >
-                        <Zap size={14} /> Взяти в роботу
+                        <Zap size={14} /> {delivery.status === "Доставка на склад" ? "В роботу (Закрити)" : "Взяти в роботу"}
                       </button>
                     )}
                     <button className={`${css.deliveryActionPrimary} ${css.primaryGreen}`} onClick={() => handleUpdateStatus(delivery, "Виконано")}>
@@ -1093,7 +1099,7 @@ export default function BottomData({ onEditClient }) {
                     <PlusCircle size={14} /> Замовити
                   </button>
                 )}
-                {!isCompleted && (
+                {!isCompleted && !isWarehouseDelivery(delivery) && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnCO}`} 
                     onClick={() => handleUpdateStatus(delivery, "Доставка з ЦО на клієнта")}
@@ -1102,7 +1108,7 @@ export default function BottomData({ onEditClient }) {
                     Доставка з ЦО
                   </button>
                 )}
-                {!isCompleted && !isNPDelivery(delivery) && (
+                {!isCompleted && !isNPDelivery(delivery) && !isWarehouseDelivery(delivery) && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnNP}`} 
                     onClick={() => setNpModalDelivery(delivery)}
@@ -1148,7 +1154,12 @@ export default function BottomData({ onEditClient }) {
                   )}
                 </span>
               </p>
-              <p><strong>Адреса:</strong> {delivery.address}</p>
+              <p>
+                <strong>{isWarehouseDelivery(delivery) ? "Склад:" : "Адреса:"}</strong>{" "}
+                {isWarehouseDelivery(delivery)
+                  ? (delivery.target_warehouse || (delivery.address?.replace(/^Склад:\s*/i, "") || delivery.address))
+                  : delivery.address}
+              </p>
               <p><strong>Менеджер:</strong> {delivery.manager}</p>
               <p><strong>Дата доставки:</strong> {delivery.delivery_date}</p>
               <p><strong>Вага:</strong> <span className={css.weight}>{delivery.total_weight?.toFixed(2)} кг</span></p>
@@ -1179,42 +1190,44 @@ export default function BottomData({ onEditClient }) {
                   </span>
                 </p>
               )}
-              <p 
-                className={css.clickableRow}
-                onClick={(e) => handleCopyContact(delivery.contact, delivery.phone, e, 'delivery_contact')}
-                title="Натисніть, щоб скопіювати контакт та номер телефону"
-              >
-                <strong>Контакт:</strong>
-                <span className={css.contactRowContent}>
-                  {delivery.contact && <span>{delivery.contact}</span>}
-                  {delivery.phone && (
-                    <span>
-                      {delivery.contact ? " (" : ""}
-                      <a 
-                        href={`tel:${delivery.phone}`}
-                        onClick={(e) => {
-                          if (typeof window !== 'undefined' && window.innerWidth > 768) {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        {delivery.phone}
-                      </a>
-                      {delivery.contact ? ")" : ""}
-                    </span>
-                  )}
-                  {!delivery.contact && !delivery.phone && <span>Не вказано</span>}
-                  {(delivery.contact || delivery.phone) && (
-                    <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
-                      {copiedKey === 'delivery_contact' ? (
-                        <Check size={13} style={{ color: 'var(--accent-green)' }} />
-                      ) : (
-                        <Copy size={13} />
-                      )}
-                    </span>
-                  )}
-                </span>
-              </p>
+              {!isWarehouseDelivery(delivery) && (
+                <p 
+                  className={css.clickableRow}
+                  onClick={(e) => handleCopyContact(delivery.contact, delivery.phone, e, 'delivery_contact')}
+                  title="Натисніть, щоб скопіювати контакт та номер телефону"
+                >
+                  <strong>Контакт:</strong>
+                  <span className={css.contactRowContent}>
+                    {delivery.contact && <span>{delivery.contact}</span>}
+                    {delivery.phone && (
+                      <span>
+                        {delivery.contact ? " (" : ""}
+                        <a 
+                          href={`tel:${delivery.phone}`}
+                          onClick={(e) => {
+                            if (typeof window !== 'undefined' && window.innerWidth > 768) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          {delivery.phone}
+                        </a>
+                        {delivery.contact ? ")" : ""}
+                      </span>
+                    )}
+                    {!delivery.contact && !delivery.phone && <span>Не вказано</span>}
+                    {(delivery.contact || delivery.phone) && (
+                      <span className={css.copyContactBtn} aria-label="Скопіювати контакт">
+                        {copiedKey === 'delivery_contact' ? (
+                          <Check size={13} style={{ color: 'var(--accent-green)' }} />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </span>
+                    )}
+                  </span>
+                </p>
+              )}
               {delivery.comment && (
                 <div className={css.comment}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px' }}>
@@ -1349,7 +1362,7 @@ export default function BottomData({ onEditClient }) {
         // Находим все активные доставки, содержащие этот заказ
         const matchingDeliveries = deliveries.filter(d => {
           const dClient = (d.client || "").trim().toLowerCase();
-          const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+          const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
           
           return dClient === sClient && 
                  activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase()) && 

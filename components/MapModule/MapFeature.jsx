@@ -24,6 +24,7 @@ import { getStatusColor } from "./statusUtils"; // Утилита для пол�
 import { warehouses } from "./warehouses"; // Статические данные о складах
 import { useMapControlStore } from "./store/mapControlStore"; // Хранилище для управления видимостью слоев
 import { filterApplicationsList, filterDelivery, matchesManager } from "./utils/filterUtils";
+import { isWarehouseDelivery } from "@/lib/utils/deliveryUtils";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
 import DeliveriesList from "./components/DeliveriesList/DeliveriesList";
@@ -719,7 +720,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           <div className={css.deliveryPopup}>
                               <strong>🚀 Доставка: {delivery.client}</strong><br />
                               <span style={{color: '#666', fontSize: '12px'}}>Статус: <b>{delivery.status}</b></span><br />
-                              Адреса: {delivery.address}<br />
+                              {isWarehouseDelivery(delivery) ? "Склад:" : "Адреса:"} {isWarehouseDelivery(delivery) ? (delivery.target_warehouse || (delivery.address?.replace(/^Склад:\s*/i, "") || delivery.address)) : delivery.address}<br />
                               Дата: {delivery.delivery_date}<br />
                               Менеджер: {delivery.manager}<br />
                               <strong>Загальна вага: {delivery.total_weight?.toFixed(2)} кг</strong><br />

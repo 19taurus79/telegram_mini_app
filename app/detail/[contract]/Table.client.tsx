@@ -165,7 +165,7 @@ function TableOrderDetail({ details }: Detail) {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     
     const delivery = allDeliveries.find(d => {
-        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+        const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
         const statusMatch = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
         if (!statusMatch) return false;
         

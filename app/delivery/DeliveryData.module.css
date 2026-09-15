@@ -425,14 +425,16 @@ textarea.modalInput {
   .modalFooter {
     padding: 16px 20px 24px;
   }
-  .deliveryTabs.threeOptions {
+  .deliveryTabs.threeOptions,
+  .deliveryTabs.fourOptions {
     flex-direction: column;
     background: transparent;
     border: none;
     padding: 0;
     gap: 8px;
   }
-  .deliveryTabs.threeOptions .deliveryTab {
+  .deliveryTabs.threeOptions .deliveryTab,
+  .deliveryTabs.fourOptions .deliveryTab {
     width: 100%;
     padding: 14px 20px;
     background: rgba(255, 255, 255, 0.03);
@@ -441,23 +443,27 @@ textarea.modalInput {
     opacity: 0.6;
     justify-content: flex-start;
   }
-  .deliveryTabs.threeOptions .deliveryTab.active {
+  .deliveryTabs.threeOptions .deliveryTab.active,
+  .deliveryTabs.fourOptions .deliveryTab.active {
     background: rgba(16, 185, 129, 0.15);
     border-color: var(--accent-green);
     opacity: 1;
     box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
   }
-  :global([data-theme='light']) .deliveryTabs.threeOptions {
+  :global([data-theme='light']) .deliveryTabs.threeOptions,
+  :global([data-theme='light']) .deliveryTabs.fourOptions {
     background: transparent;
     border: none;
     padding: 0;
   }
-  :global([data-theme='light']) .deliveryTabs.threeOptions .deliveryTab {
+  :global([data-theme='light']) .deliveryTabs.threeOptions .deliveryTab,
+  :global([data-theme='light']) .deliveryTabs.fourOptions .deliveryTab {
     background: #f8fafc;
     border-color: rgba(0, 0, 0, 0.08);
     color: var(--foreground);
   }
-  :global([data-theme='light']) .deliveryTabs.threeOptions .deliveryTab.active {
+  :global([data-theme='light']) .deliveryTabs.threeOptions .deliveryTab.active,
+  :global([data-theme='light']) .deliveryTabs.fourOptions .deliveryTab.active {
     background: #ecfdf5;
     border-color: var(--success-color);
     color: var(--success-color);
@@ -880,4 +886,107 @@ textarea.modalInput {
 :global([data-theme='light']) .deliveryTab.active {
   background: #fff;
   color: var(--success-color);
+}
+
+.warehouseSection {
+  animation: fadeIn 0.3s ease-out;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+:global([data-theme='light']) .warehouseSection {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.discretionToggleWrapper {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+:global([data-theme='light']) .discretionToggleWrapper {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.discretionToggleWrapper:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-green);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--foreground);
+  width: 100%;
+  user-select: none;
+}
+
+.modalCheckbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent-green);
+  cursor: pointer;
+}
+
+.modalSelect {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-top: 4px;
+  outline: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.modalSelect option {
+  background: #1e1e24;
+  color: #fff;
+}
+
+:global([data-theme='light']) .modalSelect {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #000;
+}
+
+:global([data-theme='light']) .modalSelect option {
+  background: #fff;
+  color: #000;
+}
+
+.modalSelect:focus {
+  border-color: var(--accent-green);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(14, 241, 142, 0.1);
+}
+
+.modalSelect.invalid {
+  border-color: var(--alert-color) !important;
+  box-shadow: 0 0 0 4px rgba(var(--alert-color-rgb), 0.1) !important;
+}
+
+.fieldError {
+  color: var(--alert-color);
+  font-size: 0.8rem;
+  margin-top: 6px;
 }

@@ -43,7 +43,7 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
     
     const matchingDeliveries = deliveries.filter(d => {
       const dClient = (d.client || "").trim().toLowerCase();
-      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта"];
+      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
       
       return dClient === sClient && 
              activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase()) &&

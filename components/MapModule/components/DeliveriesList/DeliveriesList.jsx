@@ -14,7 +14,7 @@ import { Download, Printer } from "lucide-react";
 import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
 import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
-import { isNPDelivery, isCODelivery } from "@/lib/utils/deliveryUtils";
+import { isNPDelivery, isCODelivery, isWarehouseDelivery } from "@/lib/utils/deliveryUtils";
 
 export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectDelivery, isMobile = false }) {
   const { 
@@ -432,7 +432,11 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                               {item.client}
                             </div>
                             <div className={css.itemDetails}>
-                              <span className={css.address}>{item.address}</span>
+                              <span className={css.address}>
+                                {isWarehouseDelivery(item)
+                                  ? `Склад: ${item.target_warehouse || (item.address?.replace(/^Склад:\s*/i, "") || item.address)}`
+                                  : item.address}
+                              </span>
                               <span className={css.itemWeight}>{item.total_weight?.toFixed(2)} кг</span>
                             </div>
                           </div>

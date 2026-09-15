@@ -3,14 +3,14 @@
 import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
-import { getAddressByClient, sendDeliveryData, createClientAddress, updateClientAddress } from "@/lib/api";
+import { getAddressByClient, sendDeliveryData, createClientAddress, updateClientAddress, getDeliveryWarehouses } from "@/lib/api";
 import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FadeLoader } from "react-spinners";
 import InputAddress from "@/components/MapModule/components/inputAddress/InputAddress";
-import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box, Car, FileText } from "lucide-react";
+import { User, Package, MapPin, Calendar, Phone, Trash2, Send, X, MessageSquare, Truck, Box, Car, FileText, Warehouse } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useUser } from "@/store/User";
@@ -129,6 +129,9 @@ function DeliveryDataContent() {
     longitude: undefined as number | undefined,
     isPickup: false,
     isNP: false,
+    isWarehouse: false,
+    targetWarehouse: "",
+    isLogistDiscretion: true,
     needTTN: false,
     ttnType: "self" as "self" | "client",
     carMake: "",
@@ -141,6 +144,23 @@ function DeliveryDataContent() {
     carWidth: "",
     carHeight: "",
   });
+  const [allCompanyWarehouses, setAllCompanyWarehouses] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const initData = getInitData();
+        const data = await getDeliveryWarehouses(initData);
+        if (Array.isArray(data)) {
+          setAllCompanyWarehouses(data.filter(Boolean).sort());
+        }
+      } catch (err) {
+        console.error("Error fetching warehouses for delivery form:", err);
+      }
+    };
+    fetchWarehouses();
+  }, []);
+
   const [npSelection, setNpSelection] = useState<NPSelection | null>(null);
   const handleNpSelect = React.useCallback((selection: NPSelection) => {
     setNpSelection(selection);
@@ -373,6 +393,9 @@ function DeliveryDataContent() {
                       comment: "",
                       isPickup: false,
                       isNP: false,
+                      isWarehouse: false,
+                      targetWarehouse: "",
+                      isLogistDiscretion: true,
                       needTTN: false,
                       ttnType: "self",
                       // Auto-fill даних авто/водія з довідника (для "Забирає клієнт")
@@ -398,6 +421,9 @@ function DeliveryDataContent() {
                       longitude: undefined,
                       isPickup: false,
                       isNP: false,
+                      isWarehouse: false,
+                      targetWarehouse: "",
+                      isLogistDiscretion: true,
                       needTTN: false,
                       ttnType: "self",
                       carMake: "",
@@ -422,6 +448,9 @@ function DeliveryDataContent() {
                     longitude: undefined,
                     isPickup: false,
                     isNP: false,
+                    isWarehouse: false,
+                    targetWarehouse: "",
+                    isLogistDiscretion: true,
                     needTTN: false,
                     ttnType: "self",
                     carMake: "",
@@ -519,26 +548,81 @@ function DeliveryDataContent() {
             </div>
 
             <div className={styles.modalBody}>
-              <div className={`${styles.deliveryTabs} ${styles.threeOptions}`}>
+              <div className={`${styles.deliveryTabs} ${styles.fourOptions}`}>
                 <button 
-                  className={`${styles.deliveryTab} ${!formData.isPickup && !formData.isNP ? styles.active : ""}`}
-                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: false }))}
+                  className={`${styles.deliveryTab} ${!formData.isPickup && !formData.isNP && !formData.isWarehouse ? styles.active : ""}`}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: false, isWarehouse: false }))}
                 >
                   <Truck size={18} /> Доставка
                 </button>
                 <button 
                   className={`${styles.deliveryTab} ${formData.isPickup ? styles.active : ""}`}
-                  onClick={() => setFormData(prev => ({ ...prev, isPickup: true, isNP: false }))}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: true, isNP: false, isWarehouse: false }))}
                 >
                   <Package size={18} /> Самовивіз
                 </button>
                 <button 
                   className={`${styles.deliveryTab} ${formData.isNP ? styles.active : ""}`}
-                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: true }))}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: true, isWarehouse: false }))}
                 >
                   <Box size={18} /> Нова Пошта
                 </button>
+                <button 
+                  className={`${styles.deliveryTab} ${formData.isWarehouse ? styles.active : ""}`}
+                  onClick={() => setFormData(prev => ({ ...prev, isPickup: false, isNP: false, isWarehouse: true }))}
+                >
+                  <Warehouse size={18} /> Доставка на склад
+                </button>
               </div>
+
+              {formData.isWarehouse && (
+                <div className={styles.warehouseSection}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      <Warehouse size={16} /> Склад призначення
+                    </label>
+                    <div className={styles.discretionToggleWrapper}>
+                      <label className={styles.checkboxLabel}>
+                        <input 
+                          type="checkbox"
+                          checked={formData.isLogistDiscretion}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            isLogistDiscretion: e.target.checked,
+                            targetWarehouse: e.target.checked ? "" : prev.targetWarehouse 
+                          }))}
+                          className={styles.modalCheckbox}
+                        />
+                        <span>На розсуд логіста</span>
+                      </label>
+                    </div>
+
+                    {!formData.isLogistDiscretion && (
+                      <div style={{ marginTop: '10px' }}>
+                        <select
+                          className={`${styles.modalSelect} ${errors.warehouse ? styles.invalid : ''}`}
+                          value={formData.targetWarehouse}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData(prev => ({ ...prev, targetWarehouse: val }));
+                            if (errors.warehouse) {
+                              setErrors(prev => ({ ...prev, warehouse: false }));
+                            }
+                          }}
+                        >
+                          <option value="">-- Оберіть склад зі списку --</option>
+                          {(allCompanyWarehouses.length > 0 ? allCompanyWarehouses : availableWarehouses).map(wh => (
+                            <option key={wh} value={wh}>{wh}</option>
+                          ))}
+                        </select>
+                        {errors.warehouse && (
+                          <div className={styles.fieldError}>Оберіть склад або позначте «На розсуд логіста»</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
                {formData.isNP && (
                 <div className={styles.npSection}>
@@ -550,7 +634,7 @@ function DeliveryDataContent() {
                 </div>
               )}
 
-              {!formData.isPickup && !formData.isNP && (
+              {!formData.isPickup && !formData.isNP && !formData.isWarehouse && (
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>
                     <MapPin size={16} /> Адреса доставки
@@ -579,7 +663,7 @@ function DeliveryDataContent() {
                 </div>
               )}
 
-              {!formData.isPickup && !formData.isNP && (
+              {!formData.isPickup && !formData.isNP && !formData.isWarehouse && (
                 <div>
                   <label className={styles.fieldLabel}>
                     <User size={16} /> Отримувач
@@ -595,7 +679,7 @@ function DeliveryDataContent() {
                 </div>
               )}
 
-              {!formData.isPickup && !formData.isNP && (
+              {!formData.isPickup && !formData.isNP && !formData.isWarehouse && (
                 <div>
                   <label className={styles.fieldLabel}>
                     <Phone size={16} /> Телефон
@@ -881,7 +965,7 @@ function DeliveryDataContent() {
                     try {
                       setIsLoading(true);
                       setFormError(null);
-                      const { address, contact, phone, date, comment, isPickup, isNP, needTTN, ttnType, carMake, carNumber, trailerNumber, driver, carMaxWeight, carOwnWeight, carLength, carWidth, carHeight } = formData;
+                      const { address, contact, phone, date, comment, isPickup, isNP, isWarehouse, targetWarehouse, isLogistDiscretion, needTTN, ttnType, carMake, carNumber, trailerNumber, driver, carMaxWeight, carOwnWeight, carLength, carWidth, carHeight } = formData;
                       
                       if (isNP && (!npSelection || !npSelection.isValid)) {
                         setFormError("Будь ласка, заповніть всі обов'язкові поля Нової Пошти");
@@ -890,11 +974,14 @@ function DeliveryDataContent() {
                       }
 
                       const newErrors: Record<string, boolean> = {};
+                      if (isWarehouse && !isLogistDiscretion && (!targetWarehouse || targetWarehouse.trim() === "")) {
+                        newErrors.warehouse = true;
+                      }
                       const isAddressInvalid = !address || address.trim() === "" || address.includes("undefined");
-                      if (isAddressInvalid && !isPickup && !isNP) newErrors.address = true;
+                      if (isAddressInvalid && !isPickup && !isNP && !isWarehouse) newErrors.address = true;
                       if (isPickup && needTTN && isAddressInvalid) newErrors.address = true;
-                      if (!isPickup && !isNP && !contact) newErrors.contact = true;
-                      if (!isPickup && !isNP && !isUkrainianPhoneValid(phone)) newErrors.phone = true;
+                      if (!isPickup && !isNP && !isWarehouse && !contact) newErrors.contact = true;
+                      if (!isPickup && !isNP && !isWarehouse && !isUkrainianPhoneValid(phone)) newErrors.phone = true;
                       if (!date) newErrors.date = true;
 
                       if (isPickup && needTTN && ttnType === "client") {
@@ -926,7 +1013,13 @@ function DeliveryDataContent() {
                       let finalContact = contact;
                       let finalPhone = phone;
 
-                      if (isNP && npSelection) {
+                      if (isWarehouse) {
+                        finalAddress = isLogistDiscretion ? "На розсуд логіста" : `Склад: ${targetWarehouse}`;
+                        finalContact = "";
+                        finalPhone = "";
+                        latitude = 0;
+                        longitude = 0;
+                      } else if (isNP && npSelection) {
                         const region = npSelection.city?.area ? `${npSelection.city.area} обл., ` : "";
                         const area = npSelection.city?.region ? `${npSelection.city.region} р-н, ` : "";
                         const city = npSelection.city?.main_description || "";
@@ -950,7 +1043,7 @@ function DeliveryDataContent() {
                         
                         latitude = 0;
                         longitude = 0;
-                      } else if (((!isPickup && !isNP) || (isPickup && needTTN)) && (latitude === undefined || longitude === undefined)) {
+                      } else if (((!isPickup && !isNP && !isWarehouse) || (isPickup && needTTN)) && (latitude === undefined || longitude === undefined)) {
                         try {
                           const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
                           if (geocodeResponse.ok) {
@@ -1010,10 +1103,13 @@ function DeliveryDataContent() {
                           return acc + order.items.reduce((orderAcc: number, item) => (orderAcc + (item.quantity * (item.weight || 0))), 0);
                       }, 0) || 0) * 100) / 100;
 
-                      const payloadStatus = isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено");
+                      const payloadStatus = isWarehouse ? "Доставка на склад" : (isPickup ? "Самовивіз" : (isNP ? "Нова Пошта" : "Створено"));
 
                       let finalComment = comment;
-                      if (isPickup) {
+                      if (isWarehouse) {
+                        const whDesc = isLogistDiscretion ? "На розсуд логіста" : targetWarehouse;
+                        finalComment = `ДОСТАВКА НА СКЛАД: ${whDesc}\n\n${comment}`.trim();
+                      } else if (isPickup) {
                         if (needTTN) {
                           if (ttnType === "client") {
                             const trailerPart = trailerNumber ? `, Причіп: ${trailerNumber}` : "";
@@ -1050,9 +1146,9 @@ function DeliveryDataContent() {
                       const payload: DeliveryPayload = {
                         client: formClient as string,
                         manager, 
-                        address: isPickup ? "Самовивіз" : finalAddress, 
-                        latitude: isPickup ? 0 : latitude, 
-                        longitude: isPickup ? 0 : longitude, 
+                        address: isWarehouse ? finalAddress : (isPickup ? "Самовивіз" : finalAddress), 
+                        latitude: (isPickup || isWarehouse) ? 0 : latitude, 
+                        longitude: (isPickup || isWarehouse) ? 0 : longitude, 
                         contact: finalContact, 
                         phone: finalPhone, 
                         date, 
@@ -1062,6 +1158,7 @@ function DeliveryDataContent() {
                         status: payloadStatus, 
                         is_custom_address: true,
                         actor_name: actorName,
+                        target_warehouse: isWarehouse ? (isLogistDiscretion ? "На розсуд логіста" : targetWarehouse) : undefined,
                       };
 
                       try {
@@ -1114,7 +1211,7 @@ function DeliveryDataContent() {
                                hasModifications = true;
                                updateMessage = "дані Нової Пошти";
                              }
-                          } else if (!isPickup) {
+                          } else if (!isPickup && !isWarehouse) {
                              if (finalAddress && finalAddress.trim() !== (initialClientData?.address || "").trim()) {
                                clientDataForUpdate.address = finalAddress.trim();
                                clientDataForUpdate.latitude = latitude || 0;
@@ -1124,14 +1221,14 @@ function DeliveryDataContent() {
                              }
                           }
 
-                          if (finalContact && finalContact.trim() !== (initialClientData?.representative || "").trim()) {
+                          if (!isWarehouse && finalContact && finalContact.trim() !== (initialClientData?.representative || "").trim()) {
                              clientDataForUpdate.representative = finalContact.trim();
                              hasModifications = true;
                              if (!updateMessage) updateMessage = "контактну особу";
                              else updateMessage += " та контактну особу";
                           }
 
-                          if (finalPhone && normalizeUkrainianPhone(finalPhone) !== normalizeUkrainianPhone(initialClientData?.phone1)) {
+                          if (!isWarehouse && finalPhone && normalizeUkrainianPhone(finalPhone) !== normalizeUkrainianPhone(initialClientData?.phone1)) {
                              clientDataForUpdate.phone1 = finalPhone;
                              hasModifications = true;
                              if (!updateMessage) updateMessage = "телефон";

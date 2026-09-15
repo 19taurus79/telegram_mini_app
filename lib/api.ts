@@ -178,6 +178,16 @@ export const getWarehouses = async (initData: string) => {
   return data;
 };
 
+export const getDeliveryWarehouses = async (initData: string) => {
+  const { data } = await axios.get<string[]>("/data/delivery/warehouses", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
 export const exportRemainsToExcel = async ({
   group,
   parentGroup,

@@ -30,6 +30,7 @@ export const STATUS_COLORS = {
     'виконано': '#4caf50',
     'доставка з цо на клієнта': '#6366f1', // Indigo/Purple
     'самовивіз': '#00bcd4', // Cyan
+    'доставка на склад': '#0ea5e9', // Sky Blue
 };
 
 export const getStatusColor = (status) => {
@@ -40,6 +41,7 @@ export const getStatusColor = (status) => {
     if (STATUS_COLORS[lowerStatus]) return STATUS_COLORS[lowerStatus];
     
     // Check partial matches or sensible defaults
+    if (lowerStatus.includes('склад')) return STATUS_COLORS['доставка на склад'];
     if (lowerStatus.includes('цо')) return STATUS_COLORS['доставка з цо на клієнта'];
     if (lowerStatus.includes('самовивіз')) return STATUS_COLORS['самовивіз'];
     if (lowerStatus.includes('нов') || lowerStatus.includes('creat') || lowerStatus.includes('створ')) return STATUS_COLORS['created'];

@@ -33,6 +33,7 @@ export type DeliveryPayload = {
   status?: string;
   override_created_by?: number | null;
   actor_name?: string;
+  target_warehouse?: string;
 };
 export type Product = {
   id: string;

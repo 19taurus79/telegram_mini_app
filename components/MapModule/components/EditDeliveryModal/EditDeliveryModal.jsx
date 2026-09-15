@@ -1055,7 +1055,8 @@ export default function EditDeliveryModal() {
       const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
       const prevWeight = parseFloat(delivery.total_weight) || 0;
       const newTotalWeight = calculatedWeight > 0 ? calculatedWeight : (prevWeight > 0 ? prevWeight : undefined);
-      const targetStatus = isAlreadyInWork ? (delivery.status || "В роботі") : "В роботі";
+      const isWarehouse = delivery.status === "Доставка на склад" || delivery.status?.toLowerCase().includes("склад");
+      const targetStatus = isAlreadyInWork ? (delivery.status || "В роботі") : (isWarehouse ? "Виконано" : "В роботі");
       return { ...delivery, status: targetStatus, items: deliveryUpdatedItems, total_weight: newTotalWeight || prevWeight || 1.0 };
     });
 

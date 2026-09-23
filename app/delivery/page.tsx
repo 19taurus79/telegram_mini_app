@@ -1170,11 +1170,16 @@ function DeliveryDataContent() {
                         }
 
                         if (result.status === "ok") {
+                          // Видаляємо товари з кошика ОДРАЗУ після успішної відповіді бекенду,
+                          // щоб вони не залишались при закритті модалки або переході зі сторінки
+                          const sentClient = formClient as string;
+                          removeClientDelivery(sentClient);
+
                           let hasModifications = false;
                           let updateMessage = "";
                           
                           const clientDataForUpdate = {
-                            client: formClient as string,
+                            client: sentClient,
                             manager: manager,
                             representative: initialClientData?.representative || "",
                             phone1: initialClientData?.phone1 || "",
@@ -1246,7 +1251,6 @@ function DeliveryDataContent() {
                             setIsAnimatingSuccess(true);
                             setTimeout(() => {
                               setIsAnimatingSuccess(false);
-                              removeClientDelivery(formClient as string);
                               setFormClient(null);
                               toast.success("Доставку оформлено!");
                             }, 3000);
@@ -1308,7 +1312,6 @@ function DeliveryDataContent() {
                     setIsAnimatingSuccess(true);
                     setTimeout(() => {
                       setIsAnimatingSuccess(false);
-                      removeClientDelivery(formClient as string);
                       setFormClient(null);
                       toast.success("Доставку оформлено!");
                     }, 3000);
@@ -1323,7 +1326,6 @@ function DeliveryDataContent() {
                     setIsAnimatingSuccess(true);
                     setTimeout(() => {
                       setIsAnimatingSuccess(false);
-                      removeClientDelivery(formClient as string);
                       setFormClient(null);
                       toast.success("Доставку оформлено!");
                     }, 3000);

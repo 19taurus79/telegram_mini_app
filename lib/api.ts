@@ -1731,4 +1731,23 @@ export const mapLobs = async ({
   return data;
 };
 
+export interface RequestUpdateResponse {
+  success: boolean;
+  message: string;
+}
+
+export const requestDataUpdate = async (initData: string): Promise<RequestUpdateResponse> => {
+  const { data } = await axios.post<RequestUpdateResponse>(
+    "/request_update",
+    {},
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData,
+      },
+    }
+  );
+  return data;
+};
+
 export default axios;

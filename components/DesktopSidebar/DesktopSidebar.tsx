@@ -15,24 +15,55 @@ import {
   Upload,
   Warehouse,
   ChevronRight,
-  Database
+  Database,
+  RefreshCw,
 } from "lucide-react";
 import { useUser } from "@/store/User";
+import { useInitData } from "@/store/InitData";
 import { useDelivery } from "@/store/Delivery";
 import { useUnmappedCount } from "@/hooks/useUnmappedCount";
+import { requestDataUpdate } from "@/lib/api";
+import toast from "react-hot-toast";
 import css from "./DesktopSidebar.module.css";
 import { useState, useEffect } from "react";
 
 export default function DesktopSidebar() {
   const pathname = usePathname();
   const userData = useUser((state) => state.userData);
+  const initData = useInitData((state) => state.initData);
   const { delivery } = useDelivery();
   const unmappedCount = useUnmappedCount();
   const [isMounted, setIsMounted] = useState(false);
+  const [isRequestingUpdate, setIsRequestingUpdate] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const handleRequestUpdate = async () => {
+    if (isRequestingUpdate) return;
+    if (!initData) {
+      toast.error("Помилка авторизації. Спробуйте оновити сторінку.");
+      return;
+    }
+    setIsRequestingUpdate(true);
+    try {
+      const res = await requestDataUpdate(initData);
+      if (res.success) {
+        toast.success(res.message || "Запит надіслано адміністраторам!");
+      } else {
+        toast.error(res.message || "Не вдалося надіслати запит");
+      }
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        (err as Error)?.message ||
+        "Помилка при надсиланні запиту";
+      toast.error(message);
+    } finally {
+      setIsRequestingUpdate(false);
+    }
+  };
 
   const deliveryCount = isMounted ? (delivery?.length || 0) : 0;
   const addressFixCount = isMounted ? unmappedCount : 0;
@@ -113,6 +144,25 @@ export default function DesktopSidebar() {
                 {isActive(item.href) && <ChevronRight className={css.activeIndicator} size={14} />}
               </Link>
             ))}
+          </div>
+        )}
+
+        {!userData?.is_guest && (
+          <div className={css.updateSection}>
+            <button
+              type="button"
+              onClick={handleRequestUpdate}
+              disabled={isRequestingUpdate}
+              className={css.updateBtn}
+              title="Потрібне оновлення"
+            >
+              <div className={css.iconWrapper}>
+                <RefreshCw size={22} className={isRequestingUpdate ? css.spinning : ""} />
+              </div>
+              <span className={css.label}>
+                {isRequestingUpdate ? "Надсилаємо..." : "Потрібне оновлення"}
+              </span>
+            </button>
           </div>
         )}
       </nav>

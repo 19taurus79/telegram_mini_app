@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getUserByinitData } from "@/lib/api";
+import { getUserByinitData, requestDataUpdate } from "@/lib/api";
 import { getInitData } from "@/lib/getInitData";
 import css from "./Header.module.css";
 import Link from "next/link";
@@ -11,7 +11,8 @@ import { useUser } from "@/store/User";
 import { useDelivery } from "@/store/Delivery";
 import { useUnmappedCount } from "@/hooks/useUnmappedCount";
 import { useTheme } from "@/store/Theme";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, RefreshCw } from "lucide-react";
+import toast from "react-hot-toast";
 
 function Header() {
   const headerRef = useRef<HTMLElement>(null);
@@ -135,6 +136,34 @@ function Header() {
 
   const handleNavClick = () => {
     setMenuOpen(false);
+  };
+
+  const [isRequestingUpdate, setIsRequestingUpdate] = useState(false);
+
+  const handleRequestUpdate = async () => {
+    if (isRequestingUpdate) return;
+    if (!initData) {
+      toast.error("Помилка авторизації. Спробуйте оновити сторінку.");
+      return;
+    }
+    setIsRequestingUpdate(true);
+    try {
+      const res = await requestDataUpdate(initData);
+      if (res.success) {
+        toast.success(res.message || "Запит надіслано адміністраторам!");
+        setMenuOpen(false);
+      } else {
+        toast.error(res.message || "Не вдалося надіслати запит");
+      }
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        (err as Error)?.message ||
+        "Помилка при надсиланні запиту";
+      toast.error(message);
+    } finally {
+      setIsRequestingUpdate(false);
+    }
   };
 
   const isActive = (href: string) => {
@@ -264,6 +293,19 @@ function Header() {
                 </Link>
               </li>
             </>
+          )}
+          {!userData?.is_guest && (
+            <li className={css.updateNavItem}>
+              <button
+                type="button"
+                onClick={handleRequestUpdate}
+                disabled={isRequestingUpdate}
+                className={css.updateBtn}
+              >
+                <RefreshCw size={18} className={isRequestingUpdate ? css.spinning : ""} />
+                <span>{isRequestingUpdate ? "Надсилаємо..." : "Потрібне оновлення"}</span>
+              </button>
+            </li>
           )}
         </ul>
       </nav>

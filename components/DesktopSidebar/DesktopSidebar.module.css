@@ -197,3 +197,69 @@
 :global([data-theme='light']) .badge {
   border-color: #fff;
 }
+
+.updateSection {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.updateBtn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.updateBtn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #7dd3fc;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.updateBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+:global([data-theme='light']) .updateSection {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+:global([data-theme='light']) .updateBtn {
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.25);
+}
+
+:global([data-theme='light']) .updateBtn:hover:not(:disabled) {
+  background: rgba(2, 132, 199, 0.15);
+  border-color: rgba(2, 132, 199, 0.4);
+  color: #0369a1;
+}

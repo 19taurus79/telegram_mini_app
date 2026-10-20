@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useApplicationsStore } from "../../store/applicationsStore";
 import { getInitData } from "@/lib/getInitData";
 import { getAccountants, getAccountantForManager, sendDeliveryToAccountant } from "@/lib/api";
 import { isCODelivery } from "@/lib/utils/deliveryUtils";
@@ -22,6 +24,9 @@ export default function SendAccountantDialog({
   const [comment, setComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  const updateDeliveries = useApplicationsStore((state) => state.updateDeliveries);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setMounted(true);
@@ -262,23 +267,63 @@ ${itemsText}`;
         line_of_business: it.line_of_business ? String(it.line_of_business) : undefined
       }));
 
+      const allDeliveryList = (deliveries && deliveries.length > 0 ? deliveries : (delivery ? [delivery] : []));
+      const allDeliveryIds = Array.from(new Set(
+        allDeliveryList
+          .map(d => parseInt(d?.id, 10))
+          .filter(id => !isNaN(id))
+      ));
+
       const payload = {
-        delivery_id: parseInt(delivery.id, 10),
+        delivery_id: parseInt(delivery?.id || allDeliveryIds[0], 10),
+        delivery_ids: allDeliveryIds,
         accountant_id: currentAccountant.id,
         channels: activeChannels,
         comment: comment.trim() || undefined,
         orders: groupedOrders,
         items: sanitizedItems,
         ttn: (Array.from(new Set(
-          (deliveries && deliveries.length > 0 ? deliveries : [delivery])
+          allDeliveryList
             .map(d => (d?.ttn || "").toString().trim())
             .filter(Boolean)
-        )).join(", ")) || delivery.ttn || undefined
+        )).join(", ")) || delivery?.ttn || undefined
       };
 
       const res = await sendDeliveryToAccountant(payload, initData);
 
       if (res && res.status === "ok") {
+        const nowIso = res.accountant_sent_at || new Date().toISOString();
+        const accName = currentAccountant.name;
+
+        // 1. Моментальне оновлення Zustand store (0 мс затримки для поточного логіста)
+        const updatedDeliveries = allDeliveryList.map(d => ({
+          ...d,
+          is_accountant_sent: true,
+          accountant_sent_at: nowIso,
+          accountant_name: accName
+        }));
+        updateDeliveries(updatedDeliveries);
+
+        // 2. Моментальне оновлення кешу React Query для уникнення мерехтіння
+        queryClient.setQueryData(['deliveries'], (oldData) => {
+          if (!Array.isArray(oldData)) return oldData;
+          const updatedIdsSet = new Set(allDeliveryIds);
+          return oldData.map(item => {
+            if (updatedIdsSet.has(parseInt(item.id, 10))) {
+              return {
+                ...item,
+                is_accountant_sent: true,
+                accountant_sent_at: nowIso,
+                accountant_name: accName
+              };
+            }
+            return item;
+          });
+        });
+
+        // 3. Фонова інвалідація для гарантії синхронізації з сервером
+        queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+
         let msg = `Дані надіслано бухгалтеру (${currentAccountant.name})!`;
         if (res.telegram?.success) msg += " Telegram ✓";
         if (res.email?.success) msg += " Email ✓";

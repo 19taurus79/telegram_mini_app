@@ -1540,6 +1540,14 @@ export default function EditDeliveryModal() {
             <span className={css.statusBadge}>
               {primaryDelivery.status || "В обробці"}
             </span>
+            {selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) && (
+              <span 
+                className={css.accountantBadge}
+                title={`Дані для виписки передано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || 'Бухгалтерія'})`}
+              >
+                📑 Бухгалтеру надіслано
+              </span>
+            )}
             {primaryDelivery.client && (
               <span className={css.clientSubtitle} title={primaryDelivery.client}>
                 • {primaryDelivery.client}
@@ -1593,7 +1601,7 @@ export default function EditDeliveryModal() {
           )}
 
           <button
-            className={css.btnSecondary}
+            className={`${css.btnSecondary} ${selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) ? css.btnAccountantSent : ""}`}
             onClick={() => {
               const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
               if (!hasItems) {
@@ -1603,10 +1611,16 @@ export default function EditDeliveryModal() {
               setIsAccountantDialogOpen(true);
             }}
             disabled={isSaving}
-            title="Надіслати відвантаження бухгалтеру"
+            title={selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at)
+              ? `Дані вже надіслано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || ""}). Натисніть для повторної відправки`
+              : "Надіслати відвантаження бухгалтеру"}
           >
-            <Send size={15} color="#38bdf8" />
-            <span>Бухгалтеру</span>
+            <Send size={15} color={selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) ? "#10b981" : "#38bdf8"} />
+            <span>
+              {selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at)
+                ? "Бухгалтеру (✓ Надіслано)"
+                : "Бухгалтеру"}
+            </span>
           </button>
 
           <button

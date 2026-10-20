@@ -27,7 +27,7 @@ export const warehouseIcon = new L.Icon({
   popupAnchor: [0, -36],
 });
 
-export const deliveryIcon = (color = "#ff5722", count = 1) => L.divIcon({
+export const deliveryIcon = (color = "#ff5722", count = 1, isAccountantSent = false) => L.divIcon({
   className: "custom-delivery-icon",
   html: `<div style="position: relative; background-color: ${color}; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -36,6 +36,27 @@ export const deliveryIcon = (color = "#ff5722", count = 1) => L.divIcon({
       <circle cx="5.5" cy="18.5" r="2.5"></circle>
       <circle cx="18.5" cy="18.5" r="2.5"></circle>
     </svg>
+    ${isAccountantSent ? `
+      <div title="Дані для виписки передано бухгалтеру" style="
+        position: absolute;
+        top: -7px;
+        left: -7px;
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        width: 17px;
+        height: 17px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+        z-index: 1001;
+      ">
+        📑
+      </div>
+    ` : ''}
     ${count > 1 ? `
       <div style="
         position: absolute;

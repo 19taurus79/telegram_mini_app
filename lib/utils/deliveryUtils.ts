@@ -5,6 +5,9 @@ export interface DeliveryLike {
   ttn?: string | null;
   target_warehouse?: string | null;
   comment?: string | null;
+  is_accountant_sent?: boolean;
+  accountant_sent_at?: string | null;
+  accountant_name?: string | null;
   [key: string]: unknown;
 }
 

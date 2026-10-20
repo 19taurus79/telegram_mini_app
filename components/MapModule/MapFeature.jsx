@@ -691,17 +691,23 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
             return groupedDeliveries.flatMap((group) => {
               return group.map((delivery, index) => {
                 const position = applyOffset(delivery.latitude, delivery.longitude, index, group.length, currentZoom);
+                const isTopMarker = index === group.length - 1;
+                const isAccountantSent = isTopMarker
+                  ? group.some(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
+                  : Boolean(delivery.is_accountant_sent || delivery.accountant_sent_at);
+
                 return (
                   <Marker
                       key={`delivery-${delivery.id}`}
                       position={position}
-                      zIndexOffset={index === group.length - 1 ? 1000 : 0} // Последний маркер в группе поверх остальных
+                      zIndexOffset={isTopMarker ? 1000 : 0} // Последний маркер в группе поверх остальных
                       icon={deliveryIcon(
                         // Иконка желтая, если доставка выбрана, иначе - по статусу
                         selectedDeliveries.some(d => d.id === delivery.id)
                           ? '#FFD700'
                           : getStatusColor(delivery.status),
-                        index === group.length - 1 ? group.length : 1 // Передаем кол-во для бейджа
+                        isTopMarker ? group.length : 1, // Передаем кол-во для бейджа
+                        isAccountantSent
                       )} 
                       eventHandlers={{
                           click: (e) => {
@@ -720,6 +726,29 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           <div className={css.deliveryPopup}>
                               <strong>🚀 Доставка: {delivery.client}</strong><br />
                               <span style={{color: '#666', fontSize: '12px'}}>Статус: <b>{delivery.status}</b></span><br />
+                              {(delivery.is_accountant_sent || delivery.accountant_sent_at) && (
+                                <div style={{
+                                  margin: '6px 0',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                                  color: '#10b981',
+                                  fontSize: '11px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontWeight: 600
+                                }}>
+                                  <span>📑</span>
+                                  <span>Бухгалтеру передано: {delivery.accountant_name || 'Відправлено'}</span>
+                                  {delivery.accountant_sent_at && (
+                                    <span style={{ opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
+                                      {new Date(delivery.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                               {isWarehouseDelivery(delivery) ? "Склад:" : "Адреса:"} {isWarehouseDelivery(delivery) ? (delivery.target_warehouse || (delivery.address?.replace(/^Склад:\s*/i, "") || delivery.address)) : delivery.address}<br />
                               Дата: {delivery.delivery_date}<br />
                               Менеджер: {delivery.manager}<br />

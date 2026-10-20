@@ -428,8 +428,18 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                             className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
                             onClick={(e) => handleItemClick(item, e)}
                           >
-                            <div className={css.clientName}>
-                              {item.client}
+                            <div className={css.itemHeaderRow}>
+                              <div className={css.clientName}>
+                                {item.client}
+                              </div>
+                              {(item.is_accountant_sent || item.accountant_sent_at) && (
+                                <span 
+                                  className={css.accountantBadge}
+                                  title={`Дані для виписки передано бухгалтеру (${item.accountant_name || 'Бухгалтерія'})${item.accountant_sent_at ? ` о ${new Date(item.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                                >
+                                  📑 Бухгалтеру надіслано
+                                </span>
+                              )}
                             </div>
                             <div className={css.itemDetails}>
                               <span className={css.address}>

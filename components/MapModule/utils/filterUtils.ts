@@ -60,6 +60,9 @@ export interface DeliveryItem {
   delivery_date?: string;
   client?: string;
   line_of_business?: string;
+  is_accountant_sent?: boolean;
+  accountant_sent_at?: string | null;
+  accountant_name?: string | null;
   items?: Array<{ line_of_business?: string; [key: string]: unknown }>;
   orders?: Array<{ line_of_business?: string; [key: string]: unknown }>;
   [key: string]: unknown;

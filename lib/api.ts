@@ -457,6 +457,7 @@ export interface AccountantOrder {
 
 export interface SendToAccountantPayload {
   delivery_id: number;
+  delivery_ids?: number[];
   accountant_id?: string;
   channels: string[];
   comment?: string;
@@ -468,6 +469,10 @@ export interface SendToAccountantPayload {
 export interface SendToAccountantResponse {
   status: string;
   accountant: Accountant;
+  is_accountant_sent?: boolean;
+  accountant_sent_at?: string;
+  accountant_name?: string;
+  delivery_ids?: number[];
   telegram: { success: boolean; skipped?: boolean; error?: string };
   email: { success: boolean; skipped?: boolean; error?: string };
   mailto_url: string;

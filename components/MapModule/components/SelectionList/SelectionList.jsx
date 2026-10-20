@@ -45,8 +45,22 @@ export default function SelectionList({ items, onClose, type }) {
              <div className={css.list}>
               {items.map((delivery, index) => (
                 <div key={index} className={css.item}>
-                  <div className={css.itemHeader}>
+                  <div className={css.itemHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <strong>{delivery.client}</strong>
+                    {(delivery.is_accountant_sent || delivery.accountant_sent_at) && (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        color: '#10b981',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap'
+                      }} title={`Бухгалтер: ${delivery.accountant_name || 'Відправлено'}`}>
+                        📑 Бухгалтеру надіслано
+                      </span>
+                    )}
                   </div>
                   <div className={css.itemDetails}>
                     <div>📍 {delivery.address}</div>

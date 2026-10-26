@@ -40,8 +40,8 @@ export default function ContractsWidget({
   });
 
   const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
-    queryKey: ["deliveries"],
-    queryFn: () => getDeliveries(initData),
+    queryKey: ["deliveries", "active"],
+    queryFn: () => getDeliveries(initData, { mode: "active" }),
     enabled: !!initData,
   });
 

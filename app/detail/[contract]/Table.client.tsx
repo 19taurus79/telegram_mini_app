@@ -138,10 +138,10 @@ function TableOrderDetail({ details }: Detail) {
   }, []);
 
   const { data: allDeliveries } = useQuery({
-    queryKey: ["deliveries"],
+    queryKey: ["deliveries", "active"],
     queryFn: async () => {
         try {
-            const data = await getDeliveries(initData);
+            const data = await getDeliveries(initData, { mode: "active" });
             return data || [];
         } catch (e) {
             console.error("Error loading deliveries", e);

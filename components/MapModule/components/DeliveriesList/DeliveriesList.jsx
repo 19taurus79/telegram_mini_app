@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import StatusFilter from "../StatusFilter/StatusFilter";
+import DeliveryHistoryPeriodSelector from "../DeliveryHistoryPeriodSelector/DeliveryHistoryPeriodSelector";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { filterDelivery } from "../../utils/filterUtils";
@@ -235,6 +236,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
             <div className={css.filtersContainer}>
               <ManagerFilter />
               <StatusFilter />
+              <DeliveryHistoryPeriodSelector />
               <LineOfBusinessFilter />
             </div>
           )}

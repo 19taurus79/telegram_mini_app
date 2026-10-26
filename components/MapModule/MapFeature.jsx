@@ -24,6 +24,7 @@ import { getStatusColor } from "./statusUtils"; // Утилита для пол�
 import { warehouses } from "./warehouses"; // Статические данные о складах
 import { useMapControlStore } from "./store/mapControlStore"; // Хранилище для управления видимостью слоев
 import { filterApplicationsList, filterDelivery, matchesManager } from "./utils/filterUtils";
+import { getDatesForHistoryPeriod } from "./utils/historyPeriodUtils";
 import { isWarehouseDelivery } from "@/lib/utils/deliveryUtils";
 import ApplicationsList from "./components/ApplicationsList/ApplicationsList";
 import ClientsList from "./components/ClientsList/ClientsList";
@@ -279,6 +280,9 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     setFlyToCoords,
     knownStatuses,
     setKnownStatuses,
+    deliveryHistoryPeriod,
+    deliveryCustomDateFrom,
+    deliveryCustomDateTo,
   } = useMapControlStore();
   
   // Ссылка на экземпляр карты
@@ -494,42 +498,82 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     return map;
   }, [batchCommentsData]);
 
-  // Загрузка и обработка доставок с помощью React Query
-  const { data: fetchedDeliveries } = useQuery({
-    queryKey: ['deliveries'],
+  // 1. Швидке завантаження активних доставок (mode: 'active')
+  const { data: fetchedActiveDeliveries } = useQuery({
+    queryKey: ['deliveries', 'active'],
     queryFn: async () => {
       const initData = getInitData();
-      const data = await getDeliveries(initData);
+      const data = await getDeliveries(initData, { mode: 'active' });
       if (!data || !Array.isArray(data)) {
         throw new Error("Invalid data format for deliveries");
       }
       return data;
     },
-    enabled: areDeliveriesVisible, // Запрос выполняется только когда слой видим
-    staleTime: 1 * 60 * 1000, // Данные считаются свежими в течение 1 минуты
-    refetchOnWindowFocus: true, // обновляем данные по фокусу
+    enabled: areDeliveriesVisible,
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
-  // Эффект для обновления глобального состояния (Zustand) после успешной загрузки доставок
+  // Перевіряємо, чи увімкнений статус "Виконано" у фільтрах
+  const isCompletedSelected = useMemo(() => {
+    return Array.isArray(selectedStatuses) && selectedStatuses.some(
+      s => s === "Виконано" || s === "completed" || s?.toLowerCase() === "виконано"
+    );
+  }, [selectedStatuses]);
+
+  // Розрахунок діапазону дат для історії
+  const historyDates = useMemo(() => {
+    return getDatesForHistoryPeriod(deliveryHistoryPeriod, deliveryCustomDateFrom, deliveryCustomDateTo);
+  }, [deliveryHistoryPeriod, deliveryCustomDateFrom, deliveryCustomDateTo]);
+
+  // 2. Ледаче завантаження виконаних/архівних доставок (тільки коли статус "Виконано" увімкнено)
+  const { data: fetchedHistoryDeliveries } = useQuery({
+    queryKey: ['deliveries', 'history', deliveryHistoryPeriod, historyDates.date_from, historyDates.date_to],
+    queryFn: async () => {
+      const initData = getInitData();
+      const data = await getDeliveries(initData, {
+        status: 'Виконано',
+        date_from: historyDates.date_from,
+        date_to: historyDates.date_to,
+        mode: (deliveryHistoryPeriod === 'all' || deliveryHistoryPeriod === 'year') ? 'history' : undefined,
+      });
+      return data || [];
+    },
+    enabled: areDeliveriesVisible && isCompletedSelected,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // 3. Об'єднання активних і виконаних доставок без дублювання за id
+  const combinedDeliveries = useMemo(() => {
+    const active = fetchedActiveDeliveries || [];
+    if (!isCompletedSelected || !fetchedHistoryDeliveries || fetchedHistoryDeliveries.length === 0) {
+      return active;
+    }
+    const map = new Map();
+    active.forEach(d => map.set(d.id, d));
+    fetchedHistoryDeliveries.forEach(d => map.set(d.id, d));
+    return Array.from(map.values());
+  }, [fetchedActiveDeliveries, fetchedHistoryDeliveries, isCompletedSelected]);
+
+  // Ефект для оновлення глобального стану (Zustand)
   useEffect(() => {
-    if (fetchedDeliveries) {
-      setDeliveries(fetchedDeliveries);
+    if (combinedDeliveries) {
+      setDeliveries(combinedDeliveries);
       
-      const statuses = [...new Set(fetchedDeliveries.map(d => d.status))];
+      const statuses = [...new Set(combinedDeliveries.map(d => d.status))];
+      // Завжди тримаємо статус 'Виконано' у доступних статусах для швидкого перемикання
+      if (!statuses.includes("Виконано")) {
+        statuses.push("Виконано");
+      }
       setAvailableStatuses(statuses);
       
-      // Identify genuinely new statuses we've never seen before
       const newStatuses = statuses.filter(s => !knownStatuses.includes(s));
       
       if (newStatuses.length > 0) {
-        // Mark them as known
         setKnownStatuses([...knownStatuses, ...newStatuses]);
         
         setSelectedStatuses(prev => {
-          // If this is the very first load and we had nothing selected,
-          // we might want to select everything EXCEPT 'Виконано'.
-          // But since knownStatuses is persistent, this logic will handle both
-          // initial load and future discoveries smoothly.
           const currentStatuses = new Set(prev);
           let changed = false;
           
@@ -544,7 +588,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
         });
       }
     }
-  }, [fetchedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses, knownStatuses, setKnownStatuses]);
+  }, [combinedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses, knownStatuses, setKnownStatuses]);
 
   // Перерахунок розміру карти при зміні flyToCoords (щоб уникнути «сірих плиток»)
   useEffect(() => {

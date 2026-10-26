@@ -71,6 +71,16 @@ export const useMapControlStore = create(
         }
       }),
       clearDateFilters: () => set({ selectedDates: [] }),
+
+      // Період вибірки для історії/виконаних доставок ('3days', '7days', '30days', 'season', 'year', 'all', 'custom')
+      deliveryHistoryPeriod: '7days',
+      deliveryCustomDateFrom: '',
+      deliveryCustomDateTo: '',
+      setDeliveryHistoryPeriod: (period) => set({ deliveryHistoryPeriod: period }),
+      setDeliveryCustomDates: (dateFrom, dateTo) => set({ 
+        deliveryCustomDateFrom: dateFrom, 
+        deliveryCustomDateTo: dateTo 
+      }),
     }),
     {
       name: 'map-control-store',
@@ -78,6 +88,9 @@ export const useMapControlStore = create(
         selectedStatuses: state.selectedStatuses,
         selectedDates: state.selectedDates,
         knownStatuses: state.knownStatuses,
+        deliveryHistoryPeriod: state.deliveryHistoryPeriod,
+        deliveryCustomDateFrom: state.deliveryCustomDateFrom,
+        deliveryCustomDateTo: state.deliveryCustomDateTo,
       }),
     }
   )

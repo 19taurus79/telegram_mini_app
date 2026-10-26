@@ -1317,8 +1317,29 @@ export const fetchVehicleInfo = async (carNumber: string) => {
   return data;
 };
 
-export const getDeliveries = async (initData: string) => {
+export interface GetDeliveriesParams {
+  mode?: 'active' | 'history' | 'analytics_light' | 'all';
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  manager?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export const getDeliveries = async (initData: string, params?: GetDeliveriesParams) => {
   const { data } = await axios.get<DeliveryRequest[]>("/delivery/get_data_for_delivery", {
+    params,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Telegram-Init-Data": initData,
+    },
+  });
+  return data;
+};
+
+export const getDeliveryItems = async (deliveryId: number | string, initData: string) => {
+  const { data } = await axios.get<DeliveryRequestItem[]>(`/delivery/${deliveryId}/items`, {
     headers: {
       "Content-Type": "application/json",
       "X-Telegram-Init-Data": initData,

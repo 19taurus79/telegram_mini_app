@@ -516,10 +516,10 @@ export default function AnalyticsDashboard() {
   }, [applicationsData, setApplications, setUnmappedApplications]);
 
   const { data: deliveriesData } = useQuery({
-    queryKey: ['deliveries'],
+    queryKey: ['deliveries', 'analytics_light'],
     queryFn: async () => {
       const initData = getInitData();
-      return await getDeliveries(initData);
+      return await getDeliveries(initData, { mode: 'analytics_light' });
     },
     enabled: (!deliveries || deliveries.length === 0),
     staleTime: 5 * 60 * 1000,

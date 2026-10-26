@@ -4,6 +4,7 @@ import React from "react";
 import { useMapControlStore } from "../../store/mapControlStore";
 import ManagerFilter from "../ManagerFilter/ManagerFilter";
 import StatusFilter from "../StatusFilter/StatusFilter";
+import DeliveryHistoryPeriodSelector from "../DeliveryHistoryPeriodSelector/DeliveryHistoryPeriodSelector";
 import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 
 import MapControls from "../MapControls/MapControls";
@@ -48,6 +49,7 @@ export default function MobileFilters() {
         <div>
           <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "8px", color: "var(--foreground)" }}>Статус доставки</div>
           <StatusFilter />
+          <DeliveryHistoryPeriodSelector />
         </div>
       )}
 

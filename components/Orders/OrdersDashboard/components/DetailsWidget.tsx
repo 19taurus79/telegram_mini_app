@@ -248,10 +248,10 @@ export default function DetailsWidget({
 
 
   const { data: allDeliveries } = useQuery<DeliveryRequest[]>({
-    queryKey: ["deliveries"],
+    queryKey: ["deliveries", "active"],
     queryFn: async () => {
         try {
-            const data = await getDeliveries(effectiveInitData);
+            const data = await getDeliveries(effectiveInitData, { mode: "active" });
             return data || [];
         } catch (e) {
             console.error("Error loading deliveries", e);

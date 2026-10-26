@@ -1540,14 +1540,36 @@ export default function EditDeliveryModal() {
             <span className={css.statusBadge}>
               {primaryDelivery.status || "В обробці"}
             </span>
-            {selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) && (
-              <span 
-                className={css.accountantBadge}
-                title={`Дані для виписки передано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || 'Бухгалтерія'})`}
-              >
-                📑 Бухгалтеру надіслано
-              </span>
-            )}
+            {(() => {
+              const isMulti = selectedDeliveries.length > 1;
+              const isSent = isMulti 
+                ? selectedDeliveries.every(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
+                : Boolean(primaryDelivery.is_accountant_sent || primaryDelivery.accountant_sent_at);
+              const partiallySentCount = selectedDeliveries.filter(d => Boolean(d.is_accountant_sent || d.accountant_sent_at)).length;
+              
+              if (isSent) {
+                return (
+                  <span 
+                    className={css.accountantBadge}
+                    title={`Дані для виписки передано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || 'Бухгалтерія'})`}
+                  >
+                    📑 Бухгалтеру надіслано
+                  </span>
+                );
+              }
+              if (isMulti && partiallySentCount > 0) {
+                return (
+                  <span 
+                    className={css.accountantBadge}
+                    style={{ background: 'rgba(234, 179, 8, 0.15)', borderColor: 'rgba(234, 179, 8, 0.45)', color: '#eab308' }}
+                    title={`Частина доставок передана бухгалтеру (${partiallySentCount} з ${selectedDeliveries.length})`}
+                  >
+                    📑 Бухгалтеру ({partiallySentCount}/{selectedDeliveries.length})
+                  </span>
+                );
+              }
+              return null;
+            })()}
             {primaryDelivery.client && (
               <span className={css.clientSubtitle} title={primaryDelivery.client}>
                 • {primaryDelivery.client}
@@ -1600,28 +1622,42 @@ export default function EditDeliveryModal() {
             </button>
           )}
 
-          <button
-            className={`${css.btnSecondary} ${selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) ? css.btnAccountantSent : ""}`}
-            onClick={() => {
-              const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
-              if (!hasItems) {
-                toast.error("Немає товарів для відправки");
-                return;
-              }
-              setIsAccountantDialogOpen(true);
-            }}
-            disabled={isSaving}
-            title={selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at)
-              ? `Дані вже надіслано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || ""}). Натисніть для повторної відправки`
-              : "Надіслати відвантаження бухгалтеру"}
-          >
-            <Send size={15} color={selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at) ? "#10b981" : "#38bdf8"} />
-            <span>
-              {selectedDeliveries.some(d => d.is_accountant_sent || d.accountant_sent_at)
-                ? "Бухгалтеру (✓ Надіслано)"
-                : "Бухгалтеру"}
-            </span>
-          </button>
+          {(() => {
+            const isMulti = selectedDeliveries.length > 1;
+            const isAllSent = isMulti
+              ? selectedDeliveries.every(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
+              : Boolean(primaryDelivery.is_accountant_sent || primaryDelivery.accountant_sent_at);
+            const partiallySentCount = selectedDeliveries.filter(d => Boolean(d.is_accountant_sent || d.accountant_sent_at)).length;
+
+            return (
+              <button
+                className={`${css.btnSecondary} ${isAllSent ? css.btnAccountantSent : ""}`}
+                onClick={() => {
+                  const hasItems = deliveryItems.some(i => (parseFloat(i.quantity) || 0) > 0);
+                  if (!hasItems) {
+                    toast.error("Немає товарів для відправки");
+                    return;
+                  }
+                  setIsAccountantDialogOpen(true);
+                }}
+                disabled={isSaving}
+                title={isAllSent
+                  ? `Дані вже надіслано бухгалтеру (${selectedDeliveries.find(d => d.accountant_name)?.accountant_name || ""}). Натисніть для повторної відправки`
+                  : isMulti && partiallySentCount > 0
+                    ? `Частково надіслано (${partiallySentCount}/${selectedDeliveries.length}). Натисніть для відправки решти`
+                    : "Надіслати відвантаження бухгалтеру"}
+              >
+                <Send size={15} color={isAllSent ? "#10b981" : isMulti && partiallySentCount > 0 ? "#eab308" : "#38bdf8"} />
+                <span>
+                  {isAllSent
+                    ? "Бухгалтеру (✓ Надіслано)"
+                    : isMulti && partiallySentCount > 0
+                      ? `Бухгалтеру (${partiallySentCount}/${selectedDeliveries.length})`
+                      : "Бухгалтеру"}
+                </span>
+              </button>
+            );
+          })()}
 
           <button
             className={css.btnSecondary}

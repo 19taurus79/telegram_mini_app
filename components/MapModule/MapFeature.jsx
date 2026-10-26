@@ -693,7 +693,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                 const position = applyOffset(delivery.latitude, delivery.longitude, index, group.length, currentZoom);
                 const isTopMarker = index === group.length - 1;
                 const isAccountantSent = isTopMarker
-                  ? group.some(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
+                  ? group.every(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
                   : Boolean(delivery.is_accountant_sent || delivery.accountant_sent_at);
 
                 return (

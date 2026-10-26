@@ -291,7 +291,7 @@ ${itemsText}`;
 
       const res = await sendDeliveryToAccountant(payload, initData);
 
-      if (res && res.status === "ok") {
+      if (res && res.is_accountant_sent) {
         const nowIso = res.accountant_sent_at || new Date().toISOString();
         const accName = currentAccountant.name;
 
@@ -327,7 +327,6 @@ ${itemsText}`;
         let msg = `Дані надіслано бухгалтеру (${currentAccountant.name})!`;
         if (res.telegram?.success) msg += " Telegram ✓";
         if (res.email?.success) msg += " Email ✓";
-        if (res.email?.skipped) msg += " (Email: SMTP ще не налаштовано)";
         
         toast.success(msg, { duration: 5000 });
 
@@ -337,6 +336,11 @@ ${itemsText}`;
 
         onSuccess && onSuccess(res);
         onClose();
+      } else if (res && !res.is_accountant_sent) {
+        toast.error("Дані не відправлено: жоден із каналів (Telegram / Email) не спрацював");
+        if (res.warnings && res.warnings.length > 0) {
+          res.warnings.forEach(w => toast(w, { icon: "⚠️" }));
+        }
       } else {
         toast.error("Не вдалося надіслати дані");
       }

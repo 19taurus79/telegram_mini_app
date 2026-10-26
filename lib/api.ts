@@ -23,7 +23,7 @@ import {
   TaskGoogle,
   BiRemains,
   BiOrders,
-  FiltersState, MovedData, DeliveryRequest, ClientAddress,
+  FiltersState, MovedData, DeliveryRequest, DeliveryRequestItem, ClientAddress,
   OrderComment,
   CreateOrderCommentPayload,
   ChatMessage,

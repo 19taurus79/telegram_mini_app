@@ -3,8 +3,8 @@
   flex-direction: column;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(22, 163, 74, 0.08);
-  border: 1px solid rgba(22, 163, 74, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -12,28 +12,76 @@
   transition: all 0.3s ease;
 }
 
+.containerActive {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.35);
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.15);
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.78rem;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .titleWrap {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #4ade80;
   font-weight: 600;
+  color: var(--foreground, #e2e8f0);
 }
 
-.clockIcon {
+.archiveIcon {
+  color: #10b981;
+}
+
+.activeBadge {
+  font-size: 0.7rem;
   color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.inactiveBadge {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .hint {
   font-size: 0.72rem;
   color: var(--text-muted, #94a3b8);
+}
+
+.turnOffBtn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.turnOffBtn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ffffff;
 }
 
 .pills {
@@ -57,8 +105,12 @@
 }
 
 .pill:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
+}
+
+.pillSelected {
+  border-color: rgba(34, 197, 94, 0.5);
 }
 
 .pillActive {

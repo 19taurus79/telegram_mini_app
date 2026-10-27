@@ -1447,10 +1447,15 @@ export const getWeightForProduct = async ({
   return calculatedWeight;
 };
 
-export const getTelegramIdByEventId = async (id:string)=>{
-  const {data}=await axios.get(`/delivery/get_telegram_id_from_delivery_by_id/${id}`);
-  return data;
-}
+export const getTelegramIdByEventId = async (id: string) => {
+  try {
+    const { data } = await axios.get(`/delivery/get_telegram_id_from_delivery_by_id/${id}`);
+    return data;
+  } catch (error) {
+    console.warn("Could not fetch telegram_id for event:", id, error);
+    return null;
+  }
+};
 
 export const sendTelegramMessage = async (
   telegramId: string,

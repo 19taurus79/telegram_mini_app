@@ -1167,14 +1167,28 @@ export const checkLoginToken = async (
 export const createTask = async (
   initData: string,
   title: string,
-  note: string
+  note: string,
+  date?: string,
+  idempotencyKey?: string
 ) => {
+  const payload: {
+    title: string;
+    note: string;
+    date?: string;
+    idempotency_key?: string;
+  } = {
+    title,
+    note,
+  };
+  if (date) {
+    payload.date = date;
+  }
+  if (idempotencyKey) {
+    payload.idempotency_key = idempotencyKey;
+  }
   const { data } = await axios.post<TaskInner>(
     "/data/add_task",
-    {
-      title: title,
-      note: note,
-    },
+    payload,
     {
       headers: {
         "Content-Type": "application/json",
@@ -1183,6 +1197,53 @@ export const createTask = async (
     }
   );
   return data;
+};
+
+const DEFAULT_WAREHOUSES: string[] = [
+  "Коротич",
+  "Балаклія",
+  "Лубни",
+  "Полтава",
+  "Пирятин",
+  "Миргород",
+  "Дніпро",
+  "Кропивницький",
+  "Київ",
+  "Вінниця",
+  "Черкаси",
+  "Житомир",
+  "Біла Церква",
+  "Умань",
+  "Одеса",
+  "Миколаїв",
+  "Хмельницький",
+  "Тернопіль",
+  "Львів",
+  "Рівне",
+  "Луцьк",
+  "Чернівці",
+  "Івано-Франківськ",
+];
+
+export const getDeliveryWarehouses = async (initData?: string): Promise<string[]> => {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (initData) {
+      headers["X-Telegram-Init-Data"] = initData;
+    }
+    const { data } = await axios.get<string[] | { warehouses?: string[] }>("/data/delivery/warehouses", {
+      headers,
+    });
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray(data.warehouses)) {
+      return data.warehouses;
+    }
+    return DEFAULT_WAREHOUSES;
+  } catch {
+    return DEFAULT_WAREHOUSES;
+  }
 };
 
 export const getRemainsForBi = async () => {

@@ -1,6 +1,8 @@
 "use client";
 import { create } from "zustand";
 
+export type TaskFormType = "NP" | "EXW" | "PD" | "TR" | "DL" | "FREE" | "";
+
 interface FormStoreState {
   formIsOpen: boolean;
   openForm: () => void;
@@ -12,8 +14,9 @@ interface MenuStoreState {
   openMenu: () => void;
   closeMenu: () => void;
   toggleMenu: () => void;
-  formType: string;
-  setFormType: (type: string) => void;
+  formType: TaskFormType;
+  setFormType: (type: TaskFormType) => void;
+  resetMenuState: () => void;
 }
 interface EventsModalStoreState {
   isOpen: boolean;
@@ -32,10 +35,11 @@ export const useFormStore = create<FormStoreState>((set) => ({
 export const useMenuStore = create<MenuStoreState>((set) => ({
   menuIsOpen: true,
   formType: "",
-  setFormType: (type: string) => set({ formType: type }),
+  setFormType: (type: TaskFormType) => set({ formType: type }),
   openMenu: () => set(() => ({ menuIsOpen: true })),
   closeMenu: () => set(() => ({ menuIsOpen: false })),
   toggleMenu: () => set((state) => ({ menuIsOpen: !state.menuIsOpen })),
+  resetMenuState: () => set({ menuIsOpen: true, formType: "" }),
 }));
 
 export const useEventsModalStore = create<EventsModalStoreState>((set) => ({

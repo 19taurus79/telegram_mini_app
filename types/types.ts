@@ -496,6 +496,11 @@ export type DeliveryRequest = {
   status: string;
   created_at: string;
   items: DeliveryRequestItem[];
+  is_accountant_sent?: boolean;
+  accountant_sent_at?: string | null;
+  accountant_name?: string | null;
+  ttn?: string | null;
+  target_warehouse?: string | null;
 };
 
 export type DeliveryUpdateItem = {

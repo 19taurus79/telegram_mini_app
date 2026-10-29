@@ -1391,7 +1391,11 @@ export default function BottomData({ onEditClient }) {
 
         if (matchingDeliveries.length === 0) return null;
 
-        // Приоритет статусу ЦО
+
+        // Приоритет доставке, переданій бухгалтеру, потім статусу ЦО
+        const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
+        if (accountantSentDelivery) return accountantSentDelivery;
+
         const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
         if (coDelivery) return coDelivery;
 
@@ -1498,10 +1502,22 @@ export default function BottomData({ onEditClient }) {
                           if (!delivery) return null;
                           
                           const isCO = delivery.status?.toLowerCase().includes("цо");
+                          const isAccountantSent = Boolean(delivery.is_accountant_sent || delivery.accountant_sent_at);
                           return (
-                            <span className={`${css.deliveryBadge} ${isCO ? css.badgeCO : ""}`}>
-                              {isCO ? "ДОСТАВКА З ЦО" : `В ДОСТАВЦІ ${delivery.delivery_date ? `(${delivery.delivery_date})` : ""}`}
-                            </span>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span className={`${css.deliveryBadge} ${isCO ? css.badgeCO : ""}`}>
+                                {isCO ? "ДОСТАВКА З ЦО" : `В ДОСТАВЦІ ${delivery.delivery_date ? `(${delivery.delivery_date})` : ""}`}
+                              </span>
+                              {isAccountantSent && (
+                                <span 
+                                  className={css.accountantBadge}
+                                  style={{ fontSize: '10px', padding: '2px 8px' }}
+                                  title={`Дані для виписки передано бухгалтеру (${delivery.accountant_name || 'Бухгалтерія'})${delivery.accountant_sent_at ? ` о ${new Date(delivery.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                                >
+                                  📑 Бухгалтеру надіслано
+                                </span>
+                              )}
+                            </div>
                           );
                         })()}
                       </div>

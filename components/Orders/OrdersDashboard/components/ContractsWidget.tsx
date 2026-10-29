@@ -46,11 +46,14 @@ export default function ContractsWidget({
   });
 
   const getContractDeliveryInfo = (contractRef: string) => {
-    if (!allDeliveries) return { isCO: false, isInDelivery: false, date: null };
+    if (!allDeliveries) return { isCO: false, isInDelivery: false, date: null, isAccountantSent: false, accountantName: null, accountantSentAt: null };
     
     let isCO = false;
     let isInDelivery = false;
     let date: string | null = null;
+    let isAccountantSent = false;
+    let accountantName: string | null = null;
+    let accountantSentAt: string | null = null;
 
     allDeliveries.forEach(d => {
       const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
@@ -61,17 +64,21 @@ export default function ContractsWidget({
       if (hasItem) {
         if (d.status?.toLowerCase().includes("цо")) {
           isCO = true;
-          // Для ЦО дату тоже можно сохранить, но пользователь просил не добавлять ее в бейдж.
-          // Мы сохраним ее здесь, а в рендеринге будем решать.
           date = d.delivery_date;
         } else {
           isInDelivery = true;
           date = d.delivery_date;
         }
+
+        if (Boolean(d.is_accountant_sent || d.accountant_sent_at)) {
+          isAccountantSent = true;
+          accountantName = d.accountant_name || null;
+          accountantSentAt = d.accountant_sent_at || null;
+        }
       }
     });
 
-    return { isCO, isInDelivery, date };
+    return { isCO, isInDelivery, date, isAccountantSent, accountantName, accountantSentAt };
   };
 
   // Логіка визначення статусу оплати
@@ -120,7 +127,7 @@ export default function ContractsWidget({
     <div className={styles.tableContainer}>
       <div className={styles.list}>
         {filteredContracts?.map((contract) => {
-          const { isCO, isInDelivery, date } = getContractDeliveryInfo(contract.contract_supplement);
+          const { isCO, isInDelivery, date, isAccountantSent, accountantName, accountantSentAt } = getContractDeliveryInfo(contract.contract_supplement);
           return (
             <div
               key={contract.contract_supplement}
@@ -170,6 +177,23 @@ export default function ContractsWidget({
                       border: `1px solid ${isCO ? 'rgba(99, 102, 241, 0.3)' : 'rgba(0, 196, 204, 0.3)'}`
                     }} title={isCO ? "Доставка з ЦО" : `В доставці ${date ? `(${date})` : ""}`}>
                       <Truck size={14} />
+                    </div>
+                  )}
+
+                  {/* Accountant Sent Icon */}
+                  {isAccountantSent && (
+                    <div style={{
+                      padding: '4px 6px',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#10b981',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      border: '1px solid rgba(16, 185, 129, 0.4)'
+                    }} title={`Дані для виписки передано бухгалтеру (${accountantName || 'Бухгалтерія'})${accountantSentAt ? ` о ${new Date(accountantSentAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}>
+                      📑
                     </div>
                   )}
 

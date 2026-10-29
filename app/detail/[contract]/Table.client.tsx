@@ -164,7 +164,7 @@ function TableOrderDetail({ details }: Detail) {
   const getDeliveryForItem = (item: OrderDetailItem) => {
     if (!allDeliveries || allDeliveries.length === 0) return null;
     
-    const delivery = allDeliveries.find(d => {
+    const matching = allDeliveries.filter(d => {
         const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
         const statusMatch = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
         if (!statusMatch) return false;
@@ -177,7 +177,10 @@ function TableOrderDetail({ details }: Detail) {
         });
     });
     
-    return delivery;
+    if (matching.length === 0) return null;
+    const accSent = matching.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
+    if (accSent) return accSent;
+    return matching[0];
   };
 
   const handleAddToDelivery = async (item: OrderDetailItem, customQty?: number) => {
@@ -408,14 +411,40 @@ function TableOrderDetail({ details }: Detail) {
             {/* Bottom row: Status badges and Quantity Selector button */}
             <div className={css.cardActionsRow}>
               <div className={css.badgesContainer}>
-                {getDeliveryForItem(item) && (
-                  <span className={`${css.deliveryBadge} ${getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") ? css.badgeCO : ""}`}>
-                    <ExternalLink size={10} className="mr-1" />
-                    {getDeliveryForItem(item)?.status?.toLowerCase().includes("цо") 
-                      ? "ЦО" 
-                      : `В доставці ${getDeliveryForItem(item)?.delivery_date ? `(${getDeliveryForItem(item)?.delivery_date})` : ""}`}
-                  </span>
-                )}
+                {(() => {
+                  const del = getDeliveryForItem(item);
+                  if (!del) return null;
+                  const isCO = del.status?.toLowerCase().includes("цо");
+                  const isAccountantSent = Boolean(del.is_accountant_sent || del.accountant_sent_at);
+                  return (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span className={`${css.deliveryBadge} ${isCO ? css.badgeCO : ""}`}>
+                        <ExternalLink size={10} className="mr-1" />
+                        {isCO ? "ЦО" : `В доставці ${del.delivery_date ? `(${del.delivery_date})` : ""}`}
+                      </span>
+                      {isAccountantSent && (
+                        <span 
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            color: '#10b981',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: '8px',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title={`Дані для виписки передано бухгалтеру (${del.accountant_name || 'Бухгалтерія'})${del.accountant_sent_at ? ` о ${new Date(del.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                        >
+                          📑 Бухгалтеру надіслано
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Editable Quantity Button */}

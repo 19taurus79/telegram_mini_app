@@ -279,7 +279,10 @@ export default function DetailsWidget({
 
     if (matchingDeliveries.length === 0) return null;
 
-    // Приоритет статусу ЦО
+    // Приоритет доставке, которая уже передана бухгалтеру, затем статусу ЦО
+    const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
+    if (accountantSentDelivery) return accountantSentDelivery;
+
     const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
     return coDelivery || matchingDeliveries[0];
   };
@@ -567,11 +570,33 @@ export default function DetailsWidget({
 
                           </div>
                           {inDelivery && (
-                            <span className={`${styles.deliveryBadge} ${inDelivery.status?.toLowerCase().includes("цо") ? styles.badgeCO : ""}`}>
-                              {inDelivery.status?.toLowerCase().includes("цо") 
-                                ? "ДОСТАВКА З ЦО" 
-                                : `В доставці ${inDelivery.delivery_date ? `(${inDelivery.delivery_date})` : ""}`}
-                            </span>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                              <span className={`${styles.deliveryBadge} ${inDelivery.status?.toLowerCase().includes("цо") ? styles.badgeCO : ""}`}>
+                                {inDelivery.status?.toLowerCase().includes("цо") 
+                                  ? "ДОСТАВКА З ЦО" 
+                                  : `В доставці ${inDelivery.delivery_date ? `(${inDelivery.delivery_date})` : ""}`}
+                              </span>
+                              {Boolean(inDelivery.is_accountant_sent || inDelivery.accountant_sent_at) && (
+                                <span 
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: 'rgba(16, 185, 129, 0.15)',
+                                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                                    color: '#10b981',
+                                    fontSize: '10px',
+                                    fontWeight: 600,
+                                    padding: '2px 6px',
+                                    borderRadius: '6px',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  title={`Дані для виписки передано бухгалтеру (${inDelivery.accountant_name || 'Бухгалтерія'})${inDelivery.accountant_sent_at ? ` о ${new Date(inDelivery.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                                >
+                                  📑 Бухгалтеру надіслано
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td 

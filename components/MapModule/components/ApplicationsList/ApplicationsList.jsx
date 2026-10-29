@@ -36,7 +36,7 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
     return parts.join(" ").trim();
   };
 
-  const getOrderDeliveryStatus = (order, deliveries) => {
+  const getOrderDelivery = (order, deliveries) => {
     if (!deliveries || deliveries.length === 0) return null;
     const currentName = getProductName(order);
     const sClient = (order.client || "").trim().toLowerCase();
@@ -55,11 +55,28 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
 
     if (matchingDeliveries.length === 0) return null;
     
-    // Приоритет статусу ЦО
-    const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
-    if (coDelivery) return coDelivery.status;
+    // Приоритет доставке, переданій бухгалтеру, потім статусу ЦО
+    const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
+    if (accountantSentDelivery) return accountantSentDelivery;
 
-    return matchingDeliveries[0].status;
+    const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
+    if (coDelivery) return coDelivery;
+
+    return matchingDeliveries[0];
+  };
+
+  const getOrderDeliveryStatus = (order, deliveries) => {
+    return getOrderDelivery(order, deliveries)?.status || null;
+  };
+
+  const getAccountantDelivery = (item) => {
+    for (const order of (item.orders || [])) {
+      const delivery = getOrderDelivery(order, deliveries);
+      if (delivery && (delivery.is_accountant_sent || delivery.accountant_sent_at)) {
+        return delivery;
+      }
+    }
+    return null;
   };
 
   const getDeliveryStatus = (item) => {
@@ -77,15 +94,26 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
 
   const renderClientName = (item) => {
     const status = getDeliveryStatus(item);
-    if (!status) return <div className={css.clientName}>{item.client}</div>;
+    const accDelivery = getAccountantDelivery(item);
+    if (!status && !accDelivery) return <div className={css.clientName}>{item.client}</div>;
 
-    const isCO = status.toLowerCase().includes("цо");
+    const isCO = status?.toLowerCase().includes("цо");
     return (
       <div className={css.clientName}>
         <span className={css.clientNameText}>{item.client}</span>
-        <span className={`${css.statusBadge} ${isCO ? css.badgeCO : css.badgeDelivery}`}>
-          {isCO ? "ЦО" : "🚚"}
-        </span>
+        {accDelivery && (
+          <span 
+            className={css.accountantBadge}
+            title={`Дані для виписки передано бухгалтеру (${accDelivery.accountant_name || 'Бухгалтерія'})${accDelivery.accountant_sent_at ? ` о ${new Date(accDelivery.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+          >
+            📑
+          </span>
+        )}
+        {status && (
+          <span className={`${css.statusBadge} ${isCO ? css.badgeCO : css.badgeDelivery}`}>
+            {isCO ? "ЦО" : "🚚"}
+          </span>
+        )}
       </div>
     );
   };

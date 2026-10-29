@@ -164,7 +164,7 @@ const getGroupedIcon = (baseIconUrl, count, size = 32) => {
  * @param {number} weight - Вес для расчета размера.
  * @returns {L.Icon | L.DivIcon} - Leaflet иконка.
  */
-const getDynamicGroupedIcon = (baseIconUrl, count, weight) => {
+const getDynamicGroupedIcon = (baseIconUrl, count, weight, isAccountantSent = false) => {
   // Расчет размера иконки в зависимости от веса
   const baseSize = 28;
   const maxSize = 60;
@@ -172,7 +172,7 @@ const getDynamicGroupedIcon = (baseIconUrl, count, weight) => {
   const normalizedWeight = Math.min(weight / maxWeight, 1);
   const size = baseSize + (maxSize - baseSize) * normalizedWeight;
 
-  if (count <= 1) {
+  if (count <= 1 && !isAccountantSent) {
     return new L.Icon({
       iconUrl: baseIconUrl,
       iconSize: [size, size],
@@ -187,27 +187,63 @@ const getDynamicGroupedIcon = (baseIconUrl, count, weight) => {
     html: `
       <div style="position: relative; width: ${size}px; height: ${size}px;">
         <img src="${baseIconUrl}" style="width: 100%; height: 100%;" />
-        <div style="
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          background: var(--alert-color);
-          color: white;
-          border-radius: 10px;
-          padding: 2px 6px;
-          font-size: 10px;
-          font-weight: bold;
-          border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-          z-index: 1000;
-        ">
-          ${count}
-        </div>
+        ${isAccountantSent ? `
+          <div title="Дані для виписки передано бухгалтеру" style="
+            position: absolute;
+            top: -7px;
+            left: -7px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            width: 17px;
+            height: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            border: 2px solid white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+            z-index: 1001;
+          ">
+            📑
+          </div>
+        ` : ''}
+        ${count > 1 ? `
+          <div style="
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--alert-color);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 1000;
+          ">
+            ${count}
+          </div>
+        ` : ''}
       </div>
     `,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
     popupAnchor: [1, -size],
+  });
+};
+
+const isAccountantSentForApplication = (app, deliveriesList) => {
+  if (!app?.orders || !deliveriesList || deliveriesList.length === 0) return false;
+  const sClient = (app.client || "").trim().toLowerCase();
+  return deliveriesList.some(d => {
+    if (!Boolean(d.is_accountant_sent || d.accountant_sent_at)) return false;
+    const dClient = (d.client || "").trim().toLowerCase();
+    if (dClient !== sClient) return false;
+    return d.items?.some(di => 
+      app.orders.some(o => o.contract_supplement?.trim() === di.order_ref?.trim())
+    );
   });
 };
 
@@ -818,6 +854,10 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
               return group.map((item, iIndex) => {
                 const position = applyOffset(item.address.latitude, item.address.longitude, iIndex, group.length, currentZoom);
                 const isGroup = group.length > 1;
+                const isTopMarker = iIndex === group.length - 1;
+                const isAccountantSent = isTopMarker
+                  ? group.every(a => isAccountantSentForApplication(a, deliveries))
+                  : isAccountantSentForApplication(item, deliveries);
 
                 return (
                   <Marker
@@ -829,7 +869,8 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                         ? "/images/order_selected.png" // Вы можете заменить или стилизовать, пока оставим так
                         : "/images/order.png", 
                       iIndex === group.length - 1 ? group.length : 1, 
-                      item.totalWeight || 0
+                      item.totalWeight || 0,
+                      isAccountantSent
                     )}
                     eventHandlers={{
                       click: (e) => {
@@ -859,6 +900,11 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           <strong>{item.client}</strong><br />
                           {item.address.city}, {item.address.area}<br />
                           <strong>Кількість заявок: {item.count}</strong><br />
+                          {isAccountantSent && (
+                            <div style={{ color: '#10b981', fontWeight: 600, fontSize: '11px', margin: '3px 0' }}>
+                              📑 Дані передано бухгалтеру
+                            </div>
+                          )}
                           <em style={{ fontSize: '0.85em', color: '#666' }}>Тицніть для деталей</em>
                         </div>
                       </Popup>

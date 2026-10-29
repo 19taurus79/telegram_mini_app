@@ -3,7 +3,8 @@
 import React, { useState, CSSProperties, Suspense } from "react";
 import { useDelivery } from "@/store/Delivery";
 import styles from "./DeliveryData.module.css";
-import { getAddressByClient, sendDeliveryData, createClientAddress, updateClientAddress, getDeliveryWarehouses } from "@/lib/api";
+import { getAddressByClient, sendDeliveryData, createClientAddress, updateClientAddress, getDeliveryWarehouses, getOrderComments } from "@/lib/api";
+import { formatOrderNotesForDelivery, DeliveryItemSummary } from "@/lib/utils/deliveryNotesFormatter";
 import NovaPoshtaSelector, { NPSelection } from "@/components/NovaPoshta/NovaPoshtaSelector";
 import { DeliveryPayload } from "@/types/types";
 import { getInitData } from "@/lib/getInitData";
@@ -357,7 +358,36 @@ function DeliveryDataContent() {
               onClick={async () => {
                 setFormClient(client.client);
                 setIsLoading(true);
+                let orderNotesText = "";
                 try {
+                  // Збір номерів заявок та позицій для автоматичного перенесення приміток
+                  const orderRefs = Array.from(
+                    new Set(
+                      (client.orders || [])
+                        .map((o) => (o.order || "").trim())
+                        .filter(Boolean)
+                    )
+                  );
+
+                  const deliveryItems: DeliveryItemSummary[] = (client.orders || []).flatMap((o) =>
+                    (o.items || [])
+                      .filter((item) => item.quantity > 0)
+                      .map((item) => ({
+                        order: o.order,
+                        product: item.product,
+                        nomenclature: item.nomenclature,
+                      }))
+                  );
+
+                  if (orderRefs.length > 0) {
+                    try {
+                      const comments = await getOrderComments(orderRefs, undefined, getInitData());
+                      orderNotesText = formatOrderNotesForDelivery(comments, deliveryItems);
+                    } catch (cErr) {
+                      console.warn("Could not load order comments for delivery prefill:", cErr);
+                    }
+                  }
+
                   const addressData = await getAddressByClient(client.client);
                   if (addressData && addressData.length > 0) {
                     const fetchedAddress = addressData[0];
@@ -390,7 +420,7 @@ function DeliveryDataContent() {
                       latitude: fetchedAddress.latitude,
                       longitude: fetchedAddress.longitude,
                       date: "",
-                      comment: "",
+                      comment: orderNotesText,
                       isPickup: false,
                       isNP: false,
                       isWarehouse: false,
@@ -416,7 +446,7 @@ function DeliveryDataContent() {
                       contact: "",
                       phone: "",
                       date: "",
-                      comment: "",
+                      comment: orderNotesText,
                       latitude: undefined,
                       longitude: undefined,
                       isPickup: false,
@@ -443,7 +473,7 @@ function DeliveryDataContent() {
                     contact: "",
                     phone: "",
                     date: "",
-                    comment: "",
+                    comment: orderNotesText,
                     latitude: undefined,
                     longitude: undefined,
                     isPickup: false,
@@ -943,7 +973,7 @@ function DeliveryDataContent() {
                 <textarea
                   className={styles.modalInput}
                   value={formData.comment}
-                  rows={2}
+                  rows={formData.comment ? Math.min(8, Math.max(3, formData.comment.split("\n").length + 1)) : 2}
                   placeholder="Додаткові інструкції..."
                   onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
                 />

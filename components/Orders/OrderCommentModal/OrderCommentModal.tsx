@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Edit2, Trash2, Check } from 'lucide-react';
+import { X, Edit2, Trash2, Check, Copy } from 'lucide-react';
 import { getOrderComments, createOrderComment, updateOrderComment, deleteOrderComment } from '@/lib/api';
 import { OrderComment, CreateOrderCommentPayload } from '@/types/types';
 import { useInitData } from '@/lib/useInitData';
@@ -32,6 +32,7 @@ export default function OrderCommentModal({
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const initData = useInitData();
   const userData = useUser((state) => state.userData);
   const isGuest = userData?.is_guest;
@@ -146,6 +147,36 @@ export default function OrderCommentModal({
     },
   });
 
+    const handleCopy = async (text: string, commentId: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!successful) {
+          throw new Error('execCommand failed');
+        }
+      }
+      setCopiedId(commentId);
+      toast.success('Коментар скопійовано');
+      setTimeout(() => {
+        setCopiedId((prev) => (prev === commentId ? null : prev));
+      }, 2000);
+    } catch (error: unknown) {
+      console.error('Error copying comment:', error);
+      toast.error('Не вдалося скопіювати коментар');
+    }
+  };
+
   const handleDelete = (commentId: string) => {
     deleteMutation.mutate(commentId);
   };
@@ -255,6 +286,19 @@ export default function OrderCommentModal({
                         <span className={styles.commentDate}>
                           {formatDate(comment.created_at)}
                         </span>
+                        <button
+                          type="button"
+                          className={styles.iconButton}
+                          onClick={() => handleCopy(comment.comment_text, comment.id)}
+                          title={copiedId === comment.id ? "Скопійовано" : "Копіювати коментар"}
+                          aria-label="Копіювати коментар"
+                        >
+                          {copiedId === comment.id ? (
+                            <Check size={14} className={styles.copiedIcon} />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+                        </button>
                         {!effectiveReadOnly && editingId !== comment.id && (
                           <>
                             <button

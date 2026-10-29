@@ -228,6 +228,10 @@
   opacity: 1;
 }
 
+.copiedIcon {
+  color: var(--accent-green, #10b981);
+}
+
 .commentText {
   font-size: 14px;
   color: var(--foreground);

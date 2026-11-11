@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2, RotateCcw } from "lucide-react";
+import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2, RotateCcw, Minimize2, Maximize2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApplicationsStore } from "../../store/applicationsStore";
@@ -25,6 +25,7 @@ export default function SendAccountantDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isMailClientOpened, setIsMailClientOpened] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const updateDeliveries = useApplicationsStore((state) => state.updateDeliveries);
   const queryClient = useQueryClient();
@@ -36,6 +37,7 @@ export default function SendAccountantDialog({
   useEffect(() => {
     if (!isOpen) {
       setIsMailClientOpened(false);
+      setIsMinimized(false);
     }
   }, [isOpen]);
 
@@ -408,21 +410,27 @@ ${itemsText}`;
       // Ігноруємо помилки доступу до буфера
     }
 
-    // Відкриваємо системну поштову програму без створення мертвої порожньої вкладки about:blank
-    const link = document.createElement("a");
-    link.href = mailtoUrl;
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      if (document.body.contains(link)) {
-        document.body.removeChild(link);
+    // Відкриваємо системну поштову програму через window.open з автоматичним закриттям порожньої вкладки.
+    // Створення нового вікна віддає системний фокус ОС Windows, завдяки чому Outlook розгортається поверх браузера.
+    try {
+      const mailWindow = window.open(mailtoUrl, "_blank");
+      if (mailWindow) {
+        setTimeout(() => {
+          try {
+            mailWindow.close();
+          } catch {}
+        }, 1200);
       }
-    }, 500);
+    } catch {
+      window.location.href = mailtoUrl;
+    }
 
     setIsMailClientOpened(true);
-    toast.success("Поштову програму відкрито! Текст листа також скопійовано в буфер обміну.", {
-      duration: 6500,
+    // Згортаємо модалку у плаваючий компактний віджет для швидкого підтвердження
+    setIsMinimized(true);
+
+    toast.success("Поштову програму відкрито! Вікно згорнуто для підтвердження відправки.", {
+      duration: 6000,
       icon: "✉️"
     });
   };
@@ -558,6 +566,68 @@ ${itemsText}`;
 
   if (!mounted || !isOpen) return null;
 
+  if (isMinimized) {
+    return createPortal(
+      <div className={css.floatingWidget}>
+        <div className={css.floatingHeader}>
+          <div className={css.floatingIconWrapper}>
+            <Mail size={18} color="#38bdf8" />
+          </div>
+          <div className={css.floatingInfo}>
+            <div className={css.floatingTitle}>Поштову програму відкрито</div>
+            <div className={css.floatingSubtitle}>
+              Бухгалтер: <strong>{currentAccountant?.name || "Бухгалтерія"}</strong>
+            </div>
+          </div>
+          <div className={css.floatingHeaderBtns}>
+            <button
+              type="button"
+              className={css.floatingActionBtn}
+              onClick={() => setIsMinimized(false)}
+              title="Розгорнути вікно"
+            >
+              <Maximize2 size={15} />
+            </button>
+            <button
+              type="button"
+              className={css.floatingActionBtn}
+              onClick={onClose}
+              title="Скасувати / Закрити"
+              disabled={isSending}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+        <div className={css.floatingBody}>
+          <div className={css.floatingHint}>
+            Надішліть сформований лист в Outlook / Mail та підтвердіть статус:
+          </div>
+          <button
+            type="button"
+            className={css.floatingConfirmBtn}
+            onClick={handleMarkManualSent}
+            disabled={isSending}
+            title="Зафіксувати відправку документа (поставити бейдж)"
+          >
+            {isSending ? (
+              <>
+                <Loader2 size={16} className={css.spin} />
+                <span>Збереження...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={16} />
+                <span>Документ відправлено</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
   const headerTtns = Array.from(new Set(
     (deliveries && deliveries.length > 0 ? deliveries : [delivery])
       .map(d => (d?.ttn || "").toString().trim())
@@ -595,9 +665,19 @@ ${itemsText}`;
               </div>
             )}
           </div>
-          <button className={css.closeBtn} onClick={onClose} disabled={isSending}>
-            <X size={18} />
-          </button>
+          <div className={css.headerControls}>
+            <button
+              type="button"
+              className={css.minimizeBtn}
+              onClick={() => setIsMinimized(true)}
+              title="Згорнути у плаваючий віджет"
+            >
+              <Minimize2 size={16} />
+            </button>
+            <button className={css.closeBtn} onClick={onClose} disabled={isSending} title="Закрити">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {isLoading ? (

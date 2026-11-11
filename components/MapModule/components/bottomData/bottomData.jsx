@@ -246,7 +246,8 @@ export default function BottomData({ onEditClient }) {
                 parties: Array.isArray(item.parties) 
                     ? item.parties.map(p => ({
                         party: String(p.party),
-                        moved_q: Number(p.party_quantity || p.moved_q) || 0
+                        moved_q: Number(p.party_quantity || p.moved_q) || 0,
+                        warehouse: p.warehouse ? String(p.warehouse) : ""
                       }))
                     : []
             };

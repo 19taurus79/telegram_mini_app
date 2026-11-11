@@ -214,82 +214,52 @@ export default function EditDeliveryModal() {
         const totalDeliveryQuantity = (d.items || []).reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0);
         const fallbackUnitWeight = totalDeliveryQuantity > 0 ? (parseFloat(d.total_weight) || 0) / totalDeliveryQuantity : 0;
 
-        const deliveryItemsList = (d.items || []).map(item => {
-          let unitWeight = fallbackUnitWeight;
-          let ordersQ = 0;
-          const cleanedItemProduct = cleanName(item.product);
+        const deliveryItemsList = (d.items || [])
+          .filter(item => (parseFloat(item.quantity) || 0) > 0)
+          .map(item => {
+            let unitWeight = fallbackUnitWeight;
+            let ordersQ = 0;
+            const cleanedItemProduct = cleanName(item.product);
 
-          let matchedOrder = null;
-          if (clientApp && clientApp.orders) {
-            matchedOrder = clientApp.orders.find(o => {
-              const oRef = (o.contract_supplement || o.id || "").toString();
-              const iRef = (item.order_ref || "").toString();
-              const oName = cleanName(o.nomenclature);
-              return (oRef && iRef && oRef === iRef) || (oName === cleanedItemProduct);
-            });
-
-            if (matchedOrder) {
-              const totalW = parseFloat(matchedOrder.total_weight) || 0;
-              const diffQ = parseFloat(matchedOrder.different) || 0;
-              unitWeight = parseFloat(matchedOrder.weight) || (diffQ > 0 ? totalW / diffQ : 0);
-              ordersQ = parseFloat(matchedOrder.orders_q) || diffQ;
-            }
-          }
-
-          const qty = parseFloat(item.quantity) || 0;
-
-          return {
-            ...item,
-            product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
-            client: d.client,
-            deliveryId: d.id,
-            orderRef: item.order_ref || matchedOrder?.contract_supplement || matchedOrder?.id || "",
-            manager: matchedOrder?.manager || clientApp?.manager || d.manager || "",
-            address: matchedOrder?.address || matchedOrder?.delivery_address || clientApp?.deliveryAddress || d.address || "",
-            comment: matchedOrder?.comment || d.comment || "",
-            unit_weight: unitWeight,
-            weight: unitWeight * qty,
-            orders_q: ordersQ,
-            parties: (item.parties || []).map(p => ({ ...p }))
-          };
-        });
-
-        if (clientApp && clientApp.orders) {
-          clientApp.orders.forEach(order => {
-            const orderProductClean = cleanName(order.nomenclature);
-            const orderRef = (order.contract_supplement || order.id || "").toString();
-
-            const isAlreadyInDelivery = deliveryItemsList.some(item => {
-              const itemProductClean = cleanName(item.product);
-              const itemRef = (item.orderRef || "").toString();
-              return (orderRef && itemRef && orderRef === itemRef) || (itemProductClean === orderProductClean);
-            });
-
-            if (!isAlreadyInDelivery) {
-              const totalW = parseFloat(order.total_weight) || 0;
-              const diffQ = parseFloat(order.different) || 0;
-              const uWeight = parseFloat(order.weight) || (diffQ > 0 ? totalW / diffQ : 0);
-              const ordersQ = parseFloat(order.orders_q) || diffQ;
-
-              deliveryItemsList.push({
-                product: (order.nomenclature || "").replace(/\s*рік\s*$/i, "").trim(),
-                quantity: 0,
-                client: d.client,
-                deliveryId: d.id,
-                orderRef: orderRef,
-                unit_weight: uWeight,
-                weight: 0,
-                orders_q: ordersQ,
-                parties: [],
-                isNew: true,
-                manager: order.manager || clientApp?.manager || d.manager || "",
-                address: order.address || order.delivery_address || clientApp?.deliveryAddress || d.address || "",
-                comment: order.comment || d.comment || "",
-                line_of_business: order.line_of_business || "ЗЗР"
+            let matchedOrder = null;
+            if (clientApp && clientApp.orders) {
+              matchedOrder = clientApp.orders.find(o => {
+                const oRef = (o.contract_supplement || o.id || "").toString();
+                const iRef = (item.order_ref || "").toString();
+                const oName = cleanName(o.nomenclature);
+                return (oRef && iRef && oRef === iRef) || (oName === cleanedItemProduct);
               });
+
+              if (matchedOrder) {
+                const totalW = parseFloat(matchedOrder.total_weight) || 0;
+                const diffQ = parseFloat(matchedOrder.different) || 0;
+                unitWeight = parseFloat(matchedOrder.weight) || (diffQ > 0 ? totalW / diffQ : 0);
+                ordersQ = parseFloat(matchedOrder.orders_q) || diffQ;
+              }
             }
+
+            const qty = parseFloat(item.quantity) || 0;
+            const itemWarehouse = item.warehouse || item.shipping_warehouse || matchedOrder?.shipping_warehouse || "";
+
+            return {
+              ...item,
+              product: (item.product || "").replace(/\s*рік\s*$/i, "").trim(),
+              client: d.client,
+              deliveryId: d.id,
+              orderRef: item.order_ref || matchedOrder?.contract_supplement || matchedOrder?.id || "",
+              manager: matchedOrder?.manager || clientApp?.manager || d.manager || "",
+              address: matchedOrder?.address || matchedOrder?.delivery_address || clientApp?.deliveryAddress || d.address || "",
+              comment: matchedOrder?.comment || d.comment || "",
+              unit_weight: unitWeight,
+              weight: unitWeight * qty,
+              orders_q: ordersQ,
+              warehouse: itemWarehouse,
+              parties: (item.parties || []).map(p => ({
+                ...p,
+                warehouse: p.warehouse || itemWarehouse || ""
+              }))
+            };
           });
-        }
 
         allItems.push(...deliveryItemsList);
       });
@@ -643,7 +613,7 @@ export default function EditDeliveryModal() {
       ? remainOrName
       : (remainOrName.nomenclature_series || "Без серії");
 
-    const remainWarehouse = (typeof remainOrName === "object" && remainOrName !== null)
+    let remainWarehouse = (typeof remainOrName === "object" && remainOrName !== null)
       ? (remainOrName.warehouse || "")
       : "";
 
@@ -655,6 +625,9 @@ export default function EditDeliveryModal() {
     } else if (typeof remainOrName === "string") {
       const foundRemain = stockRemains.find(r => (r.nomenclature_series || "Без серії").trim().toLowerCase() === partyName.trim().toLowerCase());
       if (foundRemain) {
+        if (!remainWarehouse) {
+          remainWarehouse = foundRemain.warehouse || "";
+        }
         const liveInfo = getPartyLiveBuh(foundRemain, itemIndex, targetPartyIdx);
         availStock = liveInfo.availRemainingBuh;
       }
@@ -807,6 +780,9 @@ export default function EditDeliveryModal() {
     }
 
     item.parties = parties;
+    if (remainWarehouse && !item.warehouse) {
+      item.warehouse = remainWarehouse;
+    }
     nextItems[itemIndex] = item;
     setDeliveryItems(nextItems);
     setExpandedRows(prev => ({ ...prev, [itemIndex]: true }));
@@ -1006,7 +982,7 @@ export default function EditDeliveryModal() {
 
   // Подготовка отправки на сервер
   const buildCleanItems = (items) =>
-    items
+    (items || [])
       .filter(item => (parseFloat(item.quantity) || 0) > 0)
       .map(item => {
         const qty = parseFloat(item.quantity) || 0;
@@ -1015,9 +991,15 @@ export default function EditDeliveryModal() {
             const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
               ? p.party_quantity
               : (p.moved_q || 0);
-            return { ...p, moved_q: parseFloat(qStr) || 0 };
+            return {
+              party: String(p.party),
+              moved_q: parseFloat(qStr) || 0,
+              party_quantity: parseFloat(qStr) || 0,
+              warehouse: p.warehouse ? String(p.warehouse) : ""
+            };
           })
           .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
+        const itemWh = item.warehouse || parties.find(p => p.warehouse)?.warehouse || "";
         return {
           product: String(item.product),
           nomenclature: String(item.nomenclature || item.product),
@@ -1028,7 +1010,8 @@ export default function EditDeliveryModal() {
           comment: String(item.comment || ""),
           orderRef: String(item.orderRef || item.order || item.order_ref || ""),
           weight: parseFloat(item.weight) || 0,
-          parties: parties.map(p => ({ party: String(p.party), moved_q: parseFloat(p.moved_q) || 0, warehouse: p.warehouse ? String(p.warehouse) : "" })),
+          warehouse: itemWh,
+          parties: parties,
           line_of_business: item.line_of_business ? String(item.line_of_business) : undefined
         };
       });
@@ -1045,11 +1028,17 @@ export default function EditDeliveryModal() {
               const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
                 ? p.party_quantity
                 : (p.moved_q || 0);
-              return { ...p, moved_q: parseFloat(qStr) || 0 };
+              return {
+                ...p,
+                moved_q: parseFloat(qStr) || 0,
+                party_quantity: parseFloat(qStr) || 0,
+                warehouse: p.warehouse ? String(p.warehouse) : ""
+              };
             })
             .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
 
-          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
+          const itemWh = item.warehouse || parties.find(p => p.warehouse)?.warehouse || "";
+          return { ...item, quantity: qty, parties: parties, warehouse: itemWh, weight: parseFloat(item.weight) || 0 };
         });
 
       const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
@@ -1122,10 +1111,16 @@ export default function EditDeliveryModal() {
               const qStr = (p.party_quantity !== "" && p.party_quantity !== undefined)
                 ? p.party_quantity
                 : (p.moved_q || 0);
-              return { ...p, moved_q: parseFloat(qStr) || 0 };
+              return {
+                ...p,
+                moved_q: parseFloat(qStr) || 0,
+                party_quantity: parseFloat(qStr) || 0,
+                warehouse: p.warehouse ? String(p.warehouse) : ""
+              };
             })
             .filter(p => p.moved_q > 0 && p.party && p.party.trim() !== "");
-          return { ...item, quantity: qty, parties: parties, weight: parseFloat(item.weight) || 0 };
+          const itemWh = item.warehouse || parties.find(p => p.warehouse)?.warehouse || "";
+          return { ...item, quantity: qty, parties: parties, warehouse: itemWh, weight: parseFloat(item.weight) || 0 };
         });
       const calculatedWeight = deliveryUpdatedItems.reduce((sum, item) => sum + (item.weight || 0), 0);
       const prevWeight = parseFloat(delivery.total_weight) || 0;
@@ -1832,7 +1827,7 @@ export default function EditDeliveryModal() {
               <tbody>
                 {validatedItems.map((item, idx) => {
                   const qty = parseFloat(item.quantity) || 0;
-                  if (qty <= 0 && !item.isNew) return null;
+                  if (qty <= 0) return null;
 
                   const isSelectedForSplit = !!selectedItemsToSplit[idx];
                   const isRowActive = activeItemIdx === idx;
@@ -1924,6 +1919,34 @@ export default function EditDeliveryModal() {
                                 Замовлено в заявці: {formatQuantity(item.orders_q)}
                               </span>
                             )}
+                            {(() => {
+                              const partyWhs = Array.from(new Set((item.parties || []).map(p => p.warehouse).filter(Boolean)));
+                              if (partyWhs.length === 0 && (item.warehouse || item.shipping_warehouse)) {
+                                partyWhs.push(item.warehouse || item.shipping_warehouse);
+                              }
+                              if (partyWhs.length > 0) {
+                                return (
+                                  <span
+                                    style={{
+                                      fontSize: "0.72rem",
+                                      color: "#38bdf8",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "3px",
+                                      maxWidth: "280px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap"
+                                    }}
+                                    title={`Склад відвантаження: ${partyWhs.join(", ")}`}
+                                  >
+                                    <Building2 size={11} color="#38bdf8" />
+                                    <span>{partyWhs.join(", ")}</span>
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
                         </td>
 

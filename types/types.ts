@@ -1,6 +1,7 @@
 export type DeliveryPayloadParty = {
   party: string;
   moved_q: number;
+  warehouse?: string;
 };
 
 export type DeliveryPayloadItem = {

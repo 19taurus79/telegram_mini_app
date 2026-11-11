@@ -51,6 +51,7 @@ type Party = {
   party: string;
   moved_q: number;
   party_quantity?: number;
+  warehouse?: string;
 };
 
 // Тип для елемента доставки (товару).
@@ -1108,12 +1109,14 @@ function DeliveryDataContent() {
                                   quantity: item.quantity,
                                   order_ref: order.order,
                                   parties: (() => {
+                                      const itemWarehouse = item.shipping_warehouse || "";
                                       const activeParties = (item.parties || []).map((p: Party) => ({
                                           party: p.party || "",
-                                          moved_q: p.moved_q ?? p.party_quantity ?? 0
-                                      })).filter((p: { party: string; moved_q: number }) => p.moved_q > 0);
+                                          moved_q: p.moved_q ?? p.party_quantity ?? 0,
+                                          warehouse: p.warehouse || itemWarehouse
+                                      })).filter((p: { party: string; moved_q: number; warehouse?: string }) => p.moved_q > 0);
                                       if (activeParties.length === 0 && item.quantity > 0) {
-                                          return [{ party: "", moved_q: item.quantity }];
+                                          return [{ party: "", moved_q: item.quantity, warehouse: itemWarehouse }];
                                       }
                                       return activeParties;
                                   })(),

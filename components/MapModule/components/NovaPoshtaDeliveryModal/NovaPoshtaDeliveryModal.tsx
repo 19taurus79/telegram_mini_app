@@ -141,9 +141,13 @@ export default function NovaPoshtaDeliveryModal({ isOpen, onClose, delivery, onS
           parties: Array.isArray(item.parties)
             ? item.parties.map((p) => {
                 const recordParty = p as Record<string, unknown>;
+                const wh = (typeof recordParty.warehouse === "string" && recordParty.warehouse)
+                  ? recordParty.warehouse
+                  : (typeof p.warehouse === "string" ? p.warehouse : undefined);
                 return {
                   party: String(p.party),
                   moved_q: Number(recordParty.party_quantity || recordParty.moved_q || p.party_quantity || p.moved_q || 0),
+                  warehouse: wh,
                 };
               })
             : [],

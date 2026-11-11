@@ -237,14 +237,17 @@ const getDynamicGroupedIcon = (baseIconUrl, count, weight, isAccountantSent = fa
 const isAccountantSentForApplication = (app, deliveriesList) => {
   if (!app?.orders || !deliveriesList || deliveriesList.length === 0) return false;
   const sClient = (app.client || "").trim().toLowerCase();
-  return deliveriesList.some(d => {
-    if (!Boolean(d.is_accountant_sent || d.accountant_sent_at)) return false;
+  const matchingDeliveries = deliveriesList.filter(d => {
     const dClient = (d.client || "").trim().toLowerCase();
     if (dClient !== sClient) return false;
     return d.items?.some(di => 
       app.orders.some(o => o.contract_supplement?.trim() === di.order_ref?.trim())
     );
   });
+  if (matchingDeliveries.length === 0) return false;
+  // Сортуємо за спаданням ID і беремо останню створену доставку
+  const latestDelivery = [...matchingDeliveries].sort((a, b) => (parseInt(b.id, 10) || 0) - (parseInt(a.id, 10) || 0))[0];
+  return latestDelivery?.is_accountant_sent === true;
 };
 
 /**
@@ -773,8 +776,8 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                 const position = applyOffset(delivery.latitude, delivery.longitude, index, group.length, currentZoom);
                 const isTopMarker = index === group.length - 1;
                 const isAccountantSent = isTopMarker
-                  ? group.every(d => Boolean(d.is_accountant_sent || d.accountant_sent_at))
-                  : Boolean(delivery.is_accountant_sent || delivery.accountant_sent_at);
+                  ? group.every(d => d.is_accountant_sent === true)
+                  : delivery.is_accountant_sent === true;
 
                 return (
                   <Marker
@@ -806,7 +809,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
                           <div className={css.deliveryPopup}>
                               <strong>🚀 Доставка: {delivery.client}</strong><br />
                               <span style={{color: '#666', fontSize: '12px'}}>Статус: <b>{delivery.status}</b></span><br />
-                              {(delivery.is_accountant_sent || delivery.accountant_sent_at) && (
+                              {delivery.is_accountant_sent === true && (
                                 <div style={{
                                   margin: '6px 0',
                                   padding: '4px 8px',

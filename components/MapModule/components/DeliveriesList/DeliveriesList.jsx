@@ -434,7 +434,7 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                               <div className={css.clientName}>
                                 {item.client}
                               </div>
-                              {(item.is_accountant_sent || item.accountant_sent_at) && (
+                              {item.is_accountant_sent === true && (
                                 <span 
                                   className={css.accountantBadge}
                                   title={`Дані для виписки передано бухгалтеру (${item.accountant_name || 'Бухгалтерія'})${item.accountant_sent_at ? ` о ${new Date(item.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}

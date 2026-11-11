@@ -88,7 +88,7 @@ export default function RootLayout({
           {/* <ReactQueryDevtools initialIsOpen={false} /> */}
           <Toaster 
             containerStyle={{
-              zIndex: 10001,
+              zIndex: 999999,
             }}
           /> {/* Add Toaster component here */}
         </TanStackProvider>

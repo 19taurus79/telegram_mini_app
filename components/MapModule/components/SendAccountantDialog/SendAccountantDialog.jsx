@@ -24,6 +24,7 @@ export default function SendAccountantDialog({
   const [comment, setComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isMailClientOpened, setIsMailClientOpened] = useState(false);
 
   const updateDeliveries = useApplicationsStore((state) => state.updateDeliveries);
   const queryClient = useQueryClient();
@@ -31,6 +32,12 @@ export default function SendAccountantDialog({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMailClientOpened(false);
+    }
+  }, [isOpen]);
 
   // Групування позицій замовлень по доповненнях і клієнтах
   const groupedOrders = useMemo(() => {
@@ -391,9 +398,31 @@ ${itemsText}`;
     body += `\n---\nЗгенеровано з додатку логістики`;
 
     const mailtoUrl = `mailto:${encodeURIComponent(currentAccountant.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoUrl, "_blank");
-    toast.success("Поштову програму відкрито. Після відправки листа натисніть «Документ відправлено», щоб зафіксувати статус.", {
-      duration: 6000,
+    
+    // Автоматично копіюємо весь текст листа в буфер обміну (на випадок, якщо ОС Windows обріже довгий URL)
+    try {
+      if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(body).catch(() => {});
+      }
+    } catch {
+      // Ігноруємо помилки доступу до буфера
+    }
+
+    // Відкриваємо системну поштову програму без створення мертвої порожньої вкладки about:blank
+    const link = document.createElement("a");
+    link.href = mailtoUrl;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+    }, 500);
+
+    setIsMailClientOpened(true);
+    toast.success("Поштову програму відкрито! Текст листа також скопійовано в буфер обміну.", {
+      duration: 6500,
       icon: "✉️"
     });
   };
@@ -755,6 +784,23 @@ ${itemsText}`;
               />
             </div>
 
+            {/* Повідомлення про відкриття поштового клієнта */}
+            {isMailClientOpened && (
+              <div className={css.mailOpenedNotice}>
+                <div className={css.mailOpenedIcon}>
+                  <Mail size={18} color="#38bdf8" />
+                </div>
+                <div className={css.mailOpenedContent}>
+                  <div className={css.mailOpenedTitle}>Поштову програму відкрито!</div>
+                  <div className={css.mailOpenedDesc}>
+                    Відомість сформовано у вашому поштовому клієнті (Outlook / Mail), а текст також скопійовано в буфер обміну.
+                    <br />
+                    <strong>Надішліть лист</strong> у поштовій програмі та натисніть кнопку <strong>«Документ відправлено»</strong> нижче, щоб зафіксувати статус у системі.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Дії */}
             <div className={css.actions}>
               {currentAccountant?.email && (
@@ -781,7 +827,7 @@ ${itemsText}`;
                 </button>
                 <button
                   type="button"
-                  className={css.markManualBtn}
+                  className={`${css.markManualBtn} ${isMailClientOpened ? css.markManualBtnHighlighted : ""}`}
                   onClick={handleMarkManualSent}
                   disabled={isSending}
                   title="Зафіксувати відправку документа (поставити бейдж без автоматичної розсилки)"

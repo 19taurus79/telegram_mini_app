@@ -48,35 +48,26 @@ export default function ContractsWidget({
   const getContractDeliveryInfo = (contractRef: string) => {
     if (!allDeliveries) return { isCO: false, isInDelivery: false, date: null, isAccountantSent: false, accountantName: null, accountantSentAt: null };
     
-    let isCO = false;
-    let isInDelivery = false;
-    let date: string | null = null;
-    let isAccountantSent = false;
-    let accountantName: string | null = null;
-    let accountantSentAt: string | null = null;
+    const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
+    const matching = allDeliveries
+      .filter(d => {
+        const matchesStatus = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
+        if (!matchesStatus) return false;
+        return d.items?.some(di => di.order_ref?.trim() === contractRef.trim());
+      })
+      .sort((a, b) => (parseInt(String(b.id), 10) || 0) - (parseInt(String(a.id), 10) || 0));
 
-    allDeliveries.forEach(d => {
-      const activeStatuses = ["Створено", "В роботі", "created", "inprogress", "Доставка з ЦО на клієнта", "Доставка на склад"];
-      const matchesStatus = activeStatuses.some(s => s.toLowerCase() === d.status?.toLowerCase());
-      if (!matchesStatus) return;
+    if (matching.length === 0) {
+      return { isCO: false, isInDelivery: false, date: null, isAccountantSent: false, accountantName: null, accountantSentAt: null };
+    }
 
-      const hasItem = d.items?.some(di => di.order_ref?.trim() === contractRef.trim());
-      if (hasItem) {
-        if (d.status?.toLowerCase().includes("цо")) {
-          isCO = true;
-          date = d.delivery_date;
-        } else {
-          isInDelivery = true;
-          date = d.delivery_date;
-        }
-
-        if (Boolean(d.is_accountant_sent || d.accountant_sent_at)) {
-          isAccountantSent = true;
-          accountantName = d.accountant_name || null;
-          accountantSentAt = d.accountant_sent_at || null;
-        }
-      }
-    });
+    const latest = matching[0];
+    const isCO = Boolean(latest.status?.toLowerCase().includes("цо"));
+    const isInDelivery = !isCO;
+    const date = latest.delivery_date || null;
+    const isAccountantSent = latest.is_accountant_sent === true;
+    const accountantName = latest.accountant_name || null;
+    const accountantSentAt = latest.accountant_sent_at || null;
 
     return { isCO, isInDelivery, date, isAccountantSent, accountantName, accountantSentAt };
   };

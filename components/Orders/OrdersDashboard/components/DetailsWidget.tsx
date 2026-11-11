@@ -577,7 +577,7 @@ export default function DetailsWidget({
                                   ? "ДОСТАВКА З ЦО" 
                                   : `В доставці ${inDelivery.delivery_date ? `(${inDelivery.delivery_date})` : ""}`}
                               </span>
-                              {Boolean(inDelivery.is_accountant_sent || inDelivery.accountant_sent_at) && (
+                              {inDelivery.is_accountant_sent === true && (
                                 <span 
                                   style={{
                                     display: 'inline-flex',

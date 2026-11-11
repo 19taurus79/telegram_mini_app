@@ -178,9 +178,9 @@ function TableOrderDetail({ details }: Detail) {
     });
     
     if (matching.length === 0) return null;
-    const accSent = matching.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
-    if (accSent) return accSent;
-    return matching[0];
+    if (matching.length === 1) return matching[0];
+    const sorted = [...matching].sort((a, b) => (parseInt(String(b.id), 10) || 0) - (parseInt(String(a.id), 10) || 0));
+    return sorted[0];
   };
 
   const handleAddToDelivery = async (item: OrderDetailItem, customQty?: number) => {

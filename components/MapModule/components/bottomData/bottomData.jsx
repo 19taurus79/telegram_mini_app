@@ -25,6 +25,7 @@ export default function BottomData({ onEditClient }) {
   const { 
     selectedClient, 
     selectedDelivery, 
+    setSelectedDelivery,
     setIsEditDeliveryModalOpen,
     selectedDeliveries,
     setSelectedDeliveries,
@@ -900,7 +901,21 @@ export default function BottomData({ onEditClient }) {
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                               {!isGuest && (
                                 <>
-                                  {d.status !== "Виконано" && (<button className={css.deliveryEditBtn} onClick={(e) => { e.stopPropagation(); setIsEditDeliveryModalOpen(true); }} style={{ fontSize: '0.8em', padding: '4px 12px' }} title="Комплектація доставки"><Boxes size={12} /> Комплектація</button>)}
+                                  {d.status !== "Виконано" && (
+                                    <button 
+                                      className={css.deliveryEditBtn} 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        setSelectedDelivery(d);
+                                        setSelectedDeliveries([d]);
+                                        setIsEditDeliveryModalOpen(true); 
+                                      }} 
+                                      style={{ fontSize: '0.8em', padding: '4px 12px' }} 
+                                      title="Комплектація доставки"
+                                    >
+                                      <Boxes size={12} /> Комплектація
+                                    </button>
+                                  )}
                                   {d.status !== "Виконано" && !isWarehouseDelivery(d) && (
                                     <button 
                                       className={`${css.deliveryEditBtn} ${css.btnCO}`} 
@@ -1392,14 +1407,15 @@ export default function BottomData({ onEditClient }) {
         if (matchingDeliveries.length === 0) return null;
 
 
-        // Приоритет доставке, переданій бухгалтеру, потім статусу ЦО
-        const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
-        if (accountantSentDelivery) return accountantSentDelivery;
+        if (matchingDeliveries.length === 1) return matchingDeliveries[0];
 
+        // Якщо є доставка з ЦО - віддаємо їй перевагу
         const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
         if (coDelivery) return coDelivery;
 
-        return matchingDeliveries[0];
+        // Віддаємо найактуальнішу доставку (за спаданням ID), щоб старі завершені/відправлені не перекривали статус нової
+        const sorted = [...matchingDeliveries].sort((a, b) => (parseInt(b.id, 10) || 0) - (parseInt(a.id, 10) || 0));
+        return sorted[0];
       };
       return (
         <div className={css.container}>

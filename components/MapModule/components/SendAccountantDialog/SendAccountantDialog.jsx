@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2 } from "lucide-react";
+import { X, Send, Mail, MessageSquare, ExternalLink, Loader2, CheckCircle2, AlertCircle, FileText, Building2, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApplicationsStore } from "../../store/applicationsStore";
@@ -150,6 +150,176 @@ export default function SendAccountantDialog({
     return accountants.find(a => String(a.id) === String(selectedAccountantId)) || null;
   }, [accountants, selectedAccountantId]);
 
+  const allDeliveryList = useMemo(() => {
+    return deliveries && deliveries.length > 0 ? deliveries : (delivery ? [delivery] : []);
+  }, [deliveries, delivery]);
+
+  const sentAccountantName = useMemo(() => {
+    return allDeliveryList.find(d => d.accountant_name)?.accountant_name || (currentAccountant?.name || "Бухгалтерія");
+  }, [allDeliveryList, currentAccountant]);
+
+  const sentTimeStr = useMemo(() => {
+    const sentItem = allDeliveryList.find(d => d.accountant_sent_at);
+    if (!sentItem?.accountant_sent_at) return "";
+    try {
+      const dt = new Date(sentItem.accountant_sent_at);
+      return `${dt.toLocaleDateString("uk-UA")} о ${dt.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" })}`;
+    } catch {
+      return "";
+    }
+  }, [allDeliveryList]);
+
+  const isAlreadySent = useMemo(() => {
+    return allDeliveryList.length > 0 && allDeliveryList.every(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
+  }, [allDeliveryList]);
+
+  const isPartiallySent = useMemo(() => {
+    const sentCount = allDeliveryList.filter(d => Boolean(d.is_accountant_sent || d.accountant_sent_at)).length;
+    return sentCount > 0 && sentCount < allDeliveryList.length;
+  }, [allDeliveryList]);
+
+  // Ручна фіксація відправки документа без обов'язкової відправки сервером ("Документ відправлено")
+  const handleMarkManualSent = async () => {
+    if (!currentAccountant) {
+      toast.error("Оберіть бухгалтера");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const initData = getInitData();
+      const allDeliveryIds = Array.from(new Set(
+        allDeliveryList
+          .map(d => parseInt(d?.id, 10))
+          .filter(id => !isNaN(id))
+      ));
+
+      const payload = {
+        delivery_id: parseInt(delivery?.id || allDeliveryIds[0], 10),
+        delivery_ids: allDeliveryIds,
+        accountant_id: currentAccountant.id,
+        channels: ["manual"],
+        comment: comment.trim() || undefined,
+        orders: groupedOrders,
+        ttn: (Array.from(new Set(
+          allDeliveryList
+            .map(d => (d?.ttn || "").toString().trim())
+            .filter(Boolean)
+        )).join(", ")) || delivery?.ttn || undefined
+      };
+
+      const res = await sendDeliveryToAccountant(payload, initData);
+
+      if (res && res.is_accountant_sent) {
+        const nowIso = res.accountant_sent_at || new Date().toISOString();
+        const accName = currentAccountant.name;
+
+        // 1. Моментальне оновлення Zustand store
+        const updatedDeliveries = allDeliveryList.map(d => ({
+          ...d,
+          is_accountant_sent: true,
+          accountant_sent_at: nowIso,
+          accountant_name: accName
+        }));
+        updateDeliveries(updatedDeliveries);
+
+        // 2. Моментальне оновлення кешу React Query
+        queryClient.setQueryData(['deliveries'], (oldData) => {
+          if (!Array.isArray(oldData)) return oldData;
+          const updatedIdsSet = new Set(allDeliveryIds);
+          return oldData.map(item => {
+            if (updatedIdsSet.has(parseInt(item.id, 10))) {
+              return {
+                ...item,
+                is_accountant_sent: true,
+                accountant_sent_at: nowIso,
+                accountant_name: accName
+              };
+            }
+            return item;
+          });
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+
+        toast.success(`Позначено: документ передано бухгалтеру (${currentAccountant.name}) ✓`, { duration: 4500 });
+        onSuccess && onSuccess(res);
+        onClose();
+      } else {
+        toast.error("Не вдалося зафіксувати відправку");
+      }
+    } catch (err) {
+      console.error("Error marking accountant sent:", err);
+      const detail = err?.response?.data?.detail || "Помилка при збереженні статусу";
+      toast.error(detail);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Зняття статусу відправки бухгалтеру (скидання бейджа)
+  const handleUnmarkSent = async () => {
+    setIsSending(true);
+    try {
+      const initData = getInitData();
+      const allDeliveryIds = Array.from(new Set(
+        allDeliveryList
+          .map(d => parseInt(d?.id, 10))
+          .filter(id => !isNaN(id))
+      ));
+
+      const payload = {
+        delivery_id: parseInt(delivery?.id || allDeliveryIds[0], 10),
+        delivery_ids: allDeliveryIds,
+        channels: ["unmark"],
+      };
+
+      const res = await sendDeliveryToAccountant(payload, initData);
+
+      if (res && res.status === "ok") {
+        // 1. Оновлення Zustand store: скидаємо статус
+        const updatedDeliveries = allDeliveryList.map(d => ({
+          ...d,
+          is_accountant_sent: false,
+          accountant_sent_at: null,
+          accountant_name: null
+        }));
+        updateDeliveries(updatedDeliveries);
+
+        // 2. Оновлення кешу React Query
+        queryClient.setQueryData(['deliveries'], (oldData) => {
+          if (!Array.isArray(oldData)) return oldData;
+          const updatedIdsSet = new Set(allDeliveryIds);
+          return oldData.map(item => {
+            if (updatedIdsSet.has(parseInt(item.id, 10))) {
+              return {
+                ...item,
+                is_accountant_sent: false,
+                accountant_sent_at: null,
+                accountant_name: null
+              };
+            }
+            return item;
+          });
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+
+        toast.success("Позначку відправки бухгалтеру знято (бейдж видалено) ✓", { duration: 4000 });
+        onSuccess && onSuccess(res);
+        onClose();
+      } else {
+        toast.error("Не вдалося зняти позначку");
+      }
+    } catch (err) {
+      console.error("Error unmarking accountant sent:", err);
+      const detail = err?.response?.data?.detail || "Помилка при знятті статусу";
+      toast.error(detail);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   // Генерація посилання mailto для відкриття поштової програми (Outlook, Thunderbird тощо)
   const handleOpenMailClient = () => {
     if (!currentAccountant?.email) {
@@ -158,7 +328,7 @@ export default function SendAccountantDialog({
     }
 
     const allTtns = Array.from(new Set(
-      (deliveries && deliveries.length > 0 ? deliveries : [delivery])
+      allDeliveryList
         .map(d => (d?.ttn || "").toString().trim())
         .filter(Boolean)
     ));
@@ -222,6 +392,10 @@ ${itemsText}`;
 
     const mailtoUrl = `mailto:${encodeURIComponent(currentAccountant.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoUrl, "_blank");
+    toast.success("Поштову програму відкрито. Після відправки листа натисніть «Документ відправлено», щоб зафіксувати статус.", {
+      duration: 6000,
+      icon: "✉️"
+    });
   };
 
   const handleSendAutomatic = async () => {
@@ -404,6 +578,53 @@ ${itemsText}`;
           </div>
         ) : (
           <div>
+            {/* Повідомлення, якщо доставка вже була передана бухгалтеру */}
+            {isAlreadySent ? (
+              <div className={css.alreadySentNotice}>
+                <div className={css.alreadySentIcon}>
+                  <CheckCircle2 size={18} color="#10b981" />
+                </div>
+                <div className={css.alreadySentContent}>
+                  <div className={css.alreadySentTitle}>Дані вже позначені як передані бухгалтеру</div>
+                  <div className={css.alreadySentMeta}>
+                    Бухгалтер: <strong>{sentAccountantName}</strong> {sentTimeStr ? `(${sentTimeStr})` : ""}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={css.unmarkBtn}
+                  onClick={handleUnmarkSent}
+                  disabled={isSending}
+                  title="Скинути статус і прибрати бейдж 'Бухгалтеру надіслано'"
+                >
+                  <RotateCcw size={13} />
+                  <span>Зняти позначку</span>
+                </button>
+              </div>
+            ) : isPartiallySent ? (
+              <div className={css.alreadySentNotice} style={{ background: "rgba(234, 179, 8, 0.12)", borderColor: "rgba(234, 179, 8, 0.35)" }}>
+                <div className={css.alreadySentIcon}>
+                  <AlertCircle size={18} color="#eab308" />
+                </div>
+                <div className={css.alreadySentContent}>
+                  <div className={css.alreadySentTitle} style={{ color: "#fef08a" }}>Частина доставок вже відправлена</div>
+                  <div className={css.alreadySentMeta}>
+                    Натисніть «Документ відправлено» або «Надіслати», щоб оновити статус для всіх обраних.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={css.unmarkBtn}
+                  onClick={handleUnmarkSent}
+                  disabled={isSending}
+                  title="Скинути статус для всіх обраних доставок"
+                >
+                  <RotateCcw size={13} />
+                  <span>Зняти всі позначки</span>
+                </button>
+              </div>
+            ) : null}
+
             {/* Блок попереднього перегляду складу відомості */}
             {groupedOrders.length > 0 && (
               <div className={css.ordersPreviewBox}>
@@ -557,6 +778,16 @@ ${itemsText}`;
                   disabled={isSending}
                 >
                   Скасувати
+                </button>
+                <button
+                  type="button"
+                  className={css.markManualBtn}
+                  onClick={handleMarkManualSent}
+                  disabled={isSending}
+                  title="Зафіксувати відправку документа (поставити бейдж без автоматичної розсилки)"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Документ відправлено</span>
                 </button>
                 <button
                   type="button"

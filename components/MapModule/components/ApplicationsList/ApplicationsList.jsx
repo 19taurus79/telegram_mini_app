@@ -55,14 +55,13 @@ export default function ApplicationsList({ onClose, onFlyTo, onAddClient, isMobi
 
     if (matchingDeliveries.length === 0) return null;
     
-    // Приоритет доставке, переданій бухгалтеру, потім статусу ЦО
-    const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
-    if (accountantSentDelivery) return accountantSentDelivery;
-
+    if (matchingDeliveries.length === 1) return matchingDeliveries[0];
+    
     const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
     if (coDelivery) return coDelivery;
 
-    return matchingDeliveries[0];
+    const sorted = [...matchingDeliveries].sort((a, b) => (parseInt(b.id, 10) || 0) - (parseInt(a.id, 10) || 0));
+    return sorted[0];
   };
 
   const getOrderDeliveryStatus = (order, deliveries) => {

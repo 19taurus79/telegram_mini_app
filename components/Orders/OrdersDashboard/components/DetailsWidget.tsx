@@ -279,12 +279,13 @@ export default function DetailsWidget({
 
     if (matchingDeliveries.length === 0) return null;
 
-    // Приоритет доставке, которая уже передана бухгалтеру, затем статусу ЦО
-    const accountantSentDelivery = matchingDeliveries.find(d => Boolean(d.is_accountant_sent || d.accountant_sent_at));
-    if (accountantSentDelivery) return accountantSentDelivery;
+    if (matchingDeliveries.length === 1) return matchingDeliveries[0];
 
     const coDelivery = matchingDeliveries.find(d => d.status?.toLowerCase().includes("цо"));
-    return coDelivery || matchingDeliveries[0];
+    if (coDelivery) return coDelivery;
+
+    const sorted = [...matchingDeliveries].sort((a, b) => (parseInt(String(b.id), 10) || 0) - (parseInt(String(a.id), 10) || 0));
+    return sorted[0];
   };
 
   const handleRemainsClick = (item: OrdersDetails) => {

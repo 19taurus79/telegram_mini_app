@@ -512,6 +512,42 @@ export const sendDeliveryToAccountant = async (
   return data;
 };
 
+export interface MarkAccountantSentPayload {
+  delivery_id: number;
+  delivery_ids?: number[];
+  accountant_id?: string;
+  comment?: string;
+  orders?: AccountantOrder[];
+  items?: DeliveryUpdateItem[];
+  ttn?: string;
+}
+
+export const markDeliveryAccountantSent = async (
+  payload: MarkAccountantSentPayload,
+  initData: string
+) => {
+  return sendDeliveryToAccountant(
+    {
+      ...payload,
+      channels: ["manual"],
+    },
+    initData
+  );
+};
+
+export const unmarkDeliveryAccountantSent = async (
+  payload: { delivery_id: number; delivery_ids?: number[] },
+  initData: string
+) => {
+  return sendDeliveryToAccountant(
+    {
+      ...payload,
+      channels: ["unmark"],
+    },
+    initData
+  );
+};
+
 
 export const changeDeliveryDate = async (
   deliveryId: string,

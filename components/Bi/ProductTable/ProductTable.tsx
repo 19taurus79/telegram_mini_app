@@ -2,12 +2,28 @@ import css from "./ProductTable.module.css";
 import { BiOrdersItem } from "@/types/types";
 import useSwipe from "@/hooks/useSwipe";
 import { useState, useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 import {
   useReactTable,
   getCoreRowModel,
   ColumnDef,
   flexRender,
 } from '@tanstack/react-table';
+
+const copyProductToClipboard = (productName: string) => {
+  if (!productName) return;
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(productName).then(
+      () => {
+        toast.success("Номенклатуру скопійовано!");
+      },
+      (err) => {
+        toast.error("Не вдалося скопіювати номенклатуру.");
+        console.error("Could not copy text: ", err);
+      }
+    );
+  }
+};
 
 // --- КОМПОНЕНТ ТАБЛИЦІ (REUSABLE) ---
 interface ProductTableProps {
@@ -235,16 +251,28 @@ const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct, showSel
               className={onRowClick ? (isSelected ? css.selectedRow : css.row) : ""}
               style={rowStyle}
             >
-              {row.getVisibleCells().map(cell => (
-                <td
-                  key={cell.id}
-                  className={css.td}
-                  style={{ width: cell.column.getSize() }}
-                  title={String(cell.getValue())}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
+              {row.getVisibleCells().map(cell => {
+                const isProductCell = cell.column.id === 'product';
+                const canCopy = isProductCell && isSelected;
+                return (
+                  <td
+                    key={cell.id}
+                    className={css.td}
+                    style={{
+                      width: cell.column.getSize(),
+                      ...(canCopy ? { cursor: 'pointer' } : {}),
+                    }}
+                    title={
+                      canCopy
+                        ? `${String(cell.getValue())} (Натисніть, щоб скопіювати)`
+                        : String(cell.getValue())
+                    }
+                    onClick={canCopy ? () => copyProductToClipboard(order.product) : undefined}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                );
+              })}
             </tr>
           );
         })}
@@ -412,7 +440,14 @@ const ProductTable = ({
                             isGreen={isGreen}
                           >
                             <div className={css.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                              <span className={css.productName}>{order.product}</span>
+                              <span
+                                className={css.productName}
+                                onClick={() => copyProductToClipboard(order.product)}
+                                style={{ cursor: 'pointer' }}
+                                title={`${order.product} (Натисніть, щоб скопіювати)`}
+                              >
+                                {order.product}
+                              </span>
                               {isGreen && (
                                 <span style={{ 
                                   fontSize: '10px', 

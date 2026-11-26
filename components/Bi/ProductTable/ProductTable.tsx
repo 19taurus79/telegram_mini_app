@@ -3,6 +3,7 @@ import { BiOrdersItem } from "@/types/types";
 import useSwipe from "@/hooks/useSwipe";
 import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
+import { Copy, Check } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,12 +11,16 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 
-const copyProductToClipboard = (productName: string) => {
+const copyProductToClipboard = (
+  productName: string,
+  onCopied?: (name: string) => void
+) => {
   if (!productName) return;
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(productName).then(
       () => {
         toast.success("Номенклатуру скопійовано!");
+        onCopied?.(productName);
       },
       (err) => {
         toast.error("Не вдалося скопіювати номенклатуру.");
@@ -89,6 +94,15 @@ interface ProductDesktopTableGroupProps {
 }
 
 const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct, showSelectedDetails = false }: ProductDesktopTableGroupProps) => {
+  const [copiedProduct, setCopiedProduct] = useState<string | null>(null);
+
+  const handleProductCopied = (name: string) => {
+    setCopiedProduct(name);
+    setTimeout(() => {
+      setCopiedProduct(prev => (prev === name ? null : prev));
+    }, 1500);
+  };
+
   const columns = useMemo<ColumnDef<BiOrdersItem>[]>(
     () => {
       if (showSelectedDetails) {
@@ -267,9 +281,22 @@ const ProductDesktopTableGroup = ({ orders, onRowClick, selectedProduct, showSel
                         ? `${String(cell.getValue())} (Натисніть, щоб скопіювати)`
                         : String(cell.getValue())
                     }
-                    onClick={canCopy ? () => copyProductToClipboard(order.product) : undefined}
+                    onClick={canCopy ? () => copyProductToClipboard(order.product, handleProductCopied) : undefined}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    {canCopy ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </span>
+                        {copiedProduct === order.product ? (
+                          <Check size={14} style={{ flexShrink: 0, color: 'var(--success-light, #4ade80)' }} />
+                        ) : (
+                          <Copy size={14} style={{ flexShrink: 0, opacity: 0.75 }} />
+                        )}
+                      </div>
+                    ) : (
+                      flexRender(cell.column.columnDef.cell, cell.getContext())
+                    )}
                   </td>
                 );
               })}

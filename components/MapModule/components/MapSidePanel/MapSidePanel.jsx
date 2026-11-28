@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
+import { useDisplayAddressStore } from "../../store/displayAddress";
 import DeliveriesList from "../DeliveriesList/DeliveriesList";
 import ApplicationsList from "../ApplicationsList/ApplicationsList";
 import ClientsList from "../ClientsList/ClientsList";
@@ -30,8 +32,16 @@ export default function MapSidePanel({ isMobile = false }) {
     setEditClientRequest,
   } = useMapControlStore();
 
-  const handleFlyTo = (lat, lon) => setFlyToCoords([lat, lon]);
+  const { clearAddressData } = useDisplayAddressStore();
 
+  // Очищення стейту адреси при перемиканні на будь-який зі списків (доставки, заявки, клієнти)
+  useEffect(() => {
+    if (areDeliveriesVisible || areApplicationsVisible || areClientsVisible) {
+      clearAddressData();
+    }
+  }, [areDeliveriesVisible, areApplicationsVisible, areClientsVisible, clearAddressData]);
+
+  const handleFlyTo = (lat, lon) => setFlyToCoords([lat, lon]);
 
   const handleAddClient = (initialData = null) => {
     setEditClientRequest(initialData ? { ...initialData, id: null } : null);
@@ -76,6 +86,7 @@ export default function MapSidePanel({ isMobile = false }) {
   // Default: address search
   return (
     <InputAddress
+      syncWithGlobalStore={true}
       onAddressSelect={(data) => {
         if (data?.lat && data?.lon) {
           handleFlyTo(data.lat, data.lon);

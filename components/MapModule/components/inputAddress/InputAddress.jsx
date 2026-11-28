@@ -25,8 +25,9 @@ const DEFAULT_REGION_NAME = "Харківська";
  * @param {object} props - Пропсы компонента.
  * @param {function} props.onAddressSelect - Callback-функция, которая вызывается при выборе
  * и успешном геокодировании адреса. Передает данные адреса родительскому компоненту.
+ * @param {boolean} [props.syncWithGlobalStore=false] - Флаг синхронизации с глобальными хранилищами карты (useGeocodeStore, useDisplayAddressStore).
  */
-export default function InputAddress({ onAddressSelect }) {
+export default function InputAddress({ onAddressSelect, syncWithGlobalStore = false }) {
   // Подключение к хранилищам Zustand для обновления глобального состояния.
   const { setGeocodeData } = useGeocodeStore();
   const { setAddressData } = useDisplayAddressStore();
@@ -116,15 +117,19 @@ export default function InputAddress({ onAddressSelect }) {
           const geocodedData = rawGeocodeResult[0];
           const finalData = processGeocodedData(geocodedData, newValue);
           
-          setGeocodeData(finalData);
-          setAddressData(finalData);
+          if (syncWithGlobalStore) {
+            setGeocodeData(finalData);
+            setAddressData(finalData);
+          }
           if (onAddressSelect) onAddressSelect(finalData);
           return true;
         } else if (rawGeocodeResult && !Array.isArray(rawGeocodeResult) && rawGeocodeResult.lat) {
            // Обработка случая, когда результат не массив, а одиночный объект.
            const finalData = processGeocodedData(rawGeocodeResult, newValue);
-           setGeocodeData(finalData);
-           setAddressData(finalData);
+           if (syncWithGlobalStore) {
+             setGeocodeData(finalData);
+             setAddressData(finalData);
+           }
            if (onAddressSelect) onAddressSelect(finalData);
            return true;
         }
@@ -163,14 +168,18 @@ export default function InputAddress({ onAddressSelect }) {
             lat: "0",
             lon: "0"
         };
-        setGeocodeData(fallbackData);
-        setAddressData(fallbackData);
+        if (syncWithGlobalStore) {
+          setGeocodeData(fallbackData);
+          setAddressData(fallbackData);
+        }
         if (onAddressSelect) onAddressSelect(fallbackData);
       }
     } else {
       // Если поле очищено, сбрасываем данные в хранилищах.
-      setGeocodeData({});
-      setAddressData({});
+      if (syncWithGlobalStore) {
+        setGeocodeData({});
+        setAddressData({});
+      }
       if (onAddressSelect) onAddressSelect(null);
     }
   };
@@ -180,8 +189,10 @@ export default function InputAddress({ onAddressSelect }) {
    * @param {object} result - Выбранный пользователем результат.
    */
   const handleAmbiguousSelect = (result) => {
-    setGeocodeData(result);
-    setAddressData(result);
+    if (syncWithGlobalStore) {
+      setGeocodeData(result);
+      setAddressData(result);
+    }
     if (onAddressSelect) onAddressSelect(result);
     setShowAmbiguousDialog(false);
   };

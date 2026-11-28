@@ -1,5 +1,6 @@
 import css from "./DeliveriesList.module.css";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import StatusFilter from "../StatusFilter/StatusFilter";
@@ -9,9 +10,9 @@ import LineOfBusinessFilter from "../LineOfBusinessFilter/LineOfBusinessFilter";
 import { filterDelivery } from "../../utils/filterUtils";
 import { getStatusColor } from "../../statusUtils";
 import { getInitData } from "@/lib/getInitData";
-import { batchUpdateDeliveries } from "@/lib/api";
+import { batchUpdateDeliveries, getDeliveryChatSummaries } from "@/lib/api";
 import toast from "react-hot-toast";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, MessageCircle } from "lucide-react";
 import ExportPrintModal from "../ExportPrintModal/ExportPrintModal";
 import BatchTTNModal from "../BatchTTNModal/BatchTTNModal";
 import SendAccountantConfirmModal from "../SendAccountantConfirmModal/SendAccountantConfirmModal";
@@ -223,6 +224,22 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
 
   const [areFiltersVisible, setAreFiltersVisible] = useState(true);
 
+  const deliveryIds = useMemo(
+    () => (deliveries || []).map((d) => Number(d.id)).filter((id) => Number.isFinite(id)),
+    [deliveries]
+  );
+  const deliveryIdsKey = useMemo(() => deliveryIds.join(","), [deliveryIds]);
+  const listInitData = getInitData();
+
+  const { data: chatSummariesRes } = useQuery({
+    queryKey: ["deliveryChatSummaries", deliveryIdsKey, listInitData],
+    queryFn: () => getDeliveryChatSummaries(deliveryIds, listInitData),
+    enabled: deliveryIds.length > 0 && Boolean(listInitData),
+    staleTime: 20000,
+    refetchOnWindowFocus: false,
+  });
+  const chatSummaries = chatSummariesRes?.summaries || {};
+
   return (
     <div className={css.container}>
       {!isMobile && (
@@ -424,24 +441,40 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                       </div>
 
                       <div className={css.itemsList}>
-                        {items.map((item, idx) => (
+                        {items.map((item, idx) => {
+                          const summary = chatSummaries[item.id];
+                          const unreadCount = summary?.unread_count || 0;
+                          const totalCount = summary?.total_count || 0;
+                          const hasPreview = Boolean(summary?.last_message_text);
+                          return (
                           <div 
                             key={`${item.id}-${idx}`} 
-                            className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''}`}
+                            className={`${css.item} ${isMultiSelected(item) ? css.itemSelected : ''} ${unreadCount > 0 ? css.itemHasUnread : ''}`}
                             onClick={(e) => handleItemClick(item, e)}
                           >
                             <div className={css.itemHeaderRow}>
                               <div className={css.clientName}>
                                 {item.client}
                               </div>
-                              {item.is_accountant_sent === true && (
-                                <span 
-                                  className={css.accountantBadge}
-                                  title={`Дані для виписки передано бухгалтеру (${item.accountant_name || 'Бухгалтерія'})${item.accountant_sent_at ? ` о ${new Date(item.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
-                                >
-                                  📑 Бухгалтеру надіслано
-                                </span>
-                              )}
+                              <div className={css.itemBadgesRow}>
+                                {(unreadCount > 0 || totalCount > 0) && (
+                                  <span
+                                    className={unreadCount > 0 ? css.chatUnreadPill : css.chatCountPill}
+                                    title={unreadCount > 0 ? `${unreadCount} непрочитаних повідомлень` : `Всього подій/повідомлень у чаті: ${totalCount}`}
+                                  >
+                                    <MessageCircle size={11} />
+                                    <span>{unreadCount > 0 ? unreadCount : totalCount}</span>
+                                  </span>
+                                )}
+                                {item.is_accountant_sent === true && (
+                                  <span 
+                                    className={css.accountantBadge}
+                                    title={`Дані для виписки передано бухгалтеру (${item.accountant_name || 'Бухгалтерія'})${item.accountant_sent_at ? ` о ${new Date(item.accountant_sent_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                                  >
+                                    📑 Бухгалтеру надіслано
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className={css.itemDetails}>
                               <span className={css.address}>
@@ -451,8 +484,24 @@ export default function DeliveriesList({ deliveries, onClose, onFlyTo, onSelectD
                               </span>
                               <span className={css.itemWeight}>{item.total_weight?.toFixed(2)} кг</span>
                             </div>
+                            {hasPreview && (
+                              <div className={css.chatPreviewRow}>
+                                <span className={css.chatPreviewText}>
+                                  <strong className={summary.last_message_source === 'telegram' ? css.chatSourceTg : css.chatSourceWeb}>
+                                    {summary.last_message_source === 'telegram' ? 'TG' : summary.last_message_source === 'system' ? 'Подія' : 'Web'} • {summary.last_message_author || 'Користувач'}:
+                                  </strong>{' '}
+                                  {summary.last_message_text}
+                                </span>
+                                {summary.last_message_at && (
+                                  <span className={css.chatPreviewTime}>
+                                    {new Date(summary.last_message_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

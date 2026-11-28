@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useApplicationsStore } from "../../store/applicationsStore";
 import { useMapControlStore } from "../../store/mapControlStore";
 import { useDisplayAddressStore } from "../../store/displayAddress";
 import { getInitData } from "@/lib/getInitData";
-import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries } from "@/lib/api";
+import { updateDeliveryData, changeDeliveryDate, batchUpdateDeliveries, getDeliveryChatSummaries } from "@/lib/api";
 import { useUser } from "@/store/User";
 import toast from "react-hot-toast";
 import css from "./bottomData.module.css";
-import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Boxes, Zap, PlusCircle } from 'lucide-react';
+import { Download, Printer as LucidePrinter, ChevronDown, ChevronRight, MessageCircle, AlertTriangle, Copy, Check, Box, Boxes, Zap, PlusCircle, Send, Clock } from 'lucide-react';
+import DeliveryChatPanel from "../DeliveryChatPanel/DeliveryChatPanel";
 import * as XLSX from 'xlsx';
 import { useRouter } from "next/navigation";
 import { useOrderCart } from "@/store/OrderCart";
@@ -311,8 +313,15 @@ export default function BottomData({ onEditClient }) {
     }
   };
 
-  const { areApplicationsVisible, areClientsVisible, areDeliveriesVisible, setEditClientRequest } = useMapControlStore();
-  const { addressData } = useDisplayAddressStore();
+  const {
+    areApplicationsVisible,
+    areClientsVisible,
+    areDeliveriesVisible,
+    setEditClientRequest,
+    requestedChatDeliveryId,
+    setRequestedChatDeliveryId,
+  } = useMapControlStore();
+  const { addressData, clearAddressData } = useDisplayAddressStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); 
   const [changeDateTarget, setChangeDateTarget] = useState(null);
@@ -320,6 +329,31 @@ export default function BottomData({ onEditClient }) {
   const [checkedDeliveryIds, setCheckedDeliveryIds] = useState(new Set());
   const [isBatchDateModalOpen, setIsBatchDateModalOpen] = useState(false);
   const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
+  const [activeDetailTab, setActiveDetailTab] = useState("details");
+
+  const singleDeliveryId = selectedDeliveries?.length === 1 ? selectedDeliveries[0]?.id : null;
+  const effectiveInitData = getInitData();
+
+  const { data: singleChatSummaryData } = useQuery({
+    queryKey: ["deliveryChatSummaries", singleDeliveryId, effectiveInitData],
+    queryFn: () => getDeliveryChatSummaries([singleDeliveryId], effectiveInitData),
+    enabled: Boolean(singleDeliveryId && effectiveInitData && areDeliveriesVisible),
+    staleTime: 15000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (!singleDeliveryId) {
+      setActiveDetailTab("details");
+      return;
+    }
+    if (requestedChatDeliveryId && Number(requestedChatDeliveryId) === Number(singleDeliveryId)) {
+      setActiveDetailTab("chat");
+      setRequestedChatDeliveryId(null);
+    } else {
+      setActiveDetailTab("details");
+    }
+  }, [singleDeliveryId, requestedChatDeliveryId, setRequestedChatDeliveryId]);
 
   const handleChangeDeliveryDate = async (d, newDateStr) => {
     if (!newDateStr) {
@@ -1046,6 +1080,9 @@ export default function BottomData({ onEditClient }) {
     }
     const delivery = selectedDeliveries[0];
     const isCompleted = delivery.status === "Виконано";
+    const singleChatSummary = singleChatSummaryData?.summaries?.[delivery.id] || null;
+    const chatUnreadCount = singleChatSummary?.unread_count || 0;
+    const chatTotalCount = singleChatSummary?.total_count || 0;
     const uniqueOrderRefs = Array.from(
       new Set(
         (delivery.items || [])
@@ -1123,6 +1160,17 @@ export default function BottomData({ onEditClient }) {
                 >
                   <Boxes size={14} /> Комплектація
                 </button>
+                <button
+                  type="button"
+                  className={`${css.deliveryEditBtn} ${css.btnChatTg}`}
+                  onClick={() => setActiveDetailTab("chat")}
+                  title="Відкрити переписку з менеджером у Telegram"
+                >
+                  <Send size={14} /> Чат з менеджером
+                  {chatUnreadCount > 0 && (
+                    <span className={css.chatUnreadBadge}>{chatUnreadCount}</span>
+                  )}
+                </button>
                 {!isCompleted && (
                   <button 
                     className={`${css.deliveryEditBtn} ${css.btnBi}`} 
@@ -1167,6 +1215,69 @@ export default function BottomData({ onEditClient }) {
               </button>
             </div>
           )}
+
+          {/* Вкладки: Реквізити / Переписка TG / Вся хронологія (Варіант А) */}
+          <div className={css.detailTabsBar}>
+            <button
+              type="button"
+              className={`${css.detailTabBtn} ${activeDetailTab === "details" ? css.detailTabActive : ""}`}
+              onClick={() => setActiveDetailTab("details")}
+            >
+              Реквізити і товари
+            </button>
+            <button
+              type="button"
+              className={`${css.detailTabBtn} ${activeDetailTab === "chat" ? css.detailTabActiveTg : ""}`}
+              onClick={() => setActiveDetailTab("chat")}
+            >
+              <MessageCircle size={13} />
+              <span>Переписка TG</span>
+              {chatUnreadCount > 0 ? (
+                <span className={css.chatUnreadBadge}>{chatUnreadCount}</span>
+              ) : chatTotalCount > 0 ? (
+                <span className={css.chatCountBadge}>{chatTotalCount}</span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className={`${css.detailTabBtn} ${activeDetailTab === "history" ? css.detailTabActive : ""}`}
+              onClick={() => setActiveDetailTab("history")}
+            >
+              <Clock size={13} />
+              <span>Хронологія</span>
+            </button>
+          </div>
+
+          {activeDetailTab === "details" && singleChatSummary?.last_message_text && (
+            <div
+              className={css.lastChatPreviewBanner}
+              onClick={() => setActiveDetailTab("chat")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setActiveDetailTab("chat");
+              }}
+              title="Натисніть, щоб відкрити переписку з менеджером"
+            >
+              <div className={css.lastChatPreviewHeader}>
+                <span className={css.lastChatPreviewTitle}>
+                  <Send size={12} /> Останнє у переписці ({singleChatSummary.last_message_source === "telegram" ? "Telegram" : singleChatSummary.last_message_source === "system" ? "Подія" : "Web"})
+                </span>
+                <span className={css.lastChatPreviewMeta}>
+                  {singleChatSummary.last_message_at
+                    ? new Date(singleChatSummary.last_message_at).toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" })
+                    : ""}
+                  {" • Відкрити →"}
+                </span>
+              </div>
+              <div className={css.lastChatPreviewBody}>
+                <strong>{singleChatSummary.last_message_author || "Користувач"}:</strong>{" "}
+                {singleChatSummary.last_message_text}
+              </div>
+            </div>
+          )}
+
+          {activeDetailTab === "details" ? (
           <div className={css.addressInfo}>
               <p 
                 className={css.clickableRow}
@@ -1274,8 +1385,17 @@ export default function BottomData({ onEditClient }) {
                 </div>
               )}
           </div>
+          ) : (
+            <div className={css.chatTabWrapper}>
+              <DeliveryChatPanel
+                deliveryId={delivery.id}
+                mode={activeDetailTab === "history" ? "history" : "chat"}
+                managerName={delivery.manager}
+              />
+            </div>
+          )}
         </div>
-        {delivery.items && delivery.items.length > 0 && (
+        {activeDetailTab === "details" && delivery.items && delivery.items.length > 0 && (
           <div className={css.itemsSection}>
             <h4 className={css.itemsTitle}>📦 Товари у доставці:</h4>
             {renderItems(delivery.items)}
@@ -1771,7 +1891,24 @@ export default function BottomData({ onEditClient }) {
   return (
     <div className={css.container}>
       <div className={css.infoCard}>
-        <h2 className={css.title}>Обрана адреса</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <h2 className={css.title} style={{ margin: 0 }}>Обрана адреса</h2>
+          <button
+            type="button"
+            onClick={() => clearAddressData()}
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              background: '#ef4444',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Очистити
+          </button>
+        </div>
         <div className={css.addressInfo}>
           <p><strong>Адреса:</strong> {addressData.display_name}</p>
           {addressData.lat && <p><strong>Координати:</strong> {addressData.lat}, {addressData.lon}</p>}

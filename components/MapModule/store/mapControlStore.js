@@ -25,6 +25,10 @@ export const useMapControlStore = create(
       // Запит на відкриття EditClientModal (дані клієнта або null для нового)
       editClientRequest: null,
       setEditClientRequest: (data) => set({ editClientRequest: data }),
+
+      // Deep-link запит на автоматичне відкриття вкладки чату конкретної доставки
+      requestedChatDeliveryId: null,
+      setRequestedChatDeliveryId: (id) => set({ requestedChatDeliveryId: id }),
       
       setApplicationsVisible: (visible) => set((state) => ({ 
         areApplicationsVisible: typeof visible === 'function' ? visible(state.areApplicationsVisible) : visible 

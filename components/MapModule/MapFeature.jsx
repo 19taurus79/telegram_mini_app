@@ -11,7 +11,6 @@ import BottomData from "./components/bottomData/bottomData";
 import { useDisplayAddressStore } from "./store/displayAddress"; // Хранилище для отображаемого адреса
 import { useApplicationsStore } from "./store/applicationsStore"; // Глобальное хранилище для заявок, доставок, клиентов
 import { fetchOrdersHeatmapData } from "./fetchOrdersWithAddresses";
-import ChangeMapView from "./components/ChangeMapView/ChangeMapView";
 import { getDeliveries, getOrderComments } from "../../lib/api";
 import Header from "./components/Header/Header";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -261,7 +260,7 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
   // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ ---
 
   // Состояние для отображения адреса, выбранного через поиск
-  const { addressData, setAddressData } = useDisplayAddressStore();
+  const { addressData, setAddressData, clearAddressData } = useDisplayAddressStore();
   const queryClient = useQueryClient();
   const initData = getInitData();
   
@@ -322,11 +321,14 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     deliveryHistoryPeriod,
     deliveryCustomDateFrom,
     deliveryCustomDateTo,
+    setDeliveriesVisible,
+    setRequestedChatDeliveryId,
   } = useMapControlStore();
   
   // Ссылка на экземпляр карты
   const mapRef = useRef(null);
   const containerRef = useRef(null);
+  const handledDeepLinkRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
 
   // --- ФИЛЬТРАЦИЯ ДАННЫХ ---
@@ -629,6 +631,44 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
     }
   }, [combinedDeliveries, setDeliveries, setAvailableStatuses, setSelectedStatuses, knownStatuses, setKnownStatuses]);
 
+  // Deep-link: відкриття конкретної доставки та її чату з ?deliveryId=...&openChat=1
+  useEffect(() => {
+    if (typeof window === 'undefined' || !combinedDeliveries || combinedDeliveries.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const deliveryIdParam = params.get('deliveryId');
+    if (!deliveryIdParam) return;
+    const targetId = Number(deliveryIdParam);
+    if (!Number.isFinite(targetId) || handledDeepLinkRef.current === targetId) return;
+
+    const targetDelivery = combinedDeliveries.find(d => Number(d.id) === targetId);
+    if (!targetDelivery) return;
+
+    handledDeepLinkRef.current = targetId;
+    setDeliveriesVisible(true);
+    setSelectedDelivery(targetDelivery);
+
+    if (params.get('openChat') === '1' || params.get('openChat') === 'true') {
+      setRequestedChatDeliveryId(targetId);
+    }
+
+    const lat = parseFloat(targetDelivery.latitude);
+    const lng = parseFloat(targetDelivery.longitude);
+    if (lat && lng) {
+      setFlyToCoords([lat, lng]);
+    }
+    if (isMobile) {
+      setIsSheetOpen(true);
+    }
+  }, [
+    combinedDeliveries,
+    isMobile,
+    setDeliveriesVisible,
+    setFlyToCoords,
+    setIsSheetOpen,
+    setRequestedChatDeliveryId,
+    setSelectedDelivery,
+  ]);
+
   // Перерахунок розміру карти при зміні flyToCoords (щоб уникнути «сірих плиток»)
   useEffect(() => {
     if (mapRef.current) {
@@ -669,7 +709,26 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
         icon={customIcon}
         position={[addressData.lat, addressData.lon]}
       >
-        <Popup>{addressData.display_name}</Popup>
+        <Popup>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '13px', lineHeight: 1.4 }}>{addressData.display_name}</span>
+            <button
+              type="button"
+              onClick={() => clearAddressData()}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Очистити маркер
+            </button>
+          </div>
+        </Popup>
       </Marker>
     );
   }
@@ -980,14 +1039,8 @@ export default function MapFeature({ onAddressSelect, setIsSheetOpen = () => {},
             });
           })()}
 
-          {/* Маркер из поиска адреса (отображается, если не активен слой заявок) */}
-          {!areApplicationsVisible && addressMarker}
-          {/* Компонент для синхронизации центра карты с выбранным адресом */}
-          {!areApplicationsVisible && (
-            <ChangeMapView
-              center={addressData.lat ? [addressData.lat, addressData.lon] : null}
-            />
-          )}
+          {/* Маркер из поиска адреса (отображается только в режиме поиска, когда не активны основные слои) */}
+          {!areApplicationsVisible && !areDeliveriesVisible && !areClientsVisible && addressMarker}
           {/* Контроллер для принудительного перемещения карты */}
           <MapController coords={flyToCoords} />
           {/* Контрол для рисования на карте (выделения) */}

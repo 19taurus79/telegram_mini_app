@@ -589,6 +589,69 @@ export type ApiResponse = {
   status: string;
   message?: string;
   warnings?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 };
+
+// ============= DELIVERY CHAT TYPES (Web <-> Telegram) =============
+
+export type DeliveryChatSource = 'web' | 'telegram' | 'system';
+
+export type DeliveryChatEventType =
+  | 'message'
+  | 'delivery_created'
+  | 'status_changed'
+  | 'date_changed'
+  | 'accountant_sent'
+  | 'delivery_split';
+
+export type DeliveryTelegramStatus = 'saved' | 'delivered_tg' | 'failed_tg' | 'not_applicable';
+
+export type DeliveryChatMessage = {
+  id: string;
+  delivery_id: number;
+  event_type: DeliveryChatEventType;
+  source: DeliveryChatSource;
+  author_telegram_id: number | null;
+  author_name: string;
+  author_role: string;
+  message_text: string;
+  reply_to_message_id?: string | null;
+  telegram_delivery_status: DeliveryTelegramStatus;
+  telegram_error?: string | null;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeliveryChatThreadResponse = {
+  delivery_id: number;
+  manager_name?: string | null;
+  manager_telegram_linked: boolean;
+  manager_username?: string | null;
+  messages: DeliveryChatMessage[];
+};
+
+export type DeliveryChatSummary = {
+  delivery_id: number;
+  total_count: number;
+  unread_count: number;
+  last_message_text?: string | null;
+  last_message_author?: string | null;
+  last_message_source?: DeliveryChatSource | null;
+  last_message_at?: string | null;
+};
+
+export type DeliveryChatSummariesResponse = {
+  summaries: Record<number, DeliveryChatSummary>;
+};
+
+export type CreateDeliveryChatMessagePayload = {
+  message_text: string;
+  reply_to_message_id?: string;
+};
+
+export type UpdateDeliveryChatMessagePayload = {
+  message_text: string;
+};
+
 

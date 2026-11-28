@@ -1160,3 +1160,138 @@
   letter-spacing: 0.5px;
   color: var(--foreground);
 }
+
+.btnChatTg {
+  background: rgba(96, 165, 250, 0.16) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  color: var(--info-color) !important;
+}
+
+.chatUnreadBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--info-color);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chatCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+:global([data-theme='light']) .chatCountBadge {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.detailTabsBar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  margin-bottom: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.detailTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.78;
+}
+
+.detailTabBtn:hover {
+  opacity: 1;
+}
+
+.detailTabActive {
+  opacity: 1;
+  background: rgba(14, 241, 142, 0.14);
+  border-color: rgba(14, 241, 142, 0.4);
+  color: var(--accent-green);
+}
+
+.detailTabActiveTg {
+  opacity: 1;
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: var(--info-color);
+}
+
+.lastChatPreviewBanner {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lastChatPreviewBanner:hover {
+  background: rgba(96, 165, 250, 0.16);
+}
+
+.lastChatPreviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.lastChatPreviewTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--info-color);
+}
+
+.lastChatPreviewMeta {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.lastChatPreviewBody {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chatTabWrapper {
+  margin-top: 4px;
+}
+

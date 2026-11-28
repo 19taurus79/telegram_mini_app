@@ -25,10 +25,18 @@ export default function TelegramRouter() {
 
     if (startParam) {
       console.log("Deep link detected, startParam:", startParam);
-      
+
+      if (startParam.startsWith("delivery_")) {
+        const cleaned = startParam.replace(/^delivery_/, "").replace(/_chat$/, "");
+        if (cleaned) {
+          router.replace(`/map?deliveryId=${encodeURIComponent(cleaned)}&openChat=1`);
+          return;
+        }
+      }
+
       // Якщо параметр містить префікс contract_ або просто ID
       const contractId = startParam.replace("contract_", "");
-      
+
       if (contractId) {
         // Використовуємо replace, щоб не засмічувати історію переходів
         router.replace(`/detail/${contractId}?openChat=true`);

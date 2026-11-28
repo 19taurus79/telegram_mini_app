@@ -28,7 +28,12 @@ import {
   CreateOrderCommentPayload,
   ChatMessage,
   CreateChatMessagePayload,
-  UpdateChatMessagePayload
+  UpdateChatMessagePayload,
+  DeliveryChatMessage,
+  DeliveryChatThreadResponse,
+  DeliveryChatSummariesResponse,
+  CreateDeliveryChatMessagePayload,
+  UpdateDeliveryChatMessagePayload,
 } from "@/types/types";
 import axios from "axios";
 import { useInitData } from "@/store/InitData";
@@ -1746,6 +1751,106 @@ export const sendChatNotification = async (
       },
     }
   );
+};
+
+// ============= DELIVERY CHAT API (Web <-> Telegram) =============
+
+export const getDeliveryChatMessages = async (
+  deliveryId: number | string,
+  initData: string
+): Promise<DeliveryChatThreadResponse> => {
+  const { data } = await axios.get<DeliveryChatThreadResponse>(
+    `/deliveries/${deliveryId}/chat/messages`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const createDeliveryChatMessage = async (
+  deliveryId: number | string,
+  payload: CreateDeliveryChatMessagePayload,
+  initData: string
+): Promise<DeliveryChatMessage> => {
+  const { data } = await axios.post<DeliveryChatMessage>(
+    `/deliveries/${deliveryId}/chat/messages`,
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const updateDeliveryChatMessage = async (
+  deliveryId: number | string,
+  messageId: string,
+  payload: UpdateDeliveryChatMessagePayload,
+  initData: string
+): Promise<DeliveryChatMessage> => {
+  const { data } = await axios.put<DeliveryChatMessage>(
+    `/deliveries/${deliveryId}/chat/messages/${messageId}`,
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
+};
+
+export const deleteDeliveryChatMessage = async (
+  deliveryId: number | string,
+  messageId: string,
+  initData: string
+): Promise<void> => {
+  await axios.delete(`/deliveries/${deliveryId}/chat/messages/${messageId}`, {
+    headers: {
+      'X-Telegram-Init-Data': initData,
+    },
+  });
+};
+
+export const markDeliveryChatRead = async (
+  deliveryId: number | string,
+  initData: string
+): Promise<void> => {
+  await axios.post(
+    `/deliveries/${deliveryId}/chat/read`,
+    {},
+    {
+      headers: {
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+};
+
+export const getDeliveryChatSummaries = async (
+  deliveryIds: number[],
+  initData: string
+): Promise<DeliveryChatSummariesResponse> => {
+  const idsParam = deliveryIds.join(',');
+  const { data } = await axios.get<DeliveryChatSummariesResponse>(
+    `/deliveries/chat/summaries`,
+    {
+      params: idsParam ? { ids: idsParam } : undefined,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    }
+  );
+  return data;
 };
 
 // --- Nova Poshta API ---

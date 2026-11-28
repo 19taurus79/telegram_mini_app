@@ -39,10 +39,26 @@ export const useWebsocket = () => {
             'DELIVERY_SPLIT'
           ];
 
+          const deliveryChatEvents = [
+            'DELIVERY_CHAT_MESSAGE_CREATED',
+            'DELIVERY_CHAT_MESSAGE_UPDATED',
+            'DELIVERY_CHAT_MESSAGE_DELETED'
+          ];
+
           if (deliveryEvents.includes(data.type)) {
             console.log(`🔄 Event ${data.type} received. Invalidating deliveries query...`);
             // Инвалидируем кеш для доставок, что вызовет автоматический рефетч
             queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['deliveryChat'] });
+            queryClient.invalidateQueries({ queryKey: ['deliveryChatSummaries'] });
+          } else if (deliveryChatEvents.includes(data.type)) {
+            const targetDeliveryId = data.payload?.delivery_id;
+            if (targetDeliveryId) {
+              queryClient.invalidateQueries({ queryKey: ['deliveryChat', Number(targetDeliveryId)] });
+            } else {
+              queryClient.invalidateQueries({ queryKey: ['deliveryChat'] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['deliveryChatSummaries'] });
           } else if (data.type === 'EXCEL_DATA_UPLOADED') {
             console.log('🔄 Excel data updated on backend. Invalidating all queries...');
             // Инвалидируем абсолютно все запросы, так как обновились остатки, клиенты и заказы
